@@ -34,10 +34,10 @@ export default function LoginPage() {
       const phoneNumber = phone.startsWith('+') ? phone : `+62${phone.replace(/^0/, '')}`;
       await signInWithPhone(phoneNumber, 'recaptcha-container');
       setStep('otp');
-      toast({ title: 'OTP Sent', description: 'Please check your phone for the verification code.' });
+      toast({ title: 'OTP Terkirim', description: 'Silakan periksa ponsel Anda untuk kode verifikasi.' });
     } catch (error) {
       console.error(error);
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to send OTP. Please try again.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Gagal mengirim OTP. Silakan coba lagi.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -48,11 +48,11 @@ export default function LoginPage() {
     setIsSubmitting(true);
     try {
       await verifyOtp(otp);
-      toast({ title: 'Success', description: 'You have been logged in successfully!' });
+      toast({ title: 'Sukses', description: 'Anda berhasil masuk!' });
       router.push('/feed');
     } catch (error) {
       console.error(error);
-      toast({ variant: 'destructive', title: 'Error', description: 'Invalid OTP. Please try again.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'OTP tidak valid. Silakan coba lagi.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -77,11 +77,11 @@ export default function LoginPage() {
         </div>
         <Card>
           <CardHeader className="text-center">
-            <CardTitle>Welcome Back</CardTitle>
+            <CardTitle>Selamat Datang Kembali</CardTitle>
             <CardDescription>
               {step === 'phone'
-                ? 'Enter your phone number to log in.'
-                : 'Enter the OTP sent to your phone.'}
+                ? 'Masukkan nomor telepon Anda untuk masuk.'
+                : 'Masukkan OTP yang dikirim ke ponsel Anda.'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -89,7 +89,7 @@ export default function LoginPage() {
               <form onSubmit={handlePhoneSubmit} className="space-y-4">
                 <Input
                   type="tel"
-                  placeholder="e.g. 08123456789"
+                  placeholder="cth. 08123456789"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   required
@@ -97,7 +97,7 @@ export default function LoginPage() {
                 <div id="recaptcha-container" className="flex justify-center"></div>
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Send OTP
+                  Kirim OTP
                 </Button>
               </form>
             ) : (
@@ -112,14 +112,14 @@ export default function LoginPage() {
                 />
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Verify OTP & Log In
+                  Verifikasi & Masuk
                 </Button>
               </form>
             )}
             <p className="mt-4 text-center text-xs text-muted-foreground">
-              Don't have an account?{' '}
+              Belum punya akun?{' '}
               <Link href="/register" className="font-semibold text-primary hover:underline">
-                Register
+                Daftar
               </Link>
             </p>
           </CardContent>

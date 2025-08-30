@@ -12,6 +12,7 @@ import {
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { redirect, usePathname } from 'next/navigation';
+import { useToast } from './use-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -31,6 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const pathname = usePathname();
+  const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -54,6 +56,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
       'expired-callback': () => {
         // Response expired. Ask user to solve reCAPTCHA again.
+        toast({
+            variant: 'destructive',
+            title: 'reCAPTCHA Kedaluwarsa',
+            description: 'Silakan selesaikan reCAPTCHA lagi.',
+        });
       }
     });
   }

@@ -23,7 +23,7 @@ const MembershipCard = ({ name, email, photoUrl, memberId }: { name: string, ema
                         <Logo className="h-8 w-8" />
                         <CardTitle className="font-headline text-xl">Garda Lestari</CardTitle>
                     </div>
-                    <span className="text-xs font-semibold uppercase tracking-widest">Member</span>
+                    <span className="text-xs font-semibold uppercase tracking-widest">Anggota</span>
                 </div>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4 text-center">
@@ -36,7 +36,7 @@ const MembershipCard = ({ name, email, photoUrl, memberId }: { name: string, ema
                     <p className="text-sm opacity-80">{email}</p>
                 </div>
                 <div>
-                    <p className="text-xs opacity-80 uppercase">Member ID</p>
+                    <p className="text-xs opacity-80 uppercase">ID Anggota</p>
                     <p className="font-mono text-lg tracking-wider">{memberId}</p>
                 </div>
             </CardContent>
@@ -69,10 +69,10 @@ export default function RegisterPage() {
             const phoneNumber = phone.startsWith('+') ? phone : `+62${phone.replace(/^0/, '')}`;
             await signInWithPhone(phoneNumber, 'recaptcha-container-register');
             setStep('otp');
-            toast({ title: 'OTP Sent', description: 'Please check your phone for the verification code.' });
+            toast({ title: 'OTP Terkirim', description: 'Silakan periksa ponsel Anda untuk kode verifikasi.' });
         } catch (error) {
             console.error(error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Failed to send OTP. Please try again.' });
+            toast({ variant: 'destructive', title: 'Error', description: 'Gagal mengirim OTP. Silakan coba lagi.' });
         } finally {
             setIsSubmitting(false);
         }
@@ -86,7 +86,7 @@ export default function RegisterPage() {
             // User is now signed in, useEffect will trigger update to 'done' step
         } catch (error) {
             console.error(error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Invalid OTP. Please try again.' });
+            toast({ variant: 'destructive', title: 'Error', description: 'OTP tidak valid. Silakan coba lagi.' });
         } finally {
             setIsSubmitting(false);
         }
@@ -114,9 +114,9 @@ export default function RegisterPage() {
                 {step !== 'done' ? (
                     <Card>
                         <CardHeader className="text-center">
-                            <CardTitle>Join Our Community</CardTitle>
+                            <CardTitle>Bergabung dengan Komunitas Kami</CardTitle>
                             <CardDescription>
-                               {step === 'phone' ? 'Create your account to get started.' : 'Enter the OTP to verify your number.'}
+                               {step === 'phone' ? 'Buat akun Anda untuk memulai.' : 'Masukkan OTP untuk verifikasi nomor Anda.'}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -124,7 +124,7 @@ export default function RegisterPage() {
                                 <form onSubmit={handlePhoneSubmit} className="space-y-4">
                                      <Input
                                         type="tel"
-                                        placeholder="e.g. 08123456789"
+                                        placeholder="cth. 08123456789"
                                         value={phone}
                                         onChange={(e) => setPhone(e.target.value)}
                                         required
@@ -132,7 +132,7 @@ export default function RegisterPage() {
                                     <div id="recaptcha-container-register" className="flex justify-center"></div>
                                     <Button type="submit" className="w-full" disabled={isSubmitting}>
                                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Sign up with Phone
+                                        Daftar dengan Nomor Telepon
                                     </Button>
                                 </form>
                             ) : (
@@ -147,14 +147,14 @@ export default function RegisterPage() {
                                     />
                                     <Button type="submit" className="w-full" disabled={isSubmitting}>
                                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Verify & Create Account
+                                        Verifikasi & Buat Akun
                                     </Button>
                                 </form>
                             )}
                             <p className="mt-4 text-center text-xs text-muted-foreground">
-                                Already have an account?{' '}
+                                Sudah punya akun?{' '}
                                 <Link href="/login" className="font-semibold text-primary hover:underline">
-                                    Log In
+                                    Masuk
                                 </Link>
                             </p>
                         </CardContent>
@@ -162,17 +162,17 @@ export default function RegisterPage() {
                 ) : (
                     <div className="flex flex-col items-center gap-6 text-center">
                        <div className="space-y-2">
-                            <h1 className="text-2xl font-bold font-headline">Registration Successful!</h1>
-                            <p className="text-muted-foreground">Here is your digital membership card (KTA).</p>
+                            <h1 className="text-2xl font-bold font-headline">Pendaftaran Berhasil!</h1>
+                            <p className="text-muted-foreground">Ini adalah Kartu Tanda Anggota (KTA) digital Anda.</p>
                         </div>
                         <MembershipCard
-                            name={user?.displayName || 'New Member'}
+                            name={user?.displayName || 'Anggota Baru'}
                             email={user?.email || (user?.phoneNumber || '')}
                             photoUrl={user?.photoURL || ''}
                             memberId={memberId}
                         />
                         <Button size="lg" onClick={() => router.push('/feed')}>
-                            Go to Feed
+                            Masuk ke Beranda
                         </Button>
                     </div>
                 )}

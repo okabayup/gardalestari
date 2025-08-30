@@ -42,11 +42,11 @@ export default function Header() {
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>{user.displayName}</DropdownMenuLabel>
+                <DropdownMenuLabel>{user.displayName || user.phoneNumber}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={signOut} className="text-destructive">
+                <DropdownMenuItem onClick={signOut} className="text-destructive cursor-pointer">
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
+                  <span>Keluar</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
