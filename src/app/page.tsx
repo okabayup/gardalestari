@@ -4,26 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Leaf, Users, Sprout, Award } from 'lucide-react';
 import { Logo } from '@/components/icons/Logo';
+import LandingHeader from '@/components/layout/LandingHeader';
 
 export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center">
-          <Link href="/" className="flex items-center gap-2 font-bold">
-            <Logo className="h-6 w-6 text-primary" />
-            <span className="font-headline text-xl">Garda Lestari</span>
-          </Link>
-          <nav className="ml-auto flex items-center gap-2">
-            <Button variant="ghost" asChild>
-              <Link href="/login">Masuk</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/register">Daftar</Link>
-            </Button>
-          </nav>
-        </div>
-      </header>
+      <LandingHeader />
 
       <main className="flex-1">
         <section className="relative w-full py-20 md:py-32 lg:py-40">
