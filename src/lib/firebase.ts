@@ -2,12 +2,12 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "garda-lestari-org.firebaseapp.com",
-  projectId: "garda-lestari-org",
-  storageBucket: "garda-lestari-org.appspot.com",
-  messagingSenderId: "1234567890",
-  appId: "1:1234567890:web:abcdef1234567890",
+  apiKey: "AIzaSyDXbT8iT_B5w0rLeYpa6yIh8kYBGXITcF8",
+  authDomain: "garda-lestari.firebaseapp.com",
+  projectId: "garda-lestari",
+  storageBucket: "garda-lestari.appspot.com",
+  messagingSenderId: "1036757381415",
+  appId: "1:1036757381415:web:d5353e06ce7da43336f902"
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();

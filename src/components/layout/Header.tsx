@@ -12,10 +12,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut } from 'lucide-react';
+import { LogOut, UserCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function Header() {
   const { user, signOut } = useAuth();
+  const router = useRouter();
 
   const getInitials = (name: string | null | undefined) => {
     if (!name) return 'GL';
@@ -23,6 +25,11 @@ export default function Header() {
       .split(' ')
       .map((n) => n[0])
       .join('');
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
   };
 
   return (
@@ -44,7 +51,11 @@ export default function Header() {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>{user.displayName || user.phoneNumber}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={signOut} className="text-destructive cursor-pointer">
+                 <DropdownMenuItem onClick={() => router.push('/profile')} className="cursor-pointer">
+                  <UserCircle className="mr-2 h-4 w-4" />
+                  <span>Profil</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Keluar</span>
                 </DropdownMenuItem>
