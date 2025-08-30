@@ -18,20 +18,20 @@ import {z} from 'genkit';
 // Input schema for the personalized benefit recommendations flow
 const PersonalizedBenefitRecommendationsInputSchema = z.object({
   userProfile: z.object({
-    age: z.number().describe('The age of the user.'),
-    interests: z.array(z.string()).describe('The interests of the user.'),
-    location: z.string().describe('The location of the user.'),
-  }).describe('The profile information of the user.'),
+    age: z.number().describe('Usia pengguna.'),
+    interests: z.array(z.string()).describe('Minat pengguna.'),
+    location: z.string().describe('Lokasi pengguna.'),
+  }).describe('Informasi profil pengguna.'),
   usagePatterns: z.object({
-    benefitsUsed: z.array(z.string()).describe('The benefits the user has used in the past.'),
-    timeSpent: z.record(z.number()).describe('A map of the time spent on each part of the application'),
-  }).describe('The usage patterns of the user.'),
+    benefitsUsed: z.array(z.string()).describe('Benefit yang pernah digunakan pengguna.'),
+    timeSpent: z.record(z.number()).describe('Peta waktu yang dihabiskan pada setiap bagian aplikasi'),
+  }).describe('Pola penggunaan pengguna.'),
   availableBenefits: z.array(z.object({
-    name: z.string().describe('The name of the benefit.'),
-    description: z.string().describe('A detailed description of the benefit.'),
-    category: z.string().describe('The category of the benefit.'),
-    eligibilityCriteria: z.string().describe('The criteria that a user must meet to be eligible for the benefit.'),
-  })).describe('A list of all available benefits.'),
+    name: z.string().describe('Nama benefit.'),
+    description: z.string().describe('Deskripsi rinci dari benefit.'),
+    category: z.string().describe('Kategori benefit.'),
+    eligibilityCriteria: z.string().describe('Kriteria yang harus dipenuhi pengguna untuk memenuhi syarat mendapatkan benefit.'),
+  })).describe('Daftar semua benefit yang tersedia.'),
 });
 
 export type PersonalizedBenefitRecommendationsInput = z.infer<typeof PersonalizedBenefitRecommendationsInputSchema>;
@@ -39,10 +39,10 @@ export type PersonalizedBenefitRecommendationsInput = z.infer<typeof Personalize
 // Output schema for the personalized benefit recommendations flow
 const PersonalizedBenefitRecommendationsOutputSchema = z.object({
   recommendedBenefits: z.array(z.object({
-    name: z.string().describe('The name of the recommended benefit.'),
-    description: z.string().describe('A detailed description of the recommended benefit.'),
-    reason: z.string().describe('The reason why this benefit is recommended for the user.'),
-  })).describe('A list of benefits recommended for the user, along with a reason for each recommendation.'),
+    name: z.string().describe('Nama benefit yang direkomendasikan.'),
+    description: z.string().describe('Deskripsi rinci dari benefit yang direkomendasikan.'),
+    reason: z.string().describe('Alasan mengapa benefit ini direkomendasikan untuk pengguna.'),
+  })).describe('Daftar benefit yang direkomendasikan untuk pengguna, beserta alasan untuk setiap rekomendasi.'),
 });
 
 export type PersonalizedBenefitRecommendationsOutput = z.infer<typeof PersonalizedBenefitRecommendationsOutputSchema>;
@@ -50,31 +50,36 @@ export type PersonalizedBenefitRecommendationsOutput = z.infer<typeof Personaliz
 // Tool to filter benefits based on user preferences
 const filterBenefitsTool = ai.defineTool({
   name: 'filterBenefits',
-  description: 'Filters a list of benefits based on user preferences and eligibility criteria.',
+  description: 'Saring daftar benefit berdasarkan preferensi pengguna dan kriteria kelayakan.',
   inputSchema: z.object({
     benefits: z.array(z.object({
-      name: z.string().describe('The name of the benefit.'),
-      description: z.string().describe('A detailed description of the benefit.'),
-      category: z.string().describe('The category of the benefit.'),
-      eligibilityCriteria: z.string().describe('The criteria that a user must meet to be eligible for the benefit.'),
-    })).describe('A list of benefits to filter.'),
+      name: z.string().describe('Nama benefit.'),
+      description: z.string().describe('Deskripsi rinci dari benefit.'),
+      category: z.string().describe('Kategori benefit.'),
+      eligibilityCriteria: z.string().describe('Kriteria yang harus dipenuhi pengguna untuk memenuhi syarat mendapatkan benefit.'),
+    })).describe('Daftar benefit untuk disaring.'),
     userProfile: z.object({
-      age: z.number().describe('The age of the user.'),
-      interests: z.array(z.string()).describe('The interests of the user.'),
-      location: z.string().describe('The location of the user.'),
-    }).describe('The profile information of the user.'),
+      age: z.number().describe('Usia pengguna.'),
+      interests: z.array(z.string()).describe('Minat pengguna.'),
+      location: z.string().describe('Lokasi pengguna.'),
+    }).describe('Informasi profil pengguna.'),
     usagePatterns: z.object({
-      benefitsUsed: z.array(z.string()).describe('The benefits the user has used in the past.'),
-      timeSpent: z.record(z.number()).describe('A map of the time spent on each part of the application'),
-    }).describe('The usage patterns of the user.'),
+      benefitsUsed: z.array(z.string()).describe('Benefit yang pernah digunakan pengguna.'),
+      timeSpent: z.record(z.number()).describe('Peta waktu yang dihabiskan pada setiap bagian aplikasi'),
+    }).describe('Pola penggunaan pengguna.'),
   }),
-  outputSchema: z.array(z.string()).describe('A list of benefit names that are relevant to the user.'),
+  outputSchema: z.array(z.string()).describe('Daftar nama benefit yang relevan bagi pengguna.'),
 }, async (input) => {
-  // Implement the benefit filtering logic here based on user profile, usage patterns, and eligibility criteria.
+  // Implement benefit filtering logic here based on user profile, usage patterns, and eligibility criteria.
   // This is a placeholder implementation.
   const relevantBenefits = input.benefits.filter(benefit => {
     // Example criteria: Benefit category matches user interests.
-    return input.userProfile.interests.includes(benefit.category);
+    const interestMatch = input.userProfile.interests.some(interest => 
+      benefit.category.toLowerCase().includes(interest.toLowerCase()) || 
+      interest.toLowerCase().includes(benefit.category.toLowerCase())
+    );
+    // You can add more complex logic here, e.g., checking age for eligibility
+    return interestMatch;
   }).map(benefit => benefit.name);
 
   return relevantBenefits;
@@ -86,30 +91,32 @@ const personalizedBenefitRecommendationsPrompt = ai.definePrompt({
   input: {schema: PersonalizedBenefitRecommendationsInputSchema},
   output: {schema: PersonalizedBenefitRecommendationsOutputSchema},
   tools: [filterBenefitsTool],
-  prompt: `You are a personalized benefit recommendation expert.
-Given the following user profile, usage patterns, and available benefits, recommend the most relevant benefits to the user.
+  prompt: `Anda adalah seorang ahli pemberi rekomendasi benefit yang dipersonalisasi untuk anggota organisasi pemberdayaan pemuda.
+Berdasarkan profil pengguna, pola penggunaan, dan benefit yang tersedia, rekomendasikan benefit yang paling relevan bagi pengguna.
 
-User Profile:
-Age: {{{userProfile.age}}}
-Interests: {{#each userProfile.interests}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
-Location: {{{userProfile.location}}}
+Profil Pengguna:
+Usia: {{{userProfile.age}}}
+Minat: {{#each userProfile.interests}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
+Lokasi: {{{userProfile.location}}}
 
-Usage Patterns:
-Benefits Used: {{#each usagePatterns.benefitsUsed}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
-Time Spent: {{#each usagePatterns.timeSpent}}{{{@key}}}: {{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
+Pola Penggunaan:
+Benefit yang Telah Digunakan: {{#each usagePatterns.benefitsUsed}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
+Waktu yang Dihabiskan: {{#each usagePatterns.timeSpent}}{{{@key}}}: {{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
 
-Available Benefits:
+Benefit Tersedia:
 {{#each availableBenefits}}
-- Name: {{{name}}}
-  Description: {{{description}}}
-  Category: {{{category}}}
-  Eligibility Criteria: {{{eligibilityCriteria}}}
+- Nama: {{{name}}}
+  Deskripsi: {{{description}}}
+  Kategori: {{{category}}}
+  Kriteria Kelayakan: {{{eligibilityCriteria}}}
 {{/each}}
 
-First, use the 'filterBenefits' tool to filter the available benefits based on the user's profile and usage patterns.
-Then, for each filtered benefit, provide a reason why it is recommended for the user.
+Langkah-langkah:
+1. Gunakan tool 'filterBenefits' untuk menyaring benefit yang tersedia berdasarkan profil dan pola penggunaan pengguna.
+2. Dari hasil yang telah disaring, pilih 3 benefit teratas yang paling sesuai.
+3. Untuk setiap benefit yang direkomendasikan, berikan alasan yang kuat dan dipersonalisasi mengapa benefit tersebut cocok untuk pengguna, hubungkan dengan minat dan profil mereka.
 
-Format your output as a JSON object with a 'recommendedBenefits' field. Each recommended benefit should include the 'name', 'description', and 'reason'.`,
+Format output Anda sebagai objek JSON dengan field 'recommendedBenefits'. Setiap benefit yang direkomendasikan harus mencakup 'name', 'description', dan 'reason'.`,
 });
 
 // Genkit flow for personalized benefit recommendations

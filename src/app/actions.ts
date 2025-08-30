@@ -5,9 +5,9 @@ import { availableBenefits } from '@/lib/placeholder-data';
 import * as z from 'zod';
 
 const formSchema = z.object({
-  age: z.number(),
-  interests: z.string(),
-  location: z.string(),
+  age: z.coerce.number().min(18, 'Umur minimal 18 tahun.').max(35, 'Umur maksimal 35 tahun.'),
+  interests: z.string().min(3, 'Sebutkan minimal satu minat.'),
+  location: z.string().min(2, 'Silakan masukkan lokasi Anda.'),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -24,7 +24,7 @@ export async function getRecommendedBenefits(values: FormValues) {
       },
       // Mock usage patterns for demonstration
       usagePatterns: {
-        benefitsUsed: ['Free Digital Magazine Subscription'],
+        benefitsUsed: ['Buletin Digital "Lestari"'],
         timeSpent: { 'feed': 3600, 'events': 1200 },
       },
       availableBenefits: availableBenefits,
@@ -40,8 +40,8 @@ export async function getRecommendedBenefits(values: FormValues) {
   } catch (error) {
     console.error('Error getting recommendations:', error);
     if (error instanceof z.ZodError) {
-      return { error: 'Invalid input data. Please check your entries.' };
+      return { error: 'Data input tidak valid. Silakan periksa kembali isian Anda.' };
     }
-    return { error: 'Failed to get recommendations from AI. Please try again later.' };
+    return { error: 'Gagal mendapatkan rekomendasi dari AI. Silakan coba lagi nanti.' };
   }
 }

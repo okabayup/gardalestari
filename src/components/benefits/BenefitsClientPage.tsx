@@ -20,9 +20,9 @@ import { Loader2, Sparkles, Wand2 } from 'lucide-react';
 import type { PersonalizedBenefitRecommendationsOutput } from '@/ai/flows/personalized-benefit-recommendations';
 
 const formSchema = z.object({
-  age: z.coerce.number().min(13, 'You must be at least 13 years old.'),
-  interests: z.string().min(3, 'Please list at least one interest.'),
-  location: z.string().min(2, 'Please enter a location.'),
+  age: z.coerce.number().min(18, 'Umur minimal 18 tahun.').max(35, 'Umur maksimal 35 tahun.'),
+  interests: z.string().min(3, 'Sebutkan minimal satu minat.'),
+  location: z.string().min(2, 'Silakan masukkan lokasi Anda.'),
 });
 
 type BenefitsFormValues = z.infer<typeof formSchema>;
@@ -40,8 +40,8 @@ export default function BenefitsClientPage({ getRecommendedBenefits }: BenefitsC
   const form = useForm<BenefitsFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      age: 30,
-      interests: 'Nature, Hiking, Community',
+      age: 25,
+      interests: 'Pertanian, Konservasi, Komunitas',
       location: 'Jakarta',
     },
   });
@@ -65,15 +65,15 @@ export default function BenefitsClientPage({ getRecommendedBenefits }: BenefitsC
   return (
     <div className="p-4 space-y-6">
       <div className="text-center">
-        <h1 className="font-headline text-3xl font-bold">Personalized Benefits</h1>
-        <p className="text-muted-foreground">Let our AI find the best benefits for you.</p>
+        <h1 className="font-headline text-3xl font-bold">Benefit Terpersonalisasi</h1>
+        <p className="text-muted-foreground">Biarkan AI kami menemukan benefit terbaik untuk Anda.</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Your Profile</CardTitle>
+          <CardTitle>Profil Anda</CardTitle>
           <CardDescription>
-            Tell us a bit about yourself to get personalized recommendations.
+            Ceritakan sedikit tentang diri Anda untuk mendapatkan rekomendasi. Sesuai syarat, usia pendaftar adalah 18-35 tahun.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -84,9 +84,9 @@ export default function BenefitsClientPage({ getRecommendedBenefits }: BenefitsC
                 name="age"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Age</FormLabel>
+                    <FormLabel>Usia</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="e.g., 28" {...field} />
+                      <Input type="number" placeholder="Contoh: 28" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -97,9 +97,9 @@ export default function BenefitsClientPage({ getRecommendedBenefits }: BenefitsC
                 name="interests"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Interests</FormLabel>
+                    <FormLabel>Minat (pisahkan dengan koma)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Hiking, Conservation, Photography" {...field} />
+                      <Input placeholder="Contoh: Pertanian, Konservasi, Fotografi" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -110,9 +110,9 @@ export default function BenefitsClientPage({ getRecommendedBenefits }: BenefitsC
                 name="location"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Location</FormLabel>
+                    <FormLabel>Lokasi</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Jakarta" {...field} />
+                      <Input placeholder="Contoh: Jakarta" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -124,7 +124,7 @@ export default function BenefitsClientPage({ getRecommendedBenefits }: BenefitsC
                 ) : (
                   <Wand2 className="mr-2 h-4 w-4" />
                 )}
-                Get Recommendations
+                Dapatkan Rekomendasi
               </Button>
             </form>
           </Form>
@@ -134,14 +134,14 @@ export default function BenefitsClientPage({ getRecommendedBenefits }: BenefitsC
       {loading && (
         <div className="flex flex-col items-center justify-center gap-4 text-center p-8">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <p className="text-muted-foreground">Our AI is thinking...</p>
+            <p className="text-muted-foreground">AI kami sedang berpikir...</p>
         </div>
       )}
 
       {error && (
         <Card className="border-destructive bg-destructive/10">
           <CardHeader>
-            <CardTitle className="text-destructive">An Error Occurred</CardTitle>
+            <CardTitle className="text-destructive">Terjadi Kesalahan</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-destructive">{error}</p>
@@ -151,7 +151,7 @@ export default function BenefitsClientPage({ getRecommendedBenefits }: BenefitsC
 
       {recommendations && (
         <div className="space-y-4">
-            <h2 className="font-headline text-2xl font-semibold text-center">Your Recommended Benefits</h2>
+            <h2 className="font-headline text-2xl font-semibold text-center">Rekomendasi Benefit Untuk Anda</h2>
             {recommendations.map((rec) => (
                 <Card key={rec.name} className="bg-primary/5">
                     <CardHeader>
@@ -163,7 +163,7 @@ export default function BenefitsClientPage({ getRecommendedBenefits }: BenefitsC
                     <CardContent className="space-y-2">
                         <p className="text-sm text-muted-foreground">{rec.description}</p>
                         <p className="text-sm text-foreground border-l-2 border-primary pl-3">
-                            <span className="font-semibold">Reason:</span> {rec.reason}
+                            <span className="font-semibold">Alasan:</span> {rec.reason}
                         </p>
                     </CardContent>
                 </Card>
