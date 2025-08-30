@@ -32,9 +32,6 @@ export async function getRecommendedBenefits(values: FormValues) {
     
     const recommendations = await personalizedBenefitRecommendations(input);
     
-    // Simulate network delay for better UX
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
     return recommendations;
 
   } catch (error) {
