@@ -7,8 +7,10 @@ import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, User as UserIcon } from 'lucide-react';
+import { LogOut, Shield } from 'lucide-react';
 import { Logo } from '@/components/icons/Logo';
+
+const ADMIN_PHONE_NUMBER = '+6285176752610';
 
 const MembershipCard = ({ name, email, photoUrl, memberId }: { name: string, email: string, photoUrl: string, memberId: string }) => {
     const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('');
@@ -53,6 +55,7 @@ export default function ProfilePage() {
   };
   
   const memberId = user ? `GL-${new Date().getFullYear()}-${String(user.phoneNumber).slice(-6)}` : '';
+  const isAdmin = user?.phoneNumber === ADMIN_PHONE_NUMBER;
 
   return (
     <MainLayout>
@@ -70,10 +73,18 @@ export default function ProfilePage() {
                         memberId={memberId}
                     />
                 )}
-                <Button variant="destructive" onClick={handleSignOut} className="w-full max-w-sm">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Keluar
-                </Button>
+                <div className="w-full max-w-sm space-y-2">
+                    {isAdmin && (
+                        <Button variant="outline" onClick={() => router.push('/admin')} className="w-full">
+                            <Shield className="mr-2 h-4 w-4" />
+                            Panel Admin
+                        </Button>
+                    )}
+                    <Button variant="destructive" onClick={handleSignOut} className="w-full">
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Keluar
+                    </Button>
+                </div>
             </div>
         </div>
     </MainLayout>
