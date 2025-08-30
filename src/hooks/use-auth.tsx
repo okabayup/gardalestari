@@ -1,22 +1,36 @@
+
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup, signOut as firebaseSignOut } from 'firebase/auth';
+import { 
+  onAuthStateChanged, 
+  User, 
+  signOut as firebaseSignOut,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  ConfirmationResult
+} from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { redirect } from 'next/navigation';
+import { redirect, usePathname } from 'next/navigation';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signInWithGoogle: () => Promise<void>;
+  signInWithPhone: (phoneNumber: string, appVerifierContainerId: string) => Promise<void>;
+  verifyOtp: (otp: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Declare recaptchaVerifier in a broader scope
+let recaptchaVerifier: RecaptchaVerifier | null = null;
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -25,26 +39,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     return () => unsubscribe();
   }, []);
-  
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Error signing in with Google: ", error);
+
+  const setupRecaptcha = (containerId: string) => {
+    if (recaptchaVerifier) {
+        // In some cases, you might want to clear previous instance
+        const oldContainer = document.getElementById(containerId);
+        if(oldContainer) oldContainer.innerHTML = '';
     }
+    
+    recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
+      'size': 'normal',
+      'callback': () => {
+        // reCAPTCHA solved, allow sign-in button.
+      },
+      'expired-callback': () => {
+        // Response expired. Ask user to solve reCAPTCHA again.
+      }
+    });
+  }
+
+  const signInWithPhone = async (phoneNumber: string, appVerifierContainerId: string) => {
+    // Ensure reCAPTCHA is only set up on the client and in the correct path
+    if (typeof window !== 'undefined' && (pathname === '/login' || pathname === '/register')) {
+        if (!document.getElementById(appVerifierContainerId)) {
+            // Wait for the container to be in the DOM
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        setupRecaptcha(appVerifierContainerId);
+        if(recaptchaVerifier) {
+            const result = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
+            setConfirmationResult(result);
+        } else {
+            throw new Error("Recaptcha verifier not initialized");
+        }
+    }
+  };
+
+  const verifyOtp = async (otp: string) => {
+    if (!confirmationResult) {
+      throw new Error("No confirmation result available. Please request an OTP first.");
+    }
+    await confirmationResult.confirm(otp);
+    // User signed in successfully. `onAuthStateChanged` will handle the user state.
+    setConfirmationResult(null); // Clear confirmation result
   };
   
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
+      // Clear recaptcha
+      if (recaptchaVerifier) {
+        recaptchaVerifier.clear();
+        recaptchaVerifier = null;
+      }
     } catch (error) {
       console.error("Error signing out: ", error);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signInWithPhone, verifyOtp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

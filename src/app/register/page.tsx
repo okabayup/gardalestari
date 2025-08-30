@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -8,15 +9,8 @@ import Link from 'next/link';
 import { Logo } from '@/components/icons/Logo';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
-const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px" {...props}>
-        <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20c0-1.341-.138-2.65-.389-3.917z"/>
-        <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
-        <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.223,0-9.655-3.373-11.303-8H6.306C9.656,39.663,16.318,44,24,44z"/>
-        <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C44.57,36.636,48,30.836,48,24C48,22.659,47.862,21.34,47.611,20.083z"/>
-    </svg>
-);
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 const MembershipCard = ({ name, email, photoUrl, memberId }: { name: string, email: string, photoUrl: string, memberId: string }) => {
     const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('');
@@ -52,15 +46,52 @@ const MembershipCard = ({ name, email, photoUrl, memberId }: { name: string, ema
 
 
 export default function RegisterPage() {
-    const { user, loading, signInWithGoogle } = useAuth();
+    const { user, loading, signInWithPhone, verifyOtp } = useAuth();
     const router = useRouter();
+    const { toast } = useToast();
+    const [phone, setPhone] = useState('');
+    const [otp, setOtp] = useState('');
+    const [step, setStep] = useState<'phone' | 'otp' | 'done'>('phone');
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [memberId, setMemberId] = useState('');
 
     useEffect(() => {
         if (user) {
-            setMemberId(`GL-${new Date().getFullYear()}-${String(user.uid).substring(0, 6).toUpperCase()}`);
+            setMemberId(`GL-${new Date().getFullYear()}-${String(user.phoneNumber).slice(-6)}`);
+            setStep('done');
         }
     }, [user]);
+
+    const handlePhoneSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+            const phoneNumber = phone.startsWith('+') ? phone : `+62${phone.replace(/^0/, '')}`;
+            await signInWithPhone(phoneNumber, 'recaptcha-container-register');
+            setStep('otp');
+            toast({ title: 'OTP Sent', description: 'Please check your phone for the verification code.' });
+        } catch (error) {
+            console.error(error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to send OTP. Please try again.' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+    
+    const handleOtpSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+            await verifyOtp(otp);
+            // User is now signed in, useEffect will trigger update to 'done' step
+        } catch (error) {
+            console.error(error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Invalid OTP. Please try again.' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
 
     if (loading) {
         return (
@@ -80,17 +111,46 @@ export default function RegisterPage() {
                     </Link>
                 </div>
 
-                {!user ? (
+                {step !== 'done' ? (
                     <Card>
                         <CardHeader className="text-center">
                             <CardTitle>Join Our Community</CardTitle>
-                            <CardDescription>Create your account to get started.</CardDescription>
+                            <CardDescription>
+                               {step === 'phone' ? 'Create your account to get started.' : 'Enter the OTP to verify your number.'}
+                            </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <Button className="w-full" onClick={signInWithGoogle}>
-                                <GoogleIcon className="mr-2" />
-                                Sign up with Google
-                            </Button>
+                            {step === 'phone' ? (
+                                <form onSubmit={handlePhoneSubmit} className="space-y-4">
+                                     <Input
+                                        type="tel"
+                                        placeholder="e.g. 08123456789"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                        required
+                                    />
+                                    <div id="recaptcha-container-register" className="flex justify-center"></div>
+                                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Sign up with Phone
+                                    </Button>
+                                </form>
+                            ) : (
+                                <form onSubmit={handleOtpSubmit} className="space-y-4">
+                                    <Input
+                                        type="text"
+                                        placeholder="6-digit OTP"
+                                        value={otp}
+                                        onChange={(e) => setOtp(e.target.value)}
+                                        maxLength={6}
+                                        required
+                                    />
+                                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Verify & Create Account
+                                    </Button>
+                                </form>
+                            )}
                             <p className="mt-4 text-center text-xs text-muted-foreground">
                                 Already have an account?{' '}
                                 <Link href="/login" className="font-semibold text-primary hover:underline">
@@ -106,9 +166,9 @@ export default function RegisterPage() {
                             <p className="text-muted-foreground">Here is your digital membership card (KTA).</p>
                         </div>
                         <MembershipCard
-                            name={user.displayName || 'New Member'}
-                            email={user.email || ''}
-                            photoUrl={user.photoURL || ''}
+                            name={user?.displayName || 'New Member'}
+                            email={user?.email || (user?.phoneNumber || '')}
+                            photoUrl={user?.photoURL || ''}
                             memberId={memberId}
                         />
                         <Button size="lg" onClick={() => router.push('/feed')}>
