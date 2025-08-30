@@ -20,7 +20,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
   return (
     <MainLayout>
       <article>
-        <div className="relative h-64 w-full">
+        <div className="relative h-64 md:h-80 w-full">
           <Image
             src={post.imageUrl}
             alt={post.title}
@@ -30,8 +30,8 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
         </div>
-        <div className="p-4 -mt-16 relative z-10">
-          <h1 className="font-headline text-3xl font-bold">{post.title}</h1>
+        <div className="p-6 -mt-16 relative z-10">
+          <h1 className="font-headline text-3xl md:text-4xl font-bold">{post.title}</h1>
           <div className="mt-4 flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarImage />

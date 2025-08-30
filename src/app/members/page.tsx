@@ -6,8 +6,8 @@ import { memberDirectory } from '@/lib/placeholder-data';
 export default function MembersPage() {
   return (
     <MainLayout>
-      <div className="p-4">
-        <div className="text-center mb-6">
+      <div className="p-6">
+        <div className="text-center mb-8">
           <h1 className="font-headline text-3xl font-bold">Member Directory</h1>
           <p className="text-muted-foreground">Meet the team behind Garda Lestari</p>
         </div>
@@ -19,21 +19,21 @@ export default function MembersPage() {
             <TabsTrigger value="advisory">Advisory</TabsTrigger>
           </TabsList>
           <TabsContent value="central" className="mt-6">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 md:gap-6">
               {memberDirectory.central.map((member) => (
                 <MemberCard key={member.name} {...member} />
               ))}
             </div>
           </TabsContent>
           <TabsContent value="regional" className="mt-6">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 md:gap-6">
               {memberDirectory.regional.map((member) => (
                 <MemberCard key={member.name} {...member} />
               ))}
             </div>
           </TabsContent>
           <TabsContent value="advisory" className="mt-6">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 md:gap-6">
               {memberDirectory.advisory.map((member) => (
                 <MemberCard key={member.name} {...member} />
               ))}

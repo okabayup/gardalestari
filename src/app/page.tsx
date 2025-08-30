@@ -12,7 +12,7 @@ export default function LandingPage() {
       <LandingHeader />
 
       <main className="flex-1">
-        <section className="relative w-full py-20 md:py-32 lg:py-40">
+        <section className="relative w-full py-24 md:py-36 lg:py-48">
           <div className="container text-center">
             <div className="absolute inset-0 -z-10">
                 <Image
@@ -27,10 +27,10 @@ export default function LandingPage() {
             <h1 className="font-headline text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
               Melestarikan Alam, Bersama-sama
             </h1>
-            <p className="mx-auto mt-4 max-w-[700px] text-lg text-muted-foreground md:text-xl">
+            <p className="mx-auto mt-6 max-w-[700px] text-lg text-muted-foreground md:text-xl">
               Bergabunglah dengan Garda Lestari dan jadilah bagian dari komunitas yang berdedikasi pada konservasi lingkungan dan kehidupan berkelanjutan.
             </p>
-            <div className="mt-6 flex justify-center gap-4">
+            <div className="mt-8 flex justify-center gap-4">
               <Button size="lg" asChild>
                 <Link href="/register">Menjadi Anggota</Link>
               </Button>
@@ -41,11 +41,11 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="features" className="w-full bg-background py-12 md:py-24 lg:py-32">
+        <section id="features" className="w-full bg-background py-16 md:py-28 lg:py-36">
           <div className="container">
-            <div className="mb-12 text-center">
+            <div className="mb-14 text-center">
               <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">Mengapa Bergabung?</h2>
-              <p className="mt-2 text-muted-foreground">Jelajahi manfaat dan fitur keanggotaan Garda Lestari.</p>
+              <p className="mt-3 text-muted-foreground">Jelajahi manfaat dan fitur keanggotaan Garda Lestari.</p>
             </div>
             <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
               <Card className="text-center">

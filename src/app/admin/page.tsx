@@ -16,7 +16,7 @@ const AdminDashboard = () => {
   const router = useRouter();
   
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-6 space-y-6">
       <div className="text-center">
         <h1 className="font-headline text-3xl font-bold">Admin Panel</h1>
         <p className="text-muted-foreground">Selamat datang di Panel Admin Garda Lestari.</p>

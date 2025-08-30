@@ -26,7 +26,7 @@ const MembershipCard = ({ name, email, photoUrl, memberId }: { name: string, ema
                     <span className="text-xs font-semibold uppercase tracking-widest">Anggota</span>
                 </div>
             </CardHeader>
-            <CardContent className="flex flex-col items-center gap-4 text-center">
+            <CardContent className="flex flex-col items-center gap-4 text-center pt-6">
                 <Avatar className="h-24 w-24 border-4 border-background/50">
                     <AvatarImage src={photoUrl} alt={name} />
                     <AvatarFallback className="text-3xl text-primary">{getInitials(name)}</AvatarFallback>
@@ -59,7 +59,7 @@ export default function ProfilePage() {
 
   return (
     <MainLayout>
-        <div className="p-4 space-y-6 flex flex-col items-center">
+        <div className="p-6 space-y-8 flex flex-col items-center">
              <div className="w-full max-w-sm flex flex-col items-center gap-6 text-center">
                 <div className="space-y-2">
                     <h1 className="text-2xl font-bold font-headline">Profil Anggota</h1>

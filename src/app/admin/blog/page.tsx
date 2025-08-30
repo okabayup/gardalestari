@@ -24,7 +24,7 @@ export default function AdminBlogPage() {
 
   return (
     <MainLayout>
-      <div className="p-4 space-y-4">
+      <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="font-headline text-2xl font-bold">Manajemen Blog</h1>
