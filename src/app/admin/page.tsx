@@ -8,10 +8,13 @@ import MainLayout from '@/components/layout/MainLayout';
 import { Loader2, Users, Sprout, Calendar, Newspaper } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 const ADMIN_PHONE_NUMBER = '+6285176752610';
 
 const AdminDashboard = () => {
+  const router = useRouter();
+  
   return (
     <div className="p-4 space-y-6">
       <div className="text-center">
@@ -71,7 +74,7 @@ const AdminDashboard = () => {
              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Button>Kelola Anggota</Button>
                 <Button>Kelola Program & Acara</Button>
-                <Button>Kelola Postingan Blog</Button>
+                <Button onClick={() => router.push('/admin/blog')}>Kelola Postingan Blog</Button>
              </div>
           </CardContent>
         </CardHeader>
