@@ -207,6 +207,20 @@ export async function getPosts(currentUserId: string): Promise<PostWithAuthor[]>
   return posts;
 }
 
+// Get a single post by ID
+export async function getPostById(postId: string, currentUserId?: string): Promise<PostWithAuthor | null> {
+    const postRef = doc(db, 'posts', postId);
+    const postDoc = await getDoc(postRef);
+
+    if (!postDoc.exists() || postDoc.data().status !== 'published') {
+        return null;
+    }
+
+    const post = await buildPostWithAuthor({ id: postDoc.id, ...postDoc.data() } as Post, currentUserId);
+    return post;
+}
+
+
 // Get all posts by a specific user ID for their profile
 export async function getPostsByUserId(userId: string): Promise<PostWithAuthor[]> {
   const q = query(
@@ -283,6 +297,7 @@ export async function togglePostLike(postId: string, userId: string) {
       transaction.update(postRef, { likes: newLikes });
     });
      revalidatePath('/feed');
+     revalidatePath(`/p/${postId}`);
   } catch (e) {
     console.error("Transaction failed: ", e);
     throw new Error("Gagal memperbarui status suka.");
@@ -313,6 +328,7 @@ export async function addComment(postId: string, userId: string, text: string) {
         
         await batch.commit();
         revalidatePath('/feed');
+        revalidatePath(`/p/${postId}`);
 
     } catch (error) {
         console.error("Error adding comment: ", error);
