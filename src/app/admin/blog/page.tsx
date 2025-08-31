@@ -30,7 +30,7 @@ export default function AdminBlogPage() {
             <h1 className="font-headline text-2xl font-bold">Manajemen Blog</h1>
             <p className="text-muted-foreground">Buat, edit, dan hapus postingan blog.</p>
           </div>
-          <Button>
+          <Button onClick={() => router.push('/admin/blog/new')}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Buat Postingan Baru
           </Button>
@@ -63,7 +63,9 @@ export default function AdminBlogPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => router.push(`/admin/blog/edit/${post.slug}`)}>
+                            Edit
+                          </DropdownMenuItem>
                           <DropdownMenuItem className="text-destructive">
                             Hapus
                           </DropdownMenuItem>
