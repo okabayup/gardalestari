@@ -46,7 +46,7 @@ const Footer = async () => {
                     </div>
                     <div className="space-y-2">
                         <h4 className="font-semibold">Hubungi Kami</h4>
-                        <p className="text-sm text-muted-foreground">Email: <a href="mailto:kontak@gardalestari.id" className="text-primary hover:underline">kontak@gardalestari.id</a></p>
+                        <p className="text-sm text-muted-foreground">Email: <a href="mailto:halo@gardalestari.org" className="text-primary hover:underline">halo@gardalestari.org</a></p>
                         <div className="flex items-center gap-2">
                            <Link href={socialLinks.linkedin} target="_blank" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary"><Linkedin size={20} /></Link>
                            <Link href={socialLinks.instagram} target="_blank" aria-label="Instagram" className="text-muted-foreground hover:text-primary"><Instagram size={20} /></Link>

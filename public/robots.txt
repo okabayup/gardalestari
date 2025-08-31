@@ -1,5 +1,7 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Allow: /
+Disallow: /admin/
+Disallow: /login/
+Disallow: /register/
 
-Sitemap: https://garda-lestari.web.app/sitemap.xml
+Sitemap: https://gardalestari.org/sitemap.xml

@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 import { getBlogPosts } from '@/app/actions/blog';
 
-const BASE_URL = 'https://garda-lestari-5gz3p.web.app'; // Ganti dengan domain Anda yang sebenarnya
+const BASE_URL = 'https://gardalestari.org'; 
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Rute statis
