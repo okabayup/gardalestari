@@ -110,7 +110,8 @@ const formatTimestamp = (timestamp: Timestamp): string => {
 };
 
 // Helper function to build a PostWithAuthor object
-const buildPostWithAuthor = async (postData: Post, currentUserId?: string): Promise<PostWithAuthor> => {
+const buildPostWithAuthor = async (postDoc: Document, currentUserId?: string): Promise<PostWithAuthor> => {
+    const postData = { id: postDoc.id, ...postDoc.data() } as Post;
     const authorRef = doc(usersCollection, postData.authorId);
     const authorDoc = await getDoc(authorRef);
     const authorData = authorDoc.data();
@@ -127,7 +128,7 @@ const buildPostWithAuthor = async (postData: Post, currentUserId?: string): Prom
     return {
       id: postData.id,
       author: author,
-      media: postData.media || [{url: (postData as any).imageUrl, type: 'image', hint: (postData as any).imageHint, mentions: []}], // Fallback for old single-image posts
+      media: postData.media || [{url: (postDoc.data() as any).imageUrl, type: 'image', hint: (postDoc.data() as any).imageHint, mentions: []}], // Fallback for old single-image posts
       caption: postData.caption,
       likesCount: postData.likes.length,
       commentsCount: postData.commentsCount,
@@ -201,7 +202,7 @@ export async function getPosts(currentUserId: string): Promise<PostWithAuthor[]>
   const postsSnapshot = await getDocs(q);
   
   const posts = await Promise.all(postsSnapshot.docs.map(doc => 
-    buildPostWithAuthor({ id: doc.id, ...doc.data() } as Post, currentUserId)
+    buildPostWithAuthor(doc as any, currentUserId)
   ));
   
   return posts;
@@ -216,7 +217,7 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
         return null;
     }
 
-    const post = await buildPostWithAuthor({ id: postDoc.id, ...postDoc.data() } as Post, currentUserId);
+    const post = await buildPostWithAuthor(postDoc as any, currentUserId);
     return post;
 }
 
@@ -232,7 +233,7 @@ export async function getPostsByUserId(userId: string): Promise<PostWithAuthor[]
   const postsSnapshot = await getDocs(q);
 
   const posts = await Promise.all(postsSnapshot.docs.map(doc => 
-    buildPostWithAuthor({ id: doc.id, ...doc.data() } as Post)
+    buildPostWithAuthor(doc as any)
   ));
   return posts;
 }
@@ -249,7 +250,7 @@ export async function getArchivedPosts(userId: string): Promise<PostWithAuthor[]
     const postsSnapshot = await getDocs(q);
 
     const posts = await Promise.all(postsSnapshot.docs.map(doc =>
-        buildPostWithAuthor({ id: doc.id, ...doc.data() } as Post, userId)
+        buildPostWithAuthor(doc as any, userId)
     ));
     return posts;
 }
@@ -265,7 +266,7 @@ export async function getTaggedPosts(userId: string): Promise<PostWithAuthor[]> 
     const postsSnapshot = await getDocs(q);
     
     const posts = await Promise.all(postsSnapshot.docs.map(doc =>
-        buildPostWithAuthor({ id: doc.id, ...doc.data() } as Post, userId)
+        buildPostWithAuthor(doc as any, userId)
     ));
     return posts;
 }
@@ -379,3 +380,5 @@ export async function archivePost(postId: string) {
         throw new Error("Gagal mengarsipkan postingan.");
     }
 }
+
+    

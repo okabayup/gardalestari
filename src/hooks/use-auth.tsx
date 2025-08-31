@@ -21,6 +21,7 @@ import { checkUsernameExists } from '@/app/actions/user';
 type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected';
 
 type ExtendedUser = User & {
+  points?: number;
   level?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
   verificationStatus?: VerificationStatus;
   fullName?: string;
@@ -60,6 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const userData = userDoc.data();
           const extendedUser: ExtendedUser = {
               ...user, 
+              points: userData.points || 0,
               level: userData.level || 'Bronze',
               verificationStatus: userData.verificationStatus || 'unverified',
               // Use Firestore data as the source of truth
@@ -72,7 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(extendedUser);
         } else {
           // Fallback if doc doesn't exist for some reason
-          setUser({ ...user, level: 'Bronze', verificationStatus: 'unverified' });
+          setUser({ ...user, points: 0, level: 'Bronze', verificationStatus: 'unverified' });
         }
       } else {
         // User is signed out
@@ -168,6 +170,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             photoURL: newUser.photoURL || `https://picsum.photos/seed/${newUser.uid}/100/100`,
             avatarUrl: newUser.photoURL || `https://picsum.photos/seed/${newUser.uid}/100/100`,
             createdAt: serverTimestamp(),
+            points: 0, // Default points
             level: 'Bronze', // Default level for new users
             verificationStatus: 'unverified'
         });
@@ -318,3 +321,5 @@ export const useRequireAuth = (redirectTo = '/login') => {
 
   return { user, loading };
 };
+
+    

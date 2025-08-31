@@ -1,8 +1,14 @@
 
+'use client';
+
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CheckCircle, Star, Shield, Gem, Award } from 'lucide-react';
+import { CheckCircle, Star, Shield, Gem, Award, ArrowRight, Check } from 'lucide-react';
 import { MemberLevelBadge } from '@/components/members/MemberLevelBadge';
+import { useAuth } from '@/hooks/use-auth';
+import { Progress } from '@/components/ui/progress';
+import { missions, levelRequirements } from '@/lib/missions';
+import { Separator } from '@/components/ui/separator';
 
 const levelBenefits = {
   Bronze: [
@@ -31,10 +37,10 @@ const levelBenefits = {
 };
 
 const levelData = [
-  { level: 'Bronze' as const, icon: Star, benefits: levelBenefits.Bronze, description: 'Level awal untuk semua anggota baru.' },
-  { level: 'Silver' as const, icon: Shield, benefits: levelBenefits.Silver, description: 'Untuk anggota yang aktif berkontribusi.' },
-  { level: 'Gold' as const, icon: Award, benefits: levelBenefits.Gold, description: 'Diberikan untuk kontribusi dan loyalitas yang signifikan.' },
-  { level: 'Platinum' as const, icon: Gem, benefits: levelBenefits.Platinum, description: 'Level tertinggi untuk anggota paling berpengaruh.' }
+  { level: 'Bronze' as const, icon: Star, benefits: levelBenefits.Bronze },
+  { level: 'Silver' as const, icon: Shield, benefits: levelBenefits.Silver },
+  { level: 'Gold' as const, icon: Award, benefits: levelBenefits.Gold },
+  { level: 'Platinum' as const, icon: Gem, benefits: levelBenefits.Platinum }
 ]
 
 const BenefitListItem = ({ children }: { children: React.ReactNode }) => (
@@ -45,6 +51,14 @@ const BenefitListItem = ({ children }: { children: React.ReactNode }) => (
 );
 
 export default function LevelPage() {
+  const { user } = useAuth();
+  const currentUserLevel = user?.level || 'Bronze';
+  const currentPoints = user?.points || 0; // Assume user object has points, default to 0
+
+  const nextLevel = currentUserLevel === 'Bronze' ? 'Silver' : currentUserLevel === 'Silver' ? 'Gold' : currentUserLevel === 'Gold' ? 'Platinum' : 'Platinum';
+  const pointsForNextLevel = levelRequirements[nextLevel];
+  const progressPercentage = currentUserLevel === 'Platinum' ? 100 : Math.min((currentPoints / pointsForNextLevel) * 100, 100);
+
   return (
     <MainLayout>
       <div className="p-6 space-y-6">
@@ -53,18 +67,65 @@ export default function LevelPage() {
           <p className="text-muted-foreground">Naikkan level Anda dengan berkontribusi aktif.</p>
         </div>
         
+        {/* User's Current Level Status */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Status Level Anda</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <MemberLevelBadge level={currentUserLevel} />
+              <div className="text-right">
+                <p className="font-bold text-lg">{currentUserLevel}</p>
+                <p className="text-sm text-muted-foreground">{currentPoints.toLocaleString()} Poin</p>
+              </div>
+            </div>
+            {currentUserLevel !== 'Platinum' && (
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-muted-foreground">Progres ke {nextLevel}</span>
+                  <span>{currentPoints.toLocaleString()} / {pointsForNextLevel.toLocaleString()}</span>
+                </div>
+                <Progress value={progressPercentage} />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        
+        {/* Missions Section */}
+         <Card>
+          <CardHeader>
+            <CardTitle>Misi Level-Up</CardTitle>
+            <CardDescription>Selesaikan misi untuk mendapatkan poin dan naik level!</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {missions.map((mission, index) => (
+               <div key={index} className="flex items-center justify-between p-3 rounded-md border bg-muted/30">
+                  <p className="font-medium text-sm">{mission.description}</p>
+                  <div className="text-right">
+                    <p className="font-bold text-primary">+{mission.points} Poin</p>
+                  </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Separator />
+        
+        {/* Level Details */}
         <div className="space-y-4">
-          {levelData.map(({ level, icon: Icon, benefits, description }) => (
+          <h2 className="font-headline text-2xl font-bold text-center">Detail Keuntungan Level</h2>
+          {levelData.map(({ level, benefits }) => (
             <Card key={level}>
               <CardHeader>
                 <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0">
-                        <MemberLevelBadge level={level} size="lg" />
-                    </div>
-                    <div className="flex-grow">
-                        <CardTitle className="text-xl">{level}</CardTitle>
-                        <CardDescription>{description}</CardDescription>
-                    </div>
+                  <div className="flex-shrink-0">
+                      <MemberLevelBadge level={level} size="lg" />
+                  </div>
+                  <div className="flex-grow">
+                      <CardTitle className="text-xl">{level}</CardTitle>
+                      <CardDescription>Keuntungan level {level}</CardDescription>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -81,3 +142,5 @@ export default function LevelPage() {
     </MainLayout>
   );
 }
+
+    
