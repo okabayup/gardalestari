@@ -34,7 +34,7 @@ const Footer = async () => {
                             <Logo className="h-6 w-6 text-primary" />
                             <span className="font-headline text-xl">Garda Lestari</span>
                         </Link>
-                        <p className="text-sm text-muted-foreground">Organisasi Kepemudaan untuk Inovasi Berkelanjutan.</p>
+                        <p className="text-sm text-muted-foreground">Wadah bagi pemuda Indonesia untuk inovasi di sektor agro-maritim dan kehutanan.</p>
                     </div>
                     <div className="space-y-2">
                         <h4 className="font-semibold">Navigasi</h4>
@@ -46,17 +46,17 @@ const Footer = async () => {
                     </div>
                     <div className="space-y-2">
                         <h4 className="font-semibold">Hubungi Kami</h4>
-                        <p className="text-sm text-muted-foreground">Email: <a href="mailto:halo@gardalestari.org" className="text-primary hover:underline">halo@gardalestari.org</a></p>
+                        <div className="text-sm text-muted-foreground">
+                           <p>Email: <a href="mailto:halo@gardalestari.org" className="text-primary hover:underline">halo@gardalestari.org</a></p>
+                           <p>Telepon: <a href="tel:085937010409" className="text-primary hover:underline">085937010409</a></p>
+                        </div>
                         <div className="flex items-center gap-2">
-                           <Link href={socialLinks.linkedin} target="_blank" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary"><Linkedin size={20} /></Link>
-                           <Link href={socialLinks.instagram} target="_blank" aria-label="Instagram" className="text-muted-foreground hover:text-primary"><Instagram size={20} /></Link>
-                           <Link href={socialLinks.twitter} target="_blank" aria-label="Twitter" className="text-muted-foreground hover:text-primary"><Twitter size={20} /></Link>
-                           <Link href={socialLinks.facebook} target="_blank" aria-label="Facebook" className="text-muted-foreground hover:text-primary"><Facebook size={20} /></Link>
+                           <Link href="https://instagram.com/garda.lestari" target="_blank" aria-label="Instagram" className="text-muted-foreground hover:text-primary"><Instagram size={20} /></Link>
                         </div>
                     </div>
                 </div>
                 <div className="mt-8 border-t pt-6 text-center text-sm text-muted-foreground">
-                    <p>&copy; {new Date().getFullYear()} Garda Lestari. Semua hak dilindungi.</p>
+                    <p>&copy; {new Date().getFullYear()} Garda Muda Lestari. Semua hak dilindungi.</p>
                 </div>
             </div>
         </footer>
@@ -108,9 +108,9 @@ export default function LandingPage() {
                 </div>
                 <div className="space-y-4">
                     <span className="text-sm font-semibold uppercase text-primary">Tentang Kami</span>
-                    <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">Siapa Garda Lestari?</h2>
-                    <p className="text-muted-foreground">Garda Lestari adalah organisasi kepemudaan yang lahir dari keprihatinan dan harapan untuk masa depan Indonesia. Kami berfokus pada pemberdayaan pemuda sebagai agen perubahan dalam mengelola dan menginovasi sektor agro, maritim, dan kehutanan secara berkelanjutan.</p>
-                    <p className="text-muted-foreground">Kami percaya bahwa potensi terbesar bangsa ini terletak pada sumber daya alamnya yang melimpah dan semangat pemudanya yang tak terbatas.</p>
+                    <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">Garda Muda Lestari</h2>
+                    <p className="text-muted-foreground">Dengan nama merek "Garda Lestari", kami adalah perkumpulan yang berdedikasi untuk pemberdayaan pemuda Indonesia. Kami berfungsi sebagai wadah bagi para pemuda untuk mengembangkan potensi dan inovasi mereka di bidang agro-maritim dan kehutanan, dengan penekanan kuat pada keberlanjutan dan pembangunan ekonomi.</p>
+                    <p className="text-muted-foreground">Melalui serangkaian program yang mencakup pelatihan, pendampingan, dan kolaborasi, kami berkomitmen untuk membentuk generasi muda yang tangguh, terampil, dan peduli terhadap lingkungan.</p>
                 </div>
             </div>
         </section>
@@ -125,14 +125,15 @@ export default function LandingPage() {
             <div className="grid gap-12 sm:grid-cols-1 lg:grid-cols-2">
               <div className="space-y-3">
                   <h3 className="font-headline text-2xl font-semibold">Visi Kami</h3>
-                  <p className="text-muted-foreground">Menjadi inkubator utama bagi lahirnya pemimpin dan inovator muda yang mampu membawa sektor agro, maritim, dan kehutanan Indonesia ke panggung dunia dengan prinsip keberlanjutan.</p>
+                  <p className="text-muted-foreground">Menjadi platform utama bagi pemberdayaan pemuda Indonesia dalam mengembangkan potensi sektor agro-maritim dan kehutanan yang berkelanjutan, kompetitif, dan berkontribusi terhadap kesejahteraan masyarakat.</p>
               </div>
               <div className="space-y-3">
                   <h3 className="font-headline text-2xl font-semibold">Misi Kami</h3>
                   <ul className="space-y-2 text-muted-foreground">
-                      <li className="flex items-start gap-2"><Leaf className="h-5 w-5 text-primary mt-1 shrink-0" />Menciptakan ekosistem kolaboratif bagi pemuda untuk belajar, berinovasi, dan berkarya.</li>
-                      <li className="flex items-start gap-2"><Leaf className="h-5 w-5 text-primary mt-1 shrink-0" />Mengembangkan program-program yang meningkatkan kompetensi dan daya saing pemuda.</li>
-                      <li className="flex items-start gap-2"><Leaf className="h-5 w-5 text-primary mt-1 shrink-0" />Mendorong implementasi teknologi dan praktik terbaik untuk kelestarian lingkungan.</li>
+                      <li className="flex items-start gap-2"><Leaf className="h-5 w-5 text-primary mt-1 shrink-0" />Mengembangkan kapasitas dan keterampilan pemuda melalui pelatihan dan pendampingan.</li>
+                      <li className="flex items-start gap-2"><Leaf className="h-5 w-5 text-primary mt-1 shrink-0" />Membangun jaringan kolaborasi yang melibatkan pemuda, pemerintah, akademisi, dan pelaku industri.</li>
+                      <li className="flex items-start gap-2"><Leaf className="h-5 w-5 text-primary mt-1 shrink-0" />Mempromosikan praktik berkelanjutan dalam pengelolaan sumber daya alam.</li>
+                       <li className="flex items-start gap-2"><Leaf className="h-5 w-5 text-primary mt-1 shrink-0" />Mendorong kewirausahaan di kalangan pemuda untuk meningkatkan kesejahteraan ekonomi.</li>
                   </ul>
               </div>
             </div>
@@ -144,12 +145,12 @@ export default function LandingPage() {
           <div className="container">
             <div className="mb-14 text-center">
               <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">Fokus Utama Kami</h2>
-              <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Kami bergerak di tiga sektor utama yang menjadi pilar kekuatan alam Indonesia, dengan pemuda sebagai garda terdepan perubahan.</p>
+              <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Kami memusatkan perhatian pada tiga sektor utama yang menjadi pilar pembangunan berkelanjutan di Indonesia.</p>
             </div>
             <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              <FeatureCard icon={<Sprout size={28} />} title="Agro">Mengembangkan inovasi pertanian modern, ketahanan pangan, dan mencetak wirausahawan tani muda yang berdaya saing global.</FeatureCard>
-              <FeatureCard icon={<Ship size={28} />} title="Maritim">Memajukan ekonomi biru melalui pengelolaan sumber daya laut yang berkelanjutan, teknologi perkapalan, dan konservasi ekosistem pesisir.</FeatureCard>
-              <FeatureCard icon={<TreePine size={28} />} title="Kehutanan">Menjaga kelestarian hutan melalui program reforestasi, perhutanan sosial, dan pencegahan deforestasi berbasis komunitas.</FeatureCard>
+              <FeatureCard icon={<Sprout size={28} />} title="Agro">Mengembangkan pertanian berkelanjutan melalui inovasi teknologi, praktik ramah lingkungan, dan peningkatan produktivitas untuk mendukung ketahanan pangan.</FeatureCard>
+              <FeatureCard icon={<Ship size={28} />} title="Maritim">Memberdayakan potensi kelautan dan perikanan melalui pengelolaan sumber daya laut yang berkelanjutan dan pengembangan budidaya perikanan.</FeatureCard>
+              <FeatureCard icon={<TreePine size={28} />} title="Kehutanan">Melestarikan ekosistem hutan melalui kegiatan konservasi, rehabilitasi, dan pemanfaatan hasil hutan non-kayu secara berkelanjutan.</FeatureCard>
             </div>
           </div>
         </section>
@@ -162,9 +163,9 @@ export default function LandingPage() {
               <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Menjadi bagian dari Garda Lestari bukan sekadar keanggotaan, tetapi sebuah perjalanan untuk bertumbuh dan memberi dampak.</p>
             </div>
             <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              <FeatureCard icon={<Users size={28} />} title="Jaringan Luas">Terhubung dengan sesama pemuda, para ahli, dan pemimpin industri di tiga sektor vital. Bangun relasi yang akan membentuk masa depan Anda.</FeatureCard>
-              <FeatureCard icon={<Leaf size={28} />} title="Pengembangan Diri">Akses eksklusif ke berbagai lokakarya, seminar, dan program mentoring yang dirancang untuk mengasah keahlian dan pengetahuan Anda.</FeatureCard>
-              <FeatureCard icon={<Sprout size={28} />} title="Kontribusi Nyata">Terlibat langsung dalam proyek-proyek inovatif yang memberikan dampak positif bagi masyarakat dan kelestarian lingkungan Indonesia.</FeatureCard>
+              <FeatureCard icon={<Users size={28} />} title="Jaringan & Kolaborasi">Terhubung dengan pakar industri, peneliti, investor, dan sesama inovator muda.</FeatureCard>
+              <FeatureCard icon={<Leaf size={28} />} title="Pendidikan & Pelatihan">Akses ke pelatihan keterampilan teknis dan manajerial, lokakarya inovasi, serta sertifikasi profesional.</FeatureCard>
+              <FeatureCard icon={<Sprout size={28} />} title="Dukungan & Pendanaan">Dapatkan pendampingan proyek serta informasi dan fasilitasi untuk akses pendanaan.</FeatureCard>
             </div>
              <div className="mt-12 text-center">
                 <Button size="lg" asChild>
