@@ -16,6 +16,7 @@ import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs
 import { auth, db } from '@/lib/firebase';
 import { redirect, usePathname } from 'next/navigation';
 import { useToast } from './use-toast';
+import { checkUsernameExists } from '@/app/actions/user';
 
 type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected';
 
@@ -33,7 +34,7 @@ interface AuthContextType {
   signInWithPhone: (phoneNumber: string, appVerifierContainerId: string) => Promise<void>;
   verifyOtp: (otp: string) => Promise<void>;
   signOut: () => Promise<void>;
-  updateUserProfile: (updates: { photoFile?: File }) => Promise<void>;
+  updateUserProfile: (updates: { photoFile?: File, username?: string }) => Promise<void>;
   submitForVerification: (data: { fullName: string; nik: string; ktpFile: File; selfieFile: File; photoFile?: File }) => Promise<void>;
 }
 
@@ -152,6 +153,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!userDoc.exists()) {
         const newUser = userCredential.user;
         const tempName = `Anggota ${String(newUser.phoneNumber).slice(-4)}`;
+        // For brand new users, username is generated from a temp name.
+        // They will be prompted to set a proper one later or during verification.
         const username = await generateUniqueUsername(tempName);
 
         // Create user document in Firestore
@@ -186,10 +189,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const updateUserProfile = async (updates: { photoFile?: File }) => {
+  const updateUserProfile = async (updates: { photoFile?: File, username?: string }) => {
     if (!auth.currentUser) throw new Error("Pengguna tidak ditemukan.");
 
-    let newPhotoURL = auth.currentUser.photoURL;
+    const updateData: { [key: string]: any } = {};
 
     // Handle photo upload
     if (updates.photoFile) {
@@ -197,23 +200,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const storageRef = ref(storage, `profile-pictures/${auth.currentUser.uid}`);
         
         await uploadBytes(storageRef, updates.photoFile);
-        newPhotoURL = await getDownloadURL(storageRef);
+        const newPhotoURL = await getDownloadURL(storageRef);
+        updateData.avatarUrl = newPhotoURL;
+        updateData.photoURL = newPhotoURL;
+        await updateProfile(auth.currentUser, { photoURL: newPhotoURL });
     }
-    
-    // Update profile in Firebase Auth
-    await updateProfile(auth.currentUser, {
-        photoURL: newPhotoURL,
-    });
+
+    // Handle username update
+    if (updates.username) {
+      const isAvailable = !(await checkUsernameExists(updates.username));
+      if (!isAvailable) {
+        throw new Error('Nama pengguna tersebut sudah digunakan.');
+      }
+      updateData.username = updates.username;
+    }
     
     // Update user document in Firestore for consistency
     const userDocRef = doc(db, 'users', auth.currentUser.uid);
-    await setDoc(userDocRef, {
-        avatarUrl: newPhotoURL,
-        photoURL: newPhotoURL,
-    }, { merge: true });
+    await setDoc(userDocRef, updateData, { merge: true });
 
     // Manually update the user state to reflect changes immediately
-    setUser(prevUser => prevUser ? { ...prevUser, photoURL: newPhotoURL } : null);
+    setUser(prevUser => prevUser ? { ...prevUser, ...updateData } : null);
 };
 
 const submitForVerification = async (data: { fullName: string; nik: string; ktpFile: File; selfieFile: File; photoFile?: File; }) => {
@@ -274,12 +281,7 @@ const submitForVerification = async (data: { fullName: string; nik: string; ktpF
         // Merge existing user data with new verification data
         return {
             ...prevUser,
-            fullName: verificationData.fullName,
-            displayName: verificationData.displayName,
-            username: verificationData.username,
-            nik: verificationData.nik,
-            verificationStatus: verificationData.verificationStatus,
-            photoURL: verificationData.photoURL,
+            ...verificationData
         };
     });
   };
@@ -316,5 +318,3 @@ export const useRequireAuth = (redirectTo = '/login') => {
 
   return { user, loading };
 };
-
-    
