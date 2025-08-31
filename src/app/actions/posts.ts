@@ -26,6 +26,7 @@ interface Post {
 interface Author {
   name: string;
   avatarUrl: string;
+  level: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
 }
 
 export interface PostWithAuthor {
@@ -69,13 +70,13 @@ async function seedPostsData() {
 
     // Let's create some dummy users first
     const user1Ref = doc(usersCollection, 'user1_id');
-    batch.set(user1Ref, { name: 'Rina Lestari', avatarUrl: 'https://picsum.photos/id/1011/50/50' });
+    batch.set(user1Ref, { name: 'Rina Lestari', avatarUrl: 'https://picsum.photos/id/1011/50/50', level: 'Gold' });
 
     const user2Ref = doc(usersCollection, 'user2_id');
-    batch.set(user2Ref, { name: 'Budi Santoso', avatarUrl: 'https://picsum.photos/id/1025/50/50' });
+    batch.set(user2Ref, { name: 'Budi Santoso', avatarUrl: 'https://picsum.photos/id/1025/50/50', level: 'Silver' });
     
     const user3Ref = doc(usersCollection, 'user3_id');
-    batch.set(user3Ref, { name: 'Citra Dewi', avatarUrl: 'https://picsum.photos/id/1027/50/50' });
+    batch.set(user3Ref, { name: 'Citra Dewi', avatarUrl: 'https://picsum.photos/id/1027/50/50', level: 'Bronze' });
 
     // Now, create posts
     const postsToSeed = [
@@ -126,7 +127,7 @@ export async function getPosts(currentUserId: string): Promise<PostWithAuthor[]>
 
     // Get author details
     const authorDoc = await getDoc(doc(usersCollection, postData.authorId));
-    const authorData = authorDoc.data() as Author || { name: 'Unknown User', avatarUrl: ''};
+    const authorData = authorDoc.data() as Author || { name: 'Unknown User', avatarUrl: '', level: 'Bronze' };
 
     posts.push({
       id: postData.id,

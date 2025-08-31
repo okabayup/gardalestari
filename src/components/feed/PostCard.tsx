@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Heart, MessageCircle, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PostWithAuthor } from '@/app/actions/posts';
+import { MemberLevelBadge } from '../members/MemberLevelBadge';
 
 
 interface PostCardProps {
@@ -21,8 +22,11 @@ export default function PostCard({ post, onToggleLike }: PostCardProps) {
           <AvatarImage src={post.author.avatarUrl} alt={post.author.name} />
           <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
         </Avatar>
-        <div className="flex flex-col">
-            <span className="font-semibold">{post.author.name}</span>
+        <div className="flex-grow">
+            <div className="flex items-center gap-2">
+                <span className="font-semibold">{post.author.name}</span>
+                <MemberLevelBadge level={post.author.level} />
+            </div>
             <span className="text-xs text-muted-foreground">{post.timestamp}</span>
         </div>
       </CardHeader>

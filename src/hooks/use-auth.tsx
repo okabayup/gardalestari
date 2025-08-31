@@ -12,13 +12,17 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { redirect, usePathname } from 'next/navigation';
 import { useToast } from './use-toast';
 
+type ExtendedUser = User & {
+  level?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
+};
+
 interface AuthContextType {
-  user: User | null;
+  user: ExtendedUser | null;
   loading: boolean;
   signInWithPhone: (phoneNumber: string, appVerifierContainerId: string) => Promise<void>;
   verifyOtp: (otp: string) => Promise<void>;
@@ -32,15 +36,29 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 let recaptchaVerifier: RecaptchaVerifier | null = null;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const pathname = usePathname();
   const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // User is signed in, now fetch additional data from Firestore.
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUser({ ...user, level: userData.level || 'Bronze' });
+        } else {
+          // Fallback if doc doesn't exist for some reason
+          setUser({ ...user, level: 'Bronze' });
+        }
+      } else {
+        // User is signed out
+        setUser(null);
+      }
       setLoading(false);
     });
     return () => unsubscribe();
@@ -103,7 +121,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email: newUser.email,
             phoneNumber: newUser.phoneNumber,
             avatarUrl: newUser.photoURL || `https://picsum.photos/seed/${newUser.uid}/100/100`,
-            createdAt: new Date()
+            createdAt: new Date(),
+            level: 'Bronze', // Default level for new users
         });
     }
 
@@ -151,7 +170,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, { merge: true });
 
     // Manually update the user state to reflect changes immediately
-    setUser(auth.currentUser);
+    setUser(auth.currentUser as ExtendedUser);
 };
 
 
