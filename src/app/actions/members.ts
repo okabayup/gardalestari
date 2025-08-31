@@ -61,3 +61,35 @@ export async function updateMemberStatus(id: string, status: 'permanent' | 'reje
         throw new Error("Gagal memperbarui status anggota.");
     }
 }
+
+
+// Update member details (position, type, region)
+export async function updateMemberDetails(id: string, details: { position: string, type?: MemberType, region?: string }) {
+    try {
+        const memberDoc = doc(db, 'users', id);
+        const dataToUpdate: {position: string; type?: MemberType; region?: string} = {
+            position: details.position
+        };
+
+        if (details.type) {
+            dataToUpdate.type = details.type;
+        } else {
+            // If type is explicitly set to undefined or null, remove it.
+            dataToUpdate.type = undefined;
+        }
+
+        if (details.type === 'daerah' && details.region) {
+            dataToUpdate.region = details.region;
+        } else {
+            // Remove region if type is not 'daerah'
+            dataToUpdate.region = undefined;
+        }
+        
+        await updateDoc(memberDoc, dataToUpdate);
+        revalidatePath('/admin/members');
+        revalidatePath('/members');
+    } catch (error) {
+        console.error("Error updating member details:", error);
+        throw new Error("Gagal memperbarui detail anggota.");
+    }
+}

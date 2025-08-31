@@ -6,18 +6,20 @@ import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, MoreHorizontal, UserCheck, UserX } from 'lucide-react';
+import { Loader2, MoreHorizontal, UserCheck, UserX, Pencil } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu"
 import { useRouter } from 'next/navigation';
-import { getMembers, updateMemberStatus, MemberWithStatus } from '@/app/actions/members';
+import { getMembers, updateMemberStatus, MemberWithStatus, updateMemberDetails, MemberType } from '@/app/actions/members';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import EditMemberDialog from '@/components/admin/EditMemberDialog';
 
 const statusConfig = {
   permanent: { label: 'Tetap', className: 'bg-green-100 text-green-800 border-green-200' },
@@ -26,6 +28,13 @@ const statusConfig = {
   rejected: { label: 'Ditolak', className: 'bg-red-100 text-red-800 border-red-200' },
 };
 
+const typeConfig: Record<MemberType, string> = {
+  pusat: 'Pengurus Pusat',
+  daerah: 'Pengurus Daerah',
+  cabang: 'Pengurus Cabang',
+  pembina: 'Dewan Pembina'
+}
+
 
 export default function AdminMembersPage() {
   const router = useRouter();
@@ -33,6 +42,8 @@ export default function AdminMembersPage() {
   const [members, setMembers] = useState<MemberWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [editingMember, setEditingMember] = useState<MemberWithStatus | null>(null);
+
 
   const fetchMembers = async () => {
     setLoading(true);
@@ -59,7 +70,7 @@ export default function AdminMembersPage() {
 
   useEffect(() => {
     fetchMembers();
-  }, [toast]);
+  }, []);
 
   const handleUpdateStatus = async (id: string, status: 'permanent' | 'rejected') => {
     setUpdatingId(id);
@@ -81,6 +92,27 @@ export default function AdminMembersPage() {
     }
   };
 
+  const handleEditDetails = async (id: string, details: { position: string, type?: MemberType, region?: string }) => {
+    setUpdatingId(id);
+    try {
+      await updateMemberDetails(id, details);
+      toast({
+        title: 'Detail Anggota Diperbarui',
+        description: 'Informasi jabatan dan jenis keanggotaan telah disimpan.'
+      });
+      await fetchMembers(); // Refresh the list
+      setEditingMember(null); // Close dialog
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Gagal Memperbarui Detail",
+        description: (error as Error).message,
+      });
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
 
   return (
     <MainLayout>
@@ -88,7 +120,7 @@ export default function AdminMembersPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="font-headline text-2xl font-bold">Manajemen Anggota</h1>
-            <p className="text-muted-foreground">Verifikasi dan kelola status keanggotaan.</p>
+            <p className="text-muted-foreground">Verifikasi, kelola status, jenis, dan jabatan keanggotaan.</p>
           </div>
            <Button variant="outline" onClick={() => router.back()}>
             Kembali ke Dasbor
@@ -100,7 +132,8 @@ export default function AdminMembersPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nama</TableHead>
-                  <TableHead className="hidden md:table-cell">Nomor Telepon</TableHead>
+                  <TableHead className="hidden sm:table-cell">Jabatan</TableHead>
+                  <TableHead className="hidden md:table-cell">Jenis / Wilayah</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>
                     <span className="sr-only">Aksi</span>
@@ -110,15 +143,22 @@ export default function AdminMembersPage() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-10">
+                    <TableCell colSpan={5} className="text-center py-10">
                       <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                     </TableCell>
                   </TableRow>
                 ) : members.length > 0 ? (
                   members.map((member) => (
                     <TableRow key={member.id} className={cn(member.verificationStatus === 'temporary' && 'bg-yellow-50/50')}>
-                      <TableCell className="font-medium">{member.name}</TableCell>
-                      <TableCell className="hidden md:table-cell">{member.phoneNumber}</TableCell>
+                      <TableCell className="font-medium">
+                        <div>{member.name}</div>
+                        <div className="text-xs text-muted-foreground md:hidden">{member.type ? (typeConfig[member.type] || 'Anggota') : 'Anggota'}</div>
+                      </TableCell>
+                       <TableCell className="hidden sm:table-cell">{member.position}</TableCell>
+                       <TableCell className="hidden md:table-cell">
+                        <div>{member.type ? (typeConfig[member.type] || 'Anggota') : 'Anggota'}</div>
+                        {member.type === 'daerah' && <div className="text-xs text-muted-foreground">{member.region}</div>}
+                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={cn(statusConfig[member.verificationStatus]?.className)}>
                           {statusConfig[member.verificationStatus]?.label || 'N/A'}
@@ -138,6 +178,11 @@ export default function AdminMembersPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setEditingMember(member)}>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                <span>Edit Jabatan/Jenis</span>
+                             </DropdownMenuItem>
+                             <DropdownMenuSeparator />
                              {member.verificationStatus === 'temporary' && (
                                 <>
                                   <DropdownMenuItem onClick={() => handleUpdateStatus(member.id, 'permanent')}>
@@ -169,7 +214,7 @@ export default function AdminMembersPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
+                    <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
                       Belum ada anggota yang mendaftar.
                     </TableCell>
                   </TableRow>
@@ -179,6 +224,16 @@ export default function AdminMembersPage() {
           </CardContent>
         </Card>
       </div>
+
+       {editingMember && (
+        <EditMemberDialog
+          member={editingMember}
+          isOpen={!!editingMember}
+          onClose={() => setEditingMember(null)}
+          onSave={handleEditDetails}
+          isSaving={!!updatingId}
+        />
+      )}
     </MainLayout>
   );
 }
