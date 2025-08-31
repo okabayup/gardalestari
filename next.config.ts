@@ -17,23 +17,19 @@ const withPWA = require('next-pwa')({
         },
       },
     },
-  ],
-  // Only cache pages under /app
-  workboxOptions: {
-    runtimeCaching: [
-      {
-        urlPattern: /\/app\/.*/,
-        handler: 'NetworkFirst',
-        options: {
-          cacheName: 'app-pages',
-          expiration: {
-            maxEntries: 64,
-            maxAgeSeconds: 24 * 60 * 60, // 1 day
-          },
+    // Cache pages under /app
+    {
+      urlPattern: /\/app\/.*/,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'app-pages',
+        expiration: {
+          maxEntries: 64,
+          maxAgeSeconds: 24 * 60 * 60, // 1 day
         },
       },
-    ],
-  },
+    },
+  ],
 });
 
 
