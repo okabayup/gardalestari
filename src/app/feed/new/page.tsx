@@ -10,8 +10,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { createPost } from '@/app/actions/posts';
-import { Loader2, ArrowLeft, Image as ImageIcon, X } from 'lucide-react';
+import { Loader2, ArrowLeft, Image as ImageIcon, X, Video } from 'lucide-react';
 import Image from 'next/image';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 interface MediaPreview {
     file: File;
@@ -42,8 +43,8 @@ export default function NewPostPage() {
     }
   };
 
-  const removeMedia = (index: number) => {
-    setMediaFiles(prev => prev.filter((_, i) => i !== index));
+  const removeMedia = (indexToRemove: number) => {
+    setMediaFiles(prev => prev.filter((_, index) => index !== indexToRemove));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,7 +91,7 @@ export default function NewPostPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div 
-                className="w-full aspect-square border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted/50 transition-colors"
+                className="w-full aspect-video border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => fileInputRef.current?.click()}
               >
                 {mediaFiles.length === 0 ? (
@@ -99,15 +100,17 @@ export default function NewPostPage() {
                     <p className="mt-2 text-sm">Klik untuk mengunggah gambar/video</p>
                   </>
                 ) : (
-                    <div className="grid grid-cols-2 gap-2 p-2 w-full h-full">
-                       {mediaFiles.map((media, index) => (
-                           <div key={index} className="relative w-full h-full">
+                    <Carousel className="w-full h-full">
+                      <CarouselContent className="h-full">
+                        {mediaFiles.map((media, index) => (
+                           <CarouselItem key={index} className="relative w-full h-full">
                                {media.type === 'image' ? (
-                                    <Image src={media.previewUrl} alt="Pratinjau media" layout="fill" objectFit="cover" className="rounded-lg" />
+                                    <Image src={media.previewUrl} alt="Pratinjau media" layout="fill" objectFit="contain" className="rounded-lg" />
                                ) : (
-                                    <video src={media.previewUrl} className="w-full h-full object-cover rounded-lg" muted loop />
+                                    <video src={media.previewUrl} className="w-full h-full object-contain rounded-lg" controls muted loop />
                                )}
                                <Button 
+                                    type="button"
                                     size="icon" 
                                     variant="destructive" 
                                     className="absolute top-1 right-1 h-6 w-6 z-10" 
@@ -117,10 +120,18 @@ export default function NewPostPage() {
                                     }}
                                 >
                                    <X className="h-4 w-4"/>
+                                   <span className="sr-only">Hapus media</span>
                                </Button>
-                           </div>
-                       ))}
-                    </div>
+                           </CarouselItem>
+                        ))}
+                      </CarouselContent>
+                       {mediaFiles.length > 1 && (
+                            <>
+                                <CarouselPrevious className="left-2" />
+                                <CarouselNext className="right-2" />
+                            </>
+                        )}
+                    </Carousel>
                 )}
                 <input
                   type="file"

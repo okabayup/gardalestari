@@ -20,10 +20,18 @@ import { revalidatePath } from 'next/cache';
 
 type MediaType = 'image' | 'video';
 
+interface Mention {
+    userId: string;
+    username: string; // denormalized for easy display
+    x: number; // position percentage
+    y: number; // position percentage
+}
+
 interface MediaItem {
     url: string;
     type: MediaType;
     hint: string;
+    mentions?: Mention[];
 }
 
 interface Post {
@@ -95,7 +103,8 @@ export async function createPost(caption: string, files: File[], authorId: strin
         mediaItems.push({
             url,
             type: file.type.startsWith('video') ? 'video' : 'image',
-            hint: 'user uploaded content'
+            hint: 'user uploaded content',
+            mentions: [] // Initialize with empty mentions
         });
     }));
 
