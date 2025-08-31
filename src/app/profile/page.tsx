@@ -15,7 +15,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const ADMIN_PHONE_NUMBER = '+6285176752610';
 
-const MembershipCard = ({ name, email, photoUrl, memberId, status }: { name: string, email: string, photoUrl: string, memberId: string, status?: string }) => {
+const MembershipCard = ({ name, username, photoUrl, memberId, status }: { name: string, username: string, photoUrl: string, memberId: string, status?: string }) => {
     const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').substring(0, 2);
     const statusText = status === 'temporary' ? 'Anggota Sementara' : 'Anggota Terverifikasi';
 
@@ -36,7 +36,7 @@ const MembershipCard = ({ name, email, photoUrl, memberId, status }: { name: str
                 </Avatar>
                 <div>
                     <p className="text-2xl font-bold font-headline">{name}</p>
-                    <p className="text-sm opacity-80">{email}</p>
+                    <p className="text-sm opacity-80">@{username}</p>
                 </div>
                 <div>
                     <p className="text-xs opacity-80 uppercase">ID Anggota</p>
@@ -107,7 +107,7 @@ export default function ProfilePage() {
                 {user && isVerified && (
                     <MembershipCard
                         name={user?.displayName || 'Anggota Baru'}
-                        email={user?.email || (user?.phoneNumber || '')}
+                        username={user?.username || ''}
                         photoUrl={user?.photoURL || ''}
                         memberId={memberId}
                         status={user.verificationStatus}

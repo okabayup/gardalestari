@@ -12,7 +12,7 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { redirect, usePathname } from 'next/navigation';
 import { useToast } from './use-toast';
@@ -23,6 +23,7 @@ type ExtendedUser = User & {
   level?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
   verificationStatus?: VerificationStatus;
   fullName?: string;
+  username?: string;
   nik?: string;
 };
 
@@ -64,6 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               displayName: userData.fullName || user.displayName,
               photoURL: userData.avatarUrl || user.photoURL,
               fullName: userData.fullName,
+              username: userData.username,
               nik: userData.nik,
           };
           setUser(extendedUser);
@@ -103,6 +105,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }
 
+  const generateUniqueUsername = async (fullName: string): Promise<string> => {
+    const baseUsername = fullName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15);
+    let username = baseUsername;
+    let attempts = 0;
+    
+    while (true) {
+        const q = query(collection(db, 'users'), where("username", "==", username));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) {
+            return username;
+        }
+        attempts++;
+        username = `${baseUsername}${Math.floor(Math.random() * 1000)}`;
+    }
+  }
+
+
   const signInWithPhone = async (phoneNumber: string, appVerifierContainerId: string) => {
     // Ensure reCAPTCHA is only set up on the client and in the correct path
     if (typeof window !== 'undefined' && (pathname === '/login' || pathname === '/register')) {
@@ -132,11 +151,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (!userDoc.exists()) {
         const newUser = userCredential.user;
+        const tempName = `Anggota ${String(newUser.phoneNumber).slice(-4)}`;
+        const username = await generateUniqueUsername(tempName);
+
         // Create user document in Firestore
         await setDoc(userDocRef, {
             uid: newUser.uid,
-            displayName: `Anggota ${String(newUser.phoneNumber).slice(-4)}`, // Placeholder name
-            fullName: `Anggota ${String(newUser.phoneNumber).slice(-4)}`,
+            displayName: tempName,
+            fullName: tempName,
+            username: username,
             email: newUser.email,
             phoneNumber: newUser.phoneNumber,
             photoURL: newUser.photoURL || `https://picsum.photos/seed/${newUser.uid}/100/100`,
@@ -218,9 +241,12 @@ const submitForVerification = async (data: { fullName: string; nik: string; ktpF
       newPhotoURL = await getDownloadURL(photoUploadResult.ref);
     }
 
+    const username = await generateUniqueUsername(data.fullName);
+
     const verificationData = {
         fullName: data.fullName,
         displayName: data.fullName,
+        username: username,
         nik: data.nik,
         verificationStatus: 'temporary' as VerificationStatus, // Set status to temporary for immediate access
         ktpImageUrl,
@@ -242,7 +268,6 @@ const submitForVerification = async (data: { fullName: string; nik: string; ktpF
         });
     }
 
-
     // Update local state to reflect all changes immediately
     setUser(prevUser => {
         if (!prevUser) return null;
@@ -251,6 +276,7 @@ const submitForVerification = async (data: { fullName: string; nik: string; ktpF
             ...prevUser,
             fullName: verificationData.fullName,
             displayName: verificationData.displayName,
+            username: verificationData.username,
             nik: verificationData.nik,
             verificationStatus: verificationData.verificationStatus,
             photoURL: verificationData.photoURL,

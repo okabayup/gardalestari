@@ -18,7 +18,7 @@ import ImageCropper from './ImageCropper';
 interface EditProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  user: User & { fullName?: string, nik?: string };
+  user: User & { fullName?: string; nik?: string; username?: string };
 }
 
 export default function EditProfileModal({ isOpen, onClose, user }: EditProfileModalProps) {
@@ -123,6 +123,10 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
               <AlertTitle>Informasi Akun</AlertTitle>
               <AlertDescription>
                 <div className="space-y-2 text-sm">
+                    <div>
+                        <p className="font-semibold">Nama Pengguna</p>
+                        <p className="text-muted-foreground">@{user.username || 'Belum diatur'}</p>
+                    </div>
                     <div>
                         <p className="font-semibold">Nama Lengkap</p>
                         <p className="text-muted-foreground">{user.displayName || 'Belum diatur'}</p>

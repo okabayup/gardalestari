@@ -46,6 +46,7 @@ interface Post {
 
 interface Author {
   name: string;
+  username: string;
   avatarUrl: string;
   level: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
 }
@@ -140,12 +141,20 @@ export async function getPosts(currentUserId: string): Promise<PostWithAuthor[]>
     const postData = { id: postDoc.id, ...postDoc.data() } as Post;
 
     // Get author details
-    const authorDoc = await getDoc(doc(usersCollection, postData.authorId));
-    const authorData = authorDoc.data() as Author || { name: 'Unknown User', avatarUrl: '', level: 'Bronze' };
+    const authorRef = doc(usersCollection, postData.authorId);
+    const authorDoc = await getDoc(authorRef);
+    const authorData = authorDoc.data();
+
+    const author: Author = {
+        name: authorData?.fullName || authorData?.displayName || 'Unknown User',
+        username: authorData?.username || `user_${postData.authorId.substring(0,5)}`,
+        avatarUrl: authorData?.avatarUrl || '',
+        level: authorData?.level || 'Bronze'
+    }
 
     posts.push({
       id: postData.id,
-      author: authorData,
+      author: author,
       media: postData.media || [{url: (postData as any).imageUrl, type: 'image', hint: (postData as any).imageHint}], // Fallback for old single-image posts
       caption: postData.caption,
       likesCount: postData.likes.length,

@@ -79,9 +79,10 @@ export default function PostCard({ post, onToggleLike }: PostCardProps) {
         <div className="flex-grow">
             <div className="flex items-center gap-2">
                 <span className="font-semibold">{post.author.name}</span>
-                <MemberLevelBadge level={post.author.level} />
+                <span className="text-sm text-muted-foreground">@{post.author.username}</span>
             </div>
-            <span className="text-xs text-muted-foreground">{post.timestamp}</span>
+            <MemberLevelBadge level={post.author.level} />
+            
         </div>
         <Button variant="ghost" size="icon" className="h-8 w-8">
             <MoreHorizontal className="h-4 w-4" />
@@ -123,7 +124,7 @@ export default function PostCard({ post, onToggleLike }: PostCardProps) {
         </Carousel>
         <div className="p-3">
             <p className="text-sm">
-                <span className="font-semibold">{post.author.name}</span>{' '}
+                <Link href={`/profile/${post.author.username}`} className="font-semibold hover:underline">{post.author.name}</Link>{' '}
                 <CaptionWithMentions text={post.caption} />
             </p>
         </div>
@@ -141,6 +142,7 @@ export default function PostCard({ post, onToggleLike }: PostCardProps) {
             </Button>
         </div>
         <div className="px-1 text-sm font-semibold">{post.likesCount.toLocaleString()} likes</div>
+        <div className="px-1 text-xs text-muted-foreground">{post.timestamp}</div>
         {post.commentsCount > 0 && (
             <div className="px-1 text-sm text-muted-foreground">Lihat semua {post.commentsCount} komentar</div>
         )}

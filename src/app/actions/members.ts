@@ -12,6 +12,7 @@ export type MemberType = 'pusat' | 'daerah' | 'pembina';
 export interface Member {
   id: string;
   name: string;
+  username: string;
   position?: string;
   type?: MemberType;
   region?: string;
@@ -35,6 +36,7 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
     members.push({
       id: doc.id,
       name: data.fullName || data.displayName || 'Nama Tidak Diketahui',
+      username: data.username || `user_${doc.id.substring(0, 5)}`,
       phoneNumber: data.phoneNumber || 'N/A',
       verificationStatus: data.verificationStatus || 'unverified',
       avatarUrl: data.avatarUrl,
