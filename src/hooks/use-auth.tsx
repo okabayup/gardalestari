@@ -12,13 +12,16 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { redirect, usePathname } from 'next/navigation';
 import { useToast } from './use-toast';
 
+type VerificationStatus = 'unverified' | 'pending' | 'verified' | 'rejected';
+
 type ExtendedUser = User & {
   level?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
+  verificationStatus?: VerificationStatus;
 };
 
 interface AuthContextType {
@@ -28,6 +31,7 @@ interface AuthContextType {
   verifyOtp: (otp: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateUserProfile: (updates: { displayName?: string; photoFile?: File }) => Promise<void>;
+  submitForVerification: (files: { ktpFile: File; selfieFile: File }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,10 +54,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          setUser({ ...user, level: userData.level || 'Bronze' });
+          setUser({ 
+              ...user, 
+              level: userData.level || 'Bronze',
+              verificationStatus: userData.verificationStatus || 'unverified'
+          });
         } else {
           // Fallback if doc doesn't exist for some reason
-          setUser({ ...user, level: 'Bronze' });
+          setUser({ ...user, level: 'Bronze', verificationStatus: 'unverified' });
         }
       } else {
         // User is signed out
@@ -121,8 +129,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email: newUser.email,
             phoneNumber: newUser.phoneNumber,
             avatarUrl: newUser.photoURL || `https://picsum.photos/seed/${newUser.uid}/100/100`,
-            createdAt: new Date(),
+            createdAt: serverTimestamp(),
             level: 'Bronze', // Default level for new users
+            verificationStatus: 'unverified'
         });
     }
 
@@ -170,12 +179,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, { merge: true });
 
     // Manually update the user state to reflect changes immediately
-    setUser(auth.currentUser as ExtendedUser);
+    setUser(prevUser => prevUser ? { ...prevUser, ...auth.currentUser } : null);
 };
+
+  const submitForVerification = async (files: { ktpFile: File; selfieFile: File }) => {
+    if (!auth.currentUser) throw new Error("Pengguna tidak ditemukan.");
+
+    const storage = getStorage();
+    const ktpRef = ref(storage, `kyc/${auth.currentUser.uid}/ktp.jpg`);
+    const selfieRef = ref(storage, `kyc/${auth.currentUser.uid}/selfie.jpg`);
+
+    // Upload files
+    await uploadBytes(ktpRef, files.ktpFile);
+    const ktpImageUrl = await getDownloadURL(ktpRef);
+    
+    await uploadBytes(selfieRef, files.selfieFile);
+    const selfieImageUrl = await getDownloadURL(selfieRef);
+
+    // Update user document in Firestore
+    const userDocRef = doc(db, 'users', auth.currentUser.uid);
+    await updateDoc(userDocRef, {
+        verificationStatus: 'pending',
+        ktpImageUrl,
+        selfieImageUrl,
+        submittedAt: serverTimestamp()
+    });
+
+    // Update local state
+    setUser(prevUser => prevUser ? { ...prevUser, verificationStatus: 'pending' } : null);
+  };
 
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithPhone, verifyOtp, signOut, updateUserProfile }}>
+    <AuthContext.Provider value={{ user, loading, signInWithPhone, verifyOtp, signOut, updateUserProfile, submitForVerification }}>
       {children}
     </AuthContext.Provider>
   );
@@ -191,12 +227,16 @@ export const useAuth = () => {
 
 export const useRequireAuth = (redirectTo = '/login') => {
   const { user, loading } = useAuth();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!loading && !user) {
       redirect(redirectTo);
     }
-  }, [user, loading, redirectTo]);
+    if (!loading && user && user.verificationStatus !== 'verified' && pathname !== '/profile/verify' && pathname !== '/profile') {
+        redirect('/profile');
+    }
+  }, [user, loading, redirectTo, pathname]);
 
   return { user, loading };
 };
