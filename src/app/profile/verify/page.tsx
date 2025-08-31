@@ -247,7 +247,7 @@ const handleSubmit = async () => {
                 </AlertDescription>
             </Alert>
         )}
-        <div className="w-full aspect-video border-2 border-dashed rounded-lg flex items-center justify-center overflow-hidden bg-muted/50">
+        <div className="w-full max-w-xs mx-auto aspect-square border-2 border-dashed rounded-lg flex items-center justify-center overflow-hidden bg-muted/50">
             <video ref={videoRef} className={cn("w-full h-full object-cover", !isCameraActive && "hidden")} autoPlay muted playsInline />
             {!isCameraActive && <Camera className="h-16 w-16 text-muted-foreground" />}
         </div>
