@@ -6,6 +6,12 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Garda Lestari',
   description: 'Garda Lestari Membership App',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Garda Lestari',
+  },
 };
 
 export default function RootLayout({
@@ -22,6 +28,7 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap"
           rel="stylesheet"
         />
+        <meta name="theme-color" content="#347C45" />
       </head>
       <body className="font-body antialiased">
         <AuthProvider>

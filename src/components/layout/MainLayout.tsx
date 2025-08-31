@@ -4,6 +4,7 @@ import { useRequireAuth } from '@/hooks/use-auth';
 import Header from './Header';
 import BottomNav from './BottomNav';
 import { Loader2 } from 'lucide-react';
+import InstallPWA from './InstallPWA';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useRequireAuth();
@@ -21,6 +22,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <Header />
       <main className="flex-1 pb-20">{children}</main>
       <BottomNav />
+      <InstallPWA />
     </div>
   );
 }
