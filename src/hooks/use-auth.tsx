@@ -17,7 +17,7 @@ import { auth, db } from '@/lib/firebase';
 import { redirect, usePathname } from 'next/navigation';
 import { useToast } from './use-toast';
 
-type VerificationStatus = 'unverified' | 'pending' | 'verified' | 'rejected';
+type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected';
 
 type ExtendedUser = User & {
   level?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
@@ -127,11 +127,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const userCredential = await confirmationResult.confirm(otp);
     
     // Check if it's a new user
-    const { _tokenResponse } = userCredential as any;
-    if (_tokenResponse.isNewUser) {
+    const userDocRef = doc(db, 'users', userCredential.user.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (!userDoc.exists()) {
         const newUser = userCredential.user;
         // Create user document in Firestore
-        await setDoc(doc(db, "users", newUser.uid), {
+        await setDoc(userDocRef, {
             uid: newUser.uid,
             displayName: `Anggota ${String(newUser.phoneNumber).slice(-4)}`, // Placeholder name
             fullName: `Anggota ${String(newUser.phoneNumber).slice(-4)}`,
@@ -220,7 +222,7 @@ const submitForVerification = async (data: { fullName: string; nik: string; ktpF
         fullName: data.fullName,
         displayName: data.fullName,
         nik: data.nik,
-        verificationStatus: 'pending' as VerificationStatus,
+        verificationStatus: 'temporary' as VerificationStatus, // Set status to temporary for immediate access
         ktpImageUrl,
         selfieImageUrl,
         avatarUrl: newPhotoURL,

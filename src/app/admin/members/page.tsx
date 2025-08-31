@@ -1,0 +1,184 @@
+
+'use client';
+
+import { useState, useMemo, useEffect } from 'react';
+import MainLayout from '@/components/layout/MainLayout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Loader2, MoreHorizontal, UserCheck, UserX } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { useRouter } from 'next/navigation';
+import { getMembers, updateMemberStatus, MemberWithStatus } from '@/app/actions/members';
+import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+
+const statusConfig = {
+  permanent: { label: 'Tetap', className: 'bg-green-100 text-green-800 border-green-200' },
+  temporary: { label: 'Sementara', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+  unverified: { label: 'Belum Verifikasi', className: 'bg-gray-100 text-gray-800 border-gray-200' },
+  rejected: { label: 'Ditolak', className: 'bg-red-100 text-red-800 border-red-200' },
+};
+
+
+export default function AdminMembersPage() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [members, setMembers] = useState<MemberWithStatus[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const fetchMembers = async () => {
+    setLoading(true);
+    try {
+      const fetchedMembers = await getMembers();
+      // Sort members: temporary first, then by name
+      fetchedMembers.sort((a, b) => {
+        if (a.verificationStatus === 'temporary' && b.verificationStatus !== 'temporary') return -1;
+        if (a.verificationStatus !== 'temporary' && b.verificationStatus === 'temporary') return 1;
+        return a.name.localeCompare(b.name);
+      });
+      setMembers(fetchedMembers);
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Gagal memuat anggota",
+        description: "Terjadi kesalahan saat mengambil data dari server.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMembers();
+  }, [toast]);
+
+  const handleUpdateStatus = async (id: string, status: 'permanent' | 'rejected') => {
+    setUpdatingId(id);
+    try {
+      await updateMemberStatus(id, status);
+      toast({
+        title: "Status Anggota Diperbarui",
+        description: `Status telah berhasil diubah menjadi ${status}.`,
+      });
+      await fetchMembers(); // Refresh the list
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Gagal Memperbarui Status",
+        description: "Terjadi kesalahan saat mencoba memperbarui status anggota.",
+      });
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+
+  return (
+    <MainLayout>
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-headline text-2xl font-bold">Manajemen Anggota</h1>
+            <p className="text-muted-foreground">Verifikasi dan kelola status keanggotaan.</p>
+          </div>
+           <Button variant="outline" onClick={() => router.back()}>
+            Kembali ke Dasbor
+          </Button>
+        </div>
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nama</TableHead>
+                  <TableHead className="hidden md:table-cell">Nomor Telepon</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>
+                    <span className="sr-only">Aksi</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-10">
+                      <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+                    </TableCell>
+                  </TableRow>
+                ) : members.length > 0 ? (
+                  members.map((member) => (
+                    <TableRow key={member.id} className={cn(member.verificationStatus === 'temporary' && 'bg-yellow-50/50')}>
+                      <TableCell className="font-medium">{member.name}</TableCell>
+                      <TableCell className="hidden md:table-cell">{member.phoneNumber}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={cn(statusConfig[member.verificationStatus]?.className)}>
+                          {statusConfig[member.verificationStatus]?.label || 'N/A'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                             <Button
+                              aria-haspopup="true"
+                              size="icon"
+                              variant="ghost"
+                              disabled={updatingId === member.id}
+                            >
+                              {updatingId === member.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <MoreHorizontal className="h-4 w-4" />}
+                              <span className="sr-only">Toggle menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                             {member.verificationStatus === 'temporary' && (
+                                <>
+                                  <DropdownMenuItem onClick={() => handleUpdateStatus(member.id, 'permanent')}>
+                                    <UserCheck className="mr-2 h-4 w-4 text-green-500" />
+                                    <span>Setujui (Anggota Tetap)</span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleUpdateStatus(member.id, 'rejected')}>
+                                    <UserX className="mr-2 h-4 w-4 text-red-500" />
+                                    <span>Tolak Verifikasi</span>
+                                  </DropdownMenuItem>
+                                </>
+                            )}
+                             {member.verificationStatus === 'permanent' && (
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(member.id, 'rejected')}>
+                                    <UserX className="mr-2 h-4 w-4 text-red-500" />
+                                    <span>Batalkan & Tolak</span>
+                                </DropdownMenuItem>
+                             )}
+                             {member.verificationStatus === 'rejected' && (
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(member.id, 'permanent')}>
+                                    <UserCheck className="mr-2 h-4 w-4 text-green-500" />
+                                    <span>Setujui Ulang</span>
+                                </DropdownMenuItem>
+                             )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
+                      Belum ada anggota yang mendaftar.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    </MainLayout>
+  );
+}

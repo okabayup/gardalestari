@@ -44,7 +44,7 @@ export default function VerifyProfilePage() {
   const [cropperSrc, setCropperSrc] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user?.verificationStatus === 'verified' || user?.verificationStatus === 'pending') {
+    if (user?.verificationStatus === 'permanent' || user?.verificationStatus === 'temporary') {
       router.replace('/profile');
     }
   }, [user, router]);
@@ -201,8 +201,6 @@ export default function VerifyProfilePage() {
       const normalizedOcrName = ocrResult.name.trim().toLowerCase();
       const normalizedInputName = fullName.trim().toLowerCase();
 
-      // Check if the user-inputted name is a substring of the OCR'd name.
-      // This allows for partial names (e.g., "John Doe" vs "John Doe Smith").
       if (normalizedOcrNik !== normalizedInputNik || !normalizedOcrName.includes(normalizedInputName)) {
           let errorMessage = 'Data tidak cocok. ';
           if (normalizedOcrNik !== normalizedInputNik) {
@@ -228,11 +226,11 @@ export default function VerifyProfilePage() {
       await submitForVerification(verificationData);
       
       toast({
-        title: 'Verifikasi Terkirim!',
-        description: 'Data Anda telah berhasil dikirim dan akan segera ditinjau oleh tim kami.',
+        title: 'Verifikasi Berhasil!',
+        description: 'Anda kini menjadi Anggota Sementara. Selamat datang di Garda Lestari!',
         duration: 5000,
       });
-      router.push('/profile');
+      router.push('/feed');
 
     } catch (error) {
       console.error(error);

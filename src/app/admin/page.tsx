@@ -17,7 +17,7 @@ const AdminDashboard = () => {
 
   const managementMenus = [
     { label: 'Blog', icon: Newspaper, action: () => router.push('/admin/blog') },
-    { label: 'Anggota', icon: Users, action: () => {} },
+    { label: 'Anggota', icon: Users, action: () => router.push('/admin/members') },
     { label: 'Program', icon: Sprout, action: () => {} },
     { label: 'Acara', icon: Calendar, action: () => {} },
     { label: 'Halaman', icon: FileText, action: () => {} },
