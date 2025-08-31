@@ -22,6 +22,8 @@ type VerificationStatus = 'unverified' | 'pending' | 'verified' | 'rejected';
 type ExtendedUser = User & {
   level?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
   verificationStatus?: VerificationStatus;
+  fullName?: string;
+  nik?: string;
 };
 
 interface AuthContextType {
@@ -30,8 +32,8 @@ interface AuthContextType {
   signInWithPhone: (phoneNumber: string, appVerifierContainerId: string) => Promise<void>;
   verifyOtp: (otp: string) => Promise<void>;
   signOut: () => Promise<void>;
-  updateUserProfile: (updates: { displayName?: string; photoFile?: File }) => Promise<void>;
-  submitForVerification: (files: { ktpFile: File; selfieFile: File }) => Promise<void>;
+  updateUserProfile: (updates: { photoFile?: File }) => Promise<void>;
+  submitForVerification: (data: { fullName: string; nik: string; ktpFile: File; selfieFile: File }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -57,7 +59,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser({ 
               ...user, 
               level: userData.level || 'Bronze',
-              verificationStatus: userData.verificationStatus || 'unverified'
+              verificationStatus: userData.verificationStatus || 'unverified',
+              fullName: userData.fullName,
+              nik: userData.nik,
+              // IMPORTANT: Sync `displayName` from Firestore to Auth state, as it's the verified name.
+              displayName: userData.fullName || user.displayName
           });
         } else {
           // Fallback if doc doesn't exist for some reason
@@ -125,7 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Create user document in Firestore
         await setDoc(doc(db, "users", newUser.uid), {
             uid: newUser.uid,
-            name: newUser.displayName || `Anggota Baru ${String(newUser.phoneNumber).slice(-4)}`,
+            name: `Anggota ${String(newUser.phoneNumber).slice(-4)}`, // Placeholder name
             email: newUser.email,
             phoneNumber: newUser.phoneNumber,
             avatarUrl: newUser.photoURL || `https://picsum.photos/seed/${newUser.uid}/100/100`,
@@ -151,7 +157,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const updateUserProfile = async (updates: { displayName?: string; photoFile?: File }) => {
+  const updateUserProfile = async (updates: { photoFile?: File }) => {
     if (!auth.currentUser) throw new Error("Pengguna tidak ditemukan.");
 
     let photoURL = auth.currentUser.photoURL;
@@ -167,22 +173,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Update profile in Firebase Auth
     await updateProfile(auth.currentUser, {
-        displayName: updates.displayName,
+        // displayName is now locked, so we only update the photoURL
         photoURL: photoURL,
     });
     
     // Update user document in Firestore for consistency
     const userDocRef = doc(db, 'users', auth.currentUser.uid);
     await setDoc(userDocRef, {
-        name: updates.displayName,
         avatarUrl: photoURL
     }, { merge: true });
 
     // Manually update the user state to reflect changes immediately
-    setUser(prevUser => prevUser ? { ...prevUser, ...auth.currentUser } : null);
+    setUser(prevUser => prevUser ? { ...prevUser, photoURL } : null);
 };
 
-  const submitForVerification = async (files: { ktpFile: File; selfieFile: File }) => {
+const submitForVerification = async (data: { fullName: string; nik: string; ktpFile: File; selfieFile: File }) => {
     if (!auth.currentUser) throw new Error("Pengguna tidak ditemukan.");
 
     const storage = getStorage();
@@ -190,23 +195,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const selfieRef = ref(storage, `kyc/${auth.currentUser.uid}/selfie.jpg`);
 
     // Upload files
-    await uploadBytes(ktpRef, files.ktpFile);
+    await uploadBytes(ktpRef, data.ktpFile);
     const ktpImageUrl = await getDownloadURL(ktpRef);
     
-    await uploadBytes(selfieRef, files.selfieFile);
+    await uploadBytes(selfieRef, data.selfieFile);
     const selfieImageUrl = await getDownloadURL(selfieRef);
 
     // Update user document in Firestore
     const userDocRef = doc(db, 'users', auth.currentUser.uid);
     await updateDoc(userDocRef, {
+        fullName: data.fullName, // This is the verified name
+        name: data.fullName, // Keep 'name' field for backward compatibility or display
+        displayName: data.fullName,
+        nik: data.nik,
         verificationStatus: 'pending',
         ktpImageUrl,
         selfieImageUrl,
         submittedAt: serverTimestamp()
     });
+    
+    // Update Firebase Auth profile displayName as well
+    await updateProfile(auth.currentUser, { displayName: data.fullName });
 
     // Update local state
-    setUser(prevUser => prevUser ? { ...prevUser, verificationStatus: 'pending' } : null);
+    setUser(prevUser => prevUser ? { ...prevUser, verificationStatus: 'pending', fullName: data.fullName, nik: data.nik, displayName: data.fullName } : null);
   };
 
 
@@ -233,7 +245,8 @@ export const useRequireAuth = (redirectTo = '/login') => {
     if (!loading && !user) {
       redirect(redirectTo);
     }
-    if (!loading && user && user.verificationStatus !== 'verified' && pathname !== '/profile/verify' && pathname !== '/profile') {
+    // Redirect unverified users to verification, but allow access to profile
+    if (!loading && user && user.verificationStatus === 'unverified' && pathname !== '/profile/verify' && pathname !== '/profile') {
         redirect('/profile');
     }
   }, [user, loading, redirectTo, pathname]);

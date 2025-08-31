@@ -11,23 +11,28 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { Info } from 'lucide-react';
 
 interface EditProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  user: User;
+  user: User & { fullName?: string, nik?: string };
 }
 
 export default function EditProfileModal({ isOpen, onClose, user }: EditProfileModalProps) {
   const { updateUserProfile } = useAuth();
   const { toast } = useToast();
-  const [displayName, setDisplayName] = useState(user.displayName || '');
+  // Name is locked, so we don't need a state for it.
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(user.photoURL);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').substring(0, 2);
+  const getInitials = (name?: string) => {
+    if (!name) return '??';
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2);
+  }
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -40,13 +45,13 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
   const handleSubmit = async () => {
     setLoading(true);
     try {
+      // Only photo can be updated here
       await updateUserProfile({
-        displayName,
         photoFile: photoFile || undefined,
       });
       toast({
         title: 'Profil Diperbarui',
-        description: 'Perubahan profil Anda telah berhasil disimpan.',
+        description: 'Foto profil Anda telah berhasil disimpan.',
       });
       onClose();
     } catch (error) {
@@ -67,14 +72,14 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
         <DialogHeader>
           <DialogTitle>Edit Profil</DialogTitle>
           <DialogDescription>
-            Perbarui nama tampilan dan foto profil Anda.
+            Anda hanya dapat mengubah foto profil. Nama dan NIK tidak dapat diubah setelah terverifikasi.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="flex flex-col items-center gap-4">
             <Avatar className="h-24 w-24">
-              <AvatarImage src={photoPreview || ''} alt={displayName} />
-              <AvatarFallback className="text-3xl text-primary">{getInitials(displayName)}</AvatarFallback>
+              <AvatarImage src={photoPreview || ''} alt={user.displayName || ''} />
+              <AvatarFallback className="text-3xl text-primary">{getInitials(user.displayName || undefined)}</AvatarFallback>
             </Avatar>
             <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
               Ubah Foto
@@ -87,14 +92,22 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
               accept="image/png, image/jpeg"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="displayName">Nama Tampilan</Label>
-            <Input
-              id="displayName"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-            />
-          </div>
+          <Alert>
+              <Info className="h-4 w-4" />
+              <AlertTitle>Informasi Akun</AlertTitle>
+              <AlertDescription>
+                <div className="space-y-2 text-sm">
+                    <div>
+                        <p className="font-semibold">Nama Lengkap</p>
+                        <p className="text-muted-foreground">{user.displayName || 'Belum diatur'}</p>
+                    </div>
+                    <div>
+                        <p className="font-semibold">NIK</p>
+                        <p className="text-muted-foreground">{user.nik || 'Belum diatur'}</p>
+                    </div>
+                </div>
+              </AlertDescription>
+          </Alert>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>Batal</Button>
