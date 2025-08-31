@@ -50,9 +50,11 @@ export const memberDirectory = {
     { name: 'Wulan Kirana', position: 'Kadiv. Kehutanan', avatarUrl: 'https://picsum.photos/id/207/100/100' },
   ],
   daerah: [
-    { name: 'Joko Susilo', position: 'Koordinator Jawa Barat', avatarUrl: 'https://picsum.photos/id/301/100/100' },
-    { name: 'Eka Putri', position: 'Koordinator Jawa Tengah', avatarUrl: 'https://picsum.photos/id/302/100/100' },
-    { name: 'Made Wijaya', position: 'Koordinator Bali', avatarUrl: 'https://picsum.photos/id/303/100/100' },
+    { name: 'Joko Susilo', position: 'Koordinator', region: 'Jawa Barat', avatarUrl: 'https://picsum.photos/id/301/100/100' },
+    { name: 'Eka Putri', position: 'Koordinator', region: 'Jawa Tengah', avatarUrl: 'https://picsum.photos/id/302/100/100' },
+    { name: 'Made Wijaya', position: 'Koordinator', region: 'Bali', avatarUrl: 'https://picsum.photos/id/303/100/100' },
+    { name: 'Dewi Anggraini', position: 'Anggota', region: 'Jawa Barat', avatarUrl: 'https://picsum.photos/id/304/100/100' },
+    { name: 'Bambang Irawan', position: 'Anggota', region: 'Bali', avatarUrl: 'https://picsum.photos/id/305/100/100' },
   ],
   pembina: [
     { name: 'Prof. Emil Salim', position: 'Dewan Pembina', avatarUrl: 'https://picsum.photos/id/401/100/100' },
