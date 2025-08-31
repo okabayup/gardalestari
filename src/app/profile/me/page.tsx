@@ -185,7 +185,7 @@ export default function ProfileMePage() {
                     <Pencil className="mr-2 h-4 w-4" />
                     Edit Profil
                 </Button>
-                <Button variant="outline" onClick={() => setIsKtaModalOpen(true)} className="w-full" disabled={user.verificationStatus !== 'permanent'}>
+                <Button variant="outline" onClick={() => setIsKtaModalOpen(true)} className="w-full" disabled={user.verificationStatus === 'rejected'}>
                     <IdCard className="mr-2 h-4 w-4" />
                     Lihat KTA
                 </Button>
