@@ -40,7 +40,7 @@ export default function VerifyProfilePage() {
     }
   }, [user, router]);
 
-  const startCamera = async () => {
+  const startCamera = async ({ facingMode }: { facingMode: 'environment' | 'user' }) => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       console.error('Camera not supported on this browser.');
       toast({ variant: 'destructive', title: 'Kamera tidak didukung' });
@@ -48,7 +48,7 @@ export default function VerifyProfilePage() {
       return;
     }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
@@ -79,7 +79,7 @@ export default function VerifyProfilePage() {
       return;
     }
     setStep('ktp');
-    startCamera();
+    startCamera({ facingMode: 'environment' });
   };
 
   const capturePhoto = (): string | null => {
@@ -101,7 +101,7 @@ export default function VerifyProfilePage() {
       setKtpDataUrl(dataUrl);
       stopCamera();
       setStep('selfie');
-      startCamera(); // Restart for selfie
+      startCamera({ facingMode: 'user' }); // Restart for selfie with front camera
     }
   };
 
