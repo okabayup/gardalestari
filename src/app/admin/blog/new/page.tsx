@@ -11,25 +11,55 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { createBlogPost, BlogPost } from '@/app/actions/blog';
+import { useAuth } from '@/hooks/use-auth';
+
+type FormData = Omit<BlogPost, 'id' | 'author' | 'date' | 'imageUrl' | 'imageHint' | 'excerpt'>;
 
 export default function NewBlogPostPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const { register, handleSubmit, watch } = useForm<FormData>();
+  const titleValue = watch('title', '');
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const generateSlug = (title: string) => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9 -]/g, '') // remove invalid chars
+      .replace(/\s+/g, '-') // collapse whitespace and replace by -
+      .replace(/-+/g, '-'); // collapse dashes
+  };
+
+  const onSubmit = async (data: FormData) => {
     setLoading(true);
-    // Placeholder for actual form submission logic
-    console.log('Form submitted');
-    // In a real app, you would get form data and call a server action
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-    toast({
-      title: 'Postingan Dibuat!',
-      description: 'Postingan blog baru telah berhasil disimpan.',
-    });
-    setLoading(false);
-    router.push('/admin/blog');
+    try {
+        const newPost: Omit<BlogPost, 'id'> = {
+            ...data,
+            slug: data.slug || generateSlug(data.title),
+            author: user?.displayName || 'Admin',
+            date: new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }),
+            // Placeholder values, can be replaced by an upload feature later
+            imageUrl: 'https://picsum.photos/id/1018/600/400',
+            imageHint: 'mountain landscape',
+            excerpt: data.content.substring(0, 150) + '...',
+        };
+        await createBlogPost(newPost);
+        toast({
+            title: 'Postingan Dibuat!',
+            description: 'Postingan blog baru telah berhasil disimpan.',
+        });
+        router.push('/admin/blog');
+    } catch (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Gagal Menyimpan',
+            description: (error as Error).message || 'Terjadi kesalahan saat menyimpan postingan.',
+        });
+        setLoading(false);
+    }
   };
 
   return (
@@ -44,19 +74,19 @@ export default function NewBlogPostPage() {
             <CardDescription>Isi detail di bawah ini untuk membuat postingan blog baru.</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="title">Judul Postingan</Label>
-                <Input id="title" placeholder="Judul yang menarik..." />
+                <Input id="title" placeholder="Judul yang menarik..." {...register('title', { required: true })} />
               </div>
                <div className="space-y-2">
                 <Label htmlFor="slug">Slug</Label>
-                <Input id="slug" placeholder="contoh: postingan-baru-saya" />
-                <p className="text-xs text-muted-foreground">Ini akan menjadi bagian dari URL. Gunakan huruf kecil, angka, dan tanda hubung.</p>
+                <Input id="slug" placeholder={generateSlug(titleValue) || 'contoh: postingan-baru-saya'} {...register('slug')} />
+                <p className="text-xs text-muted-foreground">URL unik untuk postingan. Jika dikosongkan, akan dibuat otomatis dari judul.</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="content">Konten</Label>
-                <Textarea id="content" placeholder="Tulis konten blog Anda di sini..." rows={15} />
+                <Label htmlFor="content">Konten (mendukung HTML)</Label>
+                <Textarea id="content" placeholder="Tulis konten blog Anda di sini. Anda bisa menggunakan tag HTML seperti <p>, <ul>, <li>, <h4>, dll." rows={15} {...register('content', { required: true })}/>
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" type="button" onClick={() => router.push('/admin/blog')}>

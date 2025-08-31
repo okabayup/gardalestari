@@ -1,17 +1,19 @@
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
-import { blogPosts } from '@/lib/placeholder-data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getBlogPosts, getBlogPost } from '@/app/actions/blog';
 
-export function generateStaticParams() {
-  return blogPosts.map((post) => ({
+// This function tells Next.js which slugs to pre-render at build time
+export async function generateStaticParams() {
+  const posts = await getBlogPosts();
+  return posts.map((post) => ({
     slug: post.slug,
   }));
 }
 
-export default function BlogPostPage({ params }: { params: { slug: string } }) {
-  const post = blogPosts.find((p) => p.slug === params.slug);
+export default async function BlogPostPage({ params }: { params: { slug: string } }) {
+  const post = await getBlogPost(params.slug);
 
   if (!post) {
     notFound();
@@ -22,7 +24,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
       <article>
         <div className="relative h-64 md:h-80 w-full">
           <Image
-            src={post.imageUrl}
+            src={post.imageUrl || 'https://picsum.photos/1200/800'}
             alt={post.title}
             data-ai-hint={post.imageHint}
             fill
@@ -35,7 +37,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
           <div className="mt-4 flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarImage />
-              <AvatarFallback>{post.author.charAt(0)}</AvatarFallback>
+              <AvatarFallback>{post.author ? post.author.charAt(0) : 'A'}</AvatarFallback>
             </Avatar>
             <div>
               <p className="font-semibold">{post.author}</p>

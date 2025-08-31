@@ -1,9 +1,9 @@
 import { MetadataRoute } from 'next';
-import { blogPosts } from '@/lib/placeholder-data';
+import { getBlogPosts } from '@/app/actions/blog';
 
-const BASE_URL = 'https://garda-lestari.web.app'; // Ganti dengan domain Anda yang sebenarnya
+const BASE_URL = 'https://garda-lestari-5gz3p.web.app'; // Ganti dengan domain Anda yang sebenarnya
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Rute statis
   const staticRoutes = [
     '/',
@@ -25,7 +25,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }));
 
   // Rute dinamis untuk postingan blog
-  const blogPostRoutes = blogPosts.map((post) => ({
+  const posts = await getBlogPosts();
+  const blogPostRoutes = posts.map((post) => ({
     url: `${BASE_URL}/blog/${post.slug}`,
     lastModified: new Date().toISOString(), // Idealnya, ini harus menjadi tanggal update postingan
     changeFrequency: 'weekly' as const,
