@@ -40,7 +40,7 @@ const MediaPreviewCarousel = ({
     onRemove: (index: number) => void,
     onAddMore: () => void
 }) => (
-    <div className="w-full aspect-video border rounded-lg flex flex-col items-center justify-center text-muted-foreground relative bg-black">
+    <div className="w-full aspect-video rounded-lg flex flex-col items-center justify-center text-muted-foreground relative bg-black">
       <Carousel className="w-full h-full">
         <CarouselContent className="h-full">
           {mediaFiles.map((media, index) => (
@@ -166,7 +166,7 @@ export default function NewPostPage() {
                  <MediaPreviewCarousel 
                     mediaFiles={mediaFiles} 
                     onRemove={removeMedia}
-                    onAddMore={() => fileInputref.current?.click()}
+                    onAddMore={() => fileInputRef.current?.click()}
                  />
               )}
               <input

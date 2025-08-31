@@ -48,6 +48,7 @@ interface Post {
 }
 
 interface Author {
+  id: string;
   name: string;
   username: string;
   avatarUrl: string;
@@ -147,7 +148,7 @@ export async function createPost(caption: string, mediaPayload: {file: File, men
     
     // 3. Revalidate path to show new post
     revalidatePath('/feed');
-    revalidatePath('/profile');
+    revalidatePath('/profile/me');
 
   } catch (error) {
     console.error("Error creating post:", error);
@@ -174,6 +175,7 @@ export async function getPosts(currentUserId: string): Promise<PostWithAuthor[]>
     const authorData = authorDoc.data();
 
     const author: Author = {
+        id: postData.authorId,
         name: authorData?.fullName || authorData?.displayName || 'Unknown User',
         username: authorData?.username || `user_${postData.authorId.substring(0,5)}`,
         avatarUrl: authorData?.avatarUrl || '',
@@ -209,6 +211,7 @@ export async function getPostsByUserId(userId: string): Promise<PostWithAuthor[]
   if (authorDoc.exists()) {
       const authorData = authorDoc.data();
        author = {
+          id: userId,
           name: authorData?.fullName || authorData?.displayName || 'Unknown User',
           username: authorData?.username || `user_${userId.substring(0,5)}`,
           avatarUrl: authorData?.avatarUrl || '',
@@ -338,7 +341,7 @@ export async function archivePost(postId: string) {
     try {
         await updateDoc(postRef, { status: 'archived' });
         revalidatePath('/feed');
-        revalidatePath('/profile');
+        revalidatePath('/profile/me');
     } catch (error) {
         console.error("Error archiving post:", error);
         throw new Error("Gagal mengarsipkan postingan.");

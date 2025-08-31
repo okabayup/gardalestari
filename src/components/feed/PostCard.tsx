@@ -32,8 +32,8 @@ const CaptionWithMentions = ({ text }: { text: string }) => {
   const words = text.split(/(\s+)/); // Split by space, keeping the spaces
 
   return (
-    <>
-      {words.map((word, index) => {
+    <p className="text-sm whitespace-pre-wrap">
+       {words.map((word, index) => {
         if (word.startsWith('@')) {
           const username = word.substring(1);
           return (
@@ -44,7 +44,7 @@ const CaptionWithMentions = ({ text }: { text: string }) => {
         }
         return word;
       })}
-    </>
+    </p>
   );
 };
 
@@ -92,20 +92,21 @@ export default function PostCard({ post, onToggleLike, onArchive, currentUserId 
       }
   }
   
-  const isAuthor = currentUserId === post.author.username; // This logic might need adjustment based on what's in author object
+  const isAuthor = currentUserId === post.author.id;
 
   return (
     <Card className="overflow-hidden">
       <CardHeader className="flex flex-row items-center gap-3 p-3">
-        <Avatar>
-          <AvatarImage src={post.author.avatarUrl} alt={post.author.name} />
-          <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
-        </Avatar>
+        <Link href={`/profile/${post.author.username}`}>
+            <Avatar>
+            <AvatarImage src={post.author.avatarUrl} alt={post.author.name} />
+            <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+        </Link>
         <div className="flex-grow">
-            <div className="flex items-center gap-2">
-                <Link href={`/profile/${post.author.username}`} className="font-semibold hover:underline">{post.author.name}</Link>
-                <span className="text-sm text-muted-foreground">@{post.author.username}</span>
-            </div>
+            <Link href={`/profile/${post.author.username}`} className="font-semibold hover:underline">
+                @{post.author.username}
+            </Link>
             <MemberLevelBadge level={post.author.level} />
             
         </div>
@@ -131,7 +132,7 @@ export default function PostCard({ post, onToggleLike, onArchive, currentUserId 
             <CarouselContent>
             {post.media.map((mediaItem, index) => (
                 <CarouselItem key={index}>
-                    <div className="relative w-full flex items-center justify-center">
+                    <div className="w-full flex items-center justify-center">
                         {mediaItem.type === 'image' ? (
                             <Image
                                 src={mediaItem.url}
@@ -139,7 +140,7 @@ export default function PostCard({ post, onToggleLike, onArchive, currentUserId 
                                 data-ai-hint={mediaItem.hint}
                                 width={1080}
                                 height={1080}
-                                className="object-contain w-full h-auto"
+                                className="object-contain w-full h-auto max-h-[80vh]"
                             />
                         ) : (
                             <video
@@ -147,7 +148,7 @@ export default function PostCard({ post, onToggleLike, onArchive, currentUserId 
                                 controls
                                 muted
                                 loop
-                                className="w-full h-auto object-contain"
+                                className="w-full h-auto max-h-[80vh] object-contain"
                             />
                         )}
                     </div>
@@ -162,10 +163,7 @@ export default function PostCard({ post, onToggleLike, onArchive, currentUserId 
             )}
         </Carousel>
         <div className="p-3">
-            <p className="text-sm">
-                <Link href={`/profile/${post.author.username}`} className="font-semibold hover:underline">{post.author.name}</Link>{' '}
-                <CaptionWithMentions text={post.caption} />
-            </p>
+             <CaptionWithMentions text={post.caption} />
         </div>
       </CardContent>
        <CardFooter className="flex flex-col items-start gap-2 p-3 pt-0">

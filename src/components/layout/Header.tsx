@@ -49,11 +49,11 @@ export default function Header() {
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>{user.displayName || user.phoneNumber}</DropdownMenuLabel>
+                <DropdownMenuLabel>@{user.username || user.displayName}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                 <DropdownMenuItem onClick={() => router.push('/profile')} className="cursor-pointer">
+                 <DropdownMenuItem onClick={() => router.push('/profile/me')} className="cursor-pointer">
                   <UserCircle className="mr-2 h-4 w-4" />
-                  <span>Profil</span>
+                  <span>Profil Saya</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
                   <LogOut className="mr-2 h-4 w-4" />
