@@ -1,57 +1,82 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, Shield, Pencil, AlertTriangle, BadgeCheck, Clock } from 'lucide-react';
+import { LogOut, Shield, Pencil, AlertTriangle, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import EditProfileModal from '@/components/profile/EditProfileModal';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { getPostsByUserId, PostWithAuthor } from '../actions/posts';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Grid3x3 } from 'lucide-react';
+
 
 const ADMIN_PHONE_NUMBER = '+6285176752610';
 
-const MembershipCard = ({ name, username, photoUrl, memberId, status }: { name: string, username: string, photoUrl: string, memberId: string, status?: string }) => {
-    const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').substring(0, 2);
-    const statusText = status === 'temporary' ? 'Anggota Sementara' : 'Anggota Terverifikasi';
+const ProfileHeader = ({ user, postCount }: { user: any, postCount: number }) => (
+  <div className="flex items-center gap-4 w-full px-4">
+    <Avatar className="h-20 w-20">
+      <AvatarImage src={user?.photoURL || ''} alt={user?.displayName || ''} />
+      <AvatarFallback className="text-3xl">{user?.displayName?.charAt(0) || 'A'}</AvatarFallback>
+    </Avatar>
+    <div className="flex-1 grid grid-cols-2 text-center">
+        <div>
+            <p className="font-bold text-lg">{postCount}</p>
+            <p className="text-sm text-muted-foreground">Postingan</p>
+        </div>
+         <div>
+            <p className="font-bold text-lg">{user?.level || 'Bronze'}</p>
+            <p className="text-sm text-muted-foreground">Level</p>
+        </div>
+    </div>
+  </div>
+);
+
+const ProfileBio = ({ user }: { user: any }) => (
+    <div className="px-4 space-y-1">
+        <p className="font-bold">{user?.displayName}</p>
+        <p className="text-sm text-muted-foreground">@{user?.username}</p>
+        {/* Placeholder for bio */}
+        <p className="text-sm">Selamat datang di profil saya! Anggota Garda Lestari.</p>
+    </div>
+);
+
+
+const ProfilePostsGrid = ({ posts }: { posts: PostWithAuthor[] }) => {
+    if (!posts || posts.length === 0) {
+        return <div className="text-center py-10 text-muted-foreground">Belum ada postingan.</div>;
+    }
 
     return (
-        <Card className="w-full max-w-sm bg-gradient-to-br from-primary via-green-700 to-accent text-primary-foreground shadow-2xl">
-            <CardHeader>
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Image src="/logo.png" alt="Garda Lestari Logo" width={120} height={32} className="h-8 w-auto" />
-                    </div>
-                    <span className="text-xs font-semibold uppercase tracking-widest">{statusText}</span>
+        <div className="grid grid-cols-3 gap-1">
+            {posts.map(post => (
+                <div key={post.id} className="relative aspect-square">
+                   {post.media.length > 0 && (
+                        <Image 
+                            src={post.media[0].url}
+                            alt="Postingan"
+                            fill
+                            className="object-cover"
+                            data-ai-hint={post.media[0].hint}
+                        />
+                   )}
                 </div>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center gap-4 text-center pt-6">
-                <Avatar className="h-24 w-24 border-4 border-background/50">
-                    <AvatarImage src={photoUrl} alt={name} />
-                    <AvatarFallback className="text-3xl text-primary">{getInitials(name)}</AvatarFallback>
-                </Avatar>
-                <div>
-                    <p className="text-2xl font-bold font-headline">{name}</p>
-                    <p className="text-sm opacity-80">@{username}</p>
-                </div>
-                <div>
-                    <p className="text-xs opacity-80 uppercase">ID Anggota</p>
-                    <p className="font-mono text-lg tracking-wider">{memberId}</p>
-                </div>
-            </CardContent>
-        </Card>
-    );
-};
+            ))}
+        </div>
+    )
+}
 
 const VerificationStatusAlert = ({ status }: { status?: 'unverified' | 'temporary' | 'permanent' | 'rejected' }) => {
     const router = useRouter();
     if (!status || status === 'unverified') {
         return (
-            <Alert>
+            <Alert className="mx-4">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Verifikasi Akun</AlertTitle>
                 <AlertDescription>
@@ -61,9 +86,20 @@ const VerificationStatusAlert = ({ status }: { status?: 'unverified' | 'temporar
             </Alert>
         )
     }
+     if (status === 'temporary') {
+        return (
+            <Alert className="mx-4 border-yellow-500 text-yellow-800">
+                <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                <AlertTitle>Verifikasi Sedang Ditinjau</AlertTitle>
+                <AlertDescription>
+                    Pengajuan verifikasi Anda sedang ditinjau oleh tim kami. Anda sudah bisa menggunakan fitur aplikasi.
+                </AlertDescription>
+            </Alert>
+        )
+    }
     if (status === 'rejected') {
          return (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="mx-4">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Verifikasi Ditolak</AlertTitle>
                 <AlertDescription>
@@ -81,57 +117,72 @@ export default function ProfilePage() {
   const { user, signOut } = useAuth();
   const router = useRouter();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [posts, setPosts] = useState<PostWithAuthor[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(true);
+
+  useEffect(() => {
+    const fetchUserPosts = async () => {
+        if (!user) return;
+        setLoadingPosts(true);
+        const userPosts = await getPostsByUserId(user.uid);
+        setPosts(userPosts);
+        setLoadingPosts(false);
+    }
+    fetchUserPosts();
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
     router.push('/login');
   };
   
-  const memberId = user ? `GL-${new Date().getFullYear()}-${String(user.phoneNumber).slice(-6)}` : '';
   const isAdmin = user?.phoneNumber === ADMIN_PHONE_NUMBER;
-
-  const isVerified = user?.verificationStatus === 'temporary' || user?.verificationStatus === 'permanent';
 
   return (
     <MainLayout>
-        <div className="p-6 space-y-8 flex flex-col items-center">
-             <div className="w-full max-w-sm flex flex-col items-center gap-6 text-center">
-                <div className="space-y-2">
-                    <h1 className="text-2xl font-bold font-headline">Profil Anggota</h1>
-                    {isVerified ? (
-                       <p className="text-muted-foreground">Ini adalah Kartu Tanda Anggota (KTA) digital Anda.</p>
+        <div className="space-y-4 py-4">
+            <ProfileHeader user={user} postCount={posts.length} />
+            <ProfileBio user={user} />
+
+            <div className="px-4">
+                 <Button variant="outline" onClick={() => setIsEditModalOpen(true)} className="w-full">
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit Profil
+                </Button>
+            </div>
+            
+            <div className="px-4">
+                 <VerificationStatusAlert status={user?.verificationStatus} />
+            </div>
+
+            <Tabs defaultValue="posts" className="w-full">
+                <TabsList className="w-full grid grid-cols-1">
+                    <TabsTrigger value="posts">
+                        <Grid3x3 className="mr-2 h-4 w-4" /> Postingan
+                    </TabsTrigger>
+                </TabsList>
+                <TabsContent value="posts">
+                    {loadingPosts ? (
+                        <div className="flex justify-center items-center p-10">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        </div>
                     ) : (
-                       <p className="text-muted-foreground">Lengkapi profil dan verifikasi akun Anda.</p>
+                        <ProfilePostsGrid posts={posts} />
                     )}
-                </div>
-                {user && isVerified && (
-                    <MembershipCard
-                        name={user?.displayName || 'Anggota Baru'}
-                        username={user?.username || ''}
-                        photoUrl={user?.photoURL || ''}
-                        memberId={memberId}
-                        status={user.verificationStatus}
-                    />
-                )}
-                 {user && !isVerified && (
-                    <VerificationStatusAlert status={user.verificationStatus} />
-                )}
-                <div className="w-full max-w-sm space-y-2">
-                    <Button variant="default" onClick={() => setIsEditModalOpen(true)} className="w-full">
-                        <Pencil className="mr-2 h-4 w-4" />
-                        Edit Profil
+                </TabsContent>
+            </Tabs>
+             
+            <div className="px-4 space-y-2">
+                {isAdmin && (
+                    <Button variant="outline" onClick={() => router.push('/admin')} className="w-full">
+                        <Shield className="mr-2 h-4 w-4" />
+                        Panel Admin
                     </Button>
-                    {isAdmin && (
-                        <Button variant="outline" onClick={() => router.push('/admin')} className="w-full">
-                            <Shield className="mr-2 h-4 w-4" />
-                            Panel Admin
-                        </Button>
-                    )}
-                    <Button variant="destructive" onClick={handleSignOut} className="w-full">
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Keluar
-                    </Button>
-                </div>
+                )}
+                <Button variant="destructive" onClick={handleSignOut} className="w-full">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Keluar
+                </Button>
             </div>
         </div>
         {user && (

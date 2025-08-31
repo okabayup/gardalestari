@@ -13,7 +13,8 @@ import {
   query,
   orderBy,
   increment,
-  writeBatch
+  writeBatch,
+  where
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
@@ -124,6 +125,7 @@ export async function createPost(caption: string, mediaPayload: {file: File, men
     
     // 3. Revalidate path to show new post
     revalidatePath('/feed');
+    revalidatePath('/profile');
 
   } catch (error) {
     console.error("Error creating post:", error);
@@ -166,6 +168,49 @@ export async function getPosts(currentUserId: string): Promise<PostWithAuthor[]>
 
   return posts;
 }
+
+// Get all posts by a specific user ID
+export async function getPostsByUserId(userId: string): Promise<PostWithAuthor[]> {
+  const q = query(postsCollection, where('authorId', '==', userId), orderBy('createdAt', 'desc'));
+  const postsSnapshot = await getDocs(q);
+  const posts: PostWithAuthor[] = [];
+  
+  // No need to fetch author details repeatedly as they are all the same user
+  let author: Author | null = null;
+  const authorRef = doc(usersCollection, userId);
+  const authorDoc = await getDoc(authorRef);
+  
+  if (authorDoc.exists()) {
+      const authorData = authorDoc.data();
+       author = {
+          name: authorData?.fullName || authorData?.displayName || 'Unknown User',
+          username: authorData?.username || `user_${userId.substring(0,5)}`,
+          avatarUrl: authorData?.avatarUrl || '',
+          level: authorData?.level || 'Bronze'
+      }
+  }
+
+
+  for (const postDoc of postsSnapshot.docs) {
+    const postData = { id: postDoc.id, ...postDoc.data() } as Post;
+    
+    if (author) {
+        posts.push({
+          id: postData.id,
+          author: author,
+          media: postData.media || [],
+          caption: postData.caption,
+          likesCount: postData.likes.length,
+          commentsCount: postData.commentsCount,
+          timestamp: formatTimestamp(postData.createdAt),
+          // isLiked is not relevant for viewing someone else's profile grid, default to false
+          isLiked: false, 
+        });
+    }
+  }
+  return posts;
+}
+
 
 // Toggle like on a post
 export async function togglePostLike(postId: string, userId: string) {
