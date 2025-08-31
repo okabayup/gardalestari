@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Leaf, Users, Sprout, Ship, TreePine, Linkedin, Instagram, Twitter, Facebook } from 'lucide-react';
 import LandingHeader from '@/components/layout/LandingHeader';
+import { Logo } from '@/components/icons/Logo';
 
 const FeatureCard = ({ icon, title, children }: { icon: React.ReactNode, title: string, children: React.ReactNode }) => (
     <Card className="text-center transition-transform transform hover:scale-105 hover:shadow-xl">
