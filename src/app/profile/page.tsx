@@ -23,8 +23,7 @@ const MembershipCard = ({ name, email, photoUrl, memberId }: { name: string, ema
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Image src="/logo.png" alt="Garda Lestari Logo" width={32} height={32} />
-                        <CardTitle className="font-headline text-xl">Garda Lestari</CardTitle>
+                        <Image src="/logo.png" alt="Garda Lestari Logo" width={120} height={32} className="h-8 w-auto" />
                     </div>
                     <span className="text-xs font-semibold uppercase tracking-widest">Anggota Terverifikasi</span>
                 </div>

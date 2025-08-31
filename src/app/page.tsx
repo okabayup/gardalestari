@@ -1,4 +1,5 @@
 
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -29,9 +30,8 @@ const Footer = async () => {
             <div className="container py-8">
                 <div className="grid gap-8 md:grid-cols-3">
                     <div className="space-y-2">
-                        <Link href="/" className="flex items-center gap-2 font-bold">
-                            <Image src="/logo.png" alt="Garda Lestari Logo" width={24} height={24} />
-                            <span className="font-headline text-xl">Garda Lestari</span>
+                        <Link href="/" className="flex items-center">
+                            <Image src="/logo.png" alt="Garda Lestari Logo" width={120} height={32} className="h-8 w-auto" />
                         </Link>
                         <p className="text-sm text-muted-foreground">Wadah bagi pemuda Indonesia untuk inovasi di sektor agro-maritim dan kehutanan.</p>
                     </div>
