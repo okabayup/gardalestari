@@ -103,7 +103,7 @@ export default function PostCard({ post, onToggleLike, onArchive, currentUserId 
         </Avatar>
         <div className="flex-grow">
             <div className="flex items-center gap-2">
-                <span className="font-semibold">{post.author.name}</span>
+                <Link href={`/profile/${post.author.username}`} className="font-semibold hover:underline">{post.author.name}</Link>
                 <span className="text-sm text-muted-foreground">@{post.author.username}</span>
             </div>
             <MemberLevelBadge level={post.author.level} />
@@ -131,14 +131,15 @@ export default function PostCard({ post, onToggleLike, onArchive, currentUserId 
             <CarouselContent>
             {post.media.map((mediaItem, index) => (
                 <CarouselItem key={index}>
-                    <div className="relative w-full h-[60vh] flex items-center justify-center">
+                    <div className="relative w-full flex items-center justify-center">
                         {mediaItem.type === 'image' ? (
                             <Image
                                 src={mediaItem.url}
                                 alt={`Post by ${post.author.name} - ${index + 1}`}
                                 data-ai-hint={mediaItem.hint}
-                                fill
-                                className="object-contain"
+                                width={1080}
+                                height={1080}
+                                className="object-contain w-full h-auto"
                             />
                         ) : (
                             <video
@@ -146,7 +147,7 @@ export default function PostCard({ post, onToggleLike, onArchive, currentUserId 
                                 controls
                                 muted
                                 loop
-                                className="w-full h-full object-contain"
+                                className="w-full h-auto object-contain"
                             />
                         )}
                     </div>
