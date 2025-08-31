@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { createPost, Mention } from '@/app/actions/posts';
-import { Loader2, ArrowLeft, Image as ImageIcon, X, Video } from 'lucide-react';
+import { Loader2, ArrowLeft, Image as ImageIcon, X } from 'lucide-react';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
@@ -73,11 +73,14 @@ const MediaPreviewCarousel = ({
           </>
         )}
       </Carousel>
-      <Button type="button" variant="outline" size="sm" className="absolute bottom-2 z-10 bg-background/70" onClick={onAddMore}>
-        Tambah Media
-      </Button>
+      {mediaFiles.length < 10 && ( // Batasi jumlah media
+        <Button type="button" variant="outline" size="sm" className="absolute bottom-2 z-10 bg-background/70" onClick={onAddMore}>
+            Tambah Media
+        </Button>
+      )}
     </div>
 );
+
 
 export default function NewPostPage() {
   const { user } = useAuth();
@@ -99,11 +102,13 @@ export default function NewPostPage() {
             type: file.type.startsWith('video') ? 'video' : 'image',
             mentions: []
         }));
-        setMediaFiles(prev => [...prev, ...newMediaPreviews]);
+        setMediaFiles(prev => [...prev, ...newMediaPreviews].slice(0, 10)); // Batasi 10 media
     }
   };
 
   const removeMedia = (indexToRemove: number) => {
+    // Hapus URL object untuk mencegah memory leak
+    URL.revokeObjectURL(mediaFiles[indexToRemove].previewUrl);
     setMediaFiles(prev => prev.filter((_, index) => index !== indexToRemove));
   };
 
@@ -137,6 +142,8 @@ export default function NewPostPage() {
       });
     } finally {
       setIsSubmitting(false);
+      // Clean up all object URLs after submission
+      mediaFiles.forEach(mf => URL.revokeObjectURL(mf.previewUrl));
     }
   };
 
@@ -153,13 +160,13 @@ export default function NewPostPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {mediaFiles.length === 0 ? (
+               {mediaFiles.length === 0 ? (
                  <MediaUploadPlaceholder onClick={() => fileInputRef.current?.click()} />
               ) : (
                  <MediaPreviewCarousel 
                     mediaFiles={mediaFiles} 
                     onRemove={removeMedia}
-                    onAddMore={() => fileInputRef.current?.click()}
+                    onAddMore={() => fileInputref.current?.click()}
                  />
               )}
               <input
