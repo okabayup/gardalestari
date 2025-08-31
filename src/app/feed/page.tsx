@@ -6,8 +6,10 @@ import MainLayout from '@/components/layout/MainLayout';
 import PostCard from '@/components/feed/PostCard';
 import { getPosts, togglePostLike, PostWithAuthor } from '@/app/actions/posts';
 import { useAuth } from '@/hooks/use-auth';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 
 export default function FeedPage() {
@@ -65,19 +67,8 @@ export default function FeedPage() {
           description: 'Gagal menyimpan perubahan.'
         })
       // Revert optimistic update on error
-      setPosts(prevPosts =>
-        prevPosts.map(post => {
-          if (post.id === postId) {
-            const wasLiked = !post.isLiked; // Revert the change
-             return {
-              ...post,
-              isLiked: wasLiked,
-              likesCount: wasLiked ? (post.likesCount || 0) - 1 : (post.likesCount || 0) + 1,
-            };
-          }
-          return post;
-        })
-      );
+      const freshPosts = await getPosts(user.uid);
+      setPosts(freshPosts);
     }
   };
 
@@ -94,15 +85,27 @@ export default function FeedPage() {
   return (
     <MainLayout>
       <div className="p-4 space-y-4 md:p-6 md:space-y-6">
-        {posts.map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            onToggleLike={() => handleToggleLike(post.id)}
-          />
-        ))}
+        {posts.length > 0 ? (
+           posts.map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              onToggleLike={() => handleToggleLike(post.id)}
+            />
+          ))
+        ) : (
+          <div className="text-center py-20">
+            <h3 className="text-lg font-semibold">Selamat Datang!</h3>
+            <p className="text-muted-foreground">Belum ada postingan. Jadilah yang pertama!</p>
+          </div>
+        )}
       </div>
+      <Button asChild className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg" size="icon">
+        <Link href="/feed/new">
+            <Plus className="h-6 w-6" />
+            <span className="sr-only">Buat Postingan Baru</span>
+        </Link>
+      </Button>
     </MainLayout>
   );
 }
-

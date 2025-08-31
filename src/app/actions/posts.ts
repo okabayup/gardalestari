@@ -1,7 +1,7 @@
 
 'use server';
 
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { 
   collection, 
   getDocs, 
@@ -9,8 +9,14 @@ import {
   getDoc, 
   writeBatch,
   runTransaction,
-  Timestamp
+  Timestamp,
+  addDoc,
+  query,
+  orderBy
 } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { revalidatePath } from 'next/cache';
+
 
 interface Post {
   id: string;
@@ -50,76 +56,57 @@ const formatTimestamp = (timestamp: Timestamp): string => {
   const now = new Date();
   const diff = now.getTime() - date.getTime();
   const diffHours = Math.floor(diff / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffHours / 24);
 
+  if (diffHours < 1) {
+      return "Baru saja";
+  }
   if (diffHours < 24) {
     return `${diffHours} jam lalu`;
   } else {
-    const diffDays = Math.floor(diffHours / 24);
     return `${diffDays} hari lalu`;
   }
 };
 
 
-// This function is for seeding data if the collection is empty.
-// In a real app, users would create posts.
-async function seedPostsData() {
-  const snapshot = await getDocs(postsCollection);
-  if (snapshot.empty) {
-    console.log("Posts collection is empty. Seeding data...");
-    const batch = writeBatch(db);
+// Create a new post
+export async function createPost(caption: string, imageFile: File, authorId: string) {
+  if (!authorId) {
+    throw new Error('Pengguna tidak terautentikasi.');
+  }
+  
+  try {
+    // 1. Upload image to Firebase Storage
+    const storageRef = ref(storage, `posts/${Date.now()}_${imageFile.name}`);
+    await uploadBytes(storageRef, imageFile);
+    const imageUrl = await getDownloadURL(storageRef);
 
-    // Let's create some dummy users first
-    const user1Ref = doc(usersCollection, 'user1_id');
-    batch.set(user1Ref, { name: 'Rina Lestari', avatarUrl: 'https://picsum.photos/id/1011/50/50', level: 'Gold' });
+    // 2. Create post document in Firestore
+    const newPost = {
+      authorId,
+      caption,
+      imageUrl,
+      imageHint: "user uploaded content", // Generic hint for user uploads
+      likes: [],
+      commentsCount: 0,
+      createdAt: Timestamp.now(),
+    };
 
-    const user2Ref = doc(usersCollection, 'user2_id');
-    batch.set(user2Ref, { name: 'Budi Santoso', avatarUrl: 'https://picsum.photos/id/1025/50/50', level: 'Silver' });
+    await addDoc(postsCollection, newPost);
     
-    const user3Ref = doc(usersCollection, 'user3_id');
-    batch.set(user3Ref, { name: 'Citra Dewi', avatarUrl: 'https://picsum.photos/id/1027/50/50', level: 'Bronze' });
+    // 3. Revalidate path to show new post
+    revalidatePath('/feed');
 
-    // Now, create posts
-    const postsToSeed = [
-      {
-        authorId: 'user1_id',
-        imageUrl: 'https://picsum.photos/id/1015/600/600',
-        imageHint: 'green valley',
-        caption: 'Diskusi hebat di lokakarya Wirausaha Tani Muda hari ini! Begitu banyak ide inovatif untuk pertanian berkelanjutan. 🌾 #GardaLestari #AgroMaritim',
-        likes: [],
-        commentsCount: 12,
-      },
-      {
-        authorId: 'user2_id',
-        imageUrl: 'https://picsum.photos/id/103/600/600',
-        imageHint: 'mangrove saplings',
-        caption: 'Tim kami baru saja menyelesaikan acara penanaman mangrove di Jakarta Utara. Lebih dari 1000 bibit baru ditanam! Mari jaga kelestarian pesisir kita. 🌱 #Kehutanan #Konservasi',
-        likes: ['user1_id'],
-        commentsCount: 25,
-      },
-      {
-        authorId: 'user3_id',
-        imageUrl: 'https://picsum.photos/id/218/600/600',
-        imageHint: 'coral reef underwater',
-        caption: 'Menjelajahi keindahan Bunaken. Keanekaragaman hayati laut kita adalah harta yang harus kita lindungi bersama. 🐠 #Maritim #GardaLestari',
-        likes: [],
-        commentsCount: 34,
-      },
-    ];
-
-    postsToSeed.forEach(post => {
-      const postRef = doc(postsCollection);
-      batch.set(postRef, { ...post, createdAt: Timestamp.now() });
-    });
-
-    await batch.commit();
+  } catch (error) {
+    console.error("Error creating post:", error);
+    throw new Error("Gagal membuat postingan baru.");
   }
 }
 
 // Get all posts
 export async function getPosts(currentUserId: string): Promise<PostWithAuthor[]> {
-//   await seedPostsData(); // Uncomment to seed data
-  
-  const postsSnapshot = await getDocs(postsCollection);
+  const q = query(postsCollection, orderBy('createdAt', 'desc'));
+  const postsSnapshot = await getDocs(q);
   const posts: PostWithAuthor[] = [];
 
   for (const postDoc of postsSnapshot.docs) {
@@ -142,12 +129,7 @@ export async function getPosts(currentUserId: string): Promise<PostWithAuthor[]>
     });
   }
 
-  // Sort by creation date, newest first
-  return posts.sort((a, b) => {
-    // This is a simplistic sort since timestamp is a string.
-    // For real apps, sort based on the original timestamp before formatting.
-    return b.timestamp.localeCompare(a.timestamp);
-  });
+  return posts;
 }
 
 // Toggle like on a post
@@ -175,6 +157,7 @@ export async function togglePostLike(postId: string, userId: string) {
 
       transaction.update(postRef, { likes: newLikes });
     });
+     revalidatePath('/feed');
   } catch (e) {
     console.error("Transaction failed: ", e);
     throw new Error("Gagal memperbarui status suka.");
