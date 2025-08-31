@@ -90,58 +90,61 @@ export default function NewPostPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div 
-                className="w-full aspect-video border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted/50 transition-colors"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {mediaFiles.length === 0 ? (
-                  <>
+              {mediaFiles.length === 0 ? (
+                 <div 
+                    className="w-full aspect-video border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
                     <ImageIcon className="h-12 w-12" />
                     <p className="mt-2 text-sm">Klik untuk mengunggah gambar/video</p>
-                  </>
-                ) : (
-                    <Carousel className="w-full h-full">
-                      <CarouselContent className="h-full">
-                        {mediaFiles.map((media, index) => (
-                           <CarouselItem key={index} className="relative w-full h-full">
-                               {media.type === 'image' ? (
-                                    <Image src={media.previewUrl} alt="Pratinjau media" layout="fill" objectFit="contain" className="rounded-lg" />
-                               ) : (
-                                    <video src={media.previewUrl} className="w-full h-full object-contain rounded-lg" controls muted loop />
-                               )}
-                               <Button 
-                                    type="button"
-                                    size="icon" 
-                                    variant="destructive" 
-                                    className="absolute top-1 right-1 h-6 w-6 z-10" 
-                                    onClick={(e) => { 
-                                        e.stopPropagation(); 
-                                        removeMedia(index);
-                                    }}
-                                >
-                                   <X className="h-4 w-4"/>
-                                   <span className="sr-only">Hapus media</span>
-                               </Button>
-                           </CarouselItem>
-                        ))}
-                      </CarouselContent>
-                       {mediaFiles.length > 1 && (
-                            <>
-                                <CarouselPrevious className="left-2" />
-                                <CarouselNext className="right-2" />
-                            </>
-                        )}
-                    </Carousel>
-                )}
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  className="hidden"
-                  accept="image/png, image/jpeg, image/gif, video/mp4, video/quicktime"
-                  multiple
-                />
-              </div>
+                 </div>
+              ) : (
+                <div className="w-full aspect-video border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground relative">
+                  <Carousel className="w-full h-full">
+                    <CarouselContent className="h-full">
+                      {mediaFiles.map((media, index) => (
+                         <CarouselItem key={index} className="relative w-full h-full flex items-center justify-center bg-black">
+                             {media.type === 'image' ? (
+                                  <Image src={media.previewUrl} alt="Pratinjau media" fill className="object-contain" />
+                             ) : (
+                                  <video src={media.previewUrl} className="w-full h-full object-contain" controls muted loop />
+                             )}
+                             <Button 
+                                  type="button"
+                                  size="icon" 
+                                  variant="destructive" 
+                                  className="absolute top-1 right-1 h-6 w-6 z-10" 
+                                  onClick={(e) => { 
+                                      e.stopPropagation(); 
+                                      removeMedia(index);
+                                  }}
+                              >
+                                 <X className="h-4 w-4"/>
+                                 <span className="sr-only">Hapus media</span>
+                             </Button>
+                         </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                     {mediaFiles.length > 1 && (
+                          <>
+                              <CarouselPrevious className="left-2" />
+                              <CarouselNext className="right-2" />
+                          </>
+                      )}
+                  </Carousel>
+                  <Button type="button" variant="outline" size="sm" className="absolute bottom-2" onClick={() => fileInputRef.current?.click()}>
+                    Tambah Media
+                  </Button>
+                </div>
+              )}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+                accept="image/png, image/jpeg, image/gif, video/mp4, video/quicktime"
+                multiple
+              />
               <Textarea
                 placeholder="Tulis caption Anda di sini..."
                 value={caption}
