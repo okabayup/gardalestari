@@ -177,15 +177,16 @@ export default function VerifyProfilePage() {
           throw new Error('Gagal membaca KTP. Pastikan foto jelas dan tidak buram.');
       }
       
-      const normalizedOcrNik = ocrResult.nik.replace(/\s/g, '');
-      const normalizedInputNik = nik.replace(/\s/g, '');
+      const normalizedOcrNik = ocrResult.nik.replace(/\D/g, '');
+      const normalizedInputNik = nik.replace(/\D/g, '');
       const normalizedOcrName = ocrResult.name.trim().toLowerCase();
       const normalizedInputName = fullName.trim().toLowerCase();
 
+      // Flexible matching: check if input name is a substring of OCR name
       if (normalizedOcrNik !== normalizedInputNik) {
-          throw new Error(`NIK tidak cocok. NIK di KTP: ${normalizedOcrNik}, NIK Anda: ${normalizedInputNik}.`);
+          throw new Error(`NIK tidak cocok. NIK di KTP: ${ocrResult.nik}, NIK Anda: ${nik}.`);
       }
-       if (normalizedOcrName !== normalizedInputName) {
+       if (!normalizedOcrName.includes(normalizedInputName)) {
           throw new Error(`Nama tidak cocok. Nama di KTP: ${ocrResult.name}, Nama Anda: ${fullName}.`);
       }
 
