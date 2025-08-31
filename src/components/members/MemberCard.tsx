@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 interface MemberCardProps {
   name: string;
   position: string;
-  avatarUrl: string;
+  avatarUrl?: string;
 }
 
 export const MemberCard = ({ name, position, avatarUrl }: MemberCardProps) => {

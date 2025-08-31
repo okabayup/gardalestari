@@ -46,28 +46,6 @@ export const placeholderPosts: Post[] = [
   },
 ];
 
-export const memberDirectory = {
-  pusat: [
-    { name: 'Dr. Suryo Prakoso', position: 'Ketua Umum', avatarUrl: 'https://picsum.photos/id/201/100/100' },
-    { name: 'Amelia Siregar', position: 'Sekretaris Umum', avatarUrl: 'https://picsum.photos/id/202/100/100' },
-    { name: 'Bayu Wijoyo', position: 'Bendahara Umum', avatarUrl: 'https://picsum.photos/id/203/100/100' },
-    { name: 'Kartika Sari', position: 'Kadiv. Agro', avatarUrl: 'https://picsum.photos/id/204/100/100' },
-    { name: 'Gilang Samudra', position: 'Kadiv. Maritim', avatarUrl: 'https://picsum.photos/id/206/100/100' },
-    { name: 'Wulan Kirana', position: 'Kadiv. Kehutanan', avatarUrl: 'https://picsum.photos/id/207/100/100' },
-  ],
-  daerah: [
-    { name: 'Joko Susilo', position: 'Koordinator', region: 'Jawa Barat', avatarUrl: 'https://picsum.photos/id/301/100/100' },
-    { name: 'Eka Putri', position: 'Koordinator', region: 'Jawa Tengah', avatarUrl: 'https://picsum.photos/id/302/100/100' },
-    { name: 'Made Wijaya', position: 'Koordinator', region: 'Bali', avatarUrl: 'https://picsum.photos/id/303/100/100' },
-    { name: 'Dewi Anggraini', position: 'Anggota', region: 'Jawa Barat', avatarUrl: 'https://picsum.photos/id/304/100/100' },
-    { name: 'Bambang Irawan', position: 'Anggota', region: 'Bali', avatarUrl: 'https://picsum.photos/id/305/100/100' },
-  ],
-  pembina: [
-    { name: 'Prof. Emil Salim', position: 'Dewan Pembina', avatarUrl: 'https://picsum.photos/id/401/100/100' },
-    { name: 'Dr. Ir. Rokhmin Dahuri', position: 'Dewan Pembina', avatarUrl: 'https://picsum.photos/id/402/100/100' },
-  ],
-};
-
 export const programs = {
   flagship: [
     {

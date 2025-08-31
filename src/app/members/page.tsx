@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { MemberCard } from '@/components/members/MemberCard';
 import { Input } from '@/components/ui/input';
@@ -14,28 +14,46 @@ import {
 } from '@/components/ui/select';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
-import { memberDirectory } from '@/lib/placeholder-data';
+import { Loader2, Search } from 'lucide-react';
+import { getMembers, Member } from '@/app/actions/members';
+import { useToast } from '@/hooks/use-toast';
 
-// Gabungkan semua anggota menjadi satu array dan tambahkan tipe & region
-const allMembers = [
-  ...memberDirectory.pusat.map(m => ({ ...m, type: 'pusat', region: 'Pusat' })),
-  ...memberDirectory.daerah.map(m => ({ ...m, type: 'daerah' })),
-  ...memberDirectory.pembina.map(m => ({ ...m, type: 'pembina', region: 'Pusat' })),
-];
-
-// Dapatkan semua region unik dari data
-const allRegions = [
-  'Semua Wilayah',
-  ...Array.from(new Set(allMembers.filter(m => m.type === 'daerah').map(m => m.region)))
-];
 
 const TABS = ['Semua', 'Pengurus Pusat', 'Pengurus Daerah', 'Dewan Pembina'];
 
 export default function MembersPage() {
+  const { toast } = useToast();
+  const [allMembers, setAllMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Semua');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('Semua Wilayah');
+  
+  useEffect(() => {
+    const fetchMembers = async () => {
+      setLoading(true);
+      try {
+        const members = await getMembers();
+        setAllMembers(members);
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Gagal memuat anggota",
+          description: "Tidak dapat mengambil data anggota dari server."
+        })
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMembers();
+  }, [toast]);
+
+  const allRegions = useMemo(() => {
+    return [
+      'Semua Wilayah',
+      ...Array.from(new Set(allMembers.filter(m => m.type === 'daerah' && m.region).map(m => m.region as string)))
+    ];
+  }, [allMembers]);
 
   const filteredMembers = useMemo(() => {
     let members = allMembers;
@@ -61,13 +79,11 @@ export default function MembersPage() {
         members = members.filter((member) => member.region === selectedRegion);
     }
 
-
     return members;
-  }, [activeTab, searchTerm, selectedRegion]);
+  }, [allMembers, activeTab, searchTerm, selectedRegion]);
   
   const handleTabClick = (tab: string) => {
     setActiveTab(tab);
-    // Reset filter wilayah saat berganti tab
     if (tab !== 'Pengurus Daerah' && tab !== 'Semua') {
       setSelectedRegion('Semua Wilayah');
     }
@@ -129,22 +145,28 @@ export default function MembersPage() {
         </div>
 
         {/* Member Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 md:gap-6">
-          {filteredMembers.length > 0 ? (
-            filteredMembers.map((member) => (
-              <MemberCard
-                key={member.name}
-                name={member.name}
-                position={member.position}
-                avatarUrl={member.avatarUrl}
-              />
-            ))
-          ) : (
-             <div className="col-span-full text-center py-10">
-                <p className="text-muted-foreground">Anggota tidak ditemukan.</p>
-             </div>
-          )}
-        </div>
+        {loading ? (
+            <div className="flex justify-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 md:gap-6">
+            {filteredMembers.length > 0 ? (
+                filteredMembers.map((member) => (
+                <MemberCard
+                    key={member.id}
+                    name={member.name}
+                    position={member.position}
+                    avatarUrl={member.avatarUrl}
+                />
+                ))
+            ) : (
+                <div className="col-span-full text-center py-10">
+                    <p className="text-muted-foreground">Anggota tidak ditemukan.</p>
+                </div>
+            )}
+            </div>
+        )}
       </div>
     </MainLayout>
   );
