@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Leaf, Users, Sprout, Ship, TreePine, Instagram } from 'lucide-react';
 import LandingHeader from '@/components/layout/LandingHeader';
-import { getSocialMediaLinks } from './actions/settings';
+import { getAppSettings } from './actions/settings';
 
 const FeatureCard = ({ icon, title, children }: { icon: React.ReactNode, title: string, children: React.ReactNode }) => (
     <Card className="text-center transition-transform transform hover:scale-105 hover:shadow-xl duration-300">
@@ -22,7 +22,7 @@ const FeatureCard = ({ icon, title, children }: { icon: React.ReactNode, title: 
 );
 
 const Footer = async () => {
-    const socialLinks = await getSocialMediaLinks();
+    const settings = await getAppSettings();
 
     return (
         <footer className="border-t bg-card">
@@ -49,7 +49,7 @@ const Footer = async () => {
                            <p>Telepon: <a href="tel:085937010409" className="text-primary hover:underline">085937010409</a></p>
                         </div>
                         <div className="flex items-center gap-2">
-                           <Link href="https://instagram.com/garda.lestari" target="_blank" aria-label="Instagram" className="text-muted-foreground hover:text-primary"><Instagram size={20} /></Link>
+                           <Link href={settings.instagram || '#'} target="_blank" aria-label="Instagram" className="text-muted-foreground hover:text-primary"><Instagram size={20} /></Link>
                         </div>
                     </div>
                 </div>
@@ -62,7 +62,9 @@ const Footer = async () => {
 };
 
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const settings = await getAppSettings();
+
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <LandingHeader />
@@ -89,9 +91,11 @@ export default function LandingPage() {
                 Untuk Kelestarian Sektor Agro, Maritim, dan Kehutanan Indonesia.
                 </p>
                 <div className="mt-8 flex justify-center gap-4">
-                <Button size="lg" asChild>
-                    <Link href="/register">Gabung Sekarang</Link>
-                </Button>
+                {settings.isRegistrationOpen && (
+                  <Button size="lg" asChild>
+                      <Link href="/register">Gabung Sekarang</Link>
+                  </Button>
+                )}
                 <Button size="lg" variant="outline" asChild>
                     <Link href="#about">Pelajari Lebih Lanjut</Link>
                 </Button>
@@ -180,9 +184,11 @@ export default function LandingPage() {
               </div>
             </div>
              <div className="mt-12 text-center animate-in fade-in zoom-in-95 duration-1000 delay-700">
-                <Button size="lg" asChild>
-                    <Link href="/register">Daftarkan Diri Anda</Link>
-                </Button>
+                {settings.isRegistrationOpen && (
+                  <Button size="lg" asChild>
+                      <Link href="/register">Daftarkan Diri Anda</Link>
+                  </Button>
+                )}
             </div>
           </div>
         </section>

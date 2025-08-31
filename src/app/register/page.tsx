@@ -3,14 +3,15 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ShieldOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { getAppSettings } from '@/app/actions/settings';
 
 const MembershipCard = ({ name, email, photoUrl, memberId }: { name: string, email: string, photoUrl: string, memberId: string }) => {
     const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('');
@@ -54,6 +55,15 @@ export default function RegisterPage() {
     const [step, setStep] = useState<'phone' | 'otp' | 'done'>('phone');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [memberId, setMemberId] = useState('');
+    const [isRegistrationOpen, setRegistrationOpen] = useState<boolean | null>(null);
+
+    useEffect(() => {
+        const checkRegistrationStatus = async () => {
+            const settings = await getAppSettings();
+            setRegistrationOpen(settings.isRegistrationOpen);
+        };
+        checkRegistrationStatus();
+    }, []);
 
     useEffect(() => {
         if (user) {
@@ -93,7 +103,7 @@ export default function RegisterPage() {
     };
 
 
-    if (loading) {
+    if (loading || isRegistrationOpen === null) {
         return (
             <div className="flex min-h-screen items-center justify-center">
                 <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -109,8 +119,25 @@ export default function RegisterPage() {
                        <Image src="/logo.png" alt="Garda Lestari Logo" width={160} height={42} className="h-auto w-40" />
                     </Link>
                 </div>
-
-                {step !== 'done' ? (
+                
+                {!isRegistrationOpen ? (
+                    <Card className="text-center">
+                        <CardHeader>
+                            <CardTitle>Pendaftaran Ditutup</CardTitle>
+                             <CardDescription className="flex justify-center">
+                                <ShieldOff className="w-16 h-16 text-muted-foreground my-4"/>
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-muted-foreground">Mohon maaf, pendaftaran anggota baru saat ini sedang ditutup. Silakan kembali lagi nanti.</p>
+                        </CardContent>
+                        <CardFooter>
+                             <Button asChild className="w-full">
+                                <Link href="/">Kembali ke Halaman Utama</Link>
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                ) : step !== 'done' ? (
                     <Card>
                         <CardHeader className="text-center">
                             <CardTitle>Bergabung dengan Komunitas Kami</CardTitle>

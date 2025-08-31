@@ -13,14 +13,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { getSocialMediaLinks, updateSocialMediaLinks, SocialMediaLinks } from '@/app/actions/settings';
+import { getAppSettings, updateAppSettings, AppSettings } from '@/app/actions/settings';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 
 const formSchema = z.object({
   linkedin: z.string().url().or(z.literal('')),
   instagram: z.string().url().or(z.literal('')),
   twitter: z.string().url().or(z.literal('')),
   facebook: z.string().url().or(z.literal('')),
+  isRegistrationOpen: z.boolean(),
 });
 
 export default function SettingsPage() {
@@ -29,33 +32,34 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
 
-  const form = useForm<SocialMediaLinks>({
+  const form = useForm<AppSettings>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       linkedin: '',
       instagram: '',
       twitter: '',
       facebook: '',
+      isRegistrationOpen: true,
     },
   });
 
   useEffect(() => {
-    const fetchLinks = async () => {
+    const fetchSettings = async () => {
       setPageLoading(true);
-      const links = await getSocialMediaLinks();
-      form.reset(links);
+      const settings = await getAppSettings();
+      form.reset(settings);
       setPageLoading(false);
     };
-    fetchLinks();
+    fetchSettings();
   }, [form]);
 
-  const onSubmit = async (data: SocialMediaLinks) => {
+  const onSubmit = async (data: AppSettings) => {
     setLoading(true);
     try {
-      await updateSocialMediaLinks(data);
+      await updateAppSettings(data);
       toast({
         title: 'Pengaturan Disimpan!',
-        description: 'Tautan media sosial telah berhasil diperbarui.',
+        description: 'Pengaturan aplikasi telah berhasil diperbarui.',
       });
     } catch (error) {
       toast({
@@ -85,13 +89,46 @@ export default function SettingsPage() {
           Kembali ke Dasbor
         </Button>
         <Card>
-          <CardHeader>
-            <CardTitle>Pengaturan Media Sosial</CardTitle>
-            <CardDescription>Kelola tautan media sosial yang ditampilkan di halaman utama.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <CardHeader>
+                <CardTitle>Pengaturan Aplikasi</CardTitle>
+                <CardDescription>Kelola pengaturan umum untuk aplikasi Anda.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                 {/* Registration Settings */}
+                <div>
+                  <h3 className="text-lg font-medium">Pendaftaran Anggota</h3>
+                  <p className="text-sm text-muted-foreground">Kontrol apakah pengguna baru dapat mendaftar.</p>
+                </div>
+                <FormField
+                    control={form.control}
+                    name="isRegistrationOpen"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Buka Pendaftaran</FormLabel>
+                          <p className="text-sm text-muted-foreground">
+                            Jika aktif, pengguna baru dapat membuat akun.
+                          </p>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                
+                <Separator />
+
+                {/* Social Media Settings */}
+                <div>
+                  <h3 className="text-lg font-medium">Media Sosial</h3>
+                  <p className="text-sm text-muted-foreground">Kelola tautan media sosial yang ditampilkan di halaman utama.</p>
+                </div>
                 <FormField
                   control={form.control}
                   name="linkedin"
@@ -150,9 +187,9 @@ export default function SettingsPage() {
                     Simpan Perubahan
                   </Button>
                 </div>
-              </form>
-            </Form>
-          </CardContent>
+              </CardContent>
+            </form>
+          </Form>
         </Card>
       </div>
     </MainLayout>

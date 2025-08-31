@@ -6,9 +6,20 @@ import { useAuth } from '@/hooks/use-auth';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { getAppSettings } from '@/app/actions/settings';
+import { useEffect, useState } from 'react';
 
 export default function LandingHeader() {
   const { user, loading } = useAuth();
+  const [isRegistrationOpen, setRegistrationOpen] = useState(true);
+
+   useEffect(() => {
+    const checkRegistrationStatus = async () => {
+        const settings = await getAppSettings();
+        setRegistrationOpen(settings.isRegistrationOpen);
+    };
+    checkRegistrationStatus();
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -28,9 +39,11 @@ export default function LandingHeader() {
               <Button variant="ghost" asChild>
                 <Link href="/login">Masuk</Link>
               </Button>
-              <Button asChild>
-                <Link href="/register">Daftar</Link>
-              </Button>
+              {isRegistrationOpen && (
+                <Button asChild>
+                  <Link href="/register">Daftar</Link>
+                </Button>
+              )}
             </>
           )}
         </nav>
