@@ -11,15 +11,16 @@ interface VerifiedBadgeProps {
 }
 
 const typeConfig: Record<MemberType, string> = {
-  pusat: 'text-black dark:text-white fill-black dark:fill-white',
-  daerah: 'text-blue-500 fill-blue-500',
-  cabang: 'text-yellow-500 fill-yellow-500',
-  pembina: 'text-purple-500 fill-purple-500',
+  // The 'fill' class sets the badge color, 'stroke-background' makes the checkmark transparent
+  pusat: 'fill-black dark:fill-white stroke-background dark:stroke-background',
+  daerah: 'fill-blue-500 stroke-background dark:stroke-background',
+  cabang: 'fill-yellow-500 stroke-background dark:stroke-background',
+  pembina: 'fill-purple-500 stroke-background dark:stroke-background',
 };
 
 
 export const VerifiedBadge = ({ type, className }: VerifiedBadgeProps) => {
-  if (!type || !['pusat', 'daerah', 'cabang'].includes(type)) {
+  if (!type || !['pusat', 'daerah', 'cabang', 'pembina'].includes(type)) {
     return null;
   }
 
