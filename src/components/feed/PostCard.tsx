@@ -5,24 +5,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Heart, MessageCircle, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { PostWithAuthor } from '@/app/actions/posts';
 
-export type Post = {
-  id: number;
-  author: {
-    name: string;
-    avatarUrl: string;
-  };
-  imageUrl: string;
-  imageHint: string;
-  caption: string;
-  likes: number;
-  comments: number;
-  timestamp: string;
-  isLiked?: boolean;
-};
 
 interface PostCardProps {
-  post: Post;
+  post: PostWithAuthor;
   onToggleLike: () => void;
 }
 
@@ -68,8 +55,8 @@ export default function PostCard({ post, onToggleLike }: PostCardProps) {
                 <Send className="h-5 w-5" />
             </Button>
         </div>
-        <div className="px-1 text-sm font-semibold">{post.likes.toLocaleString()} likes</div>
-        <div className="px-1 text-sm text-muted-foreground">View all {post.comments} comments</div>
+        <div className="px-1 text-sm font-semibold">{post.likesCount.toLocaleString()} likes</div>
+        <div className="px-1 text-sm text-muted-foreground">View all {post.commentsCount} comments</div>
       </CardFooter>
     </Card>
   );
