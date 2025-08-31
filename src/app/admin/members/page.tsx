@@ -78,14 +78,14 @@ export default function AdminMembersPage() {
       await updateMemberStatus(id, status);
       toast({
         title: "Status Anggota Diperbarui",
-        description: `Status telah berhasil diubah menjadi ${status}.`,
+        description: `Status telah berhasil diubah menjadi ${status === 'permanent' ? 'Anggota Tetap' : 'Ditolak'}.`,
       });
       await fetchMembers(); // Refresh the list
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Gagal Memperbarui Status",
-        description: "Terjadi kesalahan saat mencoba memperbarui status anggota.",
+        description: (error as Error).message,
       });
     } finally {
       setUpdatingId(null);
@@ -149,7 +149,7 @@ export default function AdminMembersPage() {
                   </TableRow>
                 ) : members.length > 0 ? (
                   members.map((member) => (
-                    <TableRow key={member.id} className={cn(member.verificationStatus === 'temporary' && 'bg-yellow-50/50')}>
+                    <TableRow key={member.id} className={cn(member.verificationStatus === 'temporary' && 'bg-yellow-50/50 dark:bg-yellow-900/20')}>
                       <TableCell className="font-medium">
                         <div>{member.name}</div>
                         <div className="text-xs text-muted-foreground md:hidden">{member.type ? (typeConfig[member.type] || 'Anggota') : 'Anggota'}</div>
@@ -183,29 +183,17 @@ export default function AdminMembersPage() {
                                 <span>Edit Jabatan/Jenis</span>
                              </DropdownMenuItem>
                              <DropdownMenuSeparator />
-                             {member.verificationStatus === 'temporary' && (
-                                <>
-                                  <DropdownMenuItem onClick={() => handleUpdateStatus(member.id, 'permanent')}>
-                                    <UserCheck className="mr-2 h-4 w-4 text-green-500" />
-                                    <span>Setujui (Anggota Tetap)</span>
-                                  </DropdownMenuItem>
+                             {(member.verificationStatus === 'temporary' || member.verificationStatus === 'rejected') && (
+                                <DropdownMenuItem onClick={() => handleUpdateStatus(member.id, 'permanent')}>
+                                  <UserCheck className="mr-2 h-4 w-4 text-green-500" />
+                                  <span>Setujui (Anggota Tetap)</span>
+                                </DropdownMenuItem>
+                            )}
+                             {(member.verificationStatus === 'temporary' || member.verificationStatus === 'permanent') && (
                                   <DropdownMenuItem onClick={() => handleUpdateStatus(member.id, 'rejected')}>
                                     <UserX className="mr-2 h-4 w-4 text-red-500" />
                                     <span>Tolak Verifikasi</span>
                                   </DropdownMenuItem>
-                                </>
-                            )}
-                             {member.verificationStatus === 'permanent' && (
-                                <DropdownMenuItem onClick={() => handleUpdateStatus(member.id, 'rejected')}>
-                                    <UserX className="mr-2 h-4 w-4 text-red-500" />
-                                    <span>Batalkan & Tolak</span>
-                                </DropdownMenuItem>
-                             )}
-                             {member.verificationStatus === 'rejected' && (
-                                <DropdownMenuItem onClick={() => handleUpdateStatus(member.id, 'permanent')}>
-                                    <UserCheck className="mr-2 h-4 w-4 text-green-500" />
-                                    <span>Setujui Ulang</span>
-                                </DropdownMenuItem>
                              )}
                           </DropdownMenuContent>
                         </DropdownMenu>

@@ -48,7 +48,7 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
   return members;
 }
 
-// Update member status
+// Update member status (admin action)
 export async function updateMemberStatus(id: string, status: 'permanent' | 'rejected') {
     try {
         const memberDoc = doc(db, 'users', id);
