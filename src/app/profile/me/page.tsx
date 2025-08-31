@@ -163,6 +163,7 @@ export default function ProfileMePage() {
   };
   
   const isAdmin = user?.phoneNumber === ADMIN_PHONE_NUMBER;
+  const canViewKta = user?.verificationStatus === 'temporary' || user?.verificationStatus === 'permanent';
 
   if (authLoading || !user) {
     return (
@@ -185,7 +186,7 @@ export default function ProfileMePage() {
                     <Pencil className="mr-2 h-4 w-4" />
                     Edit Profil
                 </Button>
-                <Button variant="outline" onClick={() => setIsKtaModalOpen(true)} className="w-full" disabled={user.verificationStatus === 'rejected'}>
+                <Button variant="outline" onClick={() => setIsKtaModalOpen(true)} className="w-full" disabled={!canViewKta}>
                     <IdCard className="mr-2 h-4 w-4" />
                     Lihat KTA
                 </Button>
