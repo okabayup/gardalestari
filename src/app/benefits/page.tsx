@@ -1,7 +1,7 @@
 
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CheckCircle, Star, Shield, Gem } from 'lucide-react';
+import { CheckCircle, Star, Shield, Gem, Award } from 'lucide-react';
 import { MemberLevelBadge } from '@/components/members/MemberLevelBadge';
 
 const levelBenefits = {
