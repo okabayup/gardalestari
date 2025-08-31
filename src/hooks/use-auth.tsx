@@ -106,7 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const generateUniqueUsername = async (fullName: string): Promise<string> => {
-    const baseUsername = fullName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15);
+    const baseUsername = fullName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15) || 'user';
     let username = baseUsername;
     let attempts = 0;
     
@@ -309,10 +309,12 @@ export const useRequireAuth = (redirectTo = '/login') => {
       redirect(redirectTo);
     }
     // Redirect unverified users to verification, but allow access to profile pages
-    if (!loading && user && user.verificationStatus === 'unverified' && !pathname.startsWith('/profile')) {
+    if (!loading && user && user.verificationStatus === 'unverified' && !pathname.startsWith('/profile') && pathname !== '/register') {
         redirect('/profile');
     }
   }, [user, loading, redirectTo, pathname]);
 
   return { user, loading };
 };
+
+    

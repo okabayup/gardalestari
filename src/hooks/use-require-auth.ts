@@ -19,7 +19,7 @@ export const useRequireAuth = (redirectTo = '/login') => {
     }
     
     // Redirect unverified users away from the main app, but allow access to profile and verification flow
-    if (user.verificationStatus === 'unverified' && !pathname.startsWith('/profile')) {
+    if (user.verificationStatus === 'unverified' && !pathname.startsWith('/profile') && pathname !== '/register') {
       return redirect('/profile');
     }
 
@@ -27,3 +27,5 @@ export const useRequireAuth = (redirectTo = '/login') => {
 
   return { user, loading };
 };
+
+    
