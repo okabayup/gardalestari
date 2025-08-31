@@ -1,19 +1,21 @@
 
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, Shield } from 'lucide-react';
+import { LogOut, Shield, Pencil } from 'lucide-react';
 import { Logo } from '@/components/icons/Logo';
+import EditProfileModal from '@/components/profile/EditProfileModal';
 
 const ADMIN_PHONE_NUMBER = '+6285176752610';
 
 const MembershipCard = ({ name, email, photoUrl, memberId }: { name: string, email: string, photoUrl: string, memberId: string }) => {
-    const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('');
+    const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').substring(0, 2);
 
     return (
         <Card className="w-full max-w-sm bg-gradient-to-br from-primary via-green-700 to-accent text-primary-foreground shadow-2xl">
@@ -48,6 +50,7 @@ const MembershipCard = ({ name, email, photoUrl, memberId }: { name: string, ema
 export default function ProfilePage() {
   const { user, signOut } = useAuth();
   const router = useRouter();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -74,6 +77,10 @@ export default function ProfilePage() {
                     />
                 )}
                 <div className="w-full max-w-sm space-y-2">
+                    <Button variant="default" onClick={() => setIsEditModalOpen(true)} className="w-full">
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit Profil
+                    </Button>
                     {isAdmin && (
                         <Button variant="outline" onClick={() => router.push('/admin')} className="w-full">
                             <Shield className="mr-2 h-4 w-4" />
@@ -87,6 +94,13 @@ export default function ProfilePage() {
                 </div>
             </div>
         </div>
+        {user && (
+            <EditProfileModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                user={user}
+            />
+        )}
     </MainLayout>
   );
 }

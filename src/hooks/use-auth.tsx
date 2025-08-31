@@ -8,9 +8,12 @@ import {
   signOut as firebaseSignOut,
   RecaptchaVerifier,
   signInWithPhoneNumber,
-  ConfirmationResult
+  ConfirmationResult,
+  updateProfile
 } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import { redirect, usePathname } from 'next/navigation';
 import { useToast } from './use-toast';
 
@@ -20,6 +23,7 @@ interface AuthContextType {
   signInWithPhone: (phoneNumber: string, appVerifierContainerId: string) => Promise<void>;
   verifyOtp: (otp: string) => Promise<void>;
   signOut: () => Promise<void>;
+  updateUserProfile: (updates: { displayName?: string; photoFile?: File }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -86,8 +90,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!confirmationResult) {
       throw new Error("No confirmation result available. Please request an OTP first.");
     }
-    await confirmationResult.confirm(otp);
-    // User signed in successfully. `onAuthStateChanged` will handle the user state.
+    const userCredential = await confirmationResult.confirm(otp);
+    
+    // Check if it's a new user
+    const { _tokenResponse } = userCredential as any;
+    if (_tokenResponse.isNewUser) {
+        const newUser = userCredential.user;
+        // Create user document in Firestore
+        await setDoc(doc(db, "users", newUser.uid), {
+            uid: newUser.uid,
+            name: newUser.displayName || `Anggota Baru ${String(newUser.phoneNumber).slice(-4)}`,
+            email: newUser.email,
+            phoneNumber: newUser.phoneNumber,
+            avatarUrl: newUser.photoURL || `https://picsum.photos/seed/${newUser.uid}/100/100`,
+            createdAt: new Date()
+        });
+    }
+
     setConfirmationResult(null); // Clear confirmation result
   };
   
@@ -104,8 +123,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateUserProfile = async (updates: { displayName?: string; photoFile?: File }) => {
+    if (!auth.currentUser) throw new Error("Pengguna tidak ditemukan.");
+
+    let photoURL = auth.currentUser.photoURL;
+
+    // Handle photo upload
+    if (updates.photoFile) {
+        const storage = getStorage();
+        const storageRef = ref(storage, `profile-pictures/${auth.currentUser.uid}`);
+        
+        await uploadBytes(storageRef, updates.photoFile);
+        photoURL = await getDownloadURL(storageRef);
+    }
+    
+    // Update profile in Firebase Auth
+    await updateProfile(auth.currentUser, {
+        displayName: updates.displayName,
+        photoURL: photoURL,
+    });
+    
+    // Update user document in Firestore for consistency
+    const userDocRef = doc(db, 'users', auth.currentUser.uid);
+    await setDoc(userDocRef, {
+        name: updates.displayName,
+        avatarUrl: photoURL
+    }, { merge: true });
+
+    // Manually update the user state to reflect changes immediately
+    setUser(auth.currentUser);
+};
+
+
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithPhone, verifyOtp, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signInWithPhone, verifyOtp, signOut, updateUserProfile }}>
       {children}
     </AuthContext.Provider>
   );
