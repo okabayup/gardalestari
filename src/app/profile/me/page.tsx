@@ -7,13 +7,14 @@ import { useAuth } from '@/hooks/use-auth';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, Shield, Pencil, AlertTriangle, Loader2, Grid3x3, Archive, Tag } from 'lucide-react';
+import { LogOut, Shield, Pencil, AlertTriangle, Loader2, Grid3x3, Archive, Tag, IdCard } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import EditProfileModal from '@/components/profile/EditProfileModal';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getPostsByUserId, getArchivedPosts, getTaggedPosts, PostWithAuthor } from '../../actions/posts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import MembershipCardDialog from '@/components/members/MembershipCardDialog';
 
 
 const ADMIN_PHONE_NUMBER = '+6285176752610';
@@ -123,6 +124,7 @@ export default function ProfileMePage() {
   const { user, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isKtaModalOpen, setIsKtaModalOpen] = useState(false);
   
   const [userPosts, setUserPosts] = useState<PostWithAuthor[]>([]);
   const [archivedPosts, setArchivedPosts] = useState<PostWithAuthor[]>([]);
@@ -178,10 +180,14 @@ export default function ProfileMePage() {
             <ProfileHeader user={user} postCount={userPosts.length} />
             <ProfileBio user={user} />
 
-            <div className="px-4">
+            <div className="grid grid-cols-2 gap-2 px-4">
                  <Button variant="outline" onClick={() => setIsEditModalOpen(true)} className="w-full">
                     <Pencil className="mr-2 h-4 w-4" />
                     Edit Profil
+                </Button>
+                <Button variant="outline" onClick={() => setIsKtaModalOpen(true)} className="w-full" disabled={user.verificationStatus !== 'permanent'}>
+                    <IdCard className="mr-2 h-4 w-4" />
+                    Lihat KTA
                 </Button>
             </div>
             
@@ -226,11 +232,18 @@ export default function ProfileMePage() {
             </div>
         </div>
         {user && (
+          <>
             <EditProfileModal
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
                 user={user}
             />
+            <MembershipCardDialog 
+              isOpen={isKtaModalOpen}
+              onClose={() => setIsKtaModalOpen(false)}
+              user={user}
+            />
+          </>
         )}
     </MainLayout>
   );
