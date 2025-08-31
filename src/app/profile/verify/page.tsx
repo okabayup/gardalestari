@@ -25,40 +25,26 @@ export default function VerifyProfilePage() {
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isCameraOn, setIsCameraOn] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
-
 
   useEffect(() => {
     if (user?.verificationStatus === 'verified') {
-        router.replace('/profile');
+      router.replace('/profile');
     }
-    // Clean up camera stream on component unmount
-    return () => {
-        if (videoRef.current?.srcObject) {
-            (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
-        }
-    }
-  }, [user, router]);
 
-
-  const handleKtpFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setKtpFile(file);
-      setKtpPreview(URL.createObjectURL(file));
-    }
-  };
-
-  const startCamera = async () => {
-    try {
+    const getCameraPermission = async () => {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.error('Camera not supported on this browser.');
+        setHasCameraPermission(false);
+        return;
+      }
+      try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         setHasCameraPermission(true);
         if (videoRef.current) {
-            videoRef.current.srcObject = stream;
+          videoRef.current.srcObject = stream;
         }
-        setIsCameraOn(true);
-    } catch (error) {
+      } catch (error) {
         console.error('Error accessing camera:', error);
         setHasCameraPermission(false);
         toast({
@@ -66,6 +52,23 @@ export default function VerifyProfilePage() {
           title: 'Akses Kamera Ditolak',
           description: 'Mohon izinkan akses kamera di browser Anda untuk mengambil selfie.',
         });
+      }
+    };
+
+    getCameraPermission();
+
+    return () => {
+      if (videoRef.current?.srcObject) {
+        (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [user?.verificationStatus, router, toast]);
+
+  const handleKtpFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setKtpFile(file);
+      setKtpPreview(URL.createObjectURL(file));
     }
   };
 
@@ -80,20 +83,25 @@ export default function VerifyProfilePage() {
       
       canvas.toBlob(blob => {
         if (blob) {
-            setSelfieFile(new File([blob], "selfie.jpg", { type: "image/jpeg" }));
-            setSelfiePreview(canvas.toDataURL('image/jpeg'));
-            stopCamera();
+          const selfie = new File([blob], "selfie.jpg", { type: "image/jpeg" });
+          setSelfieFile(selfie);
+          setSelfiePreview(canvas.toDataURL('image/jpeg'));
+          if (videoRef.current?.srcObject) {
+            (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+          }
         }
       }, 'image/jpeg');
     }
   };
 
-  const stopCamera = () => {
-    if (videoRef.current?.srcObject) {
-      (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+  const retakeSelfie = async () => {
+    setSelfiePreview(null);
+    setSelfieFile(null);
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream;
     }
-    setIsCameraOn(false);
-  }
+  };
 
   const handleSubmit = async () => {
     if (!ktpFile || !selfieFile) {
@@ -141,13 +149,13 @@ export default function VerifyProfilePage() {
             {/* KTP Upload */}
             <div className="space-y-2">
               <label className="font-medium">1. Unggah Foto KTP</label>
-              <div className="w-full aspect-video border-2 border-dashed rounded-lg flex items-center justify-center bg-muted/50">
+              <div className="w-full aspect-video border-2 border-dashed rounded-lg flex items-center justify-center bg-muted/50 overflow-hidden">
                 {ktpPreview ? (
                   <img src={ktpPreview} alt="Pratinjau KTP" className="object-contain max-h-full max-w-full" />
                 ) : (
-                  <div className="text-center text-muted-foreground">
+                  <div className="text-center text-muted-foreground p-4">
                     <Upload className="mx-auto h-8 w-8" />
-                    <p>Klik untuk memilih file</p>
+                    <p>Klik untuk memilih file KTP</p>
                   </div>
                 )}
               </div>
@@ -170,35 +178,25 @@ export default function VerifyProfilePage() {
                 <Alert variant="destructive">
                     <AlertTitle>Akses Kamera Diperlukan</AlertTitle>
                     <AlertDescription>
-                        Mohon izinkan akses kamera pada browser Anda untuk melanjutkan.
+                        Aplikasi ini memerlukan akses ke kamera Anda untuk verifikasi. Mohon segarkan halaman dan izinkan akses kamera pada browser Anda.
                     </AlertDescription>
                 </Alert>
               )}
               <div className="w-full aspect-video border-2 border-dashed rounded-lg flex items-center justify-center overflow-hidden bg-muted/50">
                  {selfiePreview ? (
                     <img src={selfiePreview} alt="Pratinjau Selfie" className="object-contain max-h-full max-w-full" />
-                ) : isCameraOn ? (
-                    <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
                 ) : (
-                  <div className="text-center text-muted-foreground">
-                    <Camera className="mx-auto h-8 w-8" />
-                    <p>Nyalakan kamera untuk mengambil selfie</p>
-                  </div>
+                    <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
                 )}
                  <canvas ref={canvasRef} className="hidden"></canvas>
               </div>
-              {!isCameraOn && !selfiePreview && (
-                <Button variant="outline" className="w-full" onClick={startCamera}>
-                    <Camera className="mr-2 h-4 w-4" /> Nyalakan Kamera
+              {!selfiePreview && (
+                <Button className="w-full" onClick={takeSelfie} disabled={hasCameraPermission === false}>
+                    <Camera className="mr-2 h-4 w-4" /> Ambil Foto Selfie
                 </Button>
               )}
-              {isCameraOn && (
-                 <Button className="w-full" onClick={takeSelfie}>
-                    Ambil Foto Selfie
-                </Button>
-              )}
-               {(selfiePreview) && (
-                 <Button variant="outline" className="w-full" onClick={() => { setSelfiePreview(null); setSelfieFile(null); }}>
+               {selfiePreview && (
+                 <Button variant="outline" className="w-full" onClick={retakeSelfie}>
                     Ambil Ulang Selfie
                 </Button>
               )}
@@ -215,4 +213,3 @@ export default function VerifyProfilePage() {
     </MainLayout>
   );
 }
-
