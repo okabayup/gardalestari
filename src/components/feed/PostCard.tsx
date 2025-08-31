@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Heart, MessageCircle, Send, MoreHorizontal, Archive } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PostWithAuthor, CommentWithAuthor } from '@/app/actions/posts';
-import { MemberLevelBadge } from '../members/MemberLevelBadge';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Input } from '../ui/input';
 import { useState } from 'react';
@@ -19,6 +18,7 @@ import Link from 'next/link';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import CommentList from './CommentList';
+import { VerifiedBadge } from '../members/VerifiedBadge';
 
 
 interface PostCardProps {
@@ -103,12 +103,11 @@ export default function PostCard({ post, onToggleLike, onArchive, currentUserId 
             <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
             </Avatar>
         </Link>
-        <div className="flex-grow">
+        <div className="flex-grow flex items-center gap-1">
             <Link href={`/profile/${post.author.username}`} className="font-semibold hover:underline">
-                @{post.author.username}
+                {post.author.username}
             </Link>
-            <MemberLevelBadge level={post.author.level} />
-            
+            <VerifiedBadge type={post.author.type} />
         </div>
         <DropdownMenu>
             <DropdownMenuTrigger asChild>

@@ -19,6 +19,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
+import type { MemberType } from './members';
 
 type MediaType = 'image' | 'video';
 
@@ -53,6 +54,7 @@ interface Author {
   username: string;
   avatarUrl: string;
   level: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
+  type?: MemberType;
 }
 
 export interface PostWithAuthor {
@@ -179,7 +181,8 @@ export async function getPosts(currentUserId: string): Promise<PostWithAuthor[]>
         name: authorData?.fullName || authorData?.displayName || 'Unknown User',
         username: authorData?.username || `user_${postData.authorId.substring(0,5)}`,
         avatarUrl: authorData?.avatarUrl || '',
-        level: authorData?.level || 'Bronze'
+        level: authorData?.level || 'Bronze',
+        type: authorData?.type,
     }
 
     posts.push({
@@ -215,7 +218,8 @@ export async function getPostsByUserId(userId: string): Promise<PostWithAuthor[]
           name: authorData?.fullName || authorData?.displayName || 'Unknown User',
           username: authorData?.username || `user_${userId.substring(0,5)}`,
           avatarUrl: authorData?.avatarUrl || '',
-          level: authorData?.level || 'Bronze'
+          level: authorData?.level || 'Bronze',
+          type: authorData?.type,
       }
   }
 

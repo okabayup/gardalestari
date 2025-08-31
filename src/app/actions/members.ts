@@ -6,7 +6,7 @@ import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 
 export type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected';
-export type MemberType = 'pusat' | 'daerah' | 'pembina';
+export type MemberType = 'pusat' | 'daerah' | 'cabang' | 'pembina';
 
 
 export interface Member {
