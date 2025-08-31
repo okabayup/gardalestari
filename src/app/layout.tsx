@@ -7,6 +7,10 @@ export const metadata: Metadata = {
   title: 'Garda Lestari',
   description: 'Garda Lestari Membership App',
   manifest: '/manifest.json',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/icon.png',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
