@@ -102,8 +102,20 @@ export default function NewPostPage() {
                     <div className="grid grid-cols-2 gap-2 p-2 w-full h-full">
                        {mediaFiles.map((media, index) => (
                            <div key={index} className="relative w-full h-full">
-                               <Image src={media.previewUrl} alt="Pratinjau media" layout="fill" objectFit="cover" className="rounded-lg" />
-                               <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 z-10" onClick={(e) => { e.stopPropagation(); removeMedia(index);}}>
+                               {media.type === 'image' ? (
+                                    <Image src={media.previewUrl} alt="Pratinjau media" layout="fill" objectFit="cover" className="rounded-lg" />
+                               ) : (
+                                    <video src={media.previewUrl} className="w-full h-full object-cover rounded-lg" muted loop />
+                               )}
+                               <Button 
+                                    size="icon" 
+                                    variant="destructive" 
+                                    className="absolute top-1 right-1 h-6 w-6 z-10" 
+                                    onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        removeMedia(index);
+                                    }}
+                                >
                                    <X className="h-4 w-4"/>
                                </Button>
                            </div>
@@ -115,7 +127,7 @@ export default function NewPostPage() {
                   ref={fileInputRef}
                   onChange={handleFileChange}
                   className="hidden"
-                  accept="image/png, image/jpeg, image/gif"
+                  accept="image/png, image/jpeg, image/gif, video/mp4, video/quicktime"
                   multiple
                 />
               </div>

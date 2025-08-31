@@ -69,13 +69,21 @@ export default function PostCard({ post, onToggleLike }: PostCardProps) {
             {post.media.map((mediaItem, index) => (
                 <CarouselItem key={index}>
                     <div className="aspect-square relative w-full">
-                        <Image
-                            src={mediaItem.url}
-                            alt={`Post by ${post.author.name} - ${index + 1}`}
-                            data-ai-hint={mediaItem.hint}
-                            fill
-                            className="object-cover"
-                        />
+                        {mediaItem.type === 'image' ? (
+                            <Image
+                                src={mediaItem.url}
+                                alt={`Post by ${post.author.name} - ${index + 1}`}
+                                data-ai-hint={mediaItem.hint}
+                                fill
+                                className="object-cover"
+                            />
+                        ) : (
+                            <video
+                                src={mediaItem.url}
+                                controls
+                                className="w-full h-full object-cover"
+                            />
+                        )}
                     </div>
                 </CarouselItem>
             ))}
