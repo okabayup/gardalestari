@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Leaf, Users, Sprout, Ship, TreePine, Linkedin, Instagram, Twitter, Facebook } from 'lucide-react';
 import LandingHeader from '@/components/layout/LandingHeader';
 import { Logo } from '@/components/icons/Logo';
+import { getSocialMediaLinks } from './actions/settings';
 
 const FeatureCard = ({ icon, title, children }: { icon: React.ReactNode, title: string, children: React.ReactNode }) => (
     <Card className="text-center transition-transform transform hover:scale-105 hover:shadow-xl">
@@ -20,6 +21,47 @@ const FeatureCard = ({ icon, title, children }: { icon: React.ReactNode, title: 
         </CardContent>
     </Card>
 );
+
+const Footer = async () => {
+    const socialLinks = await getSocialMediaLinks();
+
+    return (
+        <footer className="border-t bg-card">
+            <div className="container py-8">
+                <div className="grid gap-8 md:grid-cols-3">
+                    <div className="space-y-2">
+                        <Link href="/" className="flex items-center gap-2 font-bold">
+                            <Logo className="h-6 w-6 text-primary" />
+                            <span className="font-headline text-xl">Garda Lestari</span>
+                        </Link>
+                        <p className="text-sm text-muted-foreground">Organisasi Kepemudaan untuk Inovasi Berkelanjutan.</p>
+                    </div>
+                    <div className="space-y-2">
+                        <h4 className="font-semibold">Navigasi</h4>
+                        <nav className="flex flex-col gap-1 text-sm text-muted-foreground">
+                            <Link href="#about" className="hover:text-primary">Tentang Kami</Link>
+                            <Link href="#focus" className="hover:text-primary">Fokus</Link>
+                            <Link href="/blog" className="hover:text-primary">Blog</Link>
+                        </nav>
+                    </div>
+                    <div className="space-y-2">
+                        <h4 className="font-semibold">Hubungi Kami</h4>
+                        <p className="text-sm text-muted-foreground">Email: <a href="mailto:kontak@gardalestari.id" className="text-primary hover:underline">kontak@gardalestari.id</a></p>
+                        <div className="flex items-center gap-2">
+                           <Link href={socialLinks.linkedin} target="_blank" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary"><Linkedin size={20} /></Link>
+                           <Link href={socialLinks.instagram} target="_blank" aria-label="Instagram" className="text-muted-foreground hover:text-primary"><Instagram size={20} /></Link>
+                           <Link href={socialLinks.twitter} target="_blank" aria-label="Twitter" className="text-muted-foreground hover:text-primary"><Twitter size={20} /></Link>
+                           <Link href={socialLinks.facebook} target="_blank" aria-label="Facebook" className="text-muted-foreground hover:text-primary"><Facebook size={20} /></Link>
+                        </div>
+                    </div>
+                </div>
+                <div className="mt-8 border-t pt-6 text-center text-sm text-muted-foreground">
+                    <p>&copy; {new Date().getFullYear()} Garda Lestari. Semua hak dilindungi.</p>
+                </div>
+            </div>
+        </footer>
+    );
+};
 
 
 export default function LandingPage() {
@@ -131,43 +173,8 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-
       </main>
-
-      <footer className="border-t bg-card">
-        <div className="container py-8">
-            <div className="grid gap-8 md:grid-cols-3">
-                <div className="space-y-2">
-                    <Link href="/" className="flex items-center gap-2 font-bold">
-                        <Logo className="h-6 w-6 text-primary" />
-                        <span className="font-headline text-xl">Garda Lestari</span>
-                    </Link>
-                    <p className="text-sm text-muted-foreground">Organisasi Kepemudaan untuk Inovasi Berkelanjutan.</p>
-                </div>
-                <div className="space-y-2">
-                    <h4 className="font-semibold">Navigasi</h4>
-                    <nav className="flex flex-col gap-1 text-sm text-muted-foreground">
-                        <Link href="#about" className="hover:text-primary">Tentang Kami</Link>
-                        <Link href="#focus" className="hover:text-primary">Fokus</Link>
-                        <Link href="/blog" className="hover:text-primary">Blog</Link>
-                    </nav>
-                </div>
-                <div className="space-y-2">
-                    <h4 className="font-semibold">Hubungi Kami</h4>
-                    <p className="text-sm text-muted-foreground">Email: <a href="mailto:kontak@gardalestari.id" className="text-primary hover:underline">kontak@gardalestari.id</a></p>
-                    <div className="flex items-center gap-2">
-                       <Link href="#" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary"><Linkedin size={20} /></Link>
-                       <Link href="#" aria-label="Instagram" className="text-muted-foreground hover:text-primary"><Instagram size={20} /></Link>
-                       <Link href="#" aria-label="Twitter" className="text-muted-foreground hover:text-primary"><Twitter size={20} /></Link>
-                       <Link href="#" aria-label="Facebook" className="text-muted-foreground hover:text-primary"><Facebook size={20} /></Link>
-                    </div>
-                </div>
-            </div>
-            <div className="mt-8 border-t pt-6 text-center text-sm text-muted-foreground">
-                <p>&copy; {new Date().getFullYear()} Garda Lestari. Semua hak dilindungi.</p>
-            </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

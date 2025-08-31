@@ -22,7 +22,7 @@ const AdminDashboard = () => {
     { label: 'Acara', icon: Calendar, action: () => {} },
     { label: 'Halaman', icon: FileText, action: () => {} },
     { label: 'Peran & Izin', icon: UserCog, action: () => {} },
-    { label: 'Pengaturan', icon: Settings, action: () => {} },
+    { label: 'Pengaturan', icon: Settings, action: () => router.push('/admin/settings') },
   ];
 
   return (
