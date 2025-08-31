@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const withPWA = require('next-pwa')({
@@ -5,6 +6,34 @@ const withPWA = require('next-pwa')({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
+  runtimeCaching: [
+    {
+      urlPattern: /^https?.*/,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'offlineCache',
+        expiration: {
+          maxEntries: 200,
+        },
+      },
+    },
+  ],
+  // Only cache pages under /app
+  workboxOptions: {
+    runtimeCaching: [
+      {
+        urlPattern: /\/app\/.*/,
+        handler: 'NetworkFirst',
+        options: {
+          cacheName: 'app-pages',
+          expiration: {
+            maxEntries: 64,
+            maxAgeSeconds: 24 * 60 * 60, // 1 day
+          },
+        },
+      },
+    ],
+  },
 });
 
 

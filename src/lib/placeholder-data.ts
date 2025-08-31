@@ -1,4 +1,7 @@
-export const placeholderPosts = [
+
+import { Post } from '@/components/feed/PostCard';
+
+export const placeholderPosts: Post[] = [
   {
     id: 1,
     author: {
@@ -11,6 +14,7 @@ export const placeholderPosts = [
     likes: 128,
     comments: 12,
     timestamp: '2 jam lalu',
+    isLiked: false,
   },
   {
     id: 2,
@@ -24,6 +28,7 @@ export const placeholderPosts = [
     likes: 256,
     comments: 25,
     timestamp: '1 hari lalu',
+    isLiked: true,
   },
     {
     id: 3,
@@ -37,6 +42,7 @@ export const placeholderPosts = [
     likes: 312,
     comments: 34,
     timestamp: '3 hari lalu',
+    isLiked: false,
   },
 ];
 
