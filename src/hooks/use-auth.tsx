@@ -12,7 +12,7 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, setDoc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { redirect, usePathname } from 'next/navigation';
 import { useToast } from './use-toast';
@@ -182,10 +182,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Update user document in Firestore for consistency
     const userDocRef = doc(db, 'users', auth.currentUser.uid);
-    await updateDoc(userDocRef, {
+    await setDoc(userDocRef, {
         avatarUrl: newPhotoURL,
         photoURL: newPhotoURL,
-    });
+    }, { merge: true });
 
     // Manually update the user state to reflect changes immediately
     setUser(prevUser => prevUser ? { ...prevUser, photoURL: newPhotoURL } : null);
@@ -230,7 +230,7 @@ const submitForVerification = async (data: { fullName: string; nik: string; ktpF
 
     // Update user document in Firestore
     const userDocRef = doc(db, 'users', uid);
-    await updateDoc(userDocRef, verificationData);
+    await setDoc(userDocRef, verificationData, { merge: true });
     
     // Update Firebase Auth profile as well for consistency
     if (auth.currentUser) {
