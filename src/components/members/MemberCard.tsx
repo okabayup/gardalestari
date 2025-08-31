@@ -3,11 +3,11 @@ import { Card, CardContent } from '@/components/ui/card';
 
 interface MemberCardProps {
   name: string;
-  role: string;
+  position: string;
   avatarUrl: string;
 }
 
-export const MemberCard = ({ name, role, avatarUrl }: MemberCardProps) => {
+export const MemberCard = ({ name, position, avatarUrl }: MemberCardProps) => {
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('');
 
   return (
@@ -17,8 +17,8 @@ export const MemberCard = ({ name, role, avatarUrl }: MemberCardProps) => {
           <AvatarImage src={avatarUrl} alt={name} />
           <AvatarFallback>{getInitials(name)}</AvatarFallback>
         </Avatar>
-        <p className="mt-2 font-semibold">{name}</p>
-        <p className="text-xs text-muted-foreground">{role}</p>
+        <p className="mt-2 font-semibold leading-tight">{name}</p>
+        <p className="text-xs text-muted-foreground">{position}</p>
       </CardContent>
     </Card>
   );

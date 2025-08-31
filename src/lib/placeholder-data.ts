@@ -7,10 +7,10 @@ export const placeholderPosts = [
     },
     imageUrl: 'https://picsum.photos/id/1015/600/600',
     imageHint: 'green valley',
-    caption: 'Great discussion at the Young Agri-preneur workshop today! So many innovative ideas for sustainable farming. 🌾 #GardaLestari #AgroMaritim',
+    caption: 'Diskusi hebat di lokakarya Wirausaha Tani Muda hari ini! Begitu banyak ide inovatif untuk pertanian berkelanjutan. 🌾 #GardaLestari #AgroMaritim',
     likes: 128,
     comments: 12,
-    timestamp: '2h ago',
+    timestamp: '2 jam lalu',
   },
   {
     id: 2,
@@ -20,10 +20,10 @@ export const placeholderPosts = [
     },
     imageUrl: 'https://picsum.photos/id/103/600/600',
     imageHint: 'mangrove saplings',
-    caption: 'Our team just finished a mangrove planting event in North Jakarta. Over 1000 new saplings in the ground! Let\'s keep our coasts green. 🌱 #Kehutanan #Konservasi',
+    caption: 'Tim kami baru saja menyelesaikan acara penanaman mangrove di Jakarta Utara. Lebih dari 1000 bibit baru ditanam! Mari jaga kelestarian pesisir kita. 🌱 #Kehutanan #Konservasi',
     likes: 256,
     comments: 25,
-    timestamp: '1d ago',
+    timestamp: '1 hari lalu',
   },
     {
     id: 3,
@@ -33,30 +33,30 @@ export const placeholderPosts = [
     },
     imageUrl: 'https://picsum.photos/id/218/600/600',
     imageHint: 'coral reef underwater',
-    caption: 'Exploring the beauty of Bunaken. Our marine biodiversity is a treasure we must protect together. 🐠 #Maritim #GardaLestari',
+    caption: 'Menjelajahi keindahan Bunaken. Keanekaragaman hayati laut kita adalah harta yang harus kita lindungi bersama. 🐠 #Maritim #GardaLestari',
     likes: 312,
     comments: 34,
-    timestamp: '3d ago',
+    timestamp: '3 hari lalu',
   },
 ];
 
 export const memberDirectory = {
-  central: [
-    { name: 'Dr. Suryo Prakoso', role: 'Ketua Umum', avatarUrl: 'https://picsum.photos/id/201/100/100' },
-    { name: 'Amelia Siregar', role: 'Sekretaris Umum', avatarUrl: 'https://picsum.photos/id/202/100/100' },
-    { name: 'Bayu Wijoyo', role: 'Bendahara Umum', avatarUrl: 'https://picsum.photos/id/203/100/100' },
-    { name: 'Kartika Sari', role: 'Kadiv. Agro', avatarUrl: 'https://picsum.photos/id/204/100/100' },
-    { name: 'Gilang Samudra', role: 'Kadiv. Maritim', avatarUrl: 'https://picsum.photos/id/206/100/100' },
-    { name: 'Wulan Kirana', role: 'Kadiv. Kehutanan', avatarUrl: 'https://picsum.photos/id/207/100/100' },
+  pusat: [
+    { name: 'Dr. Suryo Prakoso', position: 'Ketua Umum', avatarUrl: 'https://picsum.photos/id/201/100/100' },
+    { name: 'Amelia Siregar', position: 'Sekretaris Umum', avatarUrl: 'https://picsum.photos/id/202/100/100' },
+    { name: 'Bayu Wijoyo', position: 'Bendahara Umum', avatarUrl: 'https://picsum.photos/id/203/100/100' },
+    { name: 'Kartika Sari', position: 'Kadiv. Agro', avatarUrl: 'https://picsum.photos/id/204/100/100' },
+    { name: 'Gilang Samudra', position: 'Kadiv. Maritim', avatarUrl: 'https://picsum.photos/id/206/100/100' },
+    { name: 'Wulan Kirana', position: 'Kadiv. Kehutanan', avatarUrl: 'https://picsum.photos/id/207/100/100' },
   ],
-  regional: [
-    { name: 'Joko Susilo', role: 'Koordinator Jawa Barat', avatarUrl: 'https://picsum.photos/id/301/100/100' },
-    { name: 'Eka Putri', role: 'Koordinator Jawa Tengah', avatarUrl: 'https://picsum.photos/id/302/100/100' },
-    { name: 'Made Wijaya', role: 'Koordinator Bali', avatarUrl: 'https://picsum.photos/id/303/100/100' },
+  daerah: [
+    { name: 'Joko Susilo', position: 'Koordinator Jawa Barat', avatarUrl: 'https://picsum.photos/id/301/100/100' },
+    { name: 'Eka Putri', position: 'Koordinator Jawa Tengah', avatarUrl: 'https://picsum.photos/id/302/100/100' },
+    { name: 'Made Wijaya', position: 'Koordinator Bali', avatarUrl: 'https://picsum.photos/id/303/100/100' },
   ],
-  advisory: [
-    { name: 'Prof. Emil Salim', role: 'Dewan Pembina', avatarUrl: 'https://picsum.photos/id/401/100/100' },
-    { name: 'Dr. Ir. Rokhmin Dahuri', role: 'Dewan Pembina', avatarUrl: 'https://picsum.photos/id/402/100/100' },
+  pembina: [
+    { name: 'Prof. Emil Salim', position: 'Dewan Pembina', avatarUrl: 'https://picsum.photos/id/401/100/100' },
+    { name: 'Dr. Ir. Rokhmin Dahuri', position: 'Dewan Pembina', avatarUrl: 'https://picsum.photos/id/402/100/100' },
   ],
 };
 

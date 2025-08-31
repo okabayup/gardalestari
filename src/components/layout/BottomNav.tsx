@@ -3,14 +3,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutGrid, Users, Sprout, CalendarDays, UserCircle } from 'lucide-react';
+import { LayoutGrid, Users, Sprout, CalendarDays, UserCircle, Award } from 'lucide-react';
 
 const navItems = [
-  { href: '/feed', label: 'Feed', icon: LayoutGrid },
-  { href: '/members', label: 'Members', icon: Users },
-  { href: '/programs', label: 'Programs', icon: Sprout },
-  { href: '/events', label: 'Events', icon: CalendarDays },
-  { href: '/profile', label: 'Profile', icon: UserCircle },
+  { href: '/feed', label: 'Beranda', icon: LayoutGrid },
+  { href: '/members', label: 'Anggota', icon: Users },
+  { href: '/programs', label: 'Program', icon: Sprout },
+  { href: '/events', label: 'Acara', icon: CalendarDays },
+  { href: '/benefits', label: 'Benefit', icon: Award },
 ];
 
 export default function BottomNav() {
@@ -25,7 +25,7 @@ export default function BottomNav() {
             href={item.href}
             className={cn(
               'flex flex-col items-center justify-center gap-1 text-sm text-muted-foreground transition-colors hover:text-primary',
-              (pathname === item.href || (pathname.startsWith(item.href) && item.href !== '/')) && 'text-primary'
+              (pathname.startsWith(item.href)) && 'text-primary'
             )}
           >
             <item.icon className="h-5 w-5" />
