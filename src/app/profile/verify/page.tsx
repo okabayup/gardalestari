@@ -57,7 +57,7 @@ export default function VerifyProfilePage() {
   }, []);
 
   useEffect(() => {
-    async function startInitialCamera() {
+    async function switchCameraForStep() {
       if (step === 'ktp') {
         await startCamera('environment');
       } else if (step === 'selfie') {
@@ -66,7 +66,8 @@ export default function VerifyProfilePage() {
         stopCamera();
       }
     }
-    startInitialCamera();
+    switchCameraForStep();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
 
@@ -84,6 +85,7 @@ export default function VerifyProfilePage() {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        // videoRef.current.play() is required for some browsers.
         await videoRef.current.play();
       }
       setHasCameraPermission(true);
@@ -199,19 +201,31 @@ export default function VerifyProfilePage() {
       const normalizedOcrName = ocrResult.name.trim().toLowerCase();
       const normalizedInputName = fullName.trim().toLowerCase();
 
-      if (normalizedOcrNik !== normalizedInputNik) {
-          throw new Error(`NIK tidak cocok. NIK di KTP: ${ocrResult.nik}, NIK Anda: ${nik}.`);
+      // Check if the user-inputted name is a substring of the OCR'd name.
+      // This allows for partial names (e.g., "John Doe" vs "John Doe Smith").
+      if (normalizedOcrNik !== normalizedInputNik || !normalizedOcrName.includes(normalizedInputName)) {
+          let errorMessage = 'Data tidak cocok. ';
+          if (normalizedOcrNik !== normalizedInputNik) {
+              errorMessage += `NIK di KTP terdeteksi sebagai ${ocrResult.nik}. `;
+          }
+          if (!normalizedOcrName.includes(normalizedInputName)) {
+              errorMessage += `Nama di KTP terdeteksi sebagai "${ocrResult.name}".`;
+          }
+          throw new Error(errorMessage);
       }
-      if (!normalizedOcrName.includes(normalizedInputName)) {
-          throw new Error(`Nama tidak cocok. Nama di KTP: "${ocrResult.name}", Nama Anda: "${fullName}".`);
-      }
+
 
       toast({ title: 'KTP Terverifikasi!', description: 'Data cocok. Mengirimkan pengajuan Anda...' });
 
-      const ktpFile = dataURLtoFile(ktpDataUrl, 'ktp.jpg');
-      const selfieFile = dataURLtoFile(selfieDataUrl, 'selfie.jpg');
+      const verificationData = {
+        fullName,
+        nik,
+        ktpFile: dataURLtoFile(ktpDataUrl, 'ktp.jpg'),
+        selfieFile: dataURLtoFile(selfieDataUrl, 'selfie.jpg'),
+        ...(photoFile && { photoFile: photoFile }),
+      };
 
-      await submitForVerification({ fullName, nik, ktpFile, selfieFile, photoFile: photoFile ?? undefined });
+      await submitForVerification(verificationData);
       
       toast({
         title: 'Verifikasi Terkirim!',
@@ -396,9 +410,11 @@ export default function VerifyProfilePage() {
         />
       )}
       <div className="p-6 space-y-6">
-        <Button variant="outline" onClick={handleBack} className="mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
-        </Button>
+        {step !== 'submitting' && (
+          <Button variant="outline" onClick={handleBack} className="mb-4">
+              <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
+          </Button>
+        )}
         <Card>
           <CardHeader>
             <CardTitle>Verifikasi Identitas</CardTitle>
@@ -412,4 +428,3 @@ export default function VerifyProfilePage() {
     </MainLayout>
   );
 }
-

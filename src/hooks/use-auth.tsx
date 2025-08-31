@@ -210,17 +210,17 @@ const submitForVerification = async (data: { fullName: string; nik: string; ktpF
     const ktpImageUrl = await getDownloadURL(ktpUploadResult.ref);
     const selfieImageUrl = await getDownloadURL(selfieUploadResult.ref);
     
-    let newPhotoURL = user?.photoURL;
+    let newPhotoURL = user?.photoURL ?? null;
     if (data.photoFile) {
       const photoUploadResult = await uploadBytes(profilePicRef, data.photoFile);
       newPhotoURL = await getDownloadURL(photoUploadResult.ref);
     }
 
-    const updatedProfileData = {
+    const verificationData = {
         fullName: data.fullName,
         displayName: data.fullName,
         nik: data.nik,
-        verificationStatus: 'pending',
+        verificationStatus: 'pending' as VerificationStatus,
         ktpImageUrl,
         selfieImageUrl,
         avatarUrl: newPhotoURL,
@@ -230,20 +230,28 @@ const submitForVerification = async (data: { fullName: string; nik: string; ktpF
 
     // Update user document in Firestore
     const userDocRef = doc(db, 'users', uid);
-    await updateDoc(userDocRef, updatedProfileData);
+    await updateDoc(userDocRef, verificationData);
     
-    // Update Firebase Auth profile
-    await updateProfile(auth.currentUser, { 
-        displayName: data.fullName, 
-        photoURL: newPhotoURL 
-    });
+    // Update Firebase Auth profile as well for consistency
+    if (auth.currentUser) {
+        await updateProfile(auth.currentUser, { 
+            displayName: data.fullName, 
+            photoURL: newPhotoURL 
+        });
+    }
+
 
     // Update local state to reflect all changes immediately
     setUser(prevUser => {
         if (!prevUser) return null;
+        // Merge existing user data with new verification data
         return {
             ...prevUser,
-            ...updatedProfileData
+            fullName: verificationData.fullName,
+            displayName: verificationData.displayName,
+            nik: verificationData.nik,
+            verificationStatus: verificationData.verificationStatus,
+            photoURL: verificationData.photoURL,
         };
     });
   };
