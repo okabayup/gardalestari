@@ -1,9 +1,9 @@
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Leaf, Users, Sprout, Award } from 'lucide-react';
-import { Logo } from '@/components/icons/Logo';
 import LandingHeader from '@/components/layout/LandingHeader';
 
 export default function LandingPage() {
@@ -41,7 +41,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="features" className="w-full bg-background py-16 md:py-28 lg:py-36">
+        <section id="features" className="w-full bg-secondary py-16 md:py-28 lg:py-36">
           <div className="container">
             <div className="mb-14 text-center">
               <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">Mengapa Bergabung?</h2>
@@ -97,10 +97,9 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t">
+      <footer className="border-t bg-background">
         <div className="container flex flex-col items-center justify-between gap-4 py-6 md:flex-row">
           <div className="flex items-center gap-2">
-            <Logo className="h-5 w-5 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} Garda Lestari. Semua hak dilindungi.</p>
           </div>
           <nav className="flex gap-4">

@@ -5,20 +5,30 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import MainLayout from '@/components/layout/MainLayout';
-import { Loader2, Users, Sprout, Calendar, Newspaper } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, Users, Sprout, Calendar, Newspaper, Shield, FileText, UserCog, Settings } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 const ADMIN_PHONE_NUMBER = '+6285176752610';
 
 const AdminDashboard = () => {
   const router = useRouter();
-  
+
+  const managementMenus = [
+    { label: 'Blog', icon: Newspaper, action: () => router.push('/admin/blog') },
+    { label: 'Anggota', icon: Users, action: () => {} },
+    { label: 'Program', icon: Sprout, action: () => {} },
+    { label: 'Acara', icon: Calendar, action: () => {} },
+    { label: 'Halaman', icon: FileText, action: () => {} },
+    { label: 'Peran & Izin', icon: UserCog, action: () => {} },
+    { label: 'Pengaturan', icon: Settings, action: () => {} },
+  ];
+
   return (
     <div className="p-6 space-y-6">
       <div className="text-center">
-        <h1 className="font-headline text-3xl font-bold">Admin Panel</h1>
+        <h1 className="font-headline text-3xl font-bold">Panel Admin</h1>
         <p className="text-muted-foreground">Selamat datang di Panel Admin Garda Lestari.</p>
       </div>
 
@@ -70,15 +80,23 @@ const AdminDashboard = () => {
       <Card>
         <CardHeader>
           <CardTitle>Manajemen Konten</CardTitle>
-          <CardContent className="pt-6">
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Button>Kelola Anggota</Button>
-                <Button>Kelola Program & Acara</Button>
-                <Button onClick={() => router.push('/admin/blog')}>Kelola Postingan Blog</Button>
-             </div>
-          </CardContent>
+          <CardDescription>Pilih salah satu menu di bawah untuk mengelola konten terkait.</CardDescription>
         </CardHeader>
+        <CardContent>
+           <ScrollArea className="w-full whitespace-nowrap">
+            <div className="flex space-x-2 pb-2">
+              {managementMenus.map((menu) => (
+                <Button key={menu.label} variant="outline" onClick={menu.action} className="shrink-0">
+                  <menu.icon className="mr-2 h-4 w-4" />
+                  {menu.label}
+                </Button>
+              ))}
+            </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </CardContent>
       </Card>
+      {/* Further admin content can be added here */}
     </div>
   );
 };
