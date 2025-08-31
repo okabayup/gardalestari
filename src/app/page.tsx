@@ -3,9 +3,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Leaf, Users, Sprout, Ship, TreePine, Linkedin, Instagram, Twitter, Facebook } from 'lucide-react';
+import { Leaf, Users, Sprout, Ship, TreePine, Instagram } from 'lucide-react';
 import LandingHeader from '@/components/layout/LandingHeader';
-import { Logo } from '@/components/icons/Logo';
 import { getSocialMediaLinks } from './actions/settings';
 
 const FeatureCard = ({ icon, title, children }: { icon: React.ReactNode, title: string, children: React.ReactNode }) => (
@@ -31,7 +30,7 @@ const Footer = async () => {
                 <div className="grid gap-8 md:grid-cols-3">
                     <div className="space-y-2">
                         <Link href="/" className="flex items-center gap-2 font-bold">
-                            <Logo className="h-6 w-6 text-primary" />
+                            <Image src="/logo.png" alt="Garda Lestari Logo" width={24} height={24} />
                             <span className="font-headline text-xl">Garda Lestari</span>
                         </Link>
                         <p className="text-sm text-muted-foreground">Wadah bagi pemuda Indonesia untuk inovasi di sektor agro-maritim dan kehutanan.</p>

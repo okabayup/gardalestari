@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, Shield, Pencil, AlertTriangle, BadgeCheck, Clock } from 'lucide-react';
-import { Logo } from '@/components/icons/Logo';
+import Image from 'next/image';
 import EditProfileModal from '@/components/profile/EditProfileModal';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -23,7 +23,7 @@ const MembershipCard = ({ name, email, photoUrl, memberId }: { name: string, ema
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Logo className="h-8 w-8" />
+                        <Image src="/logo.png" alt="Garda Lestari Logo" width={32} height={32} />
                         <CardTitle className="font-headline text-xl">Garda Lestari</CardTitle>
                     </div>
                     <span className="text-xs font-semibold uppercase tracking-widest">Anggota Terverifikasi</span>

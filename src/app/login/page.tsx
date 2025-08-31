@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Logo } from '@/components/icons/Logo';
+import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -71,7 +71,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-6">
           <Link href="/" className="inline-flex items-center gap-2 font-bold">
-            <Logo className="h-8 w-8 text-primary" />
+            <Image src="/logo.png" alt="Garda Lestari Logo" width={32} height={32} />
             <span className="font-headline text-2xl">Garda Lestari</span>
           </Link>
         </div>

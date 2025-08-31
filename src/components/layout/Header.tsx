@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
-import { Logo } from '@/components/icons/Logo';
+import Image from 'next/image';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,7 +36,7 @@ export default function Header() {
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center">
         <Link href="/feed" className="flex items-center gap-2 font-bold">
-          <Logo className="h-6 w-6 text-primary" />
+          <Image src="/logo.png" alt="Garda Lestari Logo" width={24} height={24} />
           <span className="font-headline text-xl">Garda Lestari</span>
         </Link>
         <div className="ml-auto">
