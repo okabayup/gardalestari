@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import PostCard from '@/components/feed/PostCard';
-import { getPosts, togglePostLike, PostWithAuthor } from '@/app/actions/posts';
+import { getPosts, togglePostLike, PostWithAuthor, archivePost } from '@/app/actions/posts';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2, Plus, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -86,6 +86,27 @@ export default function FeedPage() {
     }
   };
 
+  const handleArchivePost = async (postId: string) => {
+    // Optimistic UI update
+    setAllPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
+
+    try {
+        await archivePost(postId);
+        toast({ title: 'Postingan diarsipkan.' });
+    } catch (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Gagal Mengarsipkan',
+            description: (error as Error).message,
+        });
+        // Revert UI update
+        if (user) {
+            const freshPosts = await getPosts(user.uid);
+            setAllPosts(freshPosts);
+        }
+    }
+  };
+
   if (loading) {
     return (
       <MainLayout>
@@ -114,6 +135,8 @@ export default function FeedPage() {
               key={post.id}
               post={post}
               onToggleLike={() => handleToggleLike(post.id)}
+              onArchive={() => handleArchivePost(post.id)}
+              currentUserId={user?.uid}
             />
           ))
         ) : (

@@ -14,7 +14,8 @@ import {
   orderBy,
   increment,
   writeBatch,
-  where
+  where,
+  updateDoc
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
@@ -43,6 +44,7 @@ interface Post {
   likes: string[]; // Array of user UIDs who liked the post
   commentsCount: number;
   createdAt: Timestamp;
+  status: 'published' | 'archived';
 }
 
 interface Author {
@@ -62,6 +64,25 @@ export interface PostWithAuthor {
   timestamp: string;
   isLiked: boolean;
 }
+
+export interface Comment {
+    id: string;
+    authorId: string;
+    text: string;
+    createdAt: Timestamp;
+}
+
+export interface CommentWithAuthor {
+    id: string;
+    author: {
+        name: string;
+        username: string;
+        avatarUrl: string;
+    };
+    text: string;
+    timestamp: string;
+}
+
 
 const postsCollection = collection(db, 'posts');
 const usersCollection = collection(db, 'users'); 
@@ -119,6 +140,7 @@ export async function createPost(caption: string, mediaPayload: {file: File, men
       likes: [],
       commentsCount: 0,
       createdAt: Timestamp.now(),
+      status: 'published' as const, // Default status
     };
 
     await addDoc(postsCollection, newPost);
@@ -135,7 +157,11 @@ export async function createPost(caption: string, mediaPayload: {file: File, men
 
 // Get all posts
 export async function getPosts(currentUserId: string): Promise<PostWithAuthor[]> {
-  const q = query(postsCollection, orderBy('createdAt', 'desc'));
+  const q = query(
+    postsCollection, 
+    where('status', '==', 'published'),
+    orderBy('createdAt', 'desc')
+  );
   const postsSnapshot = await getDocs(q);
   const posts: PostWithAuthor[] = [];
 
@@ -171,7 +197,7 @@ export async function getPosts(currentUserId: string): Promise<PostWithAuthor[]>
 
 // Get all posts by a specific user ID
 export async function getPostsByUserId(userId: string): Promise<PostWithAuthor[]> {
-  const q = query(postsCollection, where('authorId', '==', userId), orderBy('createdAt', 'desc'));
+  const q = query(postsCollection, where('authorId', '==', userId), where('status', '==', 'published'), orderBy('createdAt', 'desc'));
   const postsSnapshot = await getDocs(q);
   const posts: PostWithAuthor[] = [];
   
@@ -272,5 +298,49 @@ export async function addComment(postId: string, userId: string, text: string) {
     } catch (error) {
         console.error("Error adding comment: ", error);
         throw new Error("Gagal menambahkan komentar.");
+    }
+}
+
+
+// Get comments for a post
+export async function getComments(postId: string): Promise<CommentWithAuthor[]> {
+    const postRef = doc(db, 'posts', postId);
+    const commentsCollection = collection(postRef, 'comments');
+    const q = query(commentsCollection, orderBy('createdAt', 'desc'));
+
+    const commentsSnapshot = await getDocs(q);
+    const comments: CommentWithAuthor[] = [];
+
+    for (const commentDoc of commentsSnapshot.docs) {
+        const commentData = { id: commentDoc.id, ...commentDoc.data() } as Comment;
+
+        const authorDoc = await getDoc(doc(usersCollection, commentData.authorId));
+        if (authorDoc.exists()) {
+            const authorData = authorDoc.data();
+            comments.push({
+                id: commentData.id,
+                author: {
+                    name: authorData.fullName || 'User',
+                    username: authorData.username || 'user',
+                    avatarUrl: authorData.avatarUrl || ''
+                },
+                text: commentData.text,
+                timestamp: formatTimestamp(commentData.createdAt)
+            });
+        }
+    }
+    return comments;
+}
+
+// Archive a post
+export async function archivePost(postId: string) {
+    const postRef = doc(db, 'posts', postId);
+    try {
+        await updateDoc(postRef, { status: 'archived' });
+        revalidatePath('/feed');
+        revalidatePath('/profile');
+    } catch (error) {
+        console.error("Error archiving post:", error);
+        throw new Error("Gagal mengarsipkan postingan.");
     }
 }
