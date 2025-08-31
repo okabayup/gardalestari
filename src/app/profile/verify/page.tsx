@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Camera, ArrowLeft, User, Fingerprint, RefreshCcw } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { readKtp } from '@/ai/flows/ocr-ktp-flow';
+import { cn } from '@/lib/utils';
 
 type Step = 'data' | 'ktp' | 'selfie' | 'submitting';
 
