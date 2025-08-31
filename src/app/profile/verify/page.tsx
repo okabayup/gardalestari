@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -10,10 +10,11 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Camera, ArrowLeft, User, Fingerprint, RefreshCcw } from 'lucide-react';
+import { Loader2, Camera, ArrowLeft, User, Fingerprint } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { readKtp } from '@/ai/flows/ocr-ktp-flow';
 import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 type Step = 'data' | 'ktp' | 'selfie' | 'submitting';
 
@@ -25,12 +26,15 @@ export default function VerifyProfilePage() {
   const [step, setStep] = useState<Step>('data');
   const [fullName, setFullName] = useState('');
   const [nik, setNik] = useState('');
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   const [ktpDataUrl, setKtpDataUrl] = useState<string | null>(null);
   const [selfieDataUrl, setSelfieDataUrl] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
 
@@ -39,8 +43,17 @@ export default function VerifyProfilePage() {
       router.replace('/profile');
     }
   }, [user, router]);
+  
+  useEffect(() => {
+    // Clean up camera stream when component unmounts or step changes
+    return () => {
+      stopCamera();
+    };
+  }, [step]);
+
 
   const startCamera = async ({ facingMode }: { facingMode: 'environment' | 'user' }) => {
+    stopCamera(); // Ensure previous stream is stopped
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       console.error('Camera not supported on this browser.');
       toast({ variant: 'destructive', title: 'Kamera tidak didukung' });
@@ -68,7 +81,16 @@ export default function VerifyProfilePage() {
   const stopCamera = () => {
     if (videoRef.current?.srcObject) {
       (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
       setIsCameraActive(false);
+    }
+  };
+
+  const handlePhotoInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
     }
   };
 
@@ -101,7 +123,7 @@ export default function VerifyProfilePage() {
       setKtpDataUrl(dataUrl);
       stopCamera();
       setStep('selfie');
-      startCamera({ facingMode: 'user' }); // Restart for selfie with front camera
+      startCamera({ facingMode: 'user' });
     }
   };
 
@@ -111,7 +133,7 @@ export default function VerifyProfilePage() {
       setSelfieDataUrl(dataUrl);
       stopCamera();
       setStep('submitting');
-      handleSubmit();
+      handleSubmit(); // Automatically call submit after selfie
     }
   };
 
@@ -125,12 +147,12 @@ export default function VerifyProfilePage() {
         u8arr[n] = bstr.charCodeAt(n);
     }
     return new File([u8arr], filename, {type:mime});
-}
+  }
 
-const handleSubmit = async () => {
+  const handleSubmit = async () => {
     if (!ktpDataUrl || !selfieDataUrl || !fullName || !nik) {
       toast({ variant: 'destructive', title: 'Data Tidak Lengkap' });
-      setStep('data');
+      setStep('data'); // Go back to the first step
       return;
     }
 
@@ -159,7 +181,7 @@ const handleSubmit = async () => {
       const ktpFile = dataURLtoFile(ktpDataUrl, 'ktp.jpg');
       const selfieFile = dataURLtoFile(selfieDataUrl, 'selfie.jpg');
 
-      await submitForVerification({ fullName, nik, ktpFile, selfieFile });
+      await submitForVerification({ fullName, nik, ktpFile, selfieFile, photoFile: photoFile ?? undefined });
       
       toast({
         title: 'Verifikasi Terkirim!',
@@ -180,14 +202,33 @@ const handleSubmit = async () => {
       setStep('ktp'); // Reset to KTP step
       setKtpDataUrl(null);
       setSelfieDataUrl(null);
+      startCamera({ facingMode: 'environment' }); // Restart camera for KTP
     }
-};
+  };
+
+  const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2) : '?';
 
   const renderStep = () => {
     switch (step) {
       case 'data':
         return (
           <form onSubmit={handleDataSubmit} className="space-y-6">
+            <div className="flex flex-col items-center gap-4">
+              <Avatar className="h-24 w-24">
+                <AvatarImage src={photoPreview || undefined} alt={fullName || 'Avatar'} />
+                <AvatarFallback className="text-3xl text-primary">{getInitials(fullName)}</AvatarFallback>
+              </Avatar>
+              <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                Pilih Foto Profil
+              </Button>
+              <Input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                onChange={handlePhotoInputChange}
+                accept="image/png, image/jpeg"
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="nik">Nomor Induk Kependudukan (NIK)</Label>
               <div className="relative">
@@ -265,9 +306,10 @@ const handleSubmit = async () => {
           <CardHeader>
             <CardTitle>Verifikasi Identitas</CardTitle>
             <CardDescription>
-              {step === 'data' && "Langkah 1: Isi NIK dan Nama Lengkap Anda."}
+              {step === 'data' && "Langkah 1: Isi data diri dan unggah foto profil."}
               {step === 'ktp' && "Langkah 2: Ambil Foto KTP Anda."}
               {step === 'selfie' && "Langkah 3: Ambil Foto Selfie Anda."}
+              {step === 'submitting' && "Sedang memproses pengajuan Anda."}
             </CardDescription>
           </CardHeader>
           <CardContent>

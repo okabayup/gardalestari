@@ -33,7 +33,7 @@ interface AuthContextType {
   verifyOtp: (otp: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateUserProfile: (updates: { photoFile?: File }) => Promise<void>;
-  submitForVerification: (data: { fullName: string; nik: string; ktpFile: File; selfieFile: File }) => Promise<void>;
+  submitForVerification: (data: { fullName: string; nik: string; ktpFile: File; selfieFile: File; photoFile?: File }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -56,15 +56,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          setUser({ 
+          const extendedUser: ExtendedUser = {
               ...user, 
               level: userData.level || 'Bronze',
               verificationStatus: userData.verificationStatus || 'unverified',
               fullName: userData.fullName,
               nik: userData.nik,
-              // IMPORTANT: Sync `displayName` from Firestore to Auth state, as it's the verified name.
-              displayName: userData.fullName || user.displayName
-          });
+              // IMPORTANT: Sync `displayName` & `photoURL` from Firestore to Auth state
+              displayName: userData.fullName || user.displayName,
+              photoURL: userData.avatarUrl || user.photoURL
+          };
+          setUser(extendedUser);
         } else {
           // Fallback if doc doesn't exist for some reason
           setUser({ ...user, level: 'Bronze', verificationStatus: 'unverified' });
@@ -131,9 +133,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Create user document in Firestore
         await setDoc(doc(db, "users", newUser.uid), {
             uid: newUser.uid,
-            name: `Anggota ${String(newUser.phoneNumber).slice(-4)}`, // Placeholder name
+            displayName: `Anggota ${String(newUser.phoneNumber).slice(-4)}`, // Placeholder name
+            fullName: `Anggota ${String(newUser.phoneNumber).slice(-4)}`,
             email: newUser.email,
             phoneNumber: newUser.phoneNumber,
+            photoURL: newUser.photoURL || `https://picsum.photos/seed/${newUser.uid}/100/100`,
             avatarUrl: newUser.photoURL || `https://picsum.photos/seed/${newUser.uid}/100/100`,
             createdAt: serverTimestamp(),
             level: 'Bronze', // Default level for new users
@@ -180,19 +184,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Update user document in Firestore for consistency
     const userDocRef = doc(db, 'users', auth.currentUser.uid);
     await setDoc(userDocRef, {
-        avatarUrl: photoURL
+        avatarUrl: photoURL,
+        photoURL: photoURL,
     }, { merge: true });
 
     // Manually update the user state to reflect changes immediately
-    setUser(prevUser => prevUser ? { ...prevUser, photoURL } : null);
+    setUser(prevUser => prevUser ? { ...prevUser, photoURL, photoURL } : null);
 };
 
-const submitForVerification = async (data: { fullName: string; nik: string; ktpFile: File; selfieFile: File }) => {
+const submitForVerification = async (data: { fullName: string; nik: string; ktpFile: File; selfieFile: File; photoFile?: File; }) => {
     if (!auth.currentUser) throw new Error("Pengguna tidak ditemukan.");
 
     const storage = getStorage();
     const ktpRef = ref(storage, `kyc/${auth.currentUser.uid}/ktp.jpg`);
     const selfieRef = ref(storage, `kyc/${auth.currentUser.uid}/selfie.jpg`);
+    const profilePicRef = ref(storage, `profile-pictures/${auth.currentUser.uid}`);
 
     // Upload files
     await uploadBytes(ktpRef, data.ktpFile);
@@ -200,25 +206,33 @@ const submitForVerification = async (data: { fullName: string; nik: string; ktpF
     
     await uploadBytes(selfieRef, data.selfieFile);
     const selfieImageUrl = await getDownloadURL(selfieRef);
+    
+    let photoURL = user?.photoURL;
+    if (data.photoFile) {
+      await uploadBytes(profilePicRef, data.photoFile);
+      photoURL = await getDownloadURL(profilePicRef);
+    }
+
 
     // Update user document in Firestore
     const userDocRef = doc(db, 'users', auth.currentUser.uid);
     await updateDoc(userDocRef, {
-        fullName: data.fullName, // This is the verified name
-        name: data.fullName, // Keep 'name' field for backward compatibility or display
+        fullName: data.fullName,
         displayName: data.fullName,
         nik: data.nik,
         verificationStatus: 'pending',
         ktpImageUrl,
         selfieImageUrl,
+        avatarUrl: photoURL,
+        photoURL: photoURL,
         submittedAt: serverTimestamp()
     });
     
     // Update Firebase Auth profile displayName as well
-    await updateProfile(auth.currentUser, { displayName: data.fullName });
+    await updateProfile(auth.currentUser, { displayName: data.fullName, photoURL });
 
     // Update local state
-    setUser(prevUser => prevUser ? { ...prevUser, verificationStatus: 'pending', fullName: data.fullName, nik: data.nik, displayName: data.fullName } : null);
+    setUser(prevUser => prevUser ? { ...prevUser, verificationStatus: 'pending', fullName: data.fullName, nik: data.nik, displayName: data.fullName, photoURL } : null);
   };
 
 
