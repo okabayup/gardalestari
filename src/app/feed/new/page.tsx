@@ -11,7 +11,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { createPost, Mention } from '@/app/actions/posts';
 import { searchUsers, PublicUser } from '@/app/actions/user';
-import { Loader2, ArrowLeft, Image as ImageIcon, X, AtSign } from 'lucide-react';
+import { Loader2, ArrowLeft, ImageIcon, X, Tag } from 'lucide-react';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -298,3 +298,4 @@ export default function NewPostPage() {
     </MainLayout>
   );
 }
+

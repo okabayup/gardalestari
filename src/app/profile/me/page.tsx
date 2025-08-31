@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/use-auth';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, Shield, Pencil, AlertTriangle, Loader2, Grid3x3, Archive, UserTag } from 'lucide-react';
+import { LogOut, Shield, Pencil, AlertTriangle, Loader2, Grid3x3, Archive, Tag } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import EditProfileModal from '@/components/profile/EditProfileModal';
@@ -195,7 +195,7 @@ export default function ProfileMePage() {
                         <Grid3x3 className="mr-2 h-4 w-4" /> Postingan
                     </TabsTrigger>
                     <TabsTrigger value="tagged">
-                        <UserTag className="mr-2 h-4 w-4" /> Ditandai
+                        <Tag className="mr-2 h-4 w-4" /> Ditandai
                     </TabsTrigger>
                     <TabsTrigger value="archived">
                         <Archive className="mr-2 h-4 w-4" /> Diarsipkan

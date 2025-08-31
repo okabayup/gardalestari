@@ -9,7 +9,7 @@ import Image from 'next/image';
 import { getPostsByUserId, getTaggedPosts, PostWithAuthor } from '@/app/actions/posts';
 import { getUserByUsername, PublicUser } from '@/app/actions/user';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Grid3x3, Loader2, UserTag } from 'lucide-react';
+import { Grid3x3, Loader2, Tag } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -146,7 +146,7 @@ export default function UserProfilePage() {
                         <Grid3x3 className="mr-2 h-4 w-4" /> Postingan
                     </TabsTrigger>
                      <TabsTrigger value="tagged">
-                        <UserTag className="mr-2 h-4 w-4" /> Ditandai
+                        <Tag className="mr-2 h-4 w-4" /> Ditandai
                     </TabsTrigger>
                 </TabsList>
                 <TabsContent value="posts">

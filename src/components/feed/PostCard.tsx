@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Send, MoreHorizontal, Archive, UserTag } from 'lucide-react';
+import { Heart, MessageCircle, Send, MoreHorizontal, Archive, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PostWithAuthor, CommentWithAuthor } from '@/app/actions/posts';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
@@ -147,12 +147,12 @@ export default function PostCard({ post, onToggleLike, onArchive, currentUserId 
             </DropdownMenuContent>
         </DropdownMenu>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="p-0 relative">
         <Carousel className="w-full bg-black">
             <CarouselContent>
             {post.media.map((mediaItem, index) => (
                 <CarouselItem key={index}>
-                    <div className="w-full flex items-center justify-center relative">
+                    <div className="w-full flex items-center justify-center">
                         {mediaItem.type === 'image' ? (
                             <Image
                                 src={mediaItem.url}
@@ -183,7 +183,7 @@ export default function PostCard({ post, onToggleLike, onArchive, currentUserId 
                 </>
             )}
         </Carousel>
-        {hasTags && <UserTag className="absolute bottom-2 left-2 h-5 w-5 text-white" />}
+        {hasTags && <Tag className="absolute bottom-2 left-2 h-5 w-5 text-white" />}
         <div className="p-3">
              <CaptionWithMentions text={post.caption} />
         </div>
