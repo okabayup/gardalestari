@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Leaf, Users, Sprout, Award } from 'lucide-react';
+import { Leaf, Users, Sprout, Award, Ship, TreePine } from 'lucide-react';
 import LandingHeader from '@/components/layout/LandingHeader';
 
 export default function LandingPage() {
@@ -25,10 +25,10 @@ export default function LandingPage() {
                 <div className="absolute inset-0 bg-gradient-to-b from-background via-background/80 to-background"></div>
             </div>
             <h1 className="font-headline text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
-              Melestarikan Alam, Bersama-sama
+              Melestarikan Alam, Memberdayakan Pemuda
             </h1>
             <p className="mx-auto mt-6 max-w-[700px] text-lg text-muted-foreground md:text-xl">
-              Bergabunglah dengan Garda Lestari dan jadilah bagian dari komunitas yang berdedikasi pada konservasi lingkungan dan kehidupan berkelanjutan.
+             Garda Lestari adalah organisasi kepemudaan yang berfokus pada inovasi di sektor agro, maritim, dan kehutanan untuk masa depan Indonesia yang berkelanjutan.
             </p>
             <div className="mt-8 flex justify-center gap-4">
               <Button size="lg" asChild>
@@ -44,52 +44,41 @@ export default function LandingPage() {
         <section id="features" className="w-full bg-secondary py-16 md:py-28 lg:py-36">
           <div className="container">
             <div className="mb-14 text-center">
-              <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">Mengapa Bergabung?</h2>
-              <p className="mt-3 text-muted-foreground">Jelajahi manfaat dan fitur keanggotaan Garda Lestari.</p>
+              <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">Fokus Utama Kami</h2>
+              <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Kami bergerak di tiga sektor utama yang menjadi pilar kekuatan alam Indonesia, dengan pemuda sebagai garda terdepan perubahan.</p>
             </div>
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-              <Card className="text-center">
-                <CardHeader>
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                    <Leaf className="h-6 w-6 text-primary" />
-                  </div>
-                  <CardTitle className="mt-4">Keanggotaan Digital</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">Daftar dengan mudah dan dapatkan kartu tanda anggota digital Anda secara instan.</p>
-                </CardContent>
-              </Card>
-              <Card className="text-center">
-                <CardHeader>
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                    <Users className="h-6 w-6 text-primary" />
-                  </div>
-                  <CardTitle className="mt-4">Pusat Komunitas</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">Terhubung dengan sesama anggota, bagikan pembaruan, dan jelajahi direktori anggota kami.</p>
-                </CardContent>
-              </Card>
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
               <Card className="text-center">
                 <CardHeader>
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                     <Sprout className="h-6 w-6 text-primary" />
                   </div>
-                  <CardTitle className="mt-4">Program Eksklusif</CardTitle>
+                  <CardTitle className="mt-4">Agro</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground">Berpartisipasi dalam program konservasi unggulan, acara, dan baca blog kami.</p>
+                  <p className="text-muted-foreground">Mengembangkan inovasi pertanian modern, ketahanan pangan, dan mencetak wirausahawan tani muda.</p>
                 </CardContent>
               </Card>
               <Card className="text-center">
                 <CardHeader>
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                    <Award className="h-6 w-6 text-primary" />
+                    <Ship className="h-6 w-6 text-primary" />
                   </div>
-                  <CardTitle className="mt-4">Benefit Terpersonalisasi</CardTitle>
+                  <CardTitle className="mt-4">Maritim</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground">Dapatkan rekomendasi berbasis AI untuk benefit yang sesuai dengan profil Anda.</p>
+                  <p className="text-muted-foreground">Memajukan ekonomi biru melalui pengelolaan sumber daya laut yang berkelanjutan dan konservasi ekosistem pesisir.</p>
+                </CardContent>
+              </Card>
+              <Card className="text-center">
+                <CardHeader>
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                    <TreePine className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardTitle className="mt-4">Kehutanan</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">Menjaga kelestarian hutan melalui program reforestasi, perhutanan sosial, dan pencegahan deforestasi.</p>
                 </CardContent>
               </Card>
             </div>
