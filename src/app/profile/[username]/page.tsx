@@ -6,13 +6,13 @@ import { notFound, useParams } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
-import { getPostsByUserId, PostWithAuthor } from '@/app/actions/posts';
+import { getPostsByUserId, getTaggedPosts, PostWithAuthor } from '@/app/actions/posts';
 import { getUserByUsername, PublicUser } from '@/app/actions/user';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Grid3x3, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Grid3x3, Loader2, UserTag } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const ProfileHeader = ({ user, postCount }: { user: PublicUser | null, postCount: number }) => (
   <div className="flex items-center gap-4 w-full px-4">
@@ -42,7 +42,15 @@ const ProfileBio = ({ user }: { user: PublicUser | null }) => (
 );
 
 
-const ProfilePostsGrid = ({ posts }: { posts: PostWithAuthor[] }) => {
+const ProfilePostsGrid = ({ posts, isLoading }: { posts: PostWithAuthor[], isLoading: boolean }) => {
+    if (isLoading) {
+       return (
+        <div className="flex justify-center py-10">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+       )
+    }
+
     if (!posts || posts.length === 0) {
         return <div className="text-center py-10 text-muted-foreground">Belum ada postingan.</div>;
     }
@@ -50,7 +58,7 @@ const ProfilePostsGrid = ({ posts }: { posts: PostWithAuthor[] }) => {
     return (
         <div className="grid grid-cols-3 gap-1">
             {posts.map(post => (
-                <div key={post.id} className="relative aspect-square">
+                <Link href={`/p/${post.id}`} key={post.id} className="relative aspect-square">
                    {post.media.length > 0 && (
                         <Image 
                             src={post.media[0].url}
@@ -60,7 +68,7 @@ const ProfilePostsGrid = ({ posts }: { posts: PostWithAuthor[] }) => {
                             data-ai-hint={post.media[0].hint}
                         />
                    )}
-                </div>
+                </Link>
             ))}
         </div>
     )
@@ -73,8 +81,11 @@ export default function UserProfilePage() {
   const username = params.username as string;
 
   const [user, setUser] = useState<PublicUser | null>(null);
-  const [posts, setPosts] = useState<PostWithAuthor[]>([]);
+  const [userPosts, setUserPosts] = useState<PostWithAuthor[]>([]);
+  const [taggedPosts, setTaggedPosts] = useState<PostWithAuthor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [loadingTagged, setLoadingTagged] = useState(true);
 
   useEffect(() => {
     if (username) {
@@ -90,13 +101,23 @@ export default function UserProfilePage() {
 
             if (!fetchedUser) {
                 notFound();
+                return;
             }
 
             setUser(fetchedUser);
-            if (fetchedUser) {
-                const userPosts = await getPostsByUserId(fetchedUser.id);
-                setPosts(userPosts);
-            }
+
+            setLoadingPosts(true);
+            getPostsByUserId(fetchedUser.id).then(posts => {
+                setUserPosts(posts);
+                setLoadingPosts(false);
+            });
+
+            setLoadingTagged(true);
+            getTaggedPosts(fetchedUser.id).then(posts => {
+                setTaggedPosts(posts);
+                setLoadingTagged(false);
+            });
+            
             setLoading(false);
         };
         fetchUserData();
@@ -116,17 +137,23 @@ export default function UserProfilePage() {
   return (
     <MainLayout>
         <div className="space-y-4 py-4">
-            <ProfileHeader user={user} postCount={posts.length} />
+            <ProfileHeader user={user} postCount={userPosts.length} />
             <ProfileBio user={user} />
             
             <Tabs defaultValue="posts" className="w-full">
-                <TabsList className="w-full grid grid-cols-1">
+                <TabsList className="w-full grid grid-cols-2">
                     <TabsTrigger value="posts">
                         <Grid3x3 className="mr-2 h-4 w-4" /> Postingan
                     </TabsTrigger>
+                     <TabsTrigger value="tagged">
+                        <UserTag className="mr-2 h-4 w-4" /> Ditandai
+                    </TabsTrigger>
                 </TabsList>
                 <TabsContent value="posts">
-                    <ProfilePostsGrid posts={posts} />
+                    <ProfilePostsGrid posts={userPosts} isLoading={loadingPosts} />
+                </TabsContent>
+                <TabsContent value="tagged">
+                    <ProfilePostsGrid posts={taggedPosts} isLoading={loadingTagged} />
                 </TabsContent>
             </Tabs>
         </div>

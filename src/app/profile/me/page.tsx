@@ -7,13 +7,13 @@ import { useAuth } from '@/hooks/use-auth';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, Shield, Pencil, AlertTriangle, Loader2 } from 'lucide-react';
+import { LogOut, Shield, Pencil, AlertTriangle, Loader2, Grid3x3, Archive, UserTag } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import EditProfileModal from '@/components/profile/EditProfileModal';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { getPostsByUserId, PostWithAuthor } from '../../actions/posts';
+import { getPostsByUserId, getArchivedPosts, getTaggedPosts, PostWithAuthor } from '../../actions/posts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Grid3x3 } from 'lucide-react';
 
 
 const ADMIN_PHONE_NUMBER = '+6285176752610';
@@ -47,7 +47,14 @@ const ProfileBio = ({ user }: { user: any }) => (
 );
 
 
-const ProfilePostsGrid = ({ posts }: { posts: PostWithAuthor[] }) => {
+const ProfilePostsGrid = ({ posts, isLoading }: { posts: PostWithAuthor[], isLoading: boolean }) => {
+    if (isLoading) {
+       return (
+        <div className="flex justify-center py-10">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+       )
+    }
     if (!posts || posts.length === 0) {
         return <div className="text-center py-10 text-muted-foreground">Belum ada postingan.</div>;
     }
@@ -55,7 +62,7 @@ const ProfilePostsGrid = ({ posts }: { posts: PostWithAuthor[] }) => {
     return (
         <div className="grid grid-cols-3 gap-1">
             {posts.map(post => (
-                <div key={post.id} className="relative aspect-square">
+                <Link href={`/p/${post.id}`} key={post.id} className="relative aspect-square">
                    {post.media.length > 0 && (
                         <Image 
                             src={post.media[0].url}
@@ -65,7 +72,7 @@ const ProfilePostsGrid = ({ posts }: { posts: PostWithAuthor[] }) => {
                             data-ai-hint={post.media[0].hint}
                         />
                    )}
-                </div>
+                </Link>
             ))}
         </div>
     )
@@ -116,19 +123,35 @@ export default function ProfileMePage() {
   const { user, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [posts, setPosts] = useState<PostWithAuthor[]>([]);
-  const [loadingPosts, setLoadingPosts] = useState(true);
+  
+  const [userPosts, setUserPosts] = useState<PostWithAuthor[]>([]);
+  const [archivedPosts, setArchivedPosts] = useState<PostWithAuthor[]>([]);
+  const [taggedPosts, setTaggedPosts] = useState<PostWithAuthor[]>([]);
+
+  const [loadingUserPosts, setLoadingUserPosts] = useState(true);
+  const [loadingArchived, setLoadingArchived] = useState(true);
+  const [loadingTagged, setLoadingTagged] = useState(true);
+
 
   useEffect(() => {
-    const fetchUserPosts = async () => {
-        if (!user) return;
-        setLoadingPosts(true);
-        const userPosts = await getPostsByUserId(user.uid);
-        setPosts(userPosts);
-        setLoadingPosts(false);
-    }
-    if (!authLoading) {
-      fetchUserPosts();
+    if (user && !authLoading) {
+      setLoadingUserPosts(true);
+      getPostsByUserId(user.uid).then(posts => {
+        setUserPosts(posts);
+        setLoadingUserPosts(false);
+      });
+
+      setLoadingArchived(true);
+      getArchivedPosts(user.uid).then(posts => {
+        setArchivedPosts(posts);
+        setLoadingArchived(false);
+      });
+      
+      setLoadingTagged(true);
+      getTaggedPosts(user.uid).then(posts => {
+        setTaggedPosts(posts);
+        setLoadingTagged(false);
+      });
     }
   }, [user, authLoading]);
 
@@ -152,7 +175,7 @@ export default function ProfileMePage() {
   return (
     <MainLayout>
         <div className="space-y-4 py-4">
-            <ProfileHeader user={user} postCount={posts.length} />
+            <ProfileHeader user={user} postCount={userPosts.length} />
             <ProfileBio user={user} />
 
             <div className="px-4">
@@ -167,19 +190,25 @@ export default function ProfileMePage() {
             </div>
 
             <Tabs defaultValue="posts" className="w-full">
-                <TabsList className="w-full grid grid-cols-1">
+                <TabsList className="w-full grid grid-cols-3">
                     <TabsTrigger value="posts">
                         <Grid3x3 className="mr-2 h-4 w-4" /> Postingan
                     </TabsTrigger>
+                    <TabsTrigger value="tagged">
+                        <UserTag className="mr-2 h-4 w-4" /> Ditandai
+                    </TabsTrigger>
+                    <TabsTrigger value="archived">
+                        <Archive className="mr-2 h-4 w-4" /> Diarsipkan
+                    </TabsTrigger>
                 </TabsList>
                 <TabsContent value="posts">
-                    {loadingPosts ? (
-                        <div className="flex justify-center items-center p-10">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        </div>
-                    ) : (
-                        <ProfilePostsGrid posts={posts} />
-                    )}
+                    <ProfilePostsGrid posts={userPosts} isLoading={loadingUserPosts} />
+                </TabsContent>
+                 <TabsContent value="tagged">
+                    <ProfilePostsGrid posts={taggedPosts} isLoading={loadingTagged} />
+                </TabsContent>
+                <TabsContent value="archived">
+                    <ProfilePostsGrid posts={archivedPosts} isLoading={loadingArchived} />
                 </TabsContent>
             </Tabs>
              

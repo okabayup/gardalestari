@@ -46,6 +46,7 @@ interface Post {
   commentsCount: number;
   createdAt: Timestamp;
   status: 'published' | 'archived';
+  mentionedUserIds: string[]; // For querying posts where a user is mentioned
 }
 
 interface Author {
@@ -108,6 +109,33 @@ const formatTimestamp = (timestamp: Timestamp): string => {
   }
 };
 
+// Helper function to build a PostWithAuthor object
+const buildPostWithAuthor = async (postData: Post, currentUserId?: string): Promise<PostWithAuthor> => {
+    const authorRef = doc(usersCollection, postData.authorId);
+    const authorDoc = await getDoc(authorRef);
+    const authorData = authorDoc.data();
+
+    const author: Author = {
+        id: postData.authorId,
+        name: authorData?.fullName || authorData?.displayName || 'Unknown User',
+        username: authorData?.username || `user_${postData.authorId.substring(0,5)}`,
+        avatarUrl: authorData?.avatarUrl || '',
+        level: authorData?.level || 'Bronze',
+        type: authorData?.type,
+    };
+
+    return {
+      id: postData.id,
+      author: author,
+      media: postData.media || [{url: (postData as any).imageUrl, type: 'image', hint: (postData as any).imageHint, mentions: []}], // Fallback for old single-image posts
+      caption: postData.caption,
+      likesCount: postData.likes.length,
+      commentsCount: postData.commentsCount,
+      timestamp: formatTimestamp(postData.createdAt),
+      isLiked: currentUserId ? postData.likes.includes(currentUserId) : false,
+    };
+}
+
 
 // Create a new post with multiple files
 export async function createPost(caption: string, mediaPayload: {file: File, mentions: Mention[]}[], authorId: string) {
@@ -120,6 +148,7 @@ export async function createPost(caption: string, mediaPayload: {file: File, men
 
   try {
     const mediaItems: MediaItem[] = [];
+    const mentionedUserIds = new Set<string>();
 
     // Upload all files to Firebase Storage in parallel
     await Promise.all(mediaPayload.map(async (payload) => {
@@ -127,15 +156,19 @@ export async function createPost(caption: string, mediaPayload: {file: File, men
         const storageRef = ref(storage, `posts/${Date.now()}_${file.name}`);
         await uploadBytes(storageRef, file);
         const url = await getDownloadURL(storageRef);
+        
+        const mentions = payload.mentions || [];
+        mentions.forEach(m => mentionedUserIds.add(m.userId));
+
         mediaItems.push({
             url,
             type: file.type.startsWith('video') ? 'video' : 'image',
             hint: 'user uploaded content',
-            mentions: payload.mentions || [] 
+            mentions: mentions
         });
     }));
 
-    // 2. Create post document in Firestore
+    // Create post document in Firestore
     const newPost = {
       authorId,
       caption,
@@ -143,12 +176,12 @@ export async function createPost(caption: string, mediaPayload: {file: File, men
       likes: [],
       commentsCount: 0,
       createdAt: Timestamp.now(),
-      status: 'published' as const, // Default status
+      status: 'published' as const,
+      mentionedUserIds: Array.from(mentionedUserIds),
     };
 
     await addDoc(postsCollection, newPost);
     
-    // 3. Revalidate path to show new post
     revalidatePath('/feed');
     revalidatePath('/profile/me');
 
@@ -166,82 +199,61 @@ export async function getPosts(currentUserId: string): Promise<PostWithAuthor[]>
     orderBy('createdAt', 'desc')
   );
   const postsSnapshot = await getDocs(q);
-  const posts: PostWithAuthor[] = [];
-
-  for (const postDoc of postsSnapshot.docs) {
-    const postData = { id: postDoc.id, ...postDoc.data() } as Post;
-
-    // Get author details
-    const authorRef = doc(usersCollection, postData.authorId);
-    const authorDoc = await getDoc(authorRef);
-    const authorData = authorDoc.data();
-
-    const author: Author = {
-        id: postData.authorId,
-        name: authorData?.fullName || authorData?.displayName || 'Unknown User',
-        username: authorData?.username || `user_${postData.authorId.substring(0,5)}`,
-        avatarUrl: authorData?.avatarUrl || '',
-        level: authorData?.level || 'Bronze',
-        type: authorData?.type,
-    }
-
-    posts.push({
-      id: postData.id,
-      author: author,
-      media: postData.media || [{url: (postData as any).imageUrl, type: 'image', hint: (postData as any).imageHint}], // Fallback for old single-image posts
-      caption: postData.caption,
-      likesCount: postData.likes.length,
-      commentsCount: postData.commentsCount,
-      timestamp: formatTimestamp(postData.createdAt),
-      isLiked: postData.likes.includes(currentUserId),
-    });
-  }
-
+  
+  const posts = await Promise.all(postsSnapshot.docs.map(doc => 
+    buildPostWithAuthor({ id: doc.id, ...doc.data() } as Post, currentUserId)
+  ));
+  
   return posts;
 }
 
-// Get all posts by a specific user ID
+// Get all posts by a specific user ID for their profile
 export async function getPostsByUserId(userId: string): Promise<PostWithAuthor[]> {
-  const q = query(postsCollection, where('authorId', '==', userId), where('status', '==', 'published'), orderBy('createdAt', 'desc'));
+  const q = query(
+    postsCollection, 
+    where('authorId', '==', userId), 
+    where('status', '==', 'published'), 
+    orderBy('createdAt', 'desc')
+  );
   const postsSnapshot = await getDocs(q);
-  const posts: PostWithAuthor[] = [];
-  
-  // No need to fetch author details repeatedly as they are all the same user
-  let author: Author | null = null;
-  const authorRef = doc(usersCollection, userId);
-  const authorDoc = await getDoc(authorRef);
-  
-  if (authorDoc.exists()) {
-      const authorData = authorDoc.data();
-       author = {
-          id: userId,
-          name: authorData?.fullName || authorData?.displayName || 'Unknown User',
-          username: authorData?.username || `user_${userId.substring(0,5)}`,
-          avatarUrl: authorData?.avatarUrl || '',
-          level: authorData?.level || 'Bronze',
-          type: authorData?.type,
-      }
-  }
 
-
-  for (const postDoc of postsSnapshot.docs) {
-    const postData = { id: postDoc.id, ...postDoc.data() } as Post;
-    
-    if (author) {
-        posts.push({
-          id: postData.id,
-          author: author,
-          media: postData.media || [],
-          caption: postData.caption,
-          likesCount: postData.likes.length,
-          commentsCount: postData.commentsCount,
-          timestamp: formatTimestamp(postData.createdAt),
-          // isLiked is not relevant for viewing someone else's profile grid, default to false
-          isLiked: false, 
-        });
-    }
-  }
+  const posts = await Promise.all(postsSnapshot.docs.map(doc => 
+    buildPostWithAuthor({ id: doc.id, ...doc.data() } as Post)
+  ));
   return posts;
+}
+
+
+// Get archived posts for the current user
+export async function getArchivedPosts(userId: string): Promise<PostWithAuthor[]> {
+    const q = query(
+        postsCollection,
+        where('authorId', '==', userId),
+        where('status', '==', 'archived'),
+        orderBy('createdAt', 'desc')
+    );
+    const postsSnapshot = await getDocs(q);
+
+    const posts = await Promise.all(postsSnapshot.docs.map(doc =>
+        buildPostWithAuthor({ id: doc.id, ...doc.data() } as Post, userId)
+    ));
+    return posts;
+}
+
+// Get posts where a user is mentioned/tagged
+export async function getTaggedPosts(userId: string): Promise<PostWithAuthor[]> {
+    const q = query(
+        postsCollection,
+        where('mentionedUserIds', 'array-contains', userId),
+        where('status', '==', 'published'),
+        orderBy('createdAt', 'desc')
+    );
+    const postsSnapshot = await getDocs(q);
+    
+    const posts = await Promise.all(postsSnapshot.docs.map(doc =>
+        buildPostWithAuthor({ id: doc.id, ...doc.data() } as Post, userId)
+    ));
+    return posts;
 }
 
 

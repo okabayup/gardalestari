@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Send, MoreHorizontal, Archive } from 'lucide-react';
+import { Heart, MessageCircle, Send, MoreHorizontal, Archive, UserTag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PostWithAuthor, CommentWithAuthor } from '@/app/actions/posts';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
@@ -48,6 +48,27 @@ const CaptionWithMentions = ({ text }: { text: string }) => {
   );
 };
 
+const TaggedUsersOverlay = ({ media }: { media: PostWithAuthor['media'] }) => {
+  const allMentions = media.flatMap(m => m.mentions || []);
+  if (allMentions.length === 0) return null;
+
+  return (
+    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
+      <div className="flex flex-wrap gap-2 p-4">
+        {allMentions.map(mention => (
+          <Link
+            key={mention.userId}
+            href={`/profile/${mention.username}`}
+            className="bg-black/70 text-white text-xs rounded-md px-2 py-1 hover:bg-black"
+          >
+            @{mention.username}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 
 export default function PostCard({ post, onToggleLike, onArchive, currentUserId }: PostCardProps) {
   const { user } = useAuth();
@@ -66,7 +87,6 @@ export default function PostCard({ post, onToggleLike, onArchive, currentUserId 
       await addComment(post.id, user.uid, commentText);
       setCommentText('');
       toast({ title: 'Komentar ditambahkan!' });
-      // Optionally, refresh comments after adding
       if (isCommentsOpen) {
           handleFetchComments();
       }
@@ -82,7 +102,7 @@ export default function PostCard({ post, onToggleLike, onArchive, currentUserId 
   };
 
   const handleFetchComments = async () => {
-      if (!isCommentsOpen) { // Fetch only when opening
+      if (!isCommentsOpen) { 
           try {
               const fetchedComments = await getComments(post.id);
               setComments(fetchedComments);
@@ -93,6 +113,7 @@ export default function PostCard({ post, onToggleLike, onArchive, currentUserId 
   }
   
   const isAuthor = currentUserId === post.author.id;
+  const hasTags = post.media.some(m => m.mentions && m.mentions.length > 0);
 
   return (
     <Card className="overflow-hidden">
@@ -131,7 +152,7 @@ export default function PostCard({ post, onToggleLike, onArchive, currentUserId 
             <CarouselContent>
             {post.media.map((mediaItem, index) => (
                 <CarouselItem key={index}>
-                    <div className="w-full flex items-center justify-center">
+                    <div className="w-full flex items-center justify-center relative">
                         {mediaItem.type === 'image' ? (
                             <Image
                                 src={mediaItem.url}
@@ -150,6 +171,7 @@ export default function PostCard({ post, onToggleLike, onArchive, currentUserId 
                                 className="w-full h-auto max-h-[80vh] object-contain"
                             />
                         )}
+                        <TaggedUsersOverlay media={post.media} />
                     </div>
                 </CarouselItem>
             ))}
@@ -161,6 +183,7 @@ export default function PostCard({ post, onToggleLike, onArchive, currentUserId 
                 </>
             )}
         </Carousel>
+        {hasTags && <UserTag className="absolute bottom-2 left-2 h-5 w-5 text-white" />}
         <div className="p-3">
              <CaptionWithMentions text={post.caption} />
         </div>

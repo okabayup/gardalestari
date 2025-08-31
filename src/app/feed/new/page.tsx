@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, ChangeEvent } from 'react';
+import { useState, useRef, ChangeEvent, MouseEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -10,9 +10,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { createPost, Mention } from '@/app/actions/posts';
-import { Loader2, ArrowLeft, Image as ImageIcon, X } from 'lucide-react';
+import { searchUsers, PublicUser } from '@/app/actions/user';
+import { Loader2, ArrowLeft, Image as ImageIcon, X, AtSign } from 'lucide-react';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useDebounce } from 'use-debounce';
 
 interface MediaPreview {
     file: File;
@@ -31,55 +36,69 @@ const MediaUploadPlaceholder = ({ onClick }: { onClick: () => void }) => (
     </div>
 );
 
-const MediaPreviewCarousel = ({ 
-    mediaFiles, 
-    onRemove,
-    onAddMore
-}: { 
-    mediaFiles: MediaPreview[], 
-    onRemove: (index: number) => void,
-    onAddMore: () => void
-}) => (
-    <div className="w-full aspect-video rounded-lg flex flex-col items-center justify-center text-muted-foreground relative bg-black">
-      <Carousel className="w-full h-full">
-        <CarouselContent className="h-full">
-          {mediaFiles.map((media, index) => (
-            <CarouselItem key={index} className="relative w-full h-full flex items-center justify-center">
-              {media.type === 'image' ? (
-                <Image src={media.previewUrl} alt="Pratinjau media" fill className="object-contain" />
-              ) : (
-                <video src={media.previewUrl} className="w-full h-full object-contain" controls muted loop />
-              )}
-              <Button
-                type="button"
-                size="icon"
-                variant="destructive"
-                className="absolute top-1 right-1 h-6 w-6 z-10"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRemove(index);
-                }}
-              >
-                <X className="h-4 w-4" />
-                <span className="sr-only">Hapus media</span>
-              </Button>
-            </CarouselItem>
-          ))}
-        </CarouselContent>
-        {mediaFiles.length > 1 && (
-          <>
-            <CarouselPrevious className="left-2" />
-            <CarouselNext className="right-2" />
-          </>
-        )}
-      </Carousel>
-      {mediaFiles.length < 10 && ( // Batasi jumlah media
-        <Button type="button" variant="outline" size="sm" className="absolute bottom-2 z-10 bg-background/70" onClick={onAddMore}>
-            Tambah Media
-        </Button>
-      )}
-    </div>
+const UserTag = ({ mention, onRemove }: { mention: Mention, onRemove: () => void }) => (
+  <div
+    className="absolute p-1 pr-2 bg-black/70 text-white text-xs rounded-md flex items-center gap-1 cursor-pointer"
+    style={{ left: `${mention.x}%`, top: `${mention.y}%`, transform: 'translate(-50%, -50%)' }}
+    onClick={(e) => e.stopPropagation()}
+  >
+    <span>{mention.username}</span>
+    <button type="button" onClick={onRemove} className="bg-white/20 rounded-full h-3 w-3 flex items-center justify-center text-white">
+      <X className="h-2 w-2" />
+    </button>
+  </div>
 );
+
+const UserSearchPopover = ({ onSelectUser, children }: { onSelectUser: (user: PublicUser) => void, children: React.ReactNode }) => {
+    const [search, setSearch] = useState('');
+    const [debouncedSearch] = useDebounce(search, 300);
+    const [results, setResults] = useState<PublicUser[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    React.useEffect(() => {
+        const fetchUsers = async () => {
+            if (debouncedSearch.length < 2) {
+                setResults([]);
+                return;
+            }
+            setLoading(true);
+            const users = await searchUsers(debouncedSearch);
+            setResults(users);
+            setLoading(false);
+        };
+        fetchUsers();
+    }, [debouncedSearch]);
+
+    return (
+        <Popover>
+            <PopoverTrigger asChild>{children}</PopoverTrigger>
+            <PopoverContent className="w-64 p-2">
+                <div className="space-y-2">
+                    <Input
+                        placeholder="Cari nama pengguna..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                    {loading && <div className="text-center p-2"><Loader2 className="h-4 w-4 animate-spin mx-auto"/></div>}
+                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                        {results.map(user => (
+                            <div key={user.id} className="flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer" onClick={() => onSelectUser(user)}>
+                                <Avatar className="h-8 w-8">
+                                    <AvatarImage src={user.avatarUrl} />
+                                    <AvatarFallback>{user.fullName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="font-semibold text-sm">{user.username}</p>
+                                    <p className="text-xs text-muted-foreground">{user.fullName}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </PopoverContent>
+        </Popover>
+    );
+};
 
 
 export default function NewPostPage() {
@@ -90,7 +109,8 @@ export default function NewPostPage() {
   const [caption, setCaption] = useState('');
   const [mediaFiles, setMediaFiles] = useState<MediaPreview[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+  const [taggingState, setTaggingState] = useState<{ index: number, x: number, y: number } | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -107,9 +127,45 @@ export default function NewPostPage() {
   };
 
   const removeMedia = (indexToRemove: number) => {
-    // Hapus URL object untuk mencegah memory leak
     URL.revokeObjectURL(mediaFiles[indexToRemove].previewUrl);
     setMediaFiles(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+  
+  const handleMediaClick = (e: MouseEvent<HTMLDivElement>, index: number) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setTaggingState({ index, x, y });
+  };
+
+  const handleSelectUserToTag = (selectedUser: PublicUser) => {
+    if (!taggingState) return;
+
+    setMediaFiles(prev => prev.map((media, i) => {
+      if (i === taggingState.index) {
+        // Prevent tagging the same user twice
+        if (media.mentions.some(m => m.userId === selectedUser.id)) return media;
+        
+        const newMention: Mention = {
+          userId: selectedUser.id,
+          username: selectedUser.username,
+          x: taggingState.x,
+          y: taggingState.y
+        };
+        return { ...media, mentions: [...media.mentions, newMention] };
+      }
+      return media;
+    }));
+    setTaggingState(null);
+  };
+  
+  const removeMention = (mediaIndex: number, mentionIndex: number) => {
+    setMediaFiles(prev => prev.map((media, i) => {
+      if (i === mediaIndex) {
+        return { ...media, mentions: media.mentions.filter((_, j) => j !== mentionIndex) };
+      }
+      return media;
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -142,7 +198,6 @@ export default function NewPostPage() {
       });
     } finally {
       setIsSubmitting(false);
-      // Clean up all object URLs after submission
       mediaFiles.forEach(mf => URL.revokeObjectURL(mf.previewUrl));
     }
   };
@@ -156,18 +211,61 @@ export default function NewPostPage() {
         <Card>
           <CardHeader>
             <CardTitle>Buat Postingan Baru</CardTitle>
-            <CardDescription>Bagikan momen atau wawasan Anda dengan komunitas.</CardDescription>
+            <CardDescription>Bagikan momen atau wawasan Anda. Klik pada media untuk menandai pengguna.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
                {mediaFiles.length === 0 ? (
                  <MediaUploadPlaceholder onClick={() => fileInputRef.current?.click()} />
               ) : (
-                 <MediaPreviewCarousel 
-                    mediaFiles={mediaFiles} 
-                    onRemove={removeMedia}
-                    onAddMore={() => fileInputRef.current?.click()}
-                 />
+                <div className="w-full aspect-video rounded-lg flex flex-col items-center justify-center text-muted-foreground relative bg-black">
+                  <Carousel className="w-full h-full">
+                    <CarouselContent className="h-full">
+                      {mediaFiles.map((media, index) => (
+                        <CarouselItem key={index} className="relative w-full h-full flex items-center justify-center">
+                          <UserSearchPopover onSelectUser={handleSelectUserToTag}>
+                            <div className="w-full h-full" onClick={(e) => handleMediaClick(e, index)}>
+                              {media.type === 'image' ? (
+                                <Image src={media.previewUrl} alt="Pratinjau media" fill className="object-contain" />
+                              ) : (
+                                <video src={media.previewUrl} className="w-full h-full object-contain" controls muted loop />
+                              )}
+                            </div>
+                          </UserSearchPopover>
+
+                          {media.mentions.map((mention, mentionIndex) => (
+                            <UserTag key={mention.userId} mention={mention} onRemove={() => removeMention(index, mentionIndex)} />
+                          ))}
+
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="destructive"
+                            className="absolute top-1 right-1 h-6 w-6 z-10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeMedia(index);
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                            <span className="sr-only">Hapus media</span>
+                          </Button>
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    {mediaFiles.length > 1 && (
+                      <>
+                        <CarouselPrevious className="left-2" />
+                        <CarouselNext className="right-2" />
+                      </>
+                    )}
+                  </Carousel>
+                  {mediaFiles.length < 10 && (
+                    <Button type="button" variant="outline" size="sm" className="absolute bottom-2 z-10 bg-background/70" onClick={() => fileInputRef.current?.click()}>
+                        Tambah Media
+                    </Button>
+                  )}
+                </div>
               )}
               <input
                 type="file"

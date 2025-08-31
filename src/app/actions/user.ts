@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, DocumentData } from 'firebase/firestore';
+import { collection, query, where, getDocs, DocumentData, limit } from 'firebase/firestore';
 
 export interface PublicUser {
   id: string;
@@ -61,4 +61,64 @@ export async function getUserByUsername(username: string): Promise<PublicUser | 
         console.error("Error fetching user by username:", error);
         return null;
     }
+}
+
+
+/**
+ * Searches for users by username or full name.
+ * @param searchQuery The search term.
+ * @param limitCount The maximum number of users to return.
+ * @returns {Promise<PublicUser[]>} A list of public user data.
+ */
+export async function searchUsers(searchQuery: string, limitCount: number = 5): Promise<PublicUser[]> {
+  if (!searchQuery) return [];
+
+  const searchTerm = searchQuery.toLowerCase();
+  
+  try {
+    const usernameQuery = query(
+      collection(db, 'users'),
+      where('username', '>=', searchTerm),
+      where('username', '<=', searchTerm + '\uf8ff'),
+      limit(limitCount)
+    );
+
+    const fullNameQuery = query(
+      collection(db, 'users'),
+      where('fullName', '>=', searchTerm),
+      where('fullName', '<=', searchTerm + '\uf8ff'),
+      limit(limitCount)
+    );
+
+    const [usernameSnapshot, fullNameSnapshot] = await Promise.all([
+        getDocs(usernameQuery),
+        getDocs(fullNameQuery)
+    ]);
+    
+    const usersMap = new Map<string, PublicUser>();
+
+    const processSnapshot = (snapshot: DocumentData) => {
+        snapshot.forEach((doc: DocumentData) => {
+            if (!usersMap.has(doc.id)) {
+                const data = doc.data();
+                 usersMap.set(doc.id, {
+                    id: doc.id,
+                    username: data.username,
+                    fullName: data.fullName || data.displayName,
+                    avatarUrl: data.avatarUrl,
+                    level: data.level || 'Bronze',
+                });
+            }
+        });
+    }
+
+    processSnapshot(usernameSnapshot);
+    processSnapshot(fullNameSnapshot);
+    
+    return Array.from(usersMap.values()).slice(0, limitCount);
+
+  } catch (error) {
+    console.error("Error searching users:", error);
+    return [];
+  }
 }
