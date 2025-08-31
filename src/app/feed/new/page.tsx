@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { createPost } from '@/app/actions/posts';
+import { createPost, Mention } from '@/app/actions/posts';
 import { Loader2, ArrowLeft, Image as ImageIcon, X, Video } from 'lucide-react';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
@@ -18,6 +18,7 @@ interface MediaPreview {
     file: File;
     previewUrl: string;
     type: 'image' | 'video';
+    mentions: Mention[];
 }
 
 export default function NewPostPage() {
@@ -38,6 +39,7 @@ export default function NewPostPage() {
             file,
             previewUrl: URL.createObjectURL(file),
             type: file.type.startsWith('video') ? 'video' : 'image',
+            mentions: []
         }));
         setMediaFiles(prev => [...prev, ...newMediaPreviews]);
     }
@@ -60,8 +62,11 @@ export default function NewPostPage() {
     
     setIsSubmitting(true);
     try {
-      const filesToUpload = mediaFiles.map(mf => mf.file);
-      await createPost(caption, filesToUpload, user.uid);
+      const mediaPayload = mediaFiles.map(mf => ({
+        file: mf.file,
+        mentions: mf.mentions
+      }));
+      await createPost(caption, mediaPayload, user.uid);
       toast({
         title: 'Postingan berhasil dibuat!',
       });
@@ -146,7 +151,7 @@ export default function NewPostPage() {
                 multiple
               />
               <Textarea
-                placeholder="Tulis caption Anda di sini..."
+                placeholder="Tulis caption Anda di sini... Gunakan @ untuk menyebut teman."
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
                 rows={4}

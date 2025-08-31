@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Send } from 'lucide-react';
+import { Heart, MessageCircle, Send, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PostWithAuthor } from '@/app/actions/posts';
 import { MemberLevelBadge } from '../members/MemberLevelBadge';
@@ -15,12 +15,33 @@ import { useState } from 'react';
 import { addComment } from '@/app/actions/posts';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-
+import Link from 'next/link';
 
 interface PostCardProps {
   post: PostWithAuthor;
   onToggleLike: () => void;
 }
+
+const CaptionWithMentions = ({ text }: { text: string }) => {
+  const words = text.split(/(\s+)/); // Split by space, keeping the spaces
+
+  return (
+    <>
+      {words.map((word, index) => {
+        if (word.startsWith('@')) {
+          const username = word.substring(1);
+          return (
+            <Link key={index} href={`/profile/${username}`} className="font-semibold text-primary hover:underline">
+              {word}
+            </Link>
+          );
+        }
+        return word;
+      })}
+    </>
+  );
+};
+
 
 export default function PostCard({ post, onToggleLike }: PostCardProps) {
   const { user } = useAuth();
@@ -62,6 +83,9 @@ export default function PostCard({ post, onToggleLike }: PostCardProps) {
             </div>
             <span className="text-xs text-muted-foreground">{post.timestamp}</span>
         </div>
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+            <MoreHorizontal className="h-4 w-4" />
+        </Button>
       </CardHeader>
       <CardContent className="p-0">
         <Carousel className="w-full bg-black">
@@ -81,6 +105,8 @@ export default function PostCard({ post, onToggleLike }: PostCardProps) {
                             <video
                                 src={mediaItem.url}
                                 controls
+                                muted
+                                loop
                                 className="w-full h-full object-contain"
                             />
                         )}
@@ -98,7 +124,7 @@ export default function PostCard({ post, onToggleLike }: PostCardProps) {
         <div className="p-3">
             <p className="text-sm">
                 <span className="font-semibold">{post.author.name}</span>{' '}
-                {post.caption}
+                <CaptionWithMentions text={post.caption} />
             </p>
         </div>
       </CardContent>

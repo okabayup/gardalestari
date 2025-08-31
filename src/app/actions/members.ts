@@ -6,12 +6,14 @@ import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 
 export type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected';
+export type MemberType = 'pusat' | 'daerah' | 'pembina';
+
 
 export interface Member {
   id: string;
   name: string;
   position?: string;
-  type?: 'pusat' | 'daerah' | 'pembina';
+  type?: MemberType;
   region?: string;
   avatarUrl?: string;
 }
@@ -36,6 +38,9 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
       phoneNumber: data.phoneNumber || 'N/A',
       verificationStatus: data.verificationStatus || 'unverified',
       avatarUrl: data.avatarUrl,
+      position: data.position || 'Anggota',
+      type: data.type || undefined,
+      region: data.region || undefined,
     } as MemberWithStatus);
   });
   return members;

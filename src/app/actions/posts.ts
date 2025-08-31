@@ -20,14 +20,14 @@ import { revalidatePath } from 'next/cache';
 
 type MediaType = 'image' | 'video';
 
-interface Mention {
+export interface Mention {
     userId: string;
     username: string; // denormalized for easy display
     x: number; // position percentage
     y: number; // position percentage
 }
 
-interface MediaItem {
+export interface MediaItem {
     url: string;
     type: MediaType;
     hint: string;
@@ -84,11 +84,11 @@ const formatTimestamp = (timestamp: Timestamp): string => {
 
 
 // Create a new post with multiple files
-export async function createPost(caption: string, files: File[], authorId: string) {
+export async function createPost(caption: string, mediaPayload: {file: File, mentions: Mention[]}[], authorId: string) {
   if (!authorId) {
     throw new Error('Pengguna tidak terautentikasi.');
   }
-  if (files.length === 0) {
+  if (mediaPayload.length === 0) {
     throw new Error('Setidaknya satu file harus diunggah.');
   }
 
@@ -96,7 +96,8 @@ export async function createPost(caption: string, files: File[], authorId: strin
     const mediaItems: MediaItem[] = [];
 
     // Upload all files to Firebase Storage in parallel
-    await Promise.all(files.map(async (file) => {
+    await Promise.all(mediaPayload.map(async (payload) => {
+        const file = payload.file;
         const storageRef = ref(storage, `posts/${Date.now()}_${file.name}`);
         await uploadBytes(storageRef, file);
         const url = await getDownloadURL(storageRef);
@@ -104,7 +105,7 @@ export async function createPost(caption: string, files: File[], authorId: strin
             url,
             type: file.type.startsWith('video') ? 'video' : 'image',
             hint: 'user uploaded content',
-            mentions: [] // Initialize with empty mentions
+            mentions: payload.mentions || [] 
         });
     }));
 
