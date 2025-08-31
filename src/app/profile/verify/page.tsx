@@ -10,14 +10,15 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Camera, ArrowLeft, User, Fingerprint } from 'lucide-react';
+import { Loader2, Camera, ArrowLeft, User, Fingerprint, CheckCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { readKtp } from '@/ai/flows/ocr-ktp-flow';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ImageCropper from '@/components/profile/ImageCropper';
+import Image from 'next/image';
 
-type Step = 'data' | 'ktp' | 'selfie' | 'submitting';
+type Step = 'data' | 'ktp' | 'selfie' | 'confirm' | 'submitting';
 
 export default function VerifyProfilePage() {
   const { user, submitForVerification } = useAuth();
@@ -49,17 +50,32 @@ export default function VerifyProfilePage() {
   }, [user, router]);
   
   useEffect(() => {
-    // Clean up camera stream when component unmounts
+    // Clean up camera stream when component unmounts or step changes
     return () => {
       stopCamera();
     };
   }, []);
 
+  useEffect(() => {
+    async function startInitialCamera() {
+      if (step === 'ktp') {
+        await startCamera('environment');
+      } else if (step === 'selfie') {
+        await startCamera('user');
+      } else {
+        stopCamera();
+      }
+    }
+    startInitialCamera();
+  }, [step]);
+
+
   const startCamera = async (facingMode: 'environment' | 'user') => {
     stopCamera(); // Ensure previous stream is stopped
     setCurrentFacingMode(facingMode);
+    setIsCameraActive(false); // Set loading state for camera
+
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      console.error('Camera not supported on this browser.');
       toast({ variant: 'destructive', title: 'Kamera tidak didukung' });
       setHasCameraPermission(false);
       return;
@@ -86,7 +102,8 @@ export default function VerifyProfilePage() {
 
   const stopCamera = () => {
     if (videoRef.current?.srcObject) {
-      (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
       videoRef.current.srcObject = null;
     }
     setIsCameraActive(false);
@@ -116,7 +133,6 @@ export default function VerifyProfilePage() {
       return;
     }
     setStep('ktp');
-    startCamera('environment');
   };
 
   const capturePhoto = (): string | null => {
@@ -136,9 +152,7 @@ export default function VerifyProfilePage() {
     const dataUrl = capturePhoto();
     if (dataUrl) {
       setKtpDataUrl(dataUrl);
-      stopCamera();
       setStep('selfie');
-      startCamera('user');
     }
   };
 
@@ -146,9 +160,7 @@ export default function VerifyProfilePage() {
     const dataUrl = capturePhoto();
     if (dataUrl) {
       setSelfieDataUrl(dataUrl);
-      stopCamera();
-      setStep('submitting');
-      handleSubmit(); // Automatically call submit after selfie
+      setStep('confirm');
     }
   };
 
@@ -172,6 +184,7 @@ export default function VerifyProfilePage() {
       setStep('data'); // Go back to the first step
       return;
     }
+    setStep('submitting');
 
     try {
       toast({ title: 'Memproses KTP...', description: 'Mohon tunggu, sedang memverifikasi data KTP Anda dengan OCR.' });
@@ -189,7 +202,7 @@ export default function VerifyProfilePage() {
       if (normalizedOcrNik !== normalizedInputNik) {
           throw new Error(`NIK tidak cocok. NIK di KTP: ${ocrResult.nik}, NIK Anda: ${nik}.`);
       }
-       if (!normalizedOcrName.includes(normalizedInputName)) {
+      if (!normalizedOcrName.includes(normalizedInputName)) {
           throw new Error(`Nama tidak cocok. Nama di KTP: "${ocrResult.name}", Nama Anda: "${fullName}".`);
       }
 
@@ -284,6 +297,39 @@ export default function VerifyProfilePage() {
              </Button>
           </div>
         );
+      case 'confirm':
+        return (
+            <div className="space-y-6">
+                 <div className="space-y-4">
+                    <h3 className="font-semibold">Mohon konfirmasi data Anda:</h3>
+                    <div className="grid grid-cols-2 gap-4 rounded-md border p-4">
+                        <div className="space-y-2">
+                            <Label>Nama & NIK</Label>
+                            <p className="text-sm font-medium">{fullName}</p>
+                            <p className="text-sm font-mono text-muted-foreground">{nik}</p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Foto Profil</Label>
+                            <Avatar className="h-16 w-16">
+                                <AvatarImage src={photoPreview || undefined} />
+                                <AvatarFallback>{getInitials(fullName)}</AvatarFallback>
+                            </Avatar>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Foto KTP</Label>
+                             {ktpDataUrl && <Image src={ktpDataUrl} alt="Preview KTP" width={120} height={75} className="rounded-md border object-cover"/>}
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Foto Selfie</Label>
+                            {selfieDataUrl && <Image src={selfieDataUrl} alt="Preview Selfie" width={120} height={75} className="rounded-md border object-cover"/>}
+                        </div>
+                    </div>
+                </div>
+                 <Button size="lg" className="w-full" onClick={handleSubmit}>
+                    <CheckCircle className="mr-2 h-4 w-4" /> Kirim Verifikasi
+                 </Button>
+            </div>
+        );
       case 'submitting':
         return (
             <div className="flex flex-col items-center justify-center space-y-4 p-10">
@@ -313,6 +359,33 @@ export default function VerifyProfilePage() {
       </>
   );
 
+  const handleBack = () => {
+    switch (step) {
+      case 'ktp':
+        setStep('data');
+        break;
+      case 'selfie':
+        setStep('ktp');
+        break;
+      case 'confirm':
+        setStep('selfie');
+        break;
+      default:
+        router.back();
+    }
+  };
+
+  const getStepDescription = () => {
+    switch (step) {
+      case 'data': return "Langkah 1: Isi data diri dan unggah foto profil.";
+      case 'ktp': return "Langkah 2: Ambil Foto KTP Anda.";
+      case 'selfie': return "Langkah 3: Ambil Foto Selfie Anda.";
+      case 'confirm': return "Langkah 4: Konfirmasi data Anda sebelum mengirim.";
+      case 'submitting': return "Sedang memproses pengajuan Anda.";
+      default: return "Verifikasi Identitas";
+    }
+  };
+
   return (
     <MainLayout>
        {cropperSrc && (
@@ -323,28 +396,13 @@ export default function VerifyProfilePage() {
         />
       )}
       <div className="p-6 space-y-6">
-        <Button variant="outline" onClick={() => {
-            if (step === 'data') {
-                router.back();
-            } else if (step === 'ktp') {
-                setStep('data');
-                stopCamera();
-            } else if (step === 'selfie') {
-                setStep('ktp');
-                startCamera('environment');
-            }
-        }} className="mb-4">
+        <Button variant="outline" onClick={handleBack} className="mb-4">
             <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
         </Button>
         <Card>
           <CardHeader>
             <CardTitle>Verifikasi Identitas</CardTitle>
-            <CardDescription>
-              {step === 'data' && "Langkah 1: Isi data diri dan unggah foto profil."}
-              {step === 'ktp' && "Langkah 2: Ambil Foto KTP Anda."}
-              {step === 'selfie' && "Langkah 3: Ambil Foto Selfie Anda."}
-              {step === 'submitting' && "Sedang memproses pengajuan Anda."}
-            </CardDescription>
+            <CardDescription>{getStepDescription()}</CardDescription>
           </CardHeader>
           <CardContent>
             {renderStep()}
@@ -354,3 +412,4 @@ export default function VerifyProfilePage() {
     </MainLayout>
   );
 }
+
