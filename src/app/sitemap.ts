@@ -1,0 +1,36 @@
+import { MetadataRoute } from 'next';
+import { blogPosts } from '@/lib/placeholder-data';
+
+const BASE_URL = 'https://garda-lestari.web.app'; // Ganti dengan domain Anda yang sebenarnya
+
+export default function sitemap(): MetadataRoute.Sitemap {
+  // Rute statis
+  const staticRoutes = [
+    '/',
+    '/login',
+    '/register',
+    '/feed',
+    '/members',
+    '/programs',
+    '/events',
+    '/benefits',
+    '/blog',
+    '/profile',
+    '/admin',
+  ].map((route) => ({
+    url: `${BASE_URL}${route}`,
+    lastModified: new Date().toISOString(),
+    changeFrequency: 'monthly' as const,
+    priority: route === '/' ? 1 : 0.8,
+  }));
+
+  // Rute dinamis untuk postingan blog
+  const blogPostRoutes = blogPosts.map((post) => ({
+    url: `${BASE_URL}/blog/${post.slug}`,
+    lastModified: new Date().toISOString(), // Idealnya, ini harus menjadi tanggal update postingan
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }));
+
+  return [...staticRoutes, ...blogPostRoutes];
+}
