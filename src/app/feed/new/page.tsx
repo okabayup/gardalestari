@@ -10,8 +10,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { createPost } from '@/app/actions/posts';
-import { Loader2, ArrowLeft, Image as ImageIcon, Upload } from 'lucide-react';
+import { Loader2, ArrowLeft, Image as ImageIcon, X } from 'lucide-react';
 import Image from 'next/image';
+
+interface MediaPreview {
+    file: File;
+    previewUrl: string;
+    type: 'image' | 'video';
+}
 
 export default function NewPostPage() {
   const { user } = useAuth();
@@ -19,38 +25,42 @@ export default function NewPostPage() {
   const { toast } = useToast();
   
   const [caption, setCaption] = useState('');
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [mediaFiles, setMediaFiles] = useState<MediaPreview[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+        const newMediaPreviews: MediaPreview[] = Array.from(files).map(file => ({
+            file,
+            previewUrl: URL.createObjectURL(file),
+            type: file.type.startsWith('video') ? 'video' : 'image',
+        }));
+        setMediaFiles(prev => [...prev, ...newMediaPreviews]);
     }
+  };
+
+  const removeMedia = (index: number) => {
+    setMediaFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!imageFile || !user) {
+    if (mediaFiles.length === 0 || !user) {
       toast({
         variant: 'destructive',
         title: 'Data tidak lengkap',
-        description: 'Mohon unggah gambar untuk postingan Anda.',
+        description: 'Mohon unggah setidaknya satu gambar atau video untuk postingan Anda.',
       });
       return;
     }
     
     setIsSubmitting(true);
     try {
-      await createPost(caption, imageFile, user.uid);
+      const filesToUpload = mediaFiles.map(mf => mf.file);
+      await createPost(caption, filesToUpload, user.uid);
       toast({
         title: 'Postingan berhasil dibuat!',
       });
@@ -80,23 +90,33 @@ export default function NewPostPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div 
-                className="relative w-full aspect-square border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted/50 transition-colors"
+                className="w-full aspect-square border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => fileInputRef.current?.click()}
               >
-                {imagePreview ? (
-                  <Image src={imagePreview} alt="Pratinjau gambar" layout="fill" objectFit="cover" className="rounded-lg" />
-                ) : (
+                {mediaFiles.length === 0 ? (
                   <>
                     <ImageIcon className="h-12 w-12" />
-                    <p className="mt-2 text-sm">Klik untuk mengunggah gambar</p>
+                    <p className="mt-2 text-sm">Klik untuk mengunggah gambar/video</p>
                   </>
+                ) : (
+                    <div className="grid grid-cols-2 gap-2 p-2 w-full h-full">
+                       {mediaFiles.map((media, index) => (
+                           <div key={index} className="relative w-full h-full">
+                               <Image src={media.previewUrl} alt="Pratinjau media" layout="fill" objectFit="cover" className="rounded-lg" />
+                               <Button size="icon" variant="destructive" className="absolute top-1 right-1 h-6 w-6 z-10" onClick={(e) => { e.stopPropagation(); removeMedia(index);}}>
+                                   <X className="h-4 w-4"/>
+                               </Button>
+                           </div>
+                       ))}
+                    </div>
                 )}
                 <input
                   type="file"
                   ref={fileInputRef}
-                  onChange={handleImageChange}
+                  onChange={handleFileChange}
                   className="hidden"
                   accept="image/png, image/jpeg, image/gif"
+                  multiple
                 />
               </div>
               <Textarea
@@ -105,7 +125,7 @@ export default function NewPostPage() {
                 onChange={(e) => setCaption(e.target.value)}
                 rows={4}
               />
-              <Button type="submit" className="w-full" disabled={isSubmitting || !imageFile}>
+              <Button type="submit" className="w-full" disabled={isSubmitting || mediaFiles.length === 0}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

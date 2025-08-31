@@ -7,22 +7,29 @@ import {
   getDocs, 
   doc, 
   getDoc, 
-  writeBatch,
   runTransaction,
   Timestamp,
   addDoc,
   query,
-  orderBy
+  orderBy,
+  increment,
+  writeBatch
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 
+type MediaType = 'image' | 'video';
+
+interface MediaItem {
+    url: string;
+    type: MediaType;
+    hint: string;
+}
 
 interface Post {
   id: string;
   authorId: string;
-  imageUrl: string;
-  imageHint: string;
+  media: MediaItem[];
   caption: string;
   likes: string[]; // Array of user UIDs who liked the post
   commentsCount: number;
@@ -38,8 +45,7 @@ interface Author {
 export interface PostWithAuthor {
   id: string;
   author: Author;
-  imageUrl: string;
-  imageHint: string;
+  media: MediaItem[];
   caption: string;
   likesCount: number;
   commentsCount: number;
@@ -48,7 +54,7 @@ export interface PostWithAuthor {
 }
 
 const postsCollection = collection(db, 'posts');
-const usersCollection = collection(db, 'users'); // Assuming you have a users collection
+const usersCollection = collection(db, 'users'); 
 
 // Helper to format date
 const formatTimestamp = (timestamp: Timestamp): string => {
@@ -69,24 +75,35 @@ const formatTimestamp = (timestamp: Timestamp): string => {
 };
 
 
-// Create a new post
-export async function createPost(caption: string, imageFile: File, authorId: string) {
+// Create a new post with multiple files
+export async function createPost(caption: string, files: File[], authorId: string) {
   if (!authorId) {
     throw new Error('Pengguna tidak terautentikasi.');
   }
-  
+  if (files.length === 0) {
+    throw new Error('Setidaknya satu file harus diunggah.');
+  }
+
   try {
-    // 1. Upload image to Firebase Storage
-    const storageRef = ref(storage, `posts/${Date.now()}_${imageFile.name}`);
-    await uploadBytes(storageRef, imageFile);
-    const imageUrl = await getDownloadURL(storageRef);
+    const mediaItems: MediaItem[] = [];
+
+    // Upload all files to Firebase Storage in parallel
+    await Promise.all(files.map(async (file) => {
+        const storageRef = ref(storage, `posts/${Date.now()}_${file.name}`);
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
+        mediaItems.push({
+            url,
+            type: file.type.startsWith('video') ? 'video' : 'image',
+            hint: 'user uploaded content'
+        });
+    }));
 
     // 2. Create post document in Firestore
     const newPost = {
       authorId,
       caption,
-      imageUrl,
-      imageHint: "user uploaded content", // Generic hint for user uploads
+      media: mediaItems,
       likes: [],
       commentsCount: 0,
       createdAt: Timestamp.now(),
@@ -119,8 +136,7 @@ export async function getPosts(currentUserId: string): Promise<PostWithAuthor[]>
     posts.push({
       id: postData.id,
       author: authorData,
-      imageUrl: postData.imageUrl,
-      imageHint: postData.imageHint,
+      media: postData.media || [{url: (postData as any).imageUrl, type: 'image', hint: (postData as any).imageHint}], // Fallback for old single-image posts
       caption: postData.caption,
       likesCount: postData.likes.length,
       commentsCount: postData.commentsCount,
@@ -162,4 +178,35 @@ export async function togglePostLike(postId: string, userId: string) {
     console.error("Transaction failed: ", e);
     throw new Error("Gagal memperbarui status suka.");
   }
+}
+
+
+export async function addComment(postId: string, userId: string, text: string) {
+    if (!userId) throw new Error("Pengguna tidak terautentikasi.");
+    if (!text.trim()) throw new Error("Komentar tidak boleh kosong.");
+
+    const postRef = doc(db, 'posts', postId);
+    const commentCollection = collection(postRef, 'comments');
+
+    try {
+        const batch = writeBatch(db);
+
+        // Add new comment
+        const newCommentRef = doc(commentCollection);
+        batch.set(newCommentRef, {
+            authorId: userId,
+            text: text,
+            createdAt: Timestamp.now()
+        });
+
+        // Increment commentsCount on the post
+        batch.update(postRef, { commentsCount: increment(1) });
+        
+        await batch.commit();
+        revalidatePath('/feed');
+
+    } catch (error) {
+        console.error("Error adding comment: ", error);
+        throw new Error("Gagal menambahkan komentar.");
+    }
 }
