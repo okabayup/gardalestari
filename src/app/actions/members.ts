@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteField } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 
 export type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected';
@@ -67,22 +67,22 @@ export async function updateMemberStatus(id: string, status: 'permanent' | 'reje
 export async function updateMemberDetails(id: string, details: { position: string, type?: MemberType, region?: string }) {
     try {
         const memberDoc = doc(db, 'users', id);
-        const dataToUpdate: {position: string; type?: MemberType; region?: string} = {
+        const dataToUpdate: { [key: string]: any } = {
             position: details.position
         };
 
-        if (details.type) {
+        if (details.type && details.type !== ('anggota' as any)) {
             dataToUpdate.type = details.type;
         } else {
-            // If type is explicitly set to undefined or null, remove it.
-            dataToUpdate.type = undefined;
+            // Use deleteField() to remove the field from the document
+            dataToUpdate.type = deleteField();
         }
 
         if (details.type === 'daerah' && details.region) {
             dataToUpdate.region = details.region;
         } else {
-            // Remove region if type is not 'daerah'
-            dataToUpdate.region = undefined;
+            // Use deleteField() to remove the field from the document
+            dataToUpdate.region = deleteField();
         }
         
         await updateDoc(memberDoc, dataToUpdate);
