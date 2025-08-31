@@ -11,10 +11,10 @@ interface VerifiedBadgeProps {
 }
 
 const typeConfig: Record<MemberType, string> = {
-  pusat: 'text-black dark:text-white',
-  daerah: 'text-blue-500',
-  cabang: 'text-yellow-500',
-  pembina: 'text-purple-500',
+  pusat: 'text-black dark:text-white fill-black dark:fill-white',
+  daerah: 'text-blue-500 fill-blue-500',
+  cabang: 'text-yellow-500 fill-yellow-500',
+  pembina: 'text-purple-500 fill-purple-500',
 };
 
 
