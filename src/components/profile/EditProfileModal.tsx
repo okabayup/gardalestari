@@ -13,6 +13,7 @@ import { Loader2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Info } from 'lucide-react';
+import ImageCropper from './ImageCropper';
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
   const [photoPreview, setPhotoPreview] = useState<string | null>(user.photoURL);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [cropperSrc, setCropperSrc] = useState<string | null>(null);
 
   const getInitials = (name?: string) => {
     if (!name) return '??';
@@ -37,23 +39,40 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setPhotoFile(file);
-      setPhotoPreview(URL.createObjectURL(file));
+       const reader = new FileReader();
+      reader.onload = () => {
+        setCropperSrc(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
+  };
+
+  const onCropComplete = (croppedFile: File) => {
+    setPhotoFile(croppedFile);
+    setPhotoPreview(URL.createObjectURL(croppedFile));
+    setCropperSrc(null);
   };
 
   const handleSubmit = async () => {
     setLoading(true);
     try {
       // Only photo can be updated here
-      await updateUserProfile({
-        photoFile: photoFile || undefined,
-      });
-      toast({
-        title: 'Profil Diperbarui',
-        description: 'Foto profil Anda telah berhasil disimpan.',
-      });
-      onClose();
+      if (photoFile) {
+        await updateUserProfile({
+          photoFile: photoFile || undefined,
+        });
+        toast({
+          title: 'Profil Diperbarui',
+          description: 'Foto profil Anda telah berhasil disimpan.',
+        });
+        onClose();
+      } else {
+         toast({
+          variant: 'destructive',
+          title: 'Tidak ada perubahan',
+          description: 'Anda tidak memilih foto baru untuk disimpan.',
+        });
+      }
     } catch (error) {
       console.error(error);
       toast({
@@ -69,6 +88,13 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
+         {cropperSrc && (
+            <ImageCropper
+              src={cropperSrc}
+              onCropComplete={onCropComplete}
+              onClose={() => setCropperSrc(null)}
+            />
+          )}
         <DialogHeader>
           <DialogTitle>Edit Profil</DialogTitle>
           <DialogDescription>
@@ -111,7 +137,7 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>Batal</Button>
-          <Button onClick={handleSubmit} disabled={loading}>
+          <Button onClick={handleSubmit} disabled={loading || !photoFile}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Simpan Perubahan
           </Button>

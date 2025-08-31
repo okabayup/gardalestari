@@ -15,6 +15,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { readKtp } from '@/ai/flows/ocr-ktp-flow';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import ImageCropper from '@/components/profile/ImageCropper';
 
 type Step = 'data' | 'ktp' | 'selfie' | 'submitting';
 
@@ -37,6 +38,8 @@ export default function VerifyProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
+
+  const [cropperSrc, setCropperSrc] = useState<string | null>(null);
 
   useEffect(() => {
     if (user?.verificationStatus === 'verified' || user?.verificationStatus === 'pending') {
@@ -64,6 +67,7 @@ export default function VerifyProfilePage() {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.play();
       }
       setHasCameraPermission(true);
       setIsCameraActive(true);
@@ -89,9 +93,18 @@ export default function VerifyProfilePage() {
   const handlePhotoInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setPhotoFile(file);
-      setPhotoPreview(URL.createObjectURL(file));
+      const reader = new FileReader();
+      reader.onload = () => {
+        setCropperSrc(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
+  };
+
+  const onCropComplete = (croppedFile: File) => {
+    setPhotoFile(croppedFile);
+    setPhotoPreview(URL.createObjectURL(croppedFile));
+    setCropperSrc(null);
   };
 
   const handleDataSubmit = (e: React.FormEvent) => {
@@ -298,6 +311,13 @@ export default function VerifyProfilePage() {
 
   return (
     <MainLayout>
+       {cropperSrc && (
+        <ImageCropper
+          src={cropperSrc}
+          onCropComplete={onCropComplete}
+          onClose={() => setCropperSrc(null)}
+        />
+      )}
       <div className="p-6 space-y-6">
         <Button variant="outline" onClick={() => step === 'data' ? router.back() : setStep('data')} className="mb-4">
             <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
