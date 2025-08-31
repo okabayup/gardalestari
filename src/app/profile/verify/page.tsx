@@ -38,6 +38,7 @@ export default function VerifyProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
+  const [currentFacingMode, setCurrentFacingMode] = useState<'environment' | 'user'>('environment');
 
   const [cropperSrc, setCropperSrc] = useState<string | null>(null);
 
@@ -48,15 +49,15 @@ export default function VerifyProfilePage() {
   }, [user, router]);
   
   useEffect(() => {
-    // Clean up camera stream when component unmounts or step changes
+    // Clean up camera stream when component unmounts
     return () => {
       stopCamera();
     };
-  }, [step]);
+  }, []);
 
-
-  const startCamera = async ({ facingMode }: { facingMode: 'environment' | 'user' }) => {
+  const startCamera = async (facingMode: 'environment' | 'user') => {
     stopCamera(); // Ensure previous stream is stopped
+    setCurrentFacingMode(facingMode);
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       console.error('Camera not supported on this browser.');
       toast({ variant: 'destructive', title: 'Kamera tidak didukung' });
@@ -67,7 +68,7 @@ export default function VerifyProfilePage() {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        await videoRef.current.play();
       }
       setHasCameraPermission(true);
       setIsCameraActive(true);
@@ -82,12 +83,13 @@ export default function VerifyProfilePage() {
     }
   };
 
+
   const stopCamera = () => {
     if (videoRef.current?.srcObject) {
       (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
       videoRef.current.srcObject = null;
-      setIsCameraActive(false);
     }
+    setIsCameraActive(false);
   };
 
   const handlePhotoInputChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -114,11 +116,11 @@ export default function VerifyProfilePage() {
       return;
     }
     setStep('ktp');
-    startCamera({ facingMode: 'environment' });
+    startCamera('environment');
   };
 
   const capturePhoto = (): string | null => {
-    if (videoRef.current && canvasRef.current) {
+    if (videoRef.current && canvasRef.current && isCameraActive) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
       canvas.width = video.videoWidth;
@@ -136,7 +138,7 @@ export default function VerifyProfilePage() {
       setKtpDataUrl(dataUrl);
       stopCamera();
       setStep('selfie');
-      startCamera({ facingMode: 'user' });
+      startCamera('user');
     }
   };
 
@@ -152,7 +154,9 @@ export default function VerifyProfilePage() {
 
   const dataURLtoFile = (dataurl: string, filename: string): File => {
     const arr = dataurl.split(',');
-    const mime = arr[0].match(/:(.*?);/)![1];
+    const mimeMatch = arr[0].match(/:(.*?);/);
+    if (!mimeMatch) throw new Error("Invalid data URL");
+    const mime = mimeMatch[1];
     const bstr = atob(arr[1]);
     let n = bstr.length;
     const u8arr = new Uint8Array(n);
@@ -182,12 +186,11 @@ export default function VerifyProfilePage() {
       const normalizedOcrName = ocrResult.name.trim().toLowerCase();
       const normalizedInputName = fullName.trim().toLowerCase();
 
-      // Flexible matching: check if input name is a substring of OCR name
       if (normalizedOcrNik !== normalizedInputNik) {
           throw new Error(`NIK tidak cocok. NIK di KTP: ${ocrResult.nik}, NIK Anda: ${nik}.`);
       }
        if (!normalizedOcrName.includes(normalizedInputName)) {
-          throw new Error(`Nama tidak cocok. Nama di KTP: ${ocrResult.name}, Nama Anda: ${fullName}.`);
+          throw new Error(`Nama tidak cocok. Nama di KTP: "${ocrResult.name}", Nama Anda: "${fullName}".`);
       }
 
       toast({ title: 'KTP Terverifikasi!', description: 'Data cocok. Mengirimkan pengajuan Anda...' });
@@ -213,10 +216,9 @@ export default function VerifyProfilePage() {
         description: errorMessage,
         duration: 8000,
       });
-      setStep('ktp'); // Reset to KTP step
+      setStep('data'); // Reset to data step
       setKtpDataUrl(null);
       setSelfieDataUrl(null);
-      startCamera({ facingMode: 'environment' }); // Restart camera for KTP
     }
   };
 
@@ -303,8 +305,9 @@ export default function VerifyProfilePage() {
             </Alert>
         )}
         <div className="w-full max-w-xs mx-auto aspect-square border-2 border-dashed rounded-lg flex items-center justify-center overflow-hidden bg-muted/50">
-            <video ref={videoRef} className={cn("w-full h-full object-cover", !isCameraActive && "hidden")} autoPlay muted playsInline />
-            {!isCameraActive && <Camera className="h-16 w-16 text-muted-foreground" />}
+            <video ref={videoRef} className={cn("w-full h-full object-cover", !isCameraActive && "hidden", currentFacingMode === 'user' && 'transform -scale-x-100')} autoPlay muted playsInline />
+            {!isCameraActive && hasCameraPermission !== false && <Loader2 className="h-16 w-16 animate-spin text-muted-foreground" />}
+            {hasCameraPermission === false && <Camera className="h-16 w-16 text-muted-foreground" />}
         </div>
         <canvas ref={canvasRef} className="hidden"></canvas>
       </>
@@ -320,7 +323,17 @@ export default function VerifyProfilePage() {
         />
       )}
       <div className="p-6 space-y-6">
-        <Button variant="outline" onClick={() => step === 'data' ? router.back() : setStep('data')} className="mb-4">
+        <Button variant="outline" onClick={() => {
+            if (step === 'data') {
+                router.back();
+            } else if (step === 'ktp') {
+                setStep('data');
+                stopCamera();
+            } else if (step === 'selfie') {
+                setStep('ktp');
+                startCamera('environment');
+            }
+        }} className="mb-4">
             <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
         </Button>
         <Card>

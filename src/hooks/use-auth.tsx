@@ -1,5 +1,5 @@
 
-"use client";
+'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
@@ -60,11 +60,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               ...user, 
               level: userData.level || 'Bronze',
               verificationStatus: userData.verificationStatus || 'unverified',
+              // Use Firestore data as the source of truth
+              displayName: userData.fullName || user.displayName,
+              photoURL: userData.avatarUrl || user.photoURL,
               fullName: userData.fullName,
               nik: userData.nik,
-              // IMPORTANT: Sync `displayName` & `photoURL` from Firestore to Auth state
-              displayName: userData.fullName || user.displayName,
-              photoURL: userData.avatarUrl || user.photoURL
           };
           setUser(extendedUser);
         } else {
@@ -164,7 +164,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateUserProfile = async (updates: { photoFile?: File }) => {
     if (!auth.currentUser) throw new Error("Pengguna tidak ditemukan.");
 
-    let photoURL = auth.currentUser.photoURL;
+    let newPhotoURL = auth.currentUser.photoURL;
 
     // Handle photo upload
     if (updates.photoFile) {
@@ -172,67 +172,80 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const storageRef = ref(storage, `profile-pictures/${auth.currentUser.uid}`);
         
         await uploadBytes(storageRef, updates.photoFile);
-        photoURL = await getDownloadURL(storageRef);
+        newPhotoURL = await getDownloadURL(storageRef);
     }
     
     // Update profile in Firebase Auth
     await updateProfile(auth.currentUser, {
-        // displayName is now locked, so we only update the photoURL
-        photoURL: photoURL,
+        photoURL: newPhotoURL,
     });
     
     // Update user document in Firestore for consistency
     const userDocRef = doc(db, 'users', auth.currentUser.uid);
-    await setDoc(userDocRef, {
-        avatarUrl: photoURL,
-        photoURL: photoURL,
-    }, { merge: true });
+    await updateDoc(userDocRef, {
+        avatarUrl: newPhotoURL,
+        photoURL: newPhotoURL,
+    });
 
     // Manually update the user state to reflect changes immediately
-    setUser(prevUser => prevUser ? { ...prevUser, photoURL, photoURL } : null);
+    setUser(prevUser => prevUser ? { ...prevUser, photoURL: newPhotoURL } : null);
 };
 
 const submitForVerification = async (data: { fullName: string; nik: string; ktpFile: File; selfieFile: File; photoFile?: File; }) => {
     if (!auth.currentUser) throw new Error("Pengguna tidak ditemukan.");
 
+    const { uid } = auth.currentUser;
     const storage = getStorage();
-    const ktpRef = ref(storage, `kyc/${auth.currentUser.uid}/ktp.jpg`);
-    const selfieRef = ref(storage, `kyc/${auth.currentUser.uid}/selfie.jpg`);
-    const profilePicRef = ref(storage, `profile-pictures/${auth.currentUser.uid}`);
+    
+    // Define storage refs
+    const ktpRef = ref(storage, `kyc/${uid}/ktp.jpg`);
+    const selfieRef = ref(storage, `kyc/${uid}/selfie.jpg`);
+    const profilePicRef = ref(storage, `profile-pictures/${uid}`);
 
-    // Upload files
-    await uploadBytes(ktpRef, data.ktpFile);
-    const ktpImageUrl = await getDownloadURL(ktpRef);
+    // Upload files and get URLs
+    const [ktpUploadResult, selfieUploadResult] = await Promise.all([
+      uploadBytes(ktpRef, data.ktpFile),
+      uploadBytes(selfieRef, data.selfieFile)
+    ]);
+    const ktpImageUrl = await getDownloadURL(ktpUploadResult.ref);
+    const selfieImageUrl = await getDownloadURL(selfieUploadResult.ref);
     
-    await uploadBytes(selfieRef, data.selfieFile);
-    const selfieImageUrl = await getDownloadURL(selfieRef);
-    
-    let photoURL = user?.photoURL;
+    let newPhotoURL = user?.photoURL;
     if (data.photoFile) {
-      await uploadBytes(profilePicRef, data.photoFile);
-      photoURL = await getDownloadURL(profilePicRef);
+      const photoUploadResult = await uploadBytes(profilePicRef, data.photoFile);
+      newPhotoURL = await getDownloadURL(photoUploadResult.ref);
     }
 
-
-    // Update user document in Firestore
-    const userDocRef = doc(db, 'users', auth.currentUser.uid);
-    await updateDoc(userDocRef, {
+    const updatedProfileData = {
         fullName: data.fullName,
         displayName: data.fullName,
         nik: data.nik,
         verificationStatus: 'pending',
         ktpImageUrl,
         selfieImageUrl,
-        avatarUrl: photoURL,
-        photoURL: photoURL,
+        avatarUrl: newPhotoURL,
+        photoURL: newPhotoURL,
         submittedAt: serverTimestamp()
-    });
-    
-    // Update Firebase Auth profile displayName as well
-    await updateProfile(auth.currentUser, { displayName: data.fullName, photoURL });
+    };
 
-    // Update local state
-    setUser(prevUser => prevUser ? { ...prevUser, verificationStatus: 'pending', fullName: data.fullName, nik: data.nik, displayName: data.fullName, photoURL } : null);
+    // Update user document in Firestore
+    const userDocRef = doc(db, 'users', uid);
+    await updateDoc(userDocRef, updatedProfileData);
+    
+    // Update Firebase Auth profile
+    await updateProfile(auth.currentUser, { 
+        displayName: data.fullName, 
+        photoURL: newPhotoURL 
+    });
+
+    // Update local state to reflect all changes immediately
+    setUser(prevUser => {
+        if (!prevUser) return null;
+        return {
+            ...prevUser,
+            ...updatedProfileData
+        };
+    });
   };
 
 
@@ -259,8 +272,8 @@ export const useRequireAuth = (redirectTo = '/login') => {
     if (!loading && !user) {
       redirect(redirectTo);
     }
-    // Redirect unverified users to verification, but allow access to profile
-    if (!loading && user && user.verificationStatus === 'unverified' && pathname !== '/profile/verify' && pathname !== '/profile') {
+    // Redirect unverified users to verification, but allow access to profile pages
+    if (!loading && user && user.verificationStatus === 'unverified' && !pathname.startsWith('/profile')) {
         redirect('/profile');
     }
   }, [user, loading, redirectTo, pathname]);
