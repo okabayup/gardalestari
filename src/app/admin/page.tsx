@@ -19,7 +19,7 @@ const AdminDashboard = () => {
     { label: 'Blog', icon: Newspaper, action: () => router.push('/admin/blog') },
     { label: 'Anggota', icon: Users, action: () => router.push('/admin/members') },
     { label: 'Program', icon: Sprout, action: () => router.push('/admin/programs') },
-    { label: 'Acara', icon: Calendar, action: () => {} },
+    { label: 'Acara', icon: Calendar, action: () => router.push('/admin/events') },
     { label: 'Halaman', icon: FileText, action: () => {} },
     { label: 'Peran & Izin', icon: UserCog, action: () => {} },
     { label: 'Pengaturan', icon: Settings, action: () => router.push('/admin/settings') },
@@ -86,7 +86,7 @@ const AdminDashboard = () => {
            <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex space-x-2 pb-2">
               {managementMenus.map((menu) => (
-                <Button key={menu.label} variant="outline" onClick={menu.action} className="shrink-0">
+                <Button key={menu.label} variant="outline" onClick={menu.action} className="shrink-0" disabled={!menu.action}>
                   <menu.icon className="mr-2 h-4 w-4" />
                   {menu.label}
                 </Button>

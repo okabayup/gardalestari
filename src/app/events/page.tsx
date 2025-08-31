@@ -1,19 +1,34 @@
+
 import MainLayout from '@/components/layout/MainLayout';
 import EventCard from '@/components/events/EventCard';
-import { events } from '@/lib/placeholder-data';
+import { getEvents } from '@/app/actions/events';
+import { Calendar } from 'lucide-react';
 
-export default function EventsPage() {
+export const revalidate = 3600; // Revalidate every hour
+
+export default async function EventsPage() {
+  const events = await getEvents();
+
   return (
     <MainLayout>
       <div className="p-6 space-y-6">
         <div className="text-center">
-          <h1 className="font-headline text-3xl font-bold">Upcoming Events</h1>
-          <p className="text-muted-foreground">Join us in making a difference</p>
+          <h1 className="font-headline text-3xl font-bold">Acara Mendatang</h1>
+          <p className="text-muted-foreground">Bergabunglah bersama kami untuk membuat perubahan</p>
         </div>
         <div className="space-y-4">
-          {events.map((event) => (
-            <EventCard key={event.title} {...event} />
-          ))}
+          {events.length > 0 ? (
+            events.map((event) => (
+              <EventCard key={event.id} event={event} />
+            ))
+          ) : (
+             <div className="col-span-full text-center py-10 text-muted-foreground">
+                <div className="flex flex-col items-center gap-2">
+                    <Calendar className="h-8 w-8" />
+                    <span>Belum ada acara yang akan datang.</span>
+                </div>
+            </div>
+          )}
         </div>
       </div>
     </MainLayout>
