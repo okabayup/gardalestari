@@ -7,14 +7,16 @@ import { useAuth } from '@/hooks/use-auth';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, Shield, Pencil, AlertTriangle, Loader2, Grid3x3, Archive, Tag, IdCard } from 'lucide-react';
+import { LogOut, Shield, Pencil, AlertTriangle, Loader2, Grid3x3, Archive, Tag, IdCard, Undo } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import EditProfileModal from '@/components/profile/EditProfileModal';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { getPostsByUserId, getArchivedPosts, getTaggedPosts, PostWithAuthor } from '../../actions/posts';
+import { getPostsByUserId, getArchivedPosts, getTaggedPosts, PostWithAuthor, unarchivePost } from '../../actions/posts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MembershipCardDialog from '@/components/members/MembershipCardDialog';
+import { useToast } from '@/hooks/use-toast';
+import PostCard from '@/components/feed/PostCard';
 
 
 const ADMIN_PHONE_NUMBER = '+6285176752610';
@@ -48,7 +50,7 @@ const ProfileBio = ({ user }: { user: any }) => (
 );
 
 
-const ProfilePostsGrid = ({ posts, isLoading }: { posts: PostWithAuthor[], isLoading: boolean }) => {
+const ProfilePostsGrid = ({ posts, isLoading, isArchive = false, onUnarchive }: { posts: PostWithAuthor[], isLoading: boolean, isArchive?: boolean, onUnarchive?: (postId: string) => void }) => {
     if (isLoading) {
        return (
         <div className="flex justify-center py-10">
@@ -57,7 +59,24 @@ const ProfilePostsGrid = ({ posts, isLoading }: { posts: PostWithAuthor[], isLoa
        )
     }
     if (!posts || posts.length === 0) {
-        return <div className="text-center py-10 text-muted-foreground">Belum ada postingan.</div>;
+        return <div className="text-center py-10 text-muted-foreground">{isArchive ? "Arsip kosong." : "Belum ada postingan."}</div>;
+    }
+
+    if (isArchive) {
+      return (
+        <div className="space-y-4 p-4">
+            {posts.map(post => (
+                <PostCard 
+                    key={post.id}
+                    post={post}
+                    onToggleLike={() => {}}
+                    onArchive={() => {}}
+                    onUnarchive={() => onUnarchive?.(post.id)}
+                    currentUserId={post.author.id}
+                />
+            ))}
+        </div>
+      )
     }
 
     return (
@@ -123,6 +142,7 @@ const VerificationStatusAlert = ({ status }: { status?: 'unverified' | 'temporar
 export default function ProfileMePage() {
   const { user, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isKtaModalOpen, setIsKtaModalOpen] = useState(false);
   
@@ -135,8 +155,8 @@ export default function ProfileMePage() {
   const [loadingTagged, setLoadingTagged] = useState(true);
 
 
-  useEffect(() => {
-    if (user && !authLoading) {
+  const fetchAllData = () => {
+     if (user && !authLoading) {
       setLoadingUserPosts(true);
       getPostsByUserId(user.uid).then(posts => {
         setUserPosts(posts);
@@ -155,11 +175,35 @@ export default function ProfileMePage() {
         setLoadingTagged(false);
       });
     }
+  }
+
+  useEffect(() => {
+    fetchAllData();
   }, [user, authLoading]);
 
   const handleSignOut = async () => {
     await signOut();
     router.push('/login');
+  };
+
+  const handleUnarchive = async (postId: string) => {
+    // Optimistic UI update
+    setArchivedPosts(prev => prev.filter(p => p.id !== postId));
+
+    try {
+        await unarchivePost(postId);
+        toast({ title: 'Postingan dipulihkan' });
+        // Re-fetch user posts to see the unarchived one
+        getPostsByUserId(user!.uid).then(setUserPosts);
+    } catch (error) {
+        toast({
+            variant: 'destructive',
+            title: 'Gagal memulihkan',
+            description: (error as Error).message,
+        });
+        // Revert UI on failure
+        fetchAllData();
+    }
   };
   
   const isAdmin = user?.phoneNumber === ADMIN_PHONE_NUMBER;
@@ -215,7 +259,12 @@ export default function ProfileMePage() {
                     <ProfilePostsGrid posts={taggedPosts} isLoading={loadingTagged} />
                 </TabsContent>
                 <TabsContent value="archived">
-                    <ProfilePostsGrid posts={archivedPosts} isLoading={loadingArchived} />
+                    <ProfilePostsGrid 
+                        posts={archivedPosts} 
+                        isLoading={loadingArchived} 
+                        isArchive={true} 
+                        onUnarchive={handleUnarchive}
+                    />
                 </TabsContent>
             </Tabs>
              

@@ -110,7 +110,7 @@ const formatTimestamp = (timestamp: Timestamp): string => {
 };
 
 // Helper function to build a PostWithAuthor object
-const buildPostWithAuthor = async (postDoc: Document, currentUserId?: string): Promise<PostWithAuthor> => {
+const buildPostWithAuthor = async (postDoc: any, currentUserId?: string): Promise<PostWithAuthor> => {
     const postData = { id: postDoc.id, ...postDoc.data() } as Post;
     const authorRef = doc(usersCollection, postData.authorId);
     const authorDoc = await getDoc(authorRef);
@@ -213,7 +213,7 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
     const postRef = doc(db, 'posts', postId);
     const postDoc = await getDoc(postRef);
 
-    if (!postDoc.exists() || postDoc.data().status !== 'published') {
+    if (!postDoc.exists()) { // Allow fetching archived posts by their ID
         return null;
     }
 
@@ -381,4 +381,15 @@ export async function archivePost(postId: string) {
     }
 }
 
-    
+// Unarchive a post
+export async function unarchivePost(postId: string) {
+    const postRef = doc(db, 'posts', postId);
+    try {
+        await updateDoc(postRef, { status: 'published' });
+        revalidatePath('/feed');
+        revalidatePath('/profile/me');
+    } catch (error) {
+        console.error("Error unarchiving post:", error);
+        throw new Error("Gagal memulihkan postingan.");
+    }
+}

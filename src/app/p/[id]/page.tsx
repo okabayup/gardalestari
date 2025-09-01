@@ -1,104 +1,60 @@
 
-'use client'
-
-import { useState, useEffect } from 'react';
-import { notFound, useParams } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import PostCard from '@/components/feed/PostCard';
-import { getPostById, togglePostLike, archivePost, PostWithAuthor } from '@/app/actions/posts';
-import { useAuth } from '@/hooks/use-auth';
-import { Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
+import { getPostById, togglePostLike, archivePost } from '@/app/actions/posts';
+import { auth } from '@/lib/firebase'; // We can use server-side auth access
+import { unstable_noStore as noStore } from 'next/cache';
 
-export default function PostDetailPage() {
-  const params = useParams();
-  const router = useRouter();
+// This is a dynamic page, so we don't need generateStaticParams
+// It will be rendered on-demand.
+
+interface PostDetailPageProps {
+  params: { id: string };
+}
+
+export default async function PostDetailPage({ params }: PostDetailPageProps) {
+  noStore(); // Ensures the page is always dynamic
   const { id: postId } = params;
   
-  const [post, setPost] = useState<PostWithAuthor | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
-  const { toast } = useToast();
+  // Get current user on the server
+  const currentUserId = auth.currentUser?.uid;
 
-  const fetchPost = async () => {
-    if (!postId || typeof postId !== 'string') return;
-    setLoading(true);
-    try {
-      const fetchedPost = await getPostById(postId, user?.uid);
-      if (!fetchedPost) {
-        notFound();
-      } else {
-        setPost(fetchedPost);
-      }
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Gagal memuat postingan.' });
-      notFound();
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPost();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [postId, user?.uid]);
-
-
-  const handleToggleLike = async () => {
-    if (!user || !post) return;
-    // Optimistic UI update
-    setPost(prevPost => {
-        if (!prevPost) return null;
-        const wasLiked = prevPost.isLiked;
-        return {
-            ...prevPost,
-            isLiked: !wasLiked,
-            likesCount: wasLiked ? prevPost.likesCount - 1 : prevPost.likesCount + 1,
-        };
-    });
-    try {
-      await togglePostLike(post.id, user.uid);
-    } catch (error) {
-       toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal menyimpan perubahan.' });
-       fetchPost(); // Re-fetch to revert
-    }
-  };
-
-  const handleArchivePost = async () => {
-    if (!post) return;
-    try {
-        await archivePost(post.id);
-        toast({ title: 'Postingan diarsipkan.' });
-        router.push('/feed'); // Redirect after archiving
-    } catch (error) {
-        toast({ variant: 'destructive', title: 'Gagal Mengarsipkan', description: (error as Error).message });
-    }
-  };
-
-
-  if (loading) {
-    return (
-      <MainLayout>
-        <div className="flex h-full items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </MainLayout>
-    );
+  if (!postId) {
+    notFound();
   }
+
+  const post = await getPostById(postId, currentUserId);
 
   if (!post) {
-      return null;
+    notFound();
   }
+
+  // Server actions can be passed down to client components
+  // We don't need the client-side handlers here anymore.
 
   return (
     <MainLayout>
-       <div className="p-4 md:p-6">
-         <PostCard
-            post={post}
-            onToggleLike={handleToggleLike}
-            onArchive={handleArchivePost}
-            currentUserId={user?.uid}
+      <div className="p-4 md:p-6">
+        <PostCard
+          post={post}
+          // The handlers on the PostCard component will now call the server actions directly
+          onToggleLike={async () => {
+            'use server';
+            if (!currentUserId) return;
+            await togglePostLike(postId, currentUserId);
+          }}
+          onArchive={async () => {
+            'use server';
+            await archivePost(postId);
+            // Optionally redirect or handle UI change after archiving
+          }}
+          onUnarchive={async () => {
+            'use server';
+             // This function might not be used here, but for consistency.
+          }}
+          currentUserId={currentUserId}
+          isDetailPage={true}
         />
       </div>
     </MainLayout>

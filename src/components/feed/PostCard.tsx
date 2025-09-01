@@ -5,13 +5,13 @@ import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Send, MoreHorizontal, Archive, Tag } from 'lucide-react';
+import { Heart, MessageCircle, Send, MoreHorizontal, Archive, Tag, Undo } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PostWithAuthor, CommentWithAuthor } from '@/app/actions/posts';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Input } from '../ui/input';
 import { useState } from 'react';
-import { addComment, getComments } from '@/app/actions/posts';
+import { addComment, getComments, unarchivePost } from '@/app/actions/posts';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -25,7 +25,9 @@ interface PostCardProps {
   post: PostWithAuthor;
   onToggleLike: () => void;
   onArchive: () => void;
+  onUnarchive: () => void;
   currentUserId?: string;
+  isDetailPage?: boolean;
 }
 
 const CaptionWithMentions = ({ text }: { text: string }) => {
@@ -70,7 +72,7 @@ const TaggedUsersOverlay = ({ media }: { media: PostWithAuthor['media'] }) => {
 };
 
 
-export default function PostCard({ post, onToggleLike, onArchive, currentUserId }: PostCardProps) {
+export default function PostCard({ post, onToggleLike, onArchive, onUnarchive, currentUserId, isDetailPage = false }: PostCardProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [commentText, setCommentText] = useState('');
@@ -114,9 +116,10 @@ export default function PostCard({ post, onToggleLike, onArchive, currentUserId 
   
   const isAuthor = currentUserId === post.author.id;
   const hasTags = post.media.some(m => m.mentions && m.mentions.length > 0);
+  const isArchived = (post as any).status === 'archived';
 
   return (
-    <Card className="overflow-hidden">
+    <Card className={cn("overflow-hidden", isArchived && "bg-muted/50")}>
       <CardHeader className="flex flex-row items-center gap-3 p-3">
         <Link href={`/profile/${post.author.username}`}>
             <Avatar>
@@ -137,13 +140,19 @@ export default function PostCard({ post, onToggleLike, onArchive, currentUserId 
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                {isAuthor && (
+                {isAuthor && !isArchived && (
                     <DropdownMenuItem onClick={onArchive}>
                         <Archive className="mr-2 h-4 w-4" />
                         Arsipkan
                     </DropdownMenuItem>
                 )}
-                <DropdownMenuItem>Laporkan</DropdownMenuItem>
+                 {isAuthor && isArchived && (
+                    <DropdownMenuItem onClick={onUnarchive}>
+                        <Undo className="mr-2 h-4 w-4" />
+                        Pulihkan
+                    </DropdownMenuItem>
+                )}
+                {!isAuthor && <DropdownMenuItem>Laporkan</DropdownMenuItem>}
             </DropdownMenuContent>
         </DropdownMenu>
       </CardHeader>
@@ -190,12 +199,12 @@ export default function PostCard({ post, onToggleLike, onArchive, currentUserId 
       </CardContent>
        <CardFooter className="flex flex-col items-start gap-2 p-3 pt-0">
         <div className="flex w-full items-center gap-1">
-            <Button variant="ghost" size="icon" onClick={onToggleLike}>
+            <Button variant="ghost" size="icon" onClick={onToggleLike} disabled={isArchived}>
                 <Heart className={cn("h-5 w-5", post.isLiked && "fill-red-500 text-red-500")} />
             </Button>
              <Sheet open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
                 <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={handleFetchComments}>
+                    <Button variant="ghost" size="icon" onClick={handleFetchComments} disabled={isArchived}>
                         <MessageCircle className="h-5 w-5" />
                     </Button>
                 </SheetTrigger>
@@ -206,15 +215,15 @@ export default function PostCard({ post, onToggleLike, onArchive, currentUserId 
                     <CommentList comments={comments} />
                 </SheetContent>
             </Sheet>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" disabled={isArchived}>
                 <Send className="h-5 w-5" />
             </Button>
         </div>
         <div className="px-1 text-sm font-semibold">{post.likesCount.toLocaleString()} likes</div>
-        {post.commentsCount > 0 && (
+        {post.commentsCount > 0 && !isDetailPage && (
            <Sheet open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
             <SheetTrigger asChild>
-                <button onClick={handleFetchComments} className="px-1 text-sm text-muted-foreground">
+                <button onClick={handleFetchComments} className="px-1 text-sm text-muted-foreground" disabled={isArchived}>
                     Lihat semua {post.commentsCount} komentar
                 </button>
             </SheetTrigger>
@@ -227,22 +236,24 @@ export default function PostCard({ post, onToggleLike, onArchive, currentUserId 
             </Sheet>
         )}
          <div className="px-1 text-xs text-muted-foreground">{post.timestamp}</div>
-        <form onSubmit={handleCommentSubmit} className="flex w-full items-center gap-2">
-            <Avatar className="h-6 w-6">
-                <AvatarImage src={user?.photoURL || ''} />
-                <AvatarFallback>{user?.displayName?.charAt(0) || 'U'}</AvatarFallback>
-            </Avatar>
-            <Input 
-                className="h-8 rounded-full" 
-                placeholder="Tambahkan komentar..."
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                disabled={isCommenting}
-            />
-            <Button type="submit" variant="ghost" size="sm" disabled={isCommenting || !commentText.trim()}>
-                Kirim
-            </Button>
-        </form>
+         {!isArchived &&
+            <form onSubmit={handleCommentSubmit} className="flex w-full items-center gap-2">
+                <Avatar className="h-6 w-6">
+                    <AvatarImage src={user?.photoURL || ''} />
+                    <AvatarFallback>{user?.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                </Avatar>
+                <Input 
+                    className="h-8 rounded-full" 
+                    placeholder="Tambahkan komentar..."
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    disabled={isCommenting}
+                />
+                <Button type="submit" variant="ghost" size="sm" disabled={isCommenting || !commentText.trim()}>
+                    Kirim
+                </Button>
+            </form>
+         }
       </CardFooter>
     </Card>
   );
