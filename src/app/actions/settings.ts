@@ -1,8 +1,9 @@
 
 'use server';
 
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 
 export interface AppSettings {
@@ -11,6 +12,8 @@ export interface AppSettings {
   twitter: string;
   facebook: string;
   isRegistrationOpen: boolean;
+  heroImageUrl: string;
+  aboutImageUrl: string;
 }
 
 const settingsDocRef = doc(db, 'settings', 'global');
@@ -19,14 +22,15 @@ export async function getAppSettings(): Promise<AppSettings> {
   try {
     const docSnap = await getDoc(settingsDocRef);
     if (docSnap.exists()) {
-      // Ensure default for isRegistrationOpen if it doesn't exist
       const data = docSnap.data();
       return {
-        isRegistrationOpen: true, // Default to open
+        isRegistrationOpen: true,
         linkedin: '#',
         instagram: '#',
         twitter: '#',
         facebook: '#',
+        heroImageUrl: 'https://picsum.photos/seed/paddy-field/1920/1080',
+        aboutImageUrl: 'https://picsum.photos/seed/youth-farmers/800/600',
         ...data,
       } as AppSettings;
     }
@@ -39,17 +43,39 @@ export async function getAppSettings(): Promise<AppSettings> {
     instagram: '#',
     twitter: '#',
     facebook: '#',
-    isRegistrationOpen: true, // Default to open
+    isRegistrationOpen: true,
+    heroImageUrl: 'https://picsum.photos/seed/paddy-field/1920/1080',
+    aboutImageUrl: 'https://picsum.photos/seed/youth-farmers/800/600',
   };
 }
 
-export async function updateAppSettings(settings: Partial<AppSettings>) {
+
+export async function updateAppSettings(settings: Partial<Omit<AppSettings, 'heroImageUrl' | 'aboutImageUrl'>> & { heroImageFile?: File, aboutImageFile?: File }) {
   try {
-    await setDoc(settingsDocRef, settings, { merge: true });
+    const dataToUpdate: { [key: string]: any } = { ...settings };
+    
+    if (settings.heroImageFile) {
+        const heroImageRef = ref(storage, 'landing/hero-image.jpg');
+        await uploadBytes(heroImageRef, settings.heroImageFile);
+        dataToUpdate.heroImageUrl = await getDownloadURL(heroImageRef);
+        delete dataToUpdate.heroImageFile;
+    }
+
+    if (settings.aboutImageFile) {
+        const aboutImageRef = ref(storage, 'landing/about-image.jpg');
+        await uploadBytes(aboutImageRef, settings.aboutImageFile);
+        dataToUpdate.aboutImageUrl = await getDownloadURL(aboutImageRef);
+        delete dataToUpdate.aboutImageFile;
+    }
+
+
+    await setDoc(settingsDocRef, dataToUpdate, { merge: true });
+    
     // Revalidate relevant pages
     revalidatePath('/');
     revalidatePath('/register');
     revalidatePath('/admin/settings');
+    revalidatePath('/admin/landing');
 
   } catch (error) {
     console.error("Error updating app settings:", error);

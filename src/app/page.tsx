@@ -75,11 +75,12 @@ export default async function LandingPage() {
           <div className="container text-center">
             <div className="absolute inset-0 -z-10">
                 <Image
-                    src="https://picsum.photos/seed/rice-paddy/1920/1080"
+                    src={settings.heroImageUrl}
                     alt="Lanskap pertanian Indonesia"
-                    data-ai-hint="indonesia agriculture"
+                    data-ai-hint="indonesia agriculture paddy field"
                     fill
                     className="object-cover opacity-10"
+                    priority
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-background via-background/80 to-background"></div>
             </div>
@@ -108,7 +109,7 @@ export default async function LandingPage() {
         <section id="about" className="w-full bg-card py-16 md:py-28 overflow-hidden">
             <div className="container grid gap-8 md:grid-cols-2 md:items-center">
                 <div className="relative h-64 w-full md:h-full rounded-lg overflow-hidden animate-in fade-in slide-in-from-left-24 duration-1000">
-                    <Image src="https://picsum.photos/seed/young-farmers/800/600" alt="Pemuda bertani" data-ai-hint="youth farming" fill className="object-cover" />
+                    <Image src={settings.aboutImageUrl} alt="Pemuda bertani" data-ai-hint="youth farming community" fill className="object-cover" />
                 </div>
                 <div className="space-y-4 animate-in fade-in slide-in-from-right-24 duration-1000">
                     <span className="text-sm font-semibold uppercase text-primary">Tentang Kami</span>
