@@ -5,6 +5,9 @@ import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 
+export type ProgramSource = 'garda_lestari' | 'mitra';
+export type SubmissionType = 'internal' | 'external';
+
 export interface Program {
   id?: string;
   title: string;
@@ -15,6 +18,14 @@ export interface Program {
   tags: string[];
   startDate: Timestamp;
   endDate: Timestamp;
+  // New fields
+  source: ProgramSource;
+  partnerId?: string; // Optional, only if source is 'mitra'
+  benefits: string;
+  requiredDocuments: string;
+  submissionType: SubmissionType;
+  applicationUrl?: string; // Optional, only if submissionType is 'external'
+  requiresRecommendation: boolean;
 }
 
 const programsCollection = collection(db, 'programs');
@@ -62,6 +73,7 @@ export async function updateProgram(id: string, program: Partial<Program>) {
     revalidatePath('/admin/programs');
     revalidatePath(`/admin/programs/edit/${id}`);
     revalidatePath('/programs');
+    revalidatePath(`/programs/${id}`);
   } catch (error) {
     console.error("Error updating program:", error);
     throw new Error("Gagal memperbarui program.");
