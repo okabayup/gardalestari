@@ -13,8 +13,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, UserCircle } from 'lucide-react';
+import { LogOut, UserCircle, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+
+const ADMIN_PHONE_NUMBER = '+6285176752610';
 
 export default function Header() {
   const { user, signOut } = useAuth();
@@ -32,6 +34,8 @@ export default function Header() {
     await signOut();
     router.push('/login');
   };
+  
+  const isAdmin = user?.phoneNumber === ADMIN_PHONE_NUMBER;
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -55,6 +59,12 @@ export default function Header() {
                   <UserCircle className="mr-2 h-4 w-4" />
                   <span>Profil Saya</span>
                 </DropdownMenuItem>
+                {isAdmin && (
+                    <DropdownMenuItem onClick={() => router.push('/panel/dashboard')} className="cursor-pointer">
+                        <Shield className="mr-2 h-4 w-4" />
+                        <span>Panel Admin</span>
+                    </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Keluar</span>

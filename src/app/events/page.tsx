@@ -37,7 +37,7 @@ export default function EventsPage() {
             <h1 className="font-headline text-3xl font-bold">Acara Mendatang</h1>
             <p className="text-muted-foreground">Bergabunglah bersama kami untuk membuat perubahan</p>
           </div>
-          <Button onClick={() => router.push('/admin/events/new')}>
+          <Button onClick={() => router.push('/panel/events/new')}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Buat Acara
           </Button>

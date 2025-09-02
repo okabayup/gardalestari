@@ -55,7 +55,7 @@ export async function getForm(id: string): Promise<ProgramForm | null> {
 export async function createForm(form: Omit<ProgramForm, 'id'>) {
   try {
     const docRef = await addDoc(formsCollection, form);
-    revalidatePath('/admin/forms');
+    revalidatePath('/panel/forms');
     return docRef.id;
   } catch (error) {
     console.error("Error creating form:", error);
@@ -68,8 +68,8 @@ export async function updateForm(id: string, form: Partial<ProgramForm>) {
   try {
     const formDoc = doc(db, 'programForms', id);
     await updateDoc(formDoc, form);
-    revalidatePath('/admin/forms');
-    revalidatePath(`/admin/forms/edit/${id}`);
+    revalidatePath('/panel/forms');
+    revalidatePath(`/panel/forms/edit/${id}`);
   } catch (error) {
     console.error("Error updating form:", error);
     throw new Error("Gagal memperbarui formulir.");
@@ -81,7 +81,7 @@ export async function deleteForm(id: string) {
   try {
     const formDoc = doc(db, 'programForms', id);
     await deleteDoc(formDoc);
-    revalidatePath('/admin/forms');
+    revalidatePath('/panel/forms');
   } catch (error) {
     console.error("Error deleting form:", error);
     throw new Error("Gagal menghapus formulir.");

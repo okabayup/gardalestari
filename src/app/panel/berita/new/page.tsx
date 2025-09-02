@@ -63,10 +63,13 @@ export default function NewBeritaPostPage() {
   };
 
   return (
-      <div className="p-6">
-        <Button variant="outline" onClick={() => router.back()} className="mb-4">
-          Kembali
-        </Button>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+            <h1 className="font-headline text-2xl font-bold">Buat Berita Baru</h1>
+            <Button variant="outline" onClick={() => router.back()}>
+            Kembali
+            </Button>
+        </div>
         <Card>
           <CardHeader>
             <CardTitle>Buat Berita Baru</CardTitle>

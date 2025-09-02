@@ -189,6 +189,7 @@ export default function ProfileMePage() {
 
   useEffect(() => {
     fetchAllData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading]);
 
   const handleSignOut = async () => {
@@ -286,7 +287,7 @@ export default function ProfileMePage() {
              
             <div className="px-4 space-y-2">
                 {isAdmin && (
-                    <Button variant="outline" onClick={() => router.push('/admin')} className="w-full">
+                    <Button variant="outline" onClick={() => router.push('/panel/dashboard')} className="w-full">
                         <Shield className="mr-2 h-4 w-4" />
                         Panel Admin
                     </Button>

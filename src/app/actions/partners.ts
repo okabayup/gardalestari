@@ -49,7 +49,7 @@ export async function createPartner(data: Omit<Partner, 'id' | 'logoUrl'>, logoF
     };
     await addDoc(partnersCollection, newPartner);
 
-    revalidatePath('/admin/partners');
+    revalidatePath('/panel/partners');
     revalidatePath('/');
   } catch (error) {
     console.error("Error creating partner:", error);
@@ -82,8 +82,8 @@ export async function updatePartner(id: string, data: Partial<Omit<Partner, 'log
     
     await updateDoc(partnerDoc, updateData);
 
-    revalidatePath('/admin/partners');
-    revalidatePath(`/admin/partners/edit/${id}`);
+    revalidatePath('/panel/partners');
+    revalidatePath(`/panel/partners/edit/${id}`);
     revalidatePath('/');
   } catch (error) {
     console.error("Error updating partner:", error);
@@ -106,7 +106,7 @@ export async function deletePartner(id: string) {
         await deleteObject(logoRef);
     }
 
-    revalidatePath('/admin/partners');
+    revalidatePath('/panel/partners');
     revalidatePath('/');
   } catch (error) {
     console.error("Error deleting partner:", error);

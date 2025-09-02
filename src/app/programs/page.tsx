@@ -55,7 +55,7 @@ export default function ProgramsPage() {
             <h1 className="font-headline text-3xl font-bold">Program Kami</h1>
             <p className="text-muted-foreground">Inisiatif untuk masa depan yang berkelanjutan.</p>
           </div>
-           <Button onClick={() => router.push('/admin/programs/new')}>
+           <Button onClick={() => router.push('/panel/programs/new')}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Buat Program
           </Button>

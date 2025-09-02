@@ -55,7 +55,7 @@ export async function updateMemberStatus(id: string, status: 'permanent' | 'reje
         await updateDoc(memberDoc, {
             verificationStatus: status
         });
-        revalidatePath('/admin/members');
+        revalidatePath('/panel/members');
     } catch (error) {
         console.error("Error updating member status:", error);
         throw new Error("Gagal memperbarui status anggota.");
@@ -86,7 +86,7 @@ export async function updateMemberDetails(id: string, details: { position: strin
         }
         
         await updateDoc(memberDoc, dataToUpdate);
-        revalidatePath('/admin/members');
+        revalidatePath('/panel/members');
         revalidatePath('/members');
     } catch (error) {
         console.error("Error updating member details:", error);

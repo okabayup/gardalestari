@@ -74,8 +74,8 @@ export async function updateAppSettings(settings: Partial<Omit<AppSettings, 'her
     // Revalidate relevant pages
     revalidatePath('/');
     revalidatePath('/register');
-    revalidatePath('/admin/settings');
-    revalidatePath('/admin/landing');
+    revalidatePath('/panel/settings');
+    revalidatePath('/panel/landing');
 
   } catch (error) {
     console.error("Error updating app settings:", error);

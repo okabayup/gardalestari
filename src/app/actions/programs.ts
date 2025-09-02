@@ -58,7 +58,7 @@ export async function getProgram(id: string): Promise<Program | null> {
 export async function createProgram(program: Omit<Program, 'id'>) {
   try {
     await addDoc(programsCollection, program);
-    revalidatePath('/admin/programs');
+    revalidatePath('/panel/programs');
     revalidatePath('/programs');
   } catch (error) {
     console.error("Error creating program:", error);
@@ -71,8 +71,8 @@ export async function updateProgram(id: string, program: Partial<Program>) {
   try {
     const programDoc = doc(db, 'programs', id);
     await updateDoc(programDoc, program);
-    revalidatePath('/admin/programs');
-    revalidatePath(`/admin/programs/edit/${id}`);
+    revalidatePath('/panel/programs');
+    revalidatePath(`/panel/programs/edit/${id}`);
     revalidatePath('/programs');
     revalidatePath(`/programs/${id}`);
   } catch (error) {
@@ -86,7 +86,7 @@ export async function deleteProgram(id: string) {
   try {
     const programDoc = doc(db, 'programs', id);
     await deleteDoc(programDoc);
-    revalidatePath('/admin/programs');
+    revalidatePath('/panel/programs');
     revalidatePath('/programs');
   } catch (error) {
     console.error("Error deleting program:", error);
@@ -116,7 +116,7 @@ export async function getProgramTags(): Promise<ProgramTag[]> {
 export async function addProgramTag(name: string) {
     try {
         await addDoc(tagsCollection, { name });
-        revalidatePath('/admin/programs/tags');
+        revalidatePath('/panel/programs/tags');
     } catch (error) {
         console.error("Error adding tag:", error);
         throw new Error("Gagal menambahkan tag baru.");
@@ -128,7 +128,7 @@ export async function deleteProgramTag(id: string) {
     try {
         const tagDoc = doc(db, 'programTags', id);
         await deleteDoc(tagDoc);
-        revalidatePath('/admin/programs/tags');
+        revalidatePath('/panel/programs/tags');
     } catch (error) {
         console.error("Error deleting tag:", error);
         throw new Error("Gagal menghapus tag.");

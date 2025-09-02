@@ -42,7 +42,7 @@ export async function getEvent(id: string): Promise<Event | null> {
 export async function createEvent(event: Omit<Event, 'id'>) {
   try {
     await addDoc(eventsCollection, event);
-    revalidatePath('/admin/events');
+    revalidatePath('/panel/events');
     revalidatePath('/events');
   } catch (error) {
     console.error("Error creating event:", error);
@@ -55,8 +55,8 @@ export async function updateEvent(id: string, event: Partial<Event>) {
   try {
     const eventDoc = doc(db, 'events', id);
     await updateDoc(eventDoc, event);
-    revalidatePath('/admin/events');
-    revalidatePath(`/admin/events/edit/${id}`);
+    revalidatePath('/panel/events');
+    revalidatePath(`/panel/events/edit/${id}`);
     revalidatePath('/events');
   } catch (error) {
     console.error("Error updating event:", error);
@@ -69,7 +69,7 @@ export async function deleteEvent(id: string) {
   try {
     const eventDoc = doc(db, 'events', id);
     await deleteDoc(eventDoc);
-    revalidatePath('/admin/events');
+    revalidatePath('/panel/events');
     revalidatePath('/events');
   } catch (error) {
     console.error("Error deleting event:", error);

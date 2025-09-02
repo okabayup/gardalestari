@@ -41,7 +41,7 @@ export default function BeritaPage() {
             <h1 className="font-headline text-3xl font-bold">Berita Kami</h1>
             <p className="text-muted-foreground">Cerita dan wawasan dari lapangan.</p>
           </div>
-          <Button onClick={() => router.push('/admin/berita/new')}>
+          <Button onClick={() => router.push('/panel/berita/new')}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Buat Berita
           </Button>

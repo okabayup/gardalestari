@@ -79,10 +79,13 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
   }
 
   return (
-      <div className="p-6">
-        <Button variant="outline" onClick={() => router.back()} className="mb-4">
-          Kembali
-        </Button>
+      <div className="space-y-6">
+         <div className="flex items-center justify-between">
+            <h1 className="font-headline text-2xl font-bold">Edit Berita</h1>
+            <Button variant="outline" onClick={() => router.back()}>
+            Kembali
+            </Button>
+        </div>
         <Card>
           <CardHeader>
             <CardTitle>Edit Berita</CardTitle>
