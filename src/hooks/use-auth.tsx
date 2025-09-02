@@ -27,6 +27,7 @@ type ExtendedUser = User & {
   fullName?: string;
   username?: string;
   nik?: string;
+  position?: string;
 };
 
 interface AuthContextType {
@@ -70,6 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               fullName: userData.fullName,
               username: userData.username,
               nik: userData.nik,
+              position: userData.position,
           };
           setUser(extendedUser);
         } else {
@@ -172,7 +174,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             createdAt: serverTimestamp(),
             points: 0, // Default points
             level: 'Bronze', // Default level for new users
-            verificationStatus: 'unverified'
+            verificationStatus: 'unverified',
+            position: 'Anggota'
         });
     }
 

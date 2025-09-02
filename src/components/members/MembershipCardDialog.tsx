@@ -19,6 +19,7 @@ interface MembershipCardDialogProps {
     username?: string;
     nik?: string;
     type?: 'pusat' | 'daerah' | 'cabang' | 'pembina';
+    position?: string;
   };
 }
 
@@ -93,6 +94,7 @@ export default function MembershipCardDialog({ isOpen, onClose, user }: Membersh
                 profileUrl={getProfileUrl()}
                 memberType={user.type}
                 joinDate={getJoinDate()}
+                position={user.position || 'Anggota'}
             />
         </div>
          <DialogFooter className="pt-4">

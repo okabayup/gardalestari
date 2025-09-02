@@ -16,14 +16,18 @@ interface MembershipCardProps {
     profileUrl: string;
     memberType?: MemberType;
     joinDate?: string;
+    position?: string;
 }
 
-export default function MembershipCard({ name, photoUrl, memberId, nik, profileUrl, memberType, joinDate }: MembershipCardProps) {
+export default function MembershipCard({ name, photoUrl, memberId, nik, profileUrl, memberType, joinDate, position }: MembershipCardProps) {
     const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('') : '';
 
     return (
         <Card className="w-full max-w-sm bg-gradient-to-br from-primary via-green-700 to-accent text-primary-foreground shadow-2xl relative overflow-hidden">
-            <CardHeader>
+             <div className="absolute inset-0 opacity-10">
+                <Image src="/logo.png" alt="" layout="fill" objectFit="cover" className="object-cover" />
+            </div>
+            <CardHeader className="relative z-10">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                          <Image src="/logo.png" alt="Garda Lestari Logo" width={32} height={32} />
@@ -32,7 +36,7 @@ export default function MembershipCard({ name, photoUrl, memberId, nik, profileU
                     <span className="text-xs font-semibold uppercase tracking-widest bg-black/20 px-2 py-1 rounded">Anggota</span>
                 </div>
             </CardHeader>
-            <CardContent className="flex items-center gap-4">
+            <CardContent className="flex items-center gap-4 relative z-10">
                 <div className="flex flex-col items-center gap-2">
                     <Avatar className="h-24 w-24 border-4 border-background/50">
                         <AvatarImage src={photoUrl} alt={name} />
@@ -43,10 +47,13 @@ export default function MembershipCard({ name, photoUrl, memberId, nik, profileU
                     </div>
                 </div>
 
-                <div className="space-y-2 flex-1 text-left">
-                     <div className="flex items-center gap-2">
-                        <p className="text-xl font-bold font-headline leading-tight">{name}</p>
-                        <VerifiedBadge type={memberType} className="h-5 w-5" />
+                <div className="space-y-1.5 flex-1 text-left">
+                     <div className="flex items-start gap-2">
+                        <div>
+                          <p className="text-xl font-bold font-headline leading-tight">{name}</p>
+                          <p className="text-sm text-primary-foreground/80 -mt-1">{position || 'Anggota'}</p>
+                        </div>
+                        <VerifiedBadge type={memberType} className="h-5 w-5 flex-shrink-0" />
                     </div>
                     <div>
                         <p className="text-xs opacity-80 uppercase">NIK</p>
@@ -64,9 +71,6 @@ export default function MembershipCard({ name, photoUrl, memberId, nik, profileU
                     )}
                 </div>
             </CardContent>
-             <div className="absolute -bottom-8 -right-8 w-24 h-24 opacity-10">
-                <Image src="/logo.png" alt="" fill className="grayscale" />
-            </div>
         </Card>
     );
 };
