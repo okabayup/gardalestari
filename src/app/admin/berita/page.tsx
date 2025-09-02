@@ -1,7 +1,7 @@
 
+
 'use client';
 
-import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -93,14 +93,13 @@ export default function AdminBeritaPage() {
   };
 
   return (
-    <MainLayout>
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="font-headline text-2xl font-bold">Manajemen Berita</h1>
             <p className="text-muted-foreground">Buat, edit, dan hapus berita.</p>
           </div>
-          <Button onClick={() => router.push('/admin/berita/new')}>
+          <Button onClick={() => router.push('/panel/berita/new')}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Buat Berita Baru
           </Button>
@@ -140,7 +139,7 @@ export default function AdminBeritaPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => router.push(`/admin/berita/edit/${post.slug}`)}>
+                            <DropdownMenuItem onClick={() => router.push(`/panel/berita/edit/${post.slug}`)}>
                               Edit
                             </DropdownMenuItem>
                             {isAdmin && (
@@ -187,6 +186,5 @@ export default function AdminBeritaPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </MainLayout>
   );
 }

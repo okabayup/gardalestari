@@ -1,7 +1,7 @@
 
+
 'use client';
 
-import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -55,7 +55,7 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
         title: 'Berita Diperbarui!',
         description: 'Perubahan pada berita telah disimpan.',
       });
-      router.push('/admin/berita');
+      router.push('/panel/berita');
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -68,11 +68,9 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
 
   if (pageLoading) {
     return (
-      <MainLayout>
         <div className="flex min-h-screen items-center justify-center">
           <Loader2 className="h-16 w-16 animate-spin text-primary" />
         </div>
-      </MainLayout>
     );
   }
 
@@ -81,7 +79,6 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
   }
 
   return (
-    <MainLayout>
       <div className="p-6">
         <Button variant="outline" onClick={() => router.back()} className="mb-4">
           Kembali
@@ -115,7 +112,7 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
                 <Textarea id="content" rows={15} {...register('content', { required: true })} />
               </div>
                <div className="flex justify-end gap-2">
-                <Button variant="outline" type="button" onClick={() => router.push('/admin/berita')}>
+                <Button variant="outline" type="button" onClick={() => router.push('/panel/berita')}>
                     Batal
                 </Button>
                 <Button type="submit" disabled={loading}>
@@ -127,6 +124,5 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
           </CardContent>
         </Card>
       </div>
-    </MainLayout>
   );
 }
