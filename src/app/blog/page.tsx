@@ -1,8 +1,8 @@
 
 'use client';
 import MainLayout from '@/components/layout/MainLayout';
-import BlogPostCard from '@/components/blog/BlogPostCard';
-import { getBlogPosts, BlogPost } from '@/app/actions/blog';
+import BeritaPostCard from '@/components/berita/BeritaPostCard';
+import { getBeritaPosts, BeritaPost } from '@/app/actions/berita';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, PlusCircle } from 'lucide-react';
 
 export default function BlogPage() {
-  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [posts, setPosts] = useState<BeritaPost[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
@@ -18,7 +18,7 @@ export default function BlogPage() {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const fetchedPosts = await getBlogPosts();
+        const fetchedPosts = await getBeritaPosts();
         setPosts(fetchedPosts);
       } catch (error) {
         toast({
@@ -41,7 +41,7 @@ export default function BlogPage() {
             <h1 className="font-headline text-3xl font-bold">Blog Kami</h1>
             <p className="text-muted-foreground">Cerita dan wawasan dari lapangan.</p>
           </div>
-          <Button onClick={() => router.push('/admin/blog/new')}>
+          <Button onClick={() => router.push('/panel/berita/new')}>
               <PlusCircle className="mr-2 h-4 w-4" />
               Buat Postingan
           </Button>
@@ -54,7 +54,7 @@ export default function BlogPage() {
             <div className="grid gap-6">
             {posts.length > 0 ? (
                 posts.map((post) => (
-                <BlogPostCard key={post.slug} {...post} />
+                <BeritaPostCard key={post.slug} {...post} />
                 ))
             ) : (
                 <p className="text-center text-muted-foreground py-10">Belum ada postingan yang dipublikasikan.</p>

@@ -3,18 +3,18 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getBlogPosts, getBlogPost } from '@/app/actions/blog';
+import { getBeritaPosts, getBeritaPost } from '@/app/actions/berita';
 
 // This function tells Next.js which slugs to pre-render at build time
 export async function generateStaticParams() {
-  const posts = await getBlogPosts();
+  const posts = await getBeritaPosts();
   return posts.map((post) => ({
     slug: post.slug,
   }));
 }
 
 export default async function BlogPostPage({ params }: { params: { slug: string } }) {
-  const post = await getBlogPost(params.slug);
+  const post = await getBeritaPost(params.slug);
 
   if (!post) {
     notFound();
