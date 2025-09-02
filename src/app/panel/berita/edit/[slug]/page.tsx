@@ -1,28 +1,118 @@
 
-
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useRouter, notFound } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { getBeritaPost, updateBeritaPost, BeritaPost } from '@/app/actions/berita';
+import { enhanceText, EnhanceTextOutput } from '@/ai/flows/enhance-text-flow';
+import { generateImage } from '@/ai/flows/image-generate-flow';
+import { Progress } from '@/components/ui/progress';
+import { marked } from 'marked';
+import { Separator } from '@/components/ui/separator';
 
-type FormData = Omit<BeritaPost, 'id' | 'author' | 'date'>;
+type FormData = Omit<BeritaPost, 'id' | 'author' | 'date' | 'excerpt'>;
+
+// Re-using components from the "new" page
+const RichTextEditor = ({ value, onChange }: { value: string, onChange: (value: string) => void }) => {
+    const editorRef = useRef<HTMLDivElement>(null);
+    
+    // Function to convert Markdown to HTML and set it
+    const updateHtml = (markdownText: string) => {
+        if (editorRef.current) {
+            editorRef.current.innerHTML = marked(markdownText) as string;
+        }
+    };
+    
+    useEffect(() => {
+        // When the component mounts or the initial value changes, populate the editor
+        updateHtml(value);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [value]);
+
+    const handleInput = () => {
+        if (editorRef.current) {
+            // This is tricky with rich text. For simplicity, we get innerText.
+            // A real implementation would use a library to convert HTML back to Markdown.
+            onChange(editorRef.current.innerText);
+        }
+    };
+
+    // Expose updateHtml to parent component
+    React.useImperativeHandle(editorRef, () => ({
+      ...editorRef.current,
+      updateHtml,
+    }));
+
+    return (
+        <div
+            ref={editorRef}
+            onInput={handleInput}
+            contentEditable
+            suppressContentEditableWarning
+            className="prose dark:prose-invert min-h-[300px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        />
+    );
+};
+
+const AnalysisPanel = ({ analysis }: { analysis: EnhanceTextOutput | null }) => {
+  if (!analysis) {
+    return (
+      <div className="text-center text-sm text-muted-foreground p-4 border rounded-lg h-full flex flex-col justify-center">
+        <Sparkles className="mx-auto h-8 w-8 mb-2" />
+        Jalankan "Sempurnakan dengan AI" untuk melihat analisis SEO dan Etika Pers.
+      </div>
+    );
+  }
+
+  return (
+    <Card className="h-full">
+      <CardHeader>
+        <CardTitle>Analisis AI</CardTitle>
+        <CardDescription>Hasil analisis dari asisten editor AI.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+            <h4 className="font-semibold text-sm mb-1">Ringkasan</h4>
+            <p className="text-xs text-muted-foreground">{analysis.summary}</p>
+        </div>
+        <Separator />
+        <div className="space-y-2">
+          <Label>Skor SEO: {analysis.seoScore}/100</Label>
+          <Progress value={analysis.seoScore} className="h-2 [&>div]:bg-sky-500" />
+          <p className="text-xs text-muted-foreground">{analysis.seoFeedback}</p>
+        </div>
+        <Separator />
+        <div className="space-y-2">
+          <Label>Skor Etika Pers: {analysis.ethicsScore}/100</Label>
+          <Progress value={analysis.ethicsScore} className="h-2 [&>div]:bg-emerald-500" />
+           <p className="text-xs text-muted-foreground">{analysis.ethicsFeedback}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 
 export default function EditBeritaPostPage({ params }: { params: { slug: string } }) {
   const router = useRouter();
   const { toast } = useToast();
-  const { register, handleSubmit, reset, setValue } = useForm<FormData>();
+  const [post, setPost] = useState<BeritaPost | null>(null);
+  
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
-  const [post, setPost] = useState<BeritaPost | null>(null);
+  const [loadingAi, setLoadingAi] = useState(false);
+  const [loadingImage, setLoadingImage] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<EnhanceTextOutput | null>(null);
+
+  const { register, handleSubmit, reset, setValue, getValues } = useForm<FormData>();
+  const editorRef = useRef<{ updateHtml: (markdown: string) => void }>(null);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -32,7 +122,12 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
         notFound();
       } else {
         setPost(fetchedPost);
-        reset(fetchedPost); // Populate form with fetched data
+        // Assuming content is stored as HTML, we need a way to convert it back to MD for editing
+        // For now, we'll just display it. A proper implementation needs an HTML-to-MD converter.
+        // A simple workaround: strip HTML tags for the raw text value.
+        const plainTextContent = fetchedPost.content.replace(/<[^>]*>?/gm, '');
+        const postData = { ...fetchedPost, content: plainTextContent };
+        reset(postData);
       }
       setPageLoading(false);
     };
@@ -40,11 +135,57 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
   }, [params.slug, reset]);
 
   const generateSlug = (title: string) => {
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9 -]/g, '') // remove invalid chars
-      .replace(/\s+/g, '-') // collapse whitespace and replace by -
-      .replace(/-+/g, '-'); // collapse dashes
+    return title.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+  };
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTitle = e.target.value;
+    setValue('title', newTitle);
+    setValue('slug', generateSlug(newTitle));
+  };
+  
+  const handleEnhanceWithAI = async () => {
+    const content = getValues('content');
+    if (!content.trim()) {
+      toast({ variant: 'destructive', title: 'Konten kosong' });
+      return;
+    }
+    setLoadingAi(true);
+    try {
+      const result = await enhanceText({ text: content });
+      setAiAnalysis(result);
+      setValue('title', result.suggestedTitle);
+      setValue('slug', generateSlug(result.suggestedTitle));
+      setValue('content', result.improvedText);
+      editorRef.current?.updateHtml(result.improvedText);
+      toast({ title: 'Teks disempurnakan!', description: 'Konten telah diperbarui oleh AI.' });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Gagal', description: (error as Error).message });
+    } finally {
+      setLoadingAi(false);
+    }
+  };
+  
+  const handleGenerateImage = async () => {
+      const imageHint = getValues('imageHint');
+      if (!imageHint.trim()) {
+          toast({ variant: 'destructive', title: 'Petunjuk gambar kosong' });
+          return;
+      }
+      setLoadingImage(true);
+      try {
+          const result = await generateImage({ prompt: imageHint });
+          if (result.imageUrl) {
+              setValue('imageUrl', result.imageUrl);
+              toast({ title: 'Gambar berhasil dibuat!' });
+          } else {
+              throw new Error("AI tidak mengembalikan URL gambar.");
+          }
+      } catch (error) {
+          toast({ variant: 'destructive', title: 'Gagal membuat gambar', description: (error as Error).message });
+      } finally {
+          setLoadingImage(false);
+      }
   };
 
   const onSubmit = async (data: FormData) => {
@@ -53,6 +194,7 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
     
     const updatedData: Partial<BeritaPost> = {
         ...data,
+        content: marked(data.content) as string, // Convert back to HTML
         excerpt: data.content.substring(0, 150) + '...'
     };
 
@@ -67,18 +209,12 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
       toast({
         variant: 'destructive',
         title: 'Gagal Memperbarui',
-        description: (error as Error).message || 'Terjadi kesalahan saat menyimpan perubahan.',
+        description: (error as Error).message,
       });
-      setLoading(false);
+    } finally {
+        setLoading(false);
     }
   };
-  
-   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTitle = e.target.value;
-    setValue('title', newTitle);
-    setValue('slug', generateSlug(newTitle));
-  };
-
 
   if (pageLoading) {
     return (
@@ -93,53 +229,76 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
   }
 
   return (
-      <div className="space-y-6">
-         <div className="flex items-center justify-between">
-            <h1 className="font-headline text-2xl font-bold">Edit Berita</h1>
-            <Button variant="outline" onClick={() => router.back()}>
-            Kembali
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-headline text-2xl font-bold">Edit Berita Cerdas</h1>
+          <p className="text-muted-foreground">Perbarui dan sempurnakan berita dengan bantuan AI.</p>
+        </div>
+        <div className="flex gap-2">
+            <Button variant="outline" type="button" onClick={() => router.push('/panel/berita')}>
+              Batal
+            </Button>
+            <Button type="submit" disabled={loading || loadingAi || loadingImage}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Simpan Perubahan
             </Button>
         </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Edit Berita</CardTitle>
-            <CardDescription>Perbarui detail berita Anda di bawah ini.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="title">Judul Berita</Label>
-                <Input id="title" {...register('title', { required: true })} onChange={handleTitleChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="slug">Slug</Label>
-                <Input id="slug" {...register('slug', { required: true })} />
-                <p className="text-xs text-muted-foreground">Ini akan menjadi bagian dari URL. Gunakan huruf kecil, angka, dan tanda hubung.</p>
-              </div>
-               <div className="space-y-2">
-                <Label htmlFor="imageUrl">URL Gambar</Label>
-                <Input id="imageUrl" {...register('imageUrl')} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="imageHint">Petunjuk Gambar (untuk AI)</Label>
-                <Input id="imageHint" {...register('imageHint')} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="content">Konten (mendukung HTML)</Label>
-                <Textarea id="content" rows={15} {...register('content', { required: true })} />
-              </div>
-               <div className="flex justify-end gap-2">
-                <Button variant="outline" type="button" onClick={() => router.push('/panel/berita')}>
-                    Batal
-                </Button>
-                <Button type="submit" disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Simpan Perubahan
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
       </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Konten Berita</CardTitle>
+                    <CardDescription>Perbarui detail berita di bawah ini. Gunakan fitur AI untuk membantu Anda.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="title">Judul Berita</Label>
+                        <Input id="title" {...register('title', { required: true })} onChange={handleTitleChange} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="slug">Slug</Label>
+                        <Input id="slug" {...register('slug', { required: true })} />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="imageHint">Petunjuk Gambar (untuk AI)</Label>
+                        <div className="flex gap-2">
+                            <Input id="imageHint" {...register('imageHint')} />
+                            <Button type="button" onClick={handleGenerateImage} disabled={loadingImage} className="whitespace-nowrap">
+                                {loadingImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4" />}
+                                Buat
+                            </Button>
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="imageUrl">URL Gambar Utama</Label>
+                        <Input id="imageUrl" {...register('imageUrl')} />
+                    </div>
+                    <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                            <Label htmlFor="content">Konten Berita</Label>
+                            <Button type="button" size="sm" variant="outline" onClick={handleEnhanceWithAI} disabled={loadingAi}>
+                                {loadingAi ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
+                                Sempurnakan dengan AI
+                            </Button>
+                        </div>
+                        <RichTextEditor
+                            // @ts-ignore
+                            ref={editorRef}
+                            value={getValues('content')}
+                            onChange={(newContent) => setValue('content', newContent)}
+                        />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+
+        <div className="lg:col-span-1">
+            <AnalysisPanel analysis={aiAnalysis} />
+        </div>
+      </div>
+    </form>
   );
 }

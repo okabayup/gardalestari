@@ -3,3 +3,4 @@ config();
 
 import './flows/ocr-ktp-flow';
 import './flows/enhance-text-flow';
+import './flows/image-generate-flow';
