@@ -65,7 +65,7 @@ export function Sidebar() {
         </Link>
         <TooltipProvider>
           {navItems.map((item) => 
-            (item.admin ? isAdmin : true) && (
+            (isAdmin) && ( // Show all items if admin
             <Tooltip key={item.href}>
               <TooltipTrigger asChild>
                 <Link
