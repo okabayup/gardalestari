@@ -38,7 +38,7 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
       name: data.fullName || data.displayName || 'Nama Tidak Diketahui',
       username: data.username || `user_${doc.id.substring(0, 5)}`,
       phoneNumber: data.phoneNumber || 'N/A',
-      verificationStatus: data.verificationStatus || 'unverified',
+      verificationStatus: data.verificationStatus, // Use the actual status from DB
       avatarUrl: data.avatarUrl,
       position: data.position || 'Anggota',
       type: data.type || undefined,
