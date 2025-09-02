@@ -25,6 +25,7 @@ export interface Program {
   requiredDocuments: string;
   submissionType: SubmissionType;
   applicationUrl?: string; // Optional, only if submissionType is 'external'
+  formId?: string; // Optional, only if submissionType is 'internal'
   requiresRecommendation: boolean;
 }
 

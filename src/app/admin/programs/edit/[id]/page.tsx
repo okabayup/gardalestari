@@ -12,8 +12,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Loader2, CalendarIcon } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
-import { getProgram, updateProgram, Program, getProgramTags, ProgramTag, ProgramSource, SubmissionType } from '@/app/actions/programs';
+import { getProgram, updateProgram, Program } from '@/app/actions/programs';
 import { getPartners, Partner } from '@/app/actions/partners';
+import { getForms, ProgramForm } from '@/app/actions/forms';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -40,8 +41,8 @@ export default function EditProgramPage() {
   
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
-  const [availableTags, setAvailableTags] = useState<ProgramTag[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
+  const [forms, setForms] = useState<ProgramForm[]>([]);
 
   const form = useForm<FormData>();
   const { control, watch, reset } = form;
@@ -50,13 +51,13 @@ export default function EditProgramPage() {
 
   useEffect(() => {
     if (!id) return;
-    const fetchProgramAndTags = async () => {
+    const fetchProgramAndRelatedData = async () => {
       setPageLoading(true);
       try {
-        const [fetchedProgram, fetchedTags, fetchedPartners] = await Promise.all([
+        const [fetchedProgram, fetchedPartners, fetchedForms] = await Promise.all([
           getProgram(id as string),
-          getProgramTags(),
           getPartners(),
+          getForms()
         ]);
         
         if (!fetchedProgram) {
@@ -64,8 +65,8 @@ export default function EditProgramPage() {
           return;
         }
         
-        setAvailableTags(fetchedTags);
         setPartners(fetchedPartners);
+        setForms(fetchedForms);
         reset({
           ...fetchedProgram,
           dateRange: {
@@ -80,17 +81,13 @@ export default function EditProgramPage() {
         setPageLoading(false);
       }
     };
-    fetchProgramAndTags();
+    fetchProgramAndRelatedData();
   }, [id, reset, router, toast]);
 
   const onSubmit = async (data: FormData) => {
     if (!id) return;
     if (!data.dateRange?.from || !data.dateRange?.to) {
         toast({ variant: 'destructive', title: 'Rentang Tanggal Diperlukan' });
-        return;
-    }
-     if (data.tags.length === 0) {
-        toast({ variant: 'destructive', title: 'Tag Diperlukan', description: 'Pilih setidaknya satu tag.' });
         return;
     }
     setLoading(true);
@@ -102,6 +99,7 @@ export default function EditProgramPage() {
         endDate: Timestamp.fromDate(data.dateRange.to),
         partnerId: data.source === 'mitra' ? data.partnerId : '',
         applicationUrl: data.submissionType === 'external' ? data.applicationUrl : '',
+        formId: data.submissionType === 'internal' ? data.formId : '',
       };
       delete (programToUpdate as any).dateRange;
 
@@ -187,33 +185,7 @@ export default function EditProgramPage() {
                     />
                 </div>
               </div>
-               <div className="space-y-2">
-                    <Label>Tags</Label>
-                    <Card className="p-4">
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {availableTags.map(tag => (
-                             <FormField
-                                key={tag.id}
-                                control={control}
-                                name="tags"
-                                render={({ field }) => (
-                                    <FormItem className="flex items-center space-x-2">
-                                        <Checkbox
-                                            checked={field.value?.includes(tag.name)}
-                                            onCheckedChange={(checked) => {
-                                                const currentTags = field.value || [];
-                                                return checked ? field.onChange([...currentTags, tag.name]) : field.onChange(currentTags.filter(value => value !== tag.name))
-                                            }}
-                                        />
-                                        <Label htmlFor={tag.id} className="font-normal">{tag.name}</Label>
-                                    </FormItem>
-                                )}
-                            />
-                        ))}
-                        </div>
-                    </Card>
-                </div>
-            
+               
             <Separator />
 
             <div className="space-y-4">
@@ -305,6 +277,25 @@ export default function EditProgramPage() {
                             <FormItem>
                                 <FormLabel>URL Pendaftaran Eksternal</FormLabel>
                                 <FormControl><Input placeholder="https://..." {...field} /></FormControl>
+                            </FormItem>
+                        )}
+                    />
+                 )}
+                  {watchedSubmissionType === 'internal' && (
+                     <FormField
+                        control={control}
+                        name="formId"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Pilih Formulir</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                <SelectTrigger><SelectValue placeholder="Pilih formulir pendaftaran" /></SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                {forms.map(f => <SelectItem key={f.id} value={f.id!}>{f.title}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
                             </FormItem>
                         )}
                     />

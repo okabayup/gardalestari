@@ -12,8 +12,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Loader2, CalendarIcon } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
-import { createProgram, Program, ProgramTag, getProgramTags, ProgramSource, SubmissionType } from '@/app/actions/programs';
+import { createProgram, Program, ProgramTag, getProgramTags } from '@/app/actions/programs';
 import { getPartners, Partner } from '@/app/actions/partners';
+import { getForms, ProgramForm } from '@/app/actions/forms';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -28,8 +29,9 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 
 
-type FormData = Omit<Program, 'id' | 'startDate' | 'endDate'> & {
+type FormData = Omit<Program, 'id' | 'startDate' | 'endDate' | 'tags'> & {
   dateRange: DateRange | undefined;
+  tags: string[];
 };
 
 export default function NewProgramPage() {
@@ -38,6 +40,8 @@ export default function NewProgramPage() {
   const [loading, setLoading] = useState(false);
   const [availableTags, setAvailableTags] = useState<ProgramTag[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
+  const [forms, setForms] = useState<ProgramForm[]>([]);
+
 
   const form = useForm<FormData>({
     defaultValues: {
@@ -55,9 +59,10 @@ export default function NewProgramPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const [tags, partners] = await Promise.all([getProgramTags(), getPartners()]);
+      const [tags, partners, forms] = await Promise.all([getProgramTags(), getPartners(), getForms()]);
       setAvailableTags(tags);
       setPartners(partners);
+      setForms(forms);
     };
     fetchData();
   }, []);
@@ -67,10 +72,7 @@ export default function NewProgramPage() {
         toast({ variant: 'destructive', title: 'Rentang Tanggal Diperlukan' });
         return;
     }
-    if (data.tags.length === 0) {
-        toast({ variant: 'destructive', title: 'Tag Diperlukan', description: 'Pilih setidaknya satu tag.' });
-        return;
-    }
+    
     setLoading(true);
     try {
         const newProgram: Omit<Program, 'id'> = {
@@ -83,6 +85,7 @@ export default function NewProgramPage() {
             partnerId: data.source === 'mitra' ? data.partnerId : '',
             // Clear applicationUrl if not external
             applicationUrl: data.submissionType === 'external' ? data.applicationUrl : '',
+            formId: data.submissionType === 'internal' ? data.formId : '',
         };
         delete (newProgram as any).dateRange;
 
@@ -160,33 +163,6 @@ export default function NewProgramPage() {
                     />
                 </div>
               </div>
-
-               <div className="space-y-2">
-                    <Label>Tags</Label>
-                    <Card className="p-4">
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {availableTags.map(tag => (
-                            <FormField
-                                key={tag.id}
-                                control={control}
-                                name="tags"
-                                render={({ field }) => (
-                                    <FormItem className="flex items-center space-x-2">
-                                        <Checkbox
-                                            checked={field.value?.includes(tag.name)}
-                                            onCheckedChange={(checked) => {
-                                                const currentTags = field.value || [];
-                                                return checked ? field.onChange([...currentTags, tag.name]) : field.onChange(currentTags.filter(value => value !== tag.name))
-                                            }}
-                                        />
-                                        <Label htmlFor={tag.id} className="font-normal">{tag.name}</Label>
-                                    </FormItem>
-                                )}
-                            />
-                        ))}
-                        </div>
-                    </Card>
-                </div>
             
             <Separator />
             <div className="space-y-4">
@@ -278,6 +254,28 @@ export default function NewProgramPage() {
                             <FormItem>
                                 <FormLabel>URL Pendaftaran Eksternal</FormLabel>
                                 <FormControl><Input placeholder="https://..." {...field} /></FormControl>
+                            </FormItem>
+                        )}
+                    />
+                 )}
+                 {watchedSubmissionType === 'internal' && (
+                     <FormField
+                        control={control}
+                        name="formId"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Pilih Formulir</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                <SelectTrigger><SelectValue placeholder="Pilih formulir pendaftaran" /></SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                {forms.map(f => <SelectItem key={f.id} value={f.id!}>{f.title}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                            <FormDescription>
+                                Buat formulir baru di menu <Link href="/admin/forms" className="underline">Manajemen Formulir</Link>.
+                            </FormDescription>
                             </FormItem>
                         )}
                     />
