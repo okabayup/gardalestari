@@ -1,5 +1,3 @@
-# https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow: /admin
-
+Allow: /
 Sitemap: https://gardalestari.org/sitemap.xml

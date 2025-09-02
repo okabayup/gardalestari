@@ -1,5 +1,7 @@
 import { MetadataRoute } from 'next';
 import { getBeritaPosts } from '@/app/actions/berita';
+import { getPrograms } from '@/app/actions/programs';
+import { getEvents } from '@/app/actions/events';
 
 const BASE_URL = 'https://gardalestari.org'; 
 
@@ -16,7 +18,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/benefits',
     '/berita',
     '/profile',
-    '/panel',
   ].map((route) => ({
     url: `${BASE_URL}${route}`,
     lastModified: new Date().toISOString(),
@@ -28,10 +29,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const posts = await getBeritaPosts();
   const beritaPostRoutes = posts.map((post) => ({
     url: `${BASE_URL}/berita/${post.slug}`,
-    lastModified: new Date().toISOString(), // Idealnya, ini harus menjadi tanggal update postingan
+    lastModified: new Date().toISOString(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }));
+  
+  // Rute dinamis untuk program
+  const programs = await getPrograms();
+  const programRoutes = programs.map((program) => ({
+    url: `${BASE_URL}/programs/${program.id}`,
+    lastModified: program.endDate.toDate().toISOString(),
     changeFrequency: 'weekly' as const,
     priority: 0.7,
   }));
 
-  return [...staticRoutes, ...beritaPostRoutes];
+  // Rute dinamis untuk acara (jika ada halaman detail di masa depan)
+  // Untuk saat ini, halaman /events sudah ada di rute statis.
+  // Jika setiap acara punya halaman sendiri, kita bisa menambahkannya seperti ini:
+  // const events = await getEvents();
+  // const eventRoutes = events.map((event) => ({
+  //   url: `${BASE_URL}/events/${event.id}`,
+  //   lastModified: event.date.toDate().toISOString(),
+  //   changeFrequency: 'weekly' as const,
+  //   priority: 0.6,
+  // }));
+
+  return [...staticRoutes, ...beritaPostRoutes, ...programRoutes];
 }
