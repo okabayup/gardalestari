@@ -52,7 +52,17 @@ export default function MembershipCardDialog({ isOpen, onClose, user }: Membersh
   const handleDownload = async () => {
     if (!cardRef.current) return;
     try {
-        const dataUrl = await toPng(cardRef.current, { cacheBust: true });
+        const dataUrl = await toPng(cardRef.current, { 
+            cacheBust: true,
+            // Filter out external stylesheets to prevent CORS errors
+            filter: (node) => {
+              if (node.tagName === 'LINK' && node.getAttribute('rel') === 'stylesheet') {
+                  const href = node.getAttribute('href');
+                  return href ? !href.startsWith('https://fonts.googleapis.com') : true;
+              }
+              return true;
+            }
+        });
         const link = document.createElement('a');
         link.download = `kta-${user.username}.png`;
         link.href = dataUrl;
