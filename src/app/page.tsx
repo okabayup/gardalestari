@@ -9,6 +9,7 @@ import { getAppSettings } from './actions/settings';
 import { getEvents } from './actions/events';
 import { getPrograms } from './actions/programs';
 import { getMembers } from './actions/members';
+import { getPartners } from './actions/partners';
 import { Separator } from '@/components/ui/separator';
 
 const StatCard = ({ icon, value, label }: { icon: React.ReactNode, value: string, label: string }) => (
@@ -18,6 +19,12 @@ const StatCard = ({ icon, value, label }: { icon: React.ReactNode, value: string
         <p className="text-sm text-muted-foreground">{label}</p>
     </div>
 );
+
+const PartnerLogo = ({ name, logoUrl, websiteUrl }: { name: string, logoUrl: string, websiteUrl: string }) => (
+    <Link href={websiteUrl} target="_blank" rel="noopener noreferrer" className="grayscale opacity-60 hover:opacity-100 hover:grayscale-0 transition-all duration-300">
+        <Image src={logoUrl} alt={name} title={name} width={120} height={60} className="object-contain" />
+    </Link>
+)
 
 const Footer = async () => {
     const settings = await getAppSettings();
@@ -67,6 +74,8 @@ export default async function LandingPage() {
   const events = await getEvents();
   const programs = await getPrograms();
   const members = await getMembers();
+  const partners = await getPartners();
+  const featuredPartners = partners.filter(p => p.isFeatured);
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
@@ -80,7 +89,7 @@ export default async function LandingPage() {
                 <Image
                     src={settings.heroImageUrl}
                     alt="Lanskap pertanian Indonesia"
-                    data-ai-hint="indonesian farm landscape"
+                    data-ai-hint="indonesian paddy field"
                     fill
                     className="object-cover opacity-10"
                     priority
@@ -108,6 +117,19 @@ export default async function LandingPage() {
             </div>
           </div>
         </section>
+        
+        {featuredPartners.length > 0 && (
+          <section className="w-full bg-background py-12">
+            <div className="container text-center">
+              <h3 className="text-sm font-semibold uppercase text-muted-foreground tracking-wider">Dipercaya dan Didukung Oleh</h3>
+              <div className="mt-6 flex flex-wrap justify-center items-center gap-x-8 gap-y-4">
+                {featuredPartners.map(partner => (
+                  <PartnerLogo key={partner.id} name={partner.name} logoUrl={partner.logoUrl} websiteUrl={partner.websiteUrl} />
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Impact Section */}
         <section id="impact" className="w-full bg-secondary py-16 md:py-20">
@@ -126,7 +148,7 @@ export default async function LandingPage() {
         <section id="about" className="w-full bg-background py-16 md:py-28 overflow-hidden">
             <div className="container grid gap-12 md:grid-cols-2 md:items-center">
                 <div className="relative h-80 w-full md:h-full rounded-lg overflow-hidden animate-in fade-in slide-in-from-left-24 duration-1000 shadow-lg">
-                    <Image src={settings.aboutImageUrl} alt="Pemuda bertani" data-ai-hint="youth agriculture community" fill className="object-cover" />
+                    <Image src={settings.aboutImageUrl} alt="Pemuda bertani" data-ai-hint="youth farming community" fill className="object-cover" />
                 </div>
                 <div className="space-y-4 animate-in fade-in slide-in-from-right-24 duration-1000">
                     <span className="text-sm font-semibold uppercase text-primary">Tentang Garda Lestari</span>

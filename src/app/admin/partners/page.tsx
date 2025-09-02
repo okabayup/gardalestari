@@ -5,7 +5,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, MoreHorizontal, Loader2, Trash2, Sprout, Tag } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Loader2, Trash2, Handshake } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,65 +25,65 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { getPrograms, deleteProgram, Program } from '@/app/actions/programs';
+import { getPartners, deletePartner, Partner } from '@/app/actions/partners';
 import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
 
-export default function AdminProgramsPage() {
+export default function AdminPartnersPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [programs, setPrograms] = useState<Program[]>([]);
+  const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
-  const [programToDelete, setProgramToDelete] = useState<Program | null>(null);
+  const [partnerToDelete, setPartnerToDelete] = useState<Partner | null>(null);
 
   useEffect(() => {
-    const fetchPrograms = async () => {
+    const fetchPartners = async () => {
       try {
-        const fetchedPrograms = await getPrograms();
-        setPrograms(fetchedPrograms);
+        const fetchedPartners = await getPartners();
+        setPartners(fetchedPartners);
       } catch (error) {
         console.error(error);
         toast({
             variant: "destructive",
-            title: "Gagal memuat program",
+            title: "Gagal memuat mitra",
             description: "Terjadi kesalahan saat mengambil data dari server.",
         });
       } finally {
         setLoading(false);
       }
     };
-    fetchPrograms();
+    fetchPartners();
   }, [toast]);
 
-  const handleDeleteClick = (program: Program) => {
-    setProgramToDelete(program);
+  const handleDeleteClick = (partner: Partner) => {
+    setPartnerToDelete(partner);
     setShowDeleteAlert(true);
   };
 
   const handleDeleteConfirm = async () => {
-    if (programToDelete && programToDelete.id) {
-        setIsDeleting(programToDelete.id);
+    if (partnerToDelete && partnerToDelete.id) {
+        setIsDeleting(partnerToDelete.id);
         try {
-            await deleteProgram(programToDelete.id);
-            setPrograms(programs.filter(p => p.id !== programToDelete.id));
+            await deletePartner(partnerToDelete.id);
+            setPartners(partners.filter(p => p.id !== partnerToDelete.id));
             toast({
-                title: "Program dihapus!",
-                description: `"${programToDelete.title}" telah berhasil dihapus.`,
+                title: "Mitra dihapus!",
+                description: `"${partnerToDelete.name}" telah berhasil dihapus.`,
             });
         } catch (error) {
             console.error(error);
             toast({
                 variant: "destructive",
-                title: "Gagal menghapus program",
-                description: "Terjadi kesalahan saat mencoba menghapus program ini.",
+                title: "Gagal menghapus mitra",
+                description: (error as Error).message,
             });
         } finally {
             setIsDeleting(null);
             setShowDeleteAlert(false);
-            setProgramToDelete(null);
+            setPartnerToDelete(null);
         }
     }
   };
@@ -93,26 +93,22 @@ export default function AdminProgramsPage() {
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-headline text-2xl font-bold">Manajemen Program</h1>
-            <p className="text-muted-foreground">Buat, edit, dan hapus program kerja.</p>
+            <h1 className="font-headline text-2xl font-bold">Manajemen Mitra</h1>
+            <p className="text-muted-foreground">Kelola daftar mitra organisasi.</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => router.push('/admin/programs/tags')}>
-                <Tag className="mr-2 h-4 w-4" /> Kelola Tag
-            </Button>
-            <Button onClick={() => router.push('/admin/programs/new')}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Buat Program Baru
-            </Button>
-          </div>
+          <Button onClick={() => router.push('/admin/partners/new')}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Tambah Mitra Baru
+          </Button>
         </div>
         <Card>
           <CardContent className="p-0">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Judul</TableHead>
-                  <TableHead className="hidden md:table-cell">Tanggal Berakhir</TableHead>
-                  <TableHead className="hidden md:table-cell">Tags</TableHead>
+                  <TableHead>Logo</TableHead>
+                  <TableHead>Nama Mitra</TableHead>
+                  <TableHead className="hidden md:table-cell">Status</TableHead>
                   <TableHead>
                     <span className="sr-only">Aksi</span>
                   </TableHead>
@@ -125,32 +121,30 @@ export default function AdminProgramsPage() {
                             <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                         </TableCell>
                     </TableRow>
-                ) : programs.length > 0 ? (
-                  programs.map((program) => (
-                    <TableRow key={program.id}>
-                      <TableCell className="font-medium">{program.title}</TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {format(program.endDate.toDate(), 'dd MMMM yyyy')}
+                ) : partners.length > 0 ? (
+                  partners.map((partner) => (
+                    <TableRow key={partner.id}>
+                      <TableCell>
+                        <Image src={partner.logoUrl} alt={partner.name} width={80} height={40} className="object-contain" />
                       </TableCell>
-                       <TableCell className="hidden md:table-cell">
-                        <div className="flex flex-wrap gap-1">
-                            {program.tags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
-                        </div>
+                      <TableCell className="font-medium">{partner.name}</TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {partner.isFeatured && <Badge>Utama</Badge>}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button aria-haspopup="true" size="icon" variant="ghost" disabled={!!isDeleting}>
-                              {isDeleting === program.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <MoreHorizontal className="h-4 w-4" />}
+                              {isDeleting === partner.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <MoreHorizontal className="h-4 w-4" />}
                               <span className="sr-only">Toggle menu</span>
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => router.push(`/admin/programs/edit/${program.id}`)}>
+                            <DropdownMenuItem onClick={() => router.push(`/admin/partners/edit/${partner.id}`)}>
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(program)}>
+                            <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(partner)}>
                               <Trash2 className="mr-2 h-4 w-4" />
                               Hapus
                             </DropdownMenuItem>
@@ -162,9 +156,9 @@ export default function AdminProgramsPage() {
                 ) : (
                     <TableRow>
                         <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
-                            <div className="flex flex-col items-center gap-2">
-                                <Sprout className="h-8 w-8" />
-                                <span>Belum ada program.</span>
+                             <div className="flex flex-col items-center gap-2">
+                                <Handshake className="h-8 w-8" />
+                                <span>Belum ada mitra.</span>
                             </div>
                         </TableCell>
                     </TableRow>
@@ -179,9 +173,7 @@ export default function AdminProgramsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Anda yakin ingin menghapus?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini tidak dapat dibatalkan. Program
-              <span className="font-semibold"> "{programToDelete?.title}" </span>
-              akan dihapus secara permanen.
+              Tindakan ini tidak dapat dibatalkan. Mitra "{partnerToDelete?.name}" akan dihapus.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

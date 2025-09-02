@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import MainLayout from '@/components/layout/MainLayout';
-import { Loader2, Users, Sprout, Calendar, Newspaper, Shield, FileText, UserCog, Settings, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Users, Sprout, Calendar, Newspaper, Shield, FileText, UserCog, Settings, Image as ImageIcon, Handshake } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -20,6 +20,7 @@ const AdminDashboard = () => {
     { label: 'Anggota', icon: Users, action: () => router.push('/admin/members') },
     { label: 'Program', icon: Sprout, action: () => router.push('/admin/programs') },
     { label: 'Acara', icon: Calendar, action: () => router.push('/admin/events') },
+    { label: 'Mitra', icon: Handshake, action: () => router.push('/admin/partners') },
     { label: 'Halaman Utama', icon: ImageIcon, action: () => router.push('/admin/landing') },
     { label: 'Peran & Izin', icon: UserCog, action: () => {} },
     { label: 'Pengaturan', icon: Settings, action: () => router.push('/admin/settings') },
@@ -79,7 +80,7 @@ const AdminDashboard = () => {
       {/* Management Sections */}
       <Card>
         <CardHeader>
-          <CardTitle>Manajemen Konten</CardTitle>
+          <CardTitle>Manajemen Konten & Aplikasi</CardTitle>
           <CardDescription>Pilih salah satu menu di bawah untuk mengelola konten terkait.</CardDescription>
         </CardHeader>
         <CardContent>

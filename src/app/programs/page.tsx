@@ -1,52 +1,113 @@
 
+'use client';
+
+import { useState, useMemo, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import ProgramCard from '@/components/programs/ProgramCard';
-import { getPrograms, Program } from '@/app/actions/programs';
+import { getPrograms, getProgramTags, Program } from '@/app/actions/programs';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Loader2 } from 'lucide-react';
 
-// Revalidate every hour
-export const revalidate = 3600;
+export default function ProgramsPage() {
+  const [allPrograms, setAllPrograms] = useState<Program[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-export default async function ProgramsPage() {
-  const allPrograms = await getPrograms();
-  
-  const flagshipPrograms = allPrograms.filter(p => p.category === 'flagship');
-  const ongoingPrograms = allPrograms.filter(p => p.category === 'ongoing');
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [fetchedPrograms, fetchedTags] = await Promise.all([
+          getPrograms(),
+          getProgramTags(),
+        ]);
+        setAllPrograms(fetchedPrograms);
+        setTags(['Semua', ...fetchedTags.map(t => t.name)]);
+      } catch (error) {
+        console.error("Failed to fetch programs or tags", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const filteredPrograms = useMemo(() => {
+    if (!selectedTag || selectedTag === 'Semua') {
+      return allPrograms;
+    }
+    return allPrograms.filter(p => p.tags.includes(selectedTag));
+  }, [allPrograms, selectedTag]);
+
+  const ongoingPrograms = useMemo(() => filteredPrograms.filter(p => new Date() < p.endDate.toDate()), [filteredPrograms]);
+  const pastPrograms = useMemo(() => filteredPrograms.filter(p => new Date() >= p.endDate.toDate()), [filteredPrograms]);
 
   return (
     <MainLayout>
-      <div className="p-6 space-y-8">
+      <div className="p-6 space-y-6">
         <div className="text-center">
           <h1 className="font-headline text-3xl font-bold">Program Kami</h1>
           <p className="text-muted-foreground">Inisiatif untuk masa depan yang berkelanjutan.</p>
         </div>
 
-        {flagshipPrograms.length > 0 && (
-            <div className="space-y-6">
-                <h2 className="font-headline text-2xl font-semibold mb-4">Program Unggulan</h2>
-                <div className="grid gap-6">
-                    {flagshipPrograms.map((program) => (
-                    <ProgramCard key={program.id} {...program} />
-                    ))}
-                </div>
+        <div className="sticky top-14 z-10 bg-background/95 py-2 backdrop-blur-sm -mx-6 px-6">
+          <ScrollArea className="w-full whitespace-nowrap">
+            <div className="flex space-x-2 pb-2">
+              {tags.map((tag) => (
+                <Button
+                  key={tag}
+                  variant={(selectedTag === tag || (!selectedTag && tag === 'Semua')) ? 'default' : 'outline'}
+                  onClick={() => setSelectedTag(tag)}
+                  className="shrink-0"
+                >
+                  {tag}
+                </Button>
+              ))}
             </div>
-        )}
-        
-        <Separator className="my-8" />
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </div>
 
-        {ongoingPrograms.length > 0 && (
-            <div className="space-y-6">
-                <h2 className="font-headline text-2xl font-semibold mb-4">Inisiatif Berkelanjutan</h2>
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {ongoingPrograms.length > 0 && (
+              <div className="space-y-4">
+                <h2 className="font-headline text-2xl font-semibold">Sedang Berlangsung</h2>
                 <div className="grid gap-6">
-                    {ongoingPrograms.map((program) => (
+                  {ongoingPrograms.map((program) => (
                     <ProgramCard key={program.id} {...program} />
-                    ))}
+                  ))}
                 </div>
-            </div>
-        )}
-        
-        {allPrograms.length === 0 && (
-            <p className="text-center text-muted-foreground py-10">Belum ada program yang dipublikasikan.</p>
+              </div>
+            )}
+
+            {pastPrograms.length > 0 && (
+               <>
+                <Separator className="my-8" />
+                <div className="space-y-4">
+                    <h2 className="font-headline text-2xl font-semibold">Telah Berakhir</h2>
+                    <div className="grid gap-6">
+                        {pastPrograms.map((program) => (
+                        <ProgramCard key={program.id} {...program} isPast />
+                        ))}
+                    </div>
+                </div>
+               </>
+            )}
+
+            {filteredPrograms.length === 0 && (
+              <p className="text-center text-muted-foreground py-10">
+                Tidak ada program untuk kategori "{selectedTag}".
+              </p>
+            )}
+          </div>
         )}
       </div>
     </MainLayout>

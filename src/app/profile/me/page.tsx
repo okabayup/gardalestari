@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/use-auth';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, Shield, Pencil, AlertTriangle, Loader2, Grid3x3, Archive, Tag, IdCard, Undo } from 'lucide-react';
+import { LogOut, Shield, Pencil, AlertTriangle, Loader2, Grid3x3, Archive, Tag, IdCard, Undo, History } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import EditProfileModal from '@/components/profile/EditProfileModal';
@@ -94,6 +94,16 @@ const ProfilePostsGrid = ({ posts, isLoading, isArchive = false, onUnarchive }: 
                    )}
                 </Link>
             ))}
+        </div>
+    )
+}
+
+const ProgramHistoryTab = () => {
+    // This is a placeholder. In the future, this will fetch user's program history.
+    return (
+        <div className="text-center py-10 text-muted-foreground">
+            <History className="h-8 w-8 mx-auto mb-2" />
+            Riwayat program yang diikuti akan muncul di sini.
         </div>
     )
 }
@@ -241,15 +251,18 @@ export default function ProfileMePage() {
             </div>
 
             <Tabs defaultValue="posts" className="w-full">
-                <TabsList className="w-full grid grid-cols-3">
+                <TabsList className="w-full grid grid-cols-4">
                     <TabsTrigger value="posts">
                         <Grid3x3 className="mr-2 h-4 w-4" /> Postingan
                     </TabsTrigger>
                     <TabsTrigger value="tagged">
                         <Tag className="mr-2 h-4 w-4" /> Ditandai
                     </TabsTrigger>
+                     <TabsTrigger value="history">
+                        <History className="mr-2 h-4 w-4" /> Riwayat
+                    </TabsTrigger>
                     <TabsTrigger value="archived">
-                        <Archive className="mr-2 h-4 w-4" /> Diarsipkan
+                        <Archive className="mr-2 h-4 w-4" /> Arsip
                     </TabsTrigger>
                 </TabsList>
                 <TabsContent value="posts">
@@ -257,6 +270,9 @@ export default function ProfileMePage() {
                 </TabsContent>
                  <TabsContent value="tagged">
                     <ProfilePostsGrid posts={taggedPosts} isLoading={loadingTagged} />
+                </TabsContent>
+                 <TabsContent value="history">
+                    <ProgramHistoryTab />
                 </TabsContent>
                 <TabsContent value="archived">
                     <ProfilePostsGrid 

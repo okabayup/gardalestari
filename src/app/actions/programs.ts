@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 
 export interface Program {
@@ -12,9 +12,13 @@ export interface Program {
   category: 'flagship' | 'ongoing';
   imageUrl: string;
   imageHint: string;
+  tags: string[];
+  startDate: Timestamp;
+  endDate: Timestamp;
 }
 
 const programsCollection = collection(db, 'programs');
+const tagsCollection = collection(db, 'programTags');
 
 // Get all programs
 export async function getPrograms(): Promise<Program[]> {
@@ -23,13 +27,14 @@ export async function getPrograms(): Promise<Program[]> {
   snapshot.forEach(doc => {
     programs.push({ id: doc.id, ...doc.data() } as Program);
   });
-  return programs;
+  // Sort by end date, upcoming first
+  return programs.sort((a, b) => a.endDate.toMillis() - b.endDate.toMillis());
 }
 
 // Get a single program by ID
 export async function getProgram(id: string): Promise<Program | null> {
-    const programDoc = doc(db, 'programs', id);
-    const docSnap = await getDoc(programDoc);
+    const programDocRef = doc(db, 'programs', id);
+    const docSnap = await getDoc(programDocRef);
     if (docSnap.exists()) {
         return { id: docSnap.id, ...docSnap.data() } as Program;
     }
@@ -74,4 +79,45 @@ export async function deleteProgram(id: string) {
     console.error("Error deleting program:", error);
     throw new Error("Gagal menghapus program.");
   }
+}
+
+
+// --- Tag Management ---
+
+export interface ProgramTag {
+    id?: string;
+    name: string;
+}
+
+// Get all tags
+export async function getProgramTags(): Promise<ProgramTag[]> {
+    const snapshot = await getDocs(tagsCollection);
+    const tags: ProgramTag[] = [];
+    snapshot.forEach(doc => {
+        tags.push({ id: doc.id, name: doc.data().name });
+    });
+    return tags.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+// Add a new tag
+export async function addProgramTag(name: string) {
+    try {
+        await addDoc(tagsCollection, { name });
+        revalidatePath('/admin/programs/tags');
+    } catch (error) {
+        console.error("Error adding tag:", error);
+        throw new Error("Gagal menambahkan tag baru.");
+    }
+}
+
+// Delete a tag
+export async function deleteProgramTag(id: string) {
+    try {
+        const tagDoc = doc(db, 'programTags', id);
+        await deleteDoc(tagDoc);
+        revalidatePath('/admin/programs/tags');
+    } catch (error) {
+        console.error("Error deleting tag:", error);
+        throw new Error("Gagal menghapus tag.");
+    }
 }

@@ -10,13 +10,21 @@ import { Label } from '@/components/ui/label';
 import { useRouter, notFound, useParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CalendarIcon } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
-import { getProgram, updateProgram, Program } from '@/app/actions/programs';
+import { getProgram, updateProgram, Program, getProgramTags, ProgramTag } from '@/app/actions/programs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { DateRange } from 'react-day-picker';
+import { format } from 'date-fns';
+import { Timestamp } from 'firebase/firestore';
+import { cn } from '@/lib/utils';
 
-
-type FormData = Omit<Program, 'id'>;
+type FormData = Omit<Program, 'id' | 'startDate' | 'endDate'> & {
+  dateRange: DateRange | undefined;
+};
 
 export default function EditProgramPage() {
   const router = useRouter();
@@ -26,28 +34,65 @@ export default function EditProgramPage() {
   const { register, handleSubmit, reset, control } = useForm<FormData>();
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
+  const [availableTags, setAvailableTags] = useState<ProgramTag[]>([]);
 
   useEffect(() => {
     if (!id) return;
-    const fetchProgram = async () => {
+    const fetchProgramAndTags = async () => {
       setPageLoading(true);
-      const fetchedProgram = await getProgram(id as string);
-      if (!fetchedProgram) {
-        notFound();
-      } else {
-        reset(fetchedProgram); // Populate form with fetched data
+      try {
+        const [fetchedProgram, fetchedTags] = await Promise.all([
+          getProgram(id as string),
+          getProgramTags(),
+        ]);
+        
+        if (!fetchedProgram) {
+          notFound();
+          return;
+        }
+        
+        setAvailableTags(fetchedTags);
+        reset({
+          ...fetchedProgram,
+          dateRange: {
+            from: fetchedProgram.startDate.toDate(),
+            to: fetchedProgram.endDate.toDate(),
+          },
+        });
+      } catch (error) {
+        toast({ variant: "destructive", title: "Gagal memuat data" });
+        router.push('/admin/programs');
+      } finally {
+        setPageLoading(false);
       }
-      setPageLoading(false);
     };
-    fetchProgram();
-  }, [id, reset]);
+    fetchProgramAndTags();
+  }, [id, reset, router, toast]);
 
   const onSubmit = async (data: FormData) => {
     if (!id) return;
+    if (!data.dateRange?.from || !data.dateRange?.to) {
+        toast({ variant: 'destructive', title: 'Rentang Tanggal Diperlukan' });
+        return;
+    }
+     if (data.tags.length === 0) {
+        toast({ variant: 'destructive', title: 'Tag Diperlukan', description: 'Pilih setidaknya satu tag.' });
+        return;
+    }
     setLoading(true);
     
     try {
-      await updateProgram(id as string, data);
+      const programToUpdate: Partial<Program> = {
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        imageUrl: data.imageUrl,
+        imageHint: data.imageHint,
+        tags: data.tags,
+        startDate: Timestamp.fromDate(data.dateRange.from),
+        endDate: Timestamp.fromDate(data.dateRange.to),
+      }
+      await updateProgram(id as string, programToUpdate);
       toast({
         title: 'Program Diperbarui!',
         description: 'Perubahan pada program telah disimpan.',
@@ -86,48 +131,121 @@ export default function EditProgramPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-               <div className="space-y-2">
+              <div className="space-y-2">
                 <Label htmlFor="title">Nama Program</Label>
                 <Input id="title" {...register('title', { required: true })} />
               </div>
-
-               <div className="space-y-2">
-                <Label htmlFor="category">Kategori</Label>
-                <Controller
-                  name="category"
-                  control={control}
-                  rules={{ required: true }}
-                  render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="category">Kategori</Label>
+                  <Controller
+                    name="category"
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <SelectTrigger id="category">
-                            <SelectValue placeholder="Pilih Kategori" />
+                          <SelectValue placeholder="Pilih Kategori" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="flagship">Program Unggulan (Flagship)</SelectItem>
-                            <SelectItem value="ongoing">Inisiatif Berkelanjutan (Ongoing)</SelectItem>
+                          <SelectItem value="flagship">Program Unggulan (Flagship)</SelectItem>
+                          <SelectItem value="ongoing">Inisiatif Berkelanjutan (Ongoing)</SelectItem>
                         </SelectContent>
-                    </Select>
-                  )}
-                />
+                      </Select>
+                    )}
+                  />
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="dateRange">Rentang Waktu Program</Label>
+                    <Controller
+                        name="dateRange"
+                        control={control}
+                        render={({ field }) => (
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                <Button
+                                    id="date"
+                                    variant={"outline"}
+                                    className={cn(
+                                    "w-full justify-start text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {field.value?.from ? (
+                                    field.value.to ? (
+                                        <>
+                                        {format(field.value.from, "LLL dd, y")} -{" "}
+                                        {format(field.value.to, "LLL dd, y")}
+                                        </>
+                                    ) : (
+                                        format(field.value.from, "LLL dd, y")
+                                    )
+                                    ) : (
+                                    <span>Pilih rentang tanggal</span>
+                                    )}
+                                </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    initialFocus
+                                    mode="range"
+                                    defaultMonth={field.value?.from}
+                                    selected={field.value}
+                                    onSelect={field.onChange}
+                                    numberOfMonths={2}
+                                />
+                                </PopoverContent>
+                            </Popover>
+                        )}
+                    />
+                </div>
               </div>
+               <div className="space-y-2">
+                    <Label>Tags</Label>
+                    <Card className="p-4">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {availableTags.map(tag => (
+                            <Controller
+                                key={tag.id}
+                                name="tags"
+                                control={control}
+                                render={({ field }) => (
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id={tag.id}
+                                            checked={field.value?.includes(tag.name)}
+                                            onCheckedChange={(checked) => {
+                                                const currentTags = field.value || [];
+                                                return checked
+                                                ? field.onChange([...currentTags, tag.name])
+                                                : field.onChange(currentTags.filter(value => value !== tag.name))
+                                            }}
+                                        />
+                                        <Label htmlFor={tag.id} className="font-normal">{tag.name}</Label>
+                                    </div>
+                                )}
+                            />
+                        ))}
+                        </div>
+                    </Card>
+                </div>
               
               <div className="space-y-2">
                 <Label htmlFor="imageUrl">URL Gambar</Label>
                 <Input id="imageUrl" {...register('imageUrl')} />
               </div>
-
-               <div className="space-y-2">
+              <div className="space-y-2">
                 <Label htmlFor="imageHint">Petunjuk Gambar untuk AI</Label>
                 <Input id="imageHint" {...register('imageHint')} />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="description">Deskripsi</Label>
                 <Textarea id="description" rows={5} {...register('description', { required: true })}/>
               </div>
-               <div className="flex justify-end gap-2">
+              <div className="flex justify-end gap-2">
                 <Button variant="outline" type="button" onClick={() => router.push('/admin/programs')}>
-                    Batal
+                  Batal
                 </Button>
                 <Button type="submit" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
