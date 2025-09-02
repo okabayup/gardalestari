@@ -2,7 +2,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import MembershipCard from './MembershipCard';
 import type { User } from 'firebase/auth';
 import { Button } from '../ui/button';
@@ -70,6 +70,10 @@ export default function MembershipCardDialog({ isOpen, onClose, user }: Membersh
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-transparent border-none shadow-none max-w-sm p-0">
+        <DialogHeader>
+          {/* This title is visually hidden but required for accessibility */}
+          <DialogTitle className="sr-only">Kartu Tanda Anggota</DialogTitle>
+        </DialogHeader>
         <div ref={cardRef}>
             <MembershipCard 
                 name={user.displayName || 'Anggota'}
