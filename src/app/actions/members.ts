@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, updateDoc, deleteField, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteField, query, orderBy, setDoc } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 
 export type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected';
@@ -23,6 +23,9 @@ export interface MemberWithStatus extends Member {
     phoneNumber: string;
     verificationStatus: VerificationStatus;
     joinDate?: string;
+    ktpImageUrl?: string;
+    selfieImageUrl?: string;
+    nik?: string;
 }
 
 
@@ -50,19 +53,22 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
       name: data.fullName || data.displayName || 'Nama Tidak Diketahui',
       username: data.username || `user_${doc.id.substring(0, 5)}`,
       phoneNumber: data.phoneNumber || 'N/A',
-      verificationStatus: data.verificationStatus,
+      verificationStatus: data.verificationStatus || 'unverified',
       avatarUrl: data.avatarUrl,
       position: data.position || 'Anggota',
       type: data.type || undefined,
       region: data.region || undefined,
       joinDate: joinDate,
+      ktpImageUrl: data.ktpImageUrl,
+      selfieImageUrl: data.selfieImageUrl,
+      nik: data.nik
     } as MemberWithStatus);
   });
   return members;
 }
 
-// Update member details (position, type, region)
-export async function updateMemberDetails(id: string, details: { position: string, type?: MemberType, region?: string }) {
+// Update member details (position, type, region, verification status)
+export async function updateMemberDetails(id: string, details: { position: string, type?: MemberType, region?: string, verificationStatus?: VerificationStatus }) {
     try {
         const memberDoc = doc(db, 'users', id);
         const dataToUpdate: { [key: string]: any } = {
@@ -80,8 +86,13 @@ export async function updateMemberDetails(id: string, details: { position: strin
         } else {
             dataToUpdate.region = deleteField();
         }
+
+        if (details.verificationStatus) {
+            dataToUpdate.verificationStatus = details.verificationStatus;
+        }
         
-        await updateDoc(memberDoc, dataToUpdate);
+        await setDoc(memberDoc, dataToUpdate, { merge: true });
+        
         revalidatePath('/panel/members');
         revalidatePath('/members');
     } catch (error) {
@@ -89,3 +100,5 @@ export async function updateMemberDetails(id: string, details: { position: strin
         throw new Error("Gagal memperbarui detail anggota.");
     }
 }
+
+    

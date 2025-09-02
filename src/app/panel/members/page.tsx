@@ -7,6 +7,7 @@ import {
   updateMemberDetails,
   MemberWithStatus,
   MemberType,
+  VerificationStatus,
 } from '@/app/actions/members';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -25,9 +26,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { Loader2, MoreHorizontal, Edit } from 'lucide-react';
+import { Loader2, MoreHorizontal, Edit, ShieldCheck } from 'lucide-react';
 import EditMemberDialog from '@/components/admin/EditMemberDialog';
+import ViewVerificationDialog from '@/components/admin/ViewVerificationDialog';
 
 export default function AdminMembersPage() {
   const { toast } = useToast();
@@ -35,6 +38,7 @@ export default function AdminMembersPage() {
   const [loading, setLoading] = useState(true);
   const [isSavingDetails, setIsSavingDetails] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isVerificationDialogOpen, setIsVerificationDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<MemberWithStatus | null>(null);
 
   useEffect(() => {
@@ -57,12 +61,13 @@ export default function AdminMembersPage() {
     }
   };
 
-  const handleEditDetails = (member: MemberWithStatus) => {
+  const handleOpenDialog = (member: MemberWithStatus, dialog: 'edit' | 'verify') => {
     setSelectedMember(member);
-    setIsEditDialogOpen(true);
+    if (dialog === 'edit') setIsEditDialogOpen(true);
+    if (dialog === 'verify') setIsVerificationDialogOpen(true);
   };
   
-  const handleSaveDetails = async (id: string, details: { position: string; type?: MemberType; region?: string }) => {
+  const handleSaveDetails = async (id: string, details: { position: string; type?: MemberType; region?: string, verificationStatus?: VerificationStatus }) => {
     setIsSavingDetails(true);
     try {
         await updateMemberDetails(id, details);
@@ -96,7 +101,7 @@ export default function AdminMembersPage() {
       <div className="space-y-6">
         <div>
           <h1 className="font-headline text-2xl font-bold">Manajemen Anggota</h1>
-          <p className="text-muted-foreground">Kelola jabatan dan peran anggota.</p>
+          <p className="text-muted-foreground">Kelola jabatan, peran, dan status verifikasi anggota.</p>
         </div>
         <Card>
           <CardContent className="p-0">
@@ -135,9 +140,17 @@ export default function AdminMembersPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                             <DropdownMenuItem onClick={() => handleEditDetails(member)}>
-                                <Edit className="mr-2 h-4 w-4" /> Edit Detail
+                             <DropdownMenuItem onClick={() => handleOpenDialog(member, 'edit')}>
+                                <Edit className="mr-2 h-4 w-4" /> Edit Detail & Status
                              </DropdownMenuItem>
+                             {member.ktpImageUrl && (
+                                <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleOpenDialog(member, 'verify')}>
+                                    <ShieldCheck className="mr-2 h-4 w-4" /> Tinjau Verifikasi
+                                </DropdownMenuItem>
+                                </>
+                             )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -156,14 +169,23 @@ export default function AdminMembersPage() {
         </Card>
       </div>
       {selectedMember && (
-         <EditMemberDialog
-            isOpen={isEditDialogOpen}
-            onClose={() => setIsEditDialogOpen(false)}
-            member={selectedMember}
-            onSave={handleSaveDetails}
-            isSaving={isSavingDetails}
-        />
+        <>
+            <EditMemberDialog
+                isOpen={isEditDialogOpen}
+                onClose={() => setIsEditDialogOpen(false)}
+                member={selectedMember}
+                onSave={handleSaveDetails}
+                isSaving={isSavingDetails}
+            />
+             <ViewVerificationDialog
+                isOpen={isVerificationDialogOpen}
+                onClose={() => setIsVerificationDialogOpen(false)}
+                member={selectedMember}
+            />
+        </>
       )}
     </>
   );
 }
+
+    
