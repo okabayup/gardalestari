@@ -8,13 +8,15 @@ import { getPrograms, getProgramTags, Program } from '@/app/actions/programs';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Loader2 } from 'lucide-react';
+import { Loader2, PlusCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function ProgramsPage() {
   const [allPrograms, setAllPrograms] = useState<Program[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -48,9 +50,15 @@ export default function ProgramsPage() {
   return (
     <MainLayout>
       <div className="p-6 space-y-6">
-        <div className="text-center">
-          <h1 className="font-headline text-3xl font-bold">Program Kami</h1>
-          <p className="text-muted-foreground">Inisiatif untuk masa depan yang berkelanjutan.</p>
+        <div className="flex items-center justify-between">
+          <div className="text-center sm:text-left">
+            <h1 className="font-headline text-3xl font-bold">Program Kami</h1>
+            <p className="text-muted-foreground">Inisiatif untuk masa depan yang berkelanjutan.</p>
+          </div>
+           <Button onClick={() => router.push('/admin/programs/new')}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Buat Program
+          </Button>
         </div>
 
         <div className="sticky top-14 z-10 bg-background/95 py-2 backdrop-blur-sm -mx-6 px-6">

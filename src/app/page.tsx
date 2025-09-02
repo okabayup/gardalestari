@@ -51,7 +51,7 @@ const Footer = async () => {
                         <h4 className="font-semibold">Hubungi Kami</h4>
                         <div className="text-sm text-muted-foreground">
                            <p>Email: <a href="mailto:halo@gardalestari.org" className="text-primary hover:underline">halo@gardalestari.org</a></p>
-                           <p>Telepon: <a href="tel:085937010409" className="text-primary hover:underline">085937010409</a></p>
+                           <p>Telepon: <a href="https://wa.me/6285937010409" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">0859-3701-0409 (WhatsApp)</a></p>
                         </div>
                         <div className="flex items-center gap-4 mt-2">
                            <Link href={settings.instagram || '#'} target="_blank" aria-label="Instagram" className="text-muted-foreground hover:text-primary"><Heart size={20} /></Link>
@@ -76,6 +76,7 @@ export default async function LandingPage() {
   const members = await getMembers();
   const partners = await getPartners();
   const featuredPartners = partners.filter(p => p.isFeatured);
+  const WHATSAPP_LINK = "https://wa.me/6285937010409";
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
@@ -108,10 +109,10 @@ export default async function LandingPage() {
                       <Link href="/register">Bergabunglah dengan Gerakan Kami</Link>
                   </Button>
                   <Button size="lg" variant="outline" asChild>
-                      <Link href="#impact">Dukung Misi Kami</Link>
+                      <Link href={WHATSAPP_LINK} target="_blank">Dukung Misi Kami</Link>
                   </Button>
                   <Button size="lg" variant="ghost" asChild>
-                      <Link href="#partnership">Jalin Kemitraan</Link>
+                      <Link href={WHATSAPP_LINK} target="_blank">Jalin Kemitraan</Link>
                   </Button>
                 </div>
             </div>
@@ -201,7 +202,9 @@ export default async function LandingPage() {
                   <HandHeart size={32} className="text-primary mb-4" />
                   <h3 className="font-headline text-xl mb-2">Dukung Sebagai Donatur</h3>
                   <p className="text-muted-foreground text-sm flex-grow">Donasi Anda akan langsung mendanai program-program kami di lapangan, dari penanaman pohon hingga pelatihan petani muda. Jadilah pahlawan bagi bumi.</p>
-                  <Button variant="outline" className="mt-6 w-full">Beri Donasi</Button>
+                  <Button variant="outline" className="mt-6 w-full" asChild>
+                    <Link href={WHATSAPP_LINK} target="_blank">Beri Donasi</Link>
+                  </Button>
                 </Card>
                  <Card className="p-6 flex flex-col bg-primary text-primary-foreground border-none">
                   <Target size={32} className="mb-4" />
@@ -215,7 +218,9 @@ export default async function LandingPage() {
                   <Handshake size={32} className="text-primary mb-4" />
                   <h3 className="font-headline text-xl mb-2">Jalin Kemitraan</h3>
                   <p className="text-muted-foreground text-sm flex-grow">Kami membuka pintu kolaborasi bagi perusahaan, pemerintah, dan NGO. Mari kita bersinergi untuk menciptakan dampak yang lebih besar dan berkelanjutan.</p>
-                  <Button variant="outline" className="mt-6 w-full">Hubungi Kami</Button>
+                  <Button variant="outline" className="mt-6 w-full" asChild>
+                    <Link href={WHATSAPP_LINK} target="_blank">Hubungi Kami</Link>
+                  </Button>
                 </Card>
             </div>
           </div>

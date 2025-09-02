@@ -27,15 +27,21 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { getBlogPosts, deleteBlogPost, BlogPost } from '@/app/actions/blog';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
+
+const ADMIN_PHONE_NUMBER = '+6285176752610';
 
 export default function AdminBlogPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null); // State to track deleting post
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [postToDelete, setPostToDelete] = useState<BlogPost | null>(null);
+
+  const isAdmin = user?.phoneNumber === ADMIN_PHONE_NUMBER;
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -137,11 +143,15 @@ export default function AdminBlogPage() {
                             <DropdownMenuItem onClick={() => router.push(`/admin/blog/edit/${post.slug}`)}>
                               Edit
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(post)}>
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Hapus
-                            </DropdownMenuItem>
+                            {isAdmin && (
+                                <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(post)}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Hapus
+                                </DropdownMenuItem>
+                                </>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

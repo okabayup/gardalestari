@@ -29,15 +29,21 @@ import { getPrograms, deleteProgram, Program } from '@/app/actions/programs';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { useAuth } from '@/hooks/use-auth';
+
+const ADMIN_PHONE_NUMBER = '+6285176752610';
 
 export default function AdminProgramsPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [programToDelete, setProgramToDelete] = useState<Program | null>(null);
+
+  const isAdmin = user?.phoneNumber === ADMIN_PHONE_NUMBER;
 
   useEffect(() => {
     const fetchPrograms = async () => {
@@ -97,9 +103,11 @@ export default function AdminProgramsPage() {
             <p className="text-muted-foreground">Buat, edit, dan hapus program kerja.</p>
           </div>
           <div className="flex gap-2">
+            {isAdmin && (
             <Button variant="outline" onClick={() => router.push('/admin/programs/tags')}>
                 <Tag className="mr-2 h-4 w-4" /> Kelola Tag
             </Button>
+            )}
             <Button onClick={() => router.push('/admin/programs/new')}>
                 <PlusCircle className="mr-2 h-4 w-4" /> Buat Program Baru
             </Button>
@@ -149,11 +157,15 @@ export default function AdminProgramsPage() {
                             <DropdownMenuItem onClick={() => router.push(`/admin/programs/edit/${program.id}`)}>
                               Edit
                             </DropdownMenuItem>
+                            {isAdmin && (
+                            <>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(program)}>
                               <Trash2 className="mr-2 h-4 w-4" />
                               Hapus
                             </DropdownMenuItem>
+                            </>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

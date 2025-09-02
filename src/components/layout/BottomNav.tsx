@@ -1,9 +1,11 @@
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { LayoutGrid, Users, Sprout, CalendarDays, Award } from 'lucide-react';
+import { Badge } from '../ui/badge';
 
 const navItems = [
   { href: '/feed', label: 'Beranda', icon: LayoutGrid },
@@ -26,16 +28,17 @@ export default function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex flex-col items-center justify-center gap-1 text-sm transition-colors hover:text-primary',
-                isActive ? 'text-primary' : 'text-muted-foreground',
-                item.special && isActive && 'rounded-full bg-primary/10 p-2 text-primary'
+                'relative flex flex-col items-center justify-center gap-1 text-sm transition-colors hover:text-primary',
+                isActive ? 'text-primary' : 'text-muted-foreground'
               )}
             >
-              <item.icon className={cn(
-                  "h-5 w-5",
-                  item.special && isActive && "text-amber-500"
-              )} />
+              <item.icon className="h-5 w-5" />
               <span className="text-xs">{item.label}</span>
+              {item.special && (
+                 <Badge variant="secondary" className="absolute top-0 right-1 text-[10px] px-1 py-0 h-4 leading-none">
+                    Segera
+                 </Badge>
+              )}
             </Link>
           );
         })}

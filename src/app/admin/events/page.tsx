@@ -28,15 +28,21 @@ import { useEffect, useState } from 'react';
 import { getEvents, deleteEvent, Event } from '@/app/actions/events';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { useAuth } from '@/hooks/use-auth';
+
+const ADMIN_PHONE_NUMBER = '+6285176752610';
 
 export default function AdminEventsPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<Event | null>(null);
+  
+  const isAdmin = user?.phoneNumber === ADMIN_PHONE_NUMBER;
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -140,11 +146,15 @@ export default function AdminEventsPage() {
                             <DropdownMenuItem onClick={() => router.push(`/admin/events/edit/${event.id}`)}>
                               Edit
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(event)}>
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Hapus
-                            </DropdownMenuItem>
+                            {isAdmin && (
+                                <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(event)}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Hapus
+                                </DropdownMenuItem>
+                                </>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
