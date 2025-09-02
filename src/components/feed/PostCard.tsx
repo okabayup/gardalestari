@@ -11,7 +11,7 @@ import type { PostWithAuthor, CommentWithAuthor } from '@/app/actions/posts';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Input } from '../ui/input';
 import { useState } from 'react';
-import { addComment, getComments, unarchivePost } from '@/app/actions/posts';
+import { addComment, getComments } from '@/app/actions/posts';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -115,8 +115,8 @@ export default function PostCard({ post, onToggleLike, onArchive, onUnarchive, c
   }
   
   const isAuthor = currentUserId === post.author.id;
+  const isArchived = post.status === 'archived';
   const hasTags = post.media.some(m => m.mentions && m.mentions.length > 0);
-  const isArchived = (post as any).status === 'archived';
 
   return (
     <Card className={cn("overflow-hidden", isArchived && "bg-muted/50")}>

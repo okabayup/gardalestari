@@ -67,6 +67,7 @@ export interface PostWithAuthor {
   commentsCount: number;
   timestamp: string;
   isLiked: boolean;
+  status: 'published' | 'archived';
 }
 
 export interface Comment {
@@ -134,6 +135,7 @@ const buildPostWithAuthor = async (postDoc: any, currentUserId?: string): Promis
       commentsCount: postData.commentsCount,
       timestamp: formatTimestamp(postData.createdAt),
       isLiked: currentUserId ? postData.likes.includes(currentUserId) : false,
+      status: postData.status || 'published',
     };
 }
 

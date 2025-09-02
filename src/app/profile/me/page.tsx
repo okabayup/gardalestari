@@ -12,7 +12,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import EditProfileModal from '@/components/profile/EditProfileModal';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { getPostsByUserId, getArchivedPosts, getTaggedPosts, PostWithAuthor, unarchivePost } from '../../actions/posts';
+import { getPostsByUserId, getArchivedPosts, getTaggedPosts, PostWithAuthor, unarchivePost } from '@/app/actions/posts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MembershipCardDialog from '@/components/members/MembershipCardDialog';
 import { useToast } from '@/hooks/use-toast';
