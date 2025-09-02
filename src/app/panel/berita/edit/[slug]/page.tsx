@@ -14,7 +14,7 @@ import { Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { getBeritaPost, updateBeritaPost, BeritaPost } from '@/app/actions/berita';
 
-type FormData = Omit<BeritaPost, 'id' | 'author' | 'date' | 'excerpt'>;
+type FormData = Omit<BeritaPost, 'id' | 'author' | 'date'>;
 
 export default function EditBeritaPostPage({ params }: { params: { slug: string } }) {
   const router = useRouter();
@@ -39,12 +39,19 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
     fetchPost();
   }, [params.slug, reset]);
 
+  const generateSlug = (title: string) => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9 -]/g, '') // remove invalid chars
+      .replace(/\s+/g, '-') // collapse whitespace and replace by -
+      .replace(/-+/g, '-'); // collapse dashes
+  };
+
   const onSubmit = async (data: FormData) => {
     if (!post || !post.id) return;
     setLoading(true);
     
-    // Ensure content update also updates excerpt
-    const updatedData = {
+    const updatedData: Partial<BeritaPost> = {
         ...data,
         excerpt: data.content.substring(0, 150) + '...'
     };
@@ -65,6 +72,13 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
       setLoading(false);
     }
   };
+  
+   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTitle = e.target.value;
+    setValue('title', newTitle);
+    setValue('slug', generateSlug(newTitle));
+  };
+
 
   if (pageLoading) {
     return (
@@ -95,7 +109,7 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="title">Judul Berita</Label>
-                <Input id="title" {...register('title', { required: true })} />
+                <Input id="title" {...register('title', { required: true })} onChange={handleTitleChange} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="slug">Slug</Label>

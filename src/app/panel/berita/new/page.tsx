@@ -15,14 +15,14 @@ import { useForm } from 'react-hook-form';
 import { createBeritaPost, BeritaPost } from '@/app/actions/berita';
 import { useAuth } from '@/hooks/use-auth';
 
-type FormData = Omit<BeritaPost, 'id' | 'author' | 'date' | 'imageUrl' | 'imageHint' | 'excerpt'>;
+type FormData = Omit<BeritaPost, 'id' | 'author' | 'date' | 'excerpt'>;
 
 export default function NewBeritaPostPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const { register, handleSubmit, watch } = useForm<FormData>();
+  const { register, handleSubmit, watch, setValue } = useForm<FormData>();
   const titleValue = watch('title', '');
 
   const generateSlug = (title: string) => {
@@ -37,13 +37,13 @@ export default function NewBeritaPostPage() {
     setLoading(true);
     try {
         const newPost: Omit<BeritaPost, 'id'> = {
-            ...data,
+            title: data.title,
             slug: data.slug || generateSlug(data.title),
             author: user?.displayName || 'Admin',
             date: new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }),
-            // Placeholder values, can be replaced by an upload feature later
-            imageUrl: 'https://picsum.photos/id/1018/600/400',
-            imageHint: 'mountain landscape',
+            imageUrl: data.imageUrl || 'https://picsum.photos/id/1018/600/400',
+            imageHint: data.imageHint || 'mountain landscape',
+            content: data.content,
             excerpt: data.content.substring(0, 150) + '...',
         };
         await createBeritaPost(newPost);
@@ -61,6 +61,14 @@ export default function NewBeritaPostPage() {
         setLoading(false);
     }
   };
+  
+   // Automatically update slug as title is typed
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTitle = e.target.value;
+    setValue('title', newTitle);
+    setValue('slug', generateSlug(newTitle));
+  };
+
 
   return (
       <div className="space-y-6">
@@ -79,12 +87,20 @@ export default function NewBeritaPostPage() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="title">Judul Berita</Label>
-                <Input id="title" placeholder="Judul yang menarik..." {...register('title', { required: true })} />
+                <Input id="title" placeholder="Judul yang menarik..." {...register('title', { required: true })} onChange={handleTitleChange} />
               </div>
                <div className="space-y-2">
                 <Label htmlFor="slug">Slug</Label>
-                <Input id="slug" placeholder={generateSlug(titleValue) || 'contoh: berita-baru-saya'} {...register('slug')} />
+                <Input id="slug" placeholder="contoh: berita-baru-saya" {...register('slug')} />
                 <p className="text-xs text-muted-foreground">URL unik untuk berita. Jika dikosongkan, akan dibuat otomatis dari judul.</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="imageUrl">URL Gambar Utama</Label>
+                <Input id="imageUrl" placeholder="https://..." {...register('imageUrl')} />
+              </div>
+               <div className="space-y-2">
+                <Label htmlFor="imageHint">Petunjuk Gambar (untuk AI)</Label>
+                <Input id="imageHint" placeholder="Contoh: petani di sawah" {...register('imageHint')} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="content">Konten (mendukung HTML)</Label>
