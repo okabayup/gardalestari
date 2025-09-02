@@ -16,7 +16,7 @@ const AdminDashboard = () => {
   const router = useRouter();
 
   const managementMenus = [
-    { label: 'Blog', icon: Newspaper, action: () => router.push('/admin/blog') },
+    { label: 'Berita', icon: Newspaper, action: () => router.push('/admin/berita') },
     { label: 'Anggota', icon: Users, action: () => router.push('/admin/members') },
     { label: 'Program', icon: Sprout, action: () => router.push('/admin/programs') },
     { label: 'Acara', icon: Calendar, action: () => router.push('/admin/events') },
@@ -68,7 +68,7 @@ const AdminDashboard = () => {
         </Card>
          <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Postingan Blog</CardTitle>
+            <CardTitle className="text-sm font-medium">Postingan Berita</CardTitle>
             <Newspaper className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>

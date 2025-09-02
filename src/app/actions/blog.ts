@@ -1,11 +1,10 @@
-
 'use server';
 
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 
-export interface BlogPost {
+export interface BeritaPost {
   id?: string;
   title: string;
   slug: string;
@@ -17,21 +16,21 @@ export interface BlogPost {
   excerpt: string;
 }
 
-const blogPostsCollection = collection(db, 'blogPosts');
+const beritaPostsCollection = collection(db, 'beritaPosts');
 
-// Get all blog posts
-export async function getBlogPosts() {
-  const snapshot = await getDocs(blogPostsCollection);
-  const posts: BlogPost[] = [];
+// Get all berita posts
+export async function getBeritaPosts() {
+  const snapshot = await getDocs(beritaPostsCollection);
+  const posts: BeritaPost[] = [];
   snapshot.forEach(doc => {
-    posts.push({ id: doc.id, ...doc.data() } as BlogPost);
+    posts.push({ id: doc.id, ...doc.data() } as BeritaPost);
   });
   return posts;
 }
 
-// Get a single blog post by slug
-export async function getBlogPost(slug: string) {
-  const q = query(blogPostsCollection, where("slug", "==", slug));
+// Get a single berita post by slug
+export async function getBeritaPost(slug: string) {
+  const q = query(beritaPostsCollection, where("slug", "==", slug));
   const snapshot = await getDocs(q);
 
   if (snapshot.empty) {
@@ -39,48 +38,48 @@ export async function getBlogPost(slug: string) {
   }
   
   const doc = snapshot.docs[0];
-  return { id: doc.id, ...doc.data() } as BlogPost;
+  return { id: doc.id, ...doc.data() } as BeritaPost;
 }
 
 
-// Create a new blog post
-export async function createBlogPost(post: Omit<BlogPost, 'id'>) {
+// Create a new berita post
+export async function createBeritaPost(post: Omit<BeritaPost, 'id'>) {
   try {
-    await addDoc(blogPostsCollection, post);
-    revalidatePath('/admin/blog');
-    revalidatePath('/blog');
+    await addDoc(beritaPostsCollection, post);
+    revalidatePath('/admin/berita');
+    revalidatePath('/berita');
   } catch (error) {
-    console.error("Error creating blog post:", error);
-    throw new Error("Gagal membuat postingan blog.");
+    console.error("Error creating berita post:", error);
+    throw new Error("Gagal membuat berita.");
   }
 }
 
-// Update an existing blog post
-export async function updateBlogPost(id: string, post: Partial<BlogPost>) {
+// Update an existing berita post
+export async function updateBeritaPost(id: string, post: Partial<BeritaPost>) {
   try {
-    const postDoc = doc(db, 'blogPosts', id);
+    const postDoc = doc(db, 'beritaPosts', id);
     await updateDoc(postDoc, post);
-    revalidatePath('/admin/blog');
-    revalidatePath(`/admin/blog/edit/${post.slug}`);
-    revalidatePath('/blog');
+    revalidatePath('/admin/berita');
+    revalidatePath(`/admin/berita/edit/${post.slug}`);
+    revalidatePath('/berita');
     if (post.slug) {
-        revalidatePath(`/blog/${post.slug}`);
+        revalidatePath(`/berita/${post.slug}`);
     }
   } catch (error) {
-    console.error("Error updating blog post:", error);
-    throw new Error("Gagal memperbarui postingan blog.");
+    console.error("Error updating berita post:", error);
+    throw new Error("Gagal memperbarui berita.");
   }
 }
 
-// Delete a blog post
-export async function deleteBlogPost(id: string) {
+// Delete a berita post
+export async function deleteBeritaPost(id: string) {
   try {
-    const postDoc = doc(db, 'blogPosts', id);
+    const postDoc = doc(db, 'beritaPosts', id);
     await deleteDoc(postDoc);
-    revalidatePath('/admin/blog');
-    revalidatePath('/blog');
+    revalidatePath('/admin/berita');
+    revalidatePath('/berita');
   } catch (error) {
-    console.error("Error deleting blog post:", error);
-    throw new Error("Gagal menghapus postingan blog.");
+    console.error("Error deleting berita post:", error);
+    throw new Error("Gagal menghapus berita.");
   }
 }

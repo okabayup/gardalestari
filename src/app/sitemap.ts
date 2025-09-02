@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next';
-import { getBlogPosts } from '@/app/actions/blog';
+import { getBeritaPosts } from '@/app/actions/berita';
 
 const BASE_URL = 'https://gardalestari.org'; 
 
@@ -14,7 +14,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/programs',
     '/events',
     '/benefits',
-    '/blog',
+    '/berita',
     '/profile',
     '/admin',
   ].map((route) => ({
@@ -24,14 +24,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: route === '/' ? 1 : 0.8,
   }));
 
-  // Rute dinamis untuk postingan blog
-  const posts = await getBlogPosts();
-  const blogPostRoutes = posts.map((post) => ({
-    url: `${BASE_URL}/blog/${post.slug}`,
+  // Rute dinamis untuk postingan berita
+  const posts = await getBeritaPosts();
+  const beritaPostRoutes = posts.map((post) => ({
+    url: `${BASE_URL}/berita/${post.slug}`,
     lastModified: new Date().toISOString(), // Idealnya, ini harus menjadi tanggal update postingan
     changeFrequency: 'weekly' as const,
     priority: 0.7,
   }));
 
-  return [...staticRoutes, ...blogPostRoutes];
+  return [...staticRoutes, ...beritaPostRoutes];
 }

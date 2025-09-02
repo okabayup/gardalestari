@@ -44,7 +44,7 @@ const Footer = async () => {
                         <nav className="flex flex-col gap-1 text-sm text-muted-foreground">
                             <Link href="#about" className="hover:text-primary">Tentang Kami</Link>
                             <Link href="#focus" className="hover:text-primary">Fokus</Link>
-                            <Link href="/blog" className="hover:text-primary">Blog</Link>
+                            <Link href="/berita" className="hover:text-primary">Berita</Link>
                         </nav>
                     </div>
                     <div className="space-y-2">

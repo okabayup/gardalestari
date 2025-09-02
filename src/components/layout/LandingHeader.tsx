@@ -30,7 +30,7 @@ export default function LandingHeader() {
         <nav className="ml-auto hidden items-center gap-4 md:flex">
             <Link href="/programs" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Program</Link>
             <Link href="/events" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Acara</Link>
-            <Link href="/blog" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Blog</Link>
+            <Link href="/berita" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Berita</Link>
         </nav>
         <div className="ml-auto flex items-center gap-2 md:ml-4">
           {loading ? (
