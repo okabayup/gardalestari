@@ -63,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               ...user, 
               points: userData.points || 0,
               level: userData.level || 'Bronze',
-              verificationStatus: userData.verificationStatus || 'unverified',
+              verificationStatus: userData.verificationStatus,
               // Use Firestore data as the source of truth
               displayName: userData.fullName || user.displayName,
               photoURL: userData.avatarUrl || user.photoURL,
@@ -270,7 +270,7 @@ const submitForVerification = async (data: { fullName: string; nik: string; ktpF
         displayName: data.fullName,
         username: username,
         nik: data.nik,
-        verificationStatus: 'temporary' as VerificationStatus, // Set status to temporary for immediate access
+        verificationStatus: 'permanent' as VerificationStatus, // Set status to permanent
         ktpImageUrl,
         selfieImageUrl,
         avatarUrl: newPhotoURL,

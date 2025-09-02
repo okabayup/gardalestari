@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, updateDoc, deleteField } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteField, query, orderBy } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 
 export type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected';
@@ -22,46 +22,44 @@ export interface Member {
 export interface MemberWithStatus extends Member {
     phoneNumber: string;
     verificationStatus: VerificationStatus;
+    joinDate?: string;
 }
 
 
 const usersCollection = collection(db, 'users');
 
-// Get all members
+// Get all members, sorted by creation time
 export async function getMembers(): Promise<MemberWithStatus[]> {
-  const snapshot = await getDocs(usersCollection);
+  const q = query(usersCollection, orderBy('createdAt', 'desc'));
+  const snapshot = await getDocs(q);
   const members: MemberWithStatus[] = [];
+
   snapshot.forEach(doc => {
     const data = doc.data();
+    let joinDate: string | undefined;
+    if (data.createdAt && typeof data.createdAt.toDate === 'function') {
+        joinDate = data.createdAt.toDate().toLocaleDateString('id-ID', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+        });
+    }
+
     members.push({
       id: doc.id,
       name: data.fullName || data.displayName || 'Nama Tidak Diketahui',
       username: data.username || `user_${doc.id.substring(0, 5)}`,
       phoneNumber: data.phoneNumber || 'N/A',
-      verificationStatus: data.verificationStatus, // Use the actual status from DB
+      verificationStatus: data.verificationStatus,
       avatarUrl: data.avatarUrl,
       position: data.position || 'Anggota',
       type: data.type || undefined,
       region: data.region || undefined,
+      joinDate: joinDate,
     } as MemberWithStatus);
   });
   return members;
 }
-
-// Update member status (admin action)
-export async function updateMemberStatus(id: string, status: 'permanent' | 'rejected') {
-    try {
-        const memberDoc = doc(db, 'users', id);
-        await updateDoc(memberDoc, {
-            verificationStatus: status
-        });
-        revalidatePath('/panel/members');
-    } catch (error) {
-        console.error("Error updating member status:", error);
-        throw new Error("Gagal memperbarui status anggota.");
-    }
-}
-
 
 // Update member details (position, type, region)
 export async function updateMemberDetails(id: string, details: { position: string, type?: MemberType, region?: string }) {

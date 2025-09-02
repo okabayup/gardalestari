@@ -45,7 +45,7 @@ export default function VerifyProfilePage() {
 
   useEffect(() => {
     if (user?.verificationStatus === 'permanent' || user?.verificationStatus === 'temporary') {
-      router.replace('/profile');
+      router.replace('/profile/me');
     }
   }, [user, router]);
   
@@ -227,7 +227,7 @@ export default function VerifyProfilePage() {
       
       toast({
         title: 'Verifikasi Berhasil!',
-        description: 'Anda kini menjadi Anggota Sementara. Selamat datang di Garda Lestari!',
+        description: 'Akun Anda telah terverifikasi. Selamat datang di Garda Lestari!',
         duration: 5000,
       });
       router.push('/feed');

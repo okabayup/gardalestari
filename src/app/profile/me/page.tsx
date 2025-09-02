@@ -218,7 +218,7 @@ export default function ProfileMePage() {
   };
   
   const isAdmin = user?.phoneNumber === ADMIN_PHONE_NUMBER;
-  const canViewKta = user?.verificationStatus === 'temporary' || user?.verificationStatus === 'permanent';
+  const canViewKta = user?.verificationStatus === 'permanent';
 
   if (authLoading || !user) {
     return (
