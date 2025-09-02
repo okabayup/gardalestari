@@ -229,6 +229,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 const submitForVerification = async (data: { fullName: string; nik: string; ktpFile: File; selfieFile: File; photoFile?: File; }) => {
     if (!auth.currentUser) throw new Error("Pengguna tidak ditemukan.");
 
+    // **Step 1: Check if NIK already exists for another user**
+    const nikQuery = query(collection(db, 'users'), where("nik", "==", data.nik));
+    const nikSnapshot = await getDocs(nikQuery);
+    if (!nikSnapshot.empty) {
+        const existingDoc = nikSnapshot.docs[0];
+        // If a document with this NIK exists and it's not the current user's document
+        if (existingDoc.id !== auth.currentUser.uid) {
+            throw new Error("NIK ini sudah terdaftar pada akun lain.");
+        }
+    }
+
+
     const { uid } = auth.currentUser;
     const storage = getStorage();
     
