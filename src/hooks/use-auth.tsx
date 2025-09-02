@@ -12,7 +12,7 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { redirect, usePathname } from 'next/navigation';
 import { useToast } from './use-toast';
