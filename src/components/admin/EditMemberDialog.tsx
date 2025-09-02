@@ -27,12 +27,12 @@ const memberTypes: { value: MemberType, label: string }[] = [
 
 export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSaving }: EditMemberDialogProps) {
   const [position, setPosition] = useState(member.position || '');
-  const [type, setType] = useState<MemberType | undefined>(member.type);
+  const [type, setType] = useState<MemberType | 'anggota' | undefined>(member.type || 'anggota');
   const [region, setRegion] = useState(member.region || '');
 
   useEffect(() => {
     setPosition(member.position || 'Anggota');
-    setType(member.type);
+    setType(member.type || 'anggota');
     setRegion(member.region || '');
   }, [member]);
   
@@ -44,11 +44,12 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
   }, [type]);
 
   const handleSave = () => {
-    onSave(member.id, {
-      position,
-      type,
-      region,
-    });
+    const detailsToSave: { position: string, type?: MemberType, region?: string } = {
+        position: position,
+        type: type === 'anggota' ? undefined : type,
+        region: region
+    };
+    onSave(member.id, detailsToSave);
   };
 
   return (
@@ -72,7 +73,7 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
           </div>
           <div className="space-y-2">
             <Label htmlFor="type">Jenis Keanggotaan</Label>
-            <Select value={type} onValueChange={(value) => setType(value as MemberType)}>
+            <Select value={type} onValueChange={(value) => setType(value as MemberType | 'anggota')}>
                 <SelectTrigger id="type">
                     <SelectValue placeholder="Pilih Jenis Keanggotaan" />
                 </SelectTrigger>
@@ -107,4 +108,3 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
     </Dialog>
   );
 }
-

@@ -71,17 +71,15 @@ export async function updateMemberDetails(id: string, details: { position: strin
             position: details.position
         };
 
-        if (details.type && details.type !== ('anggota' as any)) {
+        if (details.type) {
             dataToUpdate.type = details.type;
         } else {
-            // Use deleteField() to remove the field from the document
             dataToUpdate.type = deleteField();
         }
 
         if (details.type === 'daerah' && details.region) {
             dataToUpdate.region = details.region;
         } else {
-            // Use deleteField() to remove the field from the document
             dataToUpdate.region = deleteField();
         }
         

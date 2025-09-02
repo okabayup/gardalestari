@@ -58,15 +58,16 @@ export async function updateAppSettings(settings: Partial<Omit<AppSettings, 'her
         const heroImageRef = ref(storage, 'landing/hero-image.jpg');
         await uploadBytes(heroImageRef, settings.heroImageFile);
         dataToUpdate.heroImageUrl = await getDownloadURL(heroImageRef);
-        delete dataToUpdate.heroImageFile;
     }
+    delete dataToUpdate.heroImageFile;
+
 
     if (settings.aboutImageFile) {
         const aboutImageRef = ref(storage, 'landing/about-image.jpg');
         await uploadBytes(aboutImageRef, settings.aboutImageFile);
         dataToUpdate.aboutImageUrl = await getDownloadURL(aboutImageRef);
-        delete dataToUpdate.aboutImageFile;
     }
+    delete dataToUpdate.aboutImageFile;
 
 
     await setDoc(settingsDocRef, dataToUpdate, { merge: true });

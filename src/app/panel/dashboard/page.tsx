@@ -1,5 +1,4 @@
 
-
 import {
   Activity,
   ArrowUpRight,
@@ -32,8 +31,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { getMembers, MemberWithStatus } from "@/app/actions/members"
+import { getPrograms } from "@/app/actions/programs"
+import { getBeritaPosts } from "@/app/actions/berita"
+import { getEvents } from "@/app/actions/events"
 
-export default function Dashboard() {
+export default async function Dashboard() {
+    const members = await getMembers();
+    const programs = await getPrograms();
+    const news = await getBeritaPosts();
+    const events = await getEvents();
+
+    const verifiedMembers = members.filter(m => m.verificationStatus === 'permanent' || m.verificationStatus === 'temporary').length;
+    const pendingVerification = members.filter(m => m.verificationStatus === 'temporary');
+
   return (
     <div className="flex flex-1 flex-col gap-4 md:gap-8">
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
@@ -45,10 +56,7 @@ export default function Dashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+235</div>
-            <p className="text-xs text-muted-foreground">
-              +10.1% dari bulan lalu
-            </p>
+            <div className="text-2xl font-bold">{verifiedMembers.toLocaleString()}</div>
           </CardContent>
         </Card>
         <Card>
@@ -59,10 +67,7 @@ export default function Dashboard() {
             <Megaphone className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+12</div>
-            <p className="text-xs text-muted-foreground">
-              +1 sejak minggu lalu
-            </p>
+            <div className="text-2xl font-bold">{programs.length.toLocaleString()}</div>
           </CardContent>
         </Card>
         <Card>
@@ -71,22 +76,16 @@ export default function Dashboard() {
             <Newspaper className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+57</div>
-            <p className="text-xs text-muted-foreground">
-              +12 sejak bulan lalu
-            </p>
+            <div className="text-2xl font-bold">{news.length.toLocaleString()}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Aktivitas Anggota</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Acara</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+573</div>
-            <p className="text-xs text-muted-foreground">
-              +201 sejak minggu lalu
-            </p>
+            <div className="text-2xl font-bold">{events.length.toLocaleString()}</div>
           </CardContent>
         </Card>
       </div>
@@ -94,9 +93,9 @@ export default function Dashboard() {
         <Card className="xl:col-span-2">
           <CardHeader className="flex flex-row items-center">
             <div className="grid gap-2">
-              <CardTitle>Pendaftaran Terbaru</CardTitle>
+              <CardTitle>Verifikasi Menunggu</CardTitle>
               <CardDescription>
-                Daftar anggota baru yang perlu ditinjau.
+                Anggota yang telah mengirimkan data dan menunggu persetujuan.
               </CardDescription>
             </div>
             <Button asChild size="sm" className="ml-auto gap-1">
@@ -114,62 +113,66 @@ export default function Dashboard() {
                   <TableHead className="hidden xl:table-cell">
                     Status
                   </TableHead>
-                  <TableHead className="hidden xl:table-cell">
-                    Tanggal
-                  </TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                        <Avatar className="hidden h-9 w-9 sm:flex">
-                        <AvatarImage src="/avatars/01.png" alt="Avatar" />
-                        <AvatarFallback>SP</AvatarFallback>
-                        </Avatar>
-                        <div className="grid gap-1">
-                            <p className="text-sm font-medium leading-none">
-                            Siti Purnamasari
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                            siti.p@email.com
-                            </p>
-                        </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden xl:table-cell">
-                    <Badge className="text-xs" variant="outline">
-                      Menunggu
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell lg:hidden xl:table-column">
-                    2023-06-23
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button size="sm" variant="outline">Tinjau</Button>
-                  </TableCell>
-                </TableRow>
+                {pendingVerification.length > 0 ? pendingVerification.slice(0, 5).map(member => (
+                    <TableRow key={member.id}>
+                        <TableCell>
+                            <div className="flex items-center gap-2">
+                                <Avatar className="hidden h-9 w-9 sm:flex">
+                                <AvatarImage src={member.avatarUrl} alt="Avatar" />
+                                <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div className="grid gap-1">
+                                    <p className="text-sm font-medium leading-none">
+                                    {member.name}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                    {member.phoneNumber}
+                                    </p>
+                                </div>
+                            </div>
+                        </TableCell>
+                        <TableCell className="hidden xl:table-cell">
+                            <Badge className="text-xs" variant="outline">
+                            Menunggu
+                            </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                           <Button asChild size="sm" variant="outline">
+                             <Link href="/panel/members">Tinjau</Link>
+                           </Button>
+                        </TableCell>
+                    </TableRow>
+                )) : (
+                    <TableRow>
+                        <TableCell colSpan={3} className="text-center">Tidak ada verifikasi yang menunggu.</TableCell>
+                    </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Konten Menunggu Persetujuan</CardTitle>
+            <CardTitle>Aktivitas Terbaru</CardTitle>
+             <CardDescription>
+                Menampilkan log aktivitas terbaru dari pengguna (fitur mendatang).
+              </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-8">
             <div className="flex items-center gap-4">
-              <Newspaper className="h-6 w-6" />
+              <Activity className="h-6 w-6" />
               <div className="grid gap-1">
                 <p className="text-sm font-medium leading-none">
-                  Inovasi Pertanian di Lahan Gambut
+                  Pengembangan Fitur
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Oleh Budi Santoso
+                  Log aktivitas akan ditampilkan di sini.
                 </p>
               </div>
-              <Button size="sm" variant="outline" className="ml-auto">Tinjau</Button>
             </div>
           </CardContent>
         </Card>

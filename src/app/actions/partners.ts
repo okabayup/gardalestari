@@ -3,7 +3,7 @@
 
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 
 export interface Partner {
@@ -37,10 +37,10 @@ export async function getPartner(id: string): Promise<Partner | null> {
 }
 
 // Create a new partner
-export async function createPartner(data: Omit<Partner, 'id' | 'logoUrl'>, logoFile: File) {
+export async function createPartner(data: Omit<Partner, 'id' | 'logoUrl'>, logoDataUrl: string) {
   try {
-    const logoRef = ref(storage, `partners/${Date.now()}_${logoFile.name}`);
-    await uploadBytes(logoRef, logoFile);
+    const logoRef = ref(storage, `partners/${Date.now()}_${data.name.replace(/\s+/g, '_')}.png`);
+    await uploadString(logoRef, logoDataUrl, 'data_url');
     const logoUrl = await getDownloadURL(logoRef);
 
     const newPartner = {
@@ -58,12 +58,12 @@ export async function createPartner(data: Omit<Partner, 'id' | 'logoUrl'>, logoF
 }
 
 // Update an existing partner
-export async function updatePartner(id: string, data: Partial<Omit<Partner, 'logoUrl'>>, newLogoFile?: File) {
+export async function updatePartner(id: string, data: Partial<Omit<Partner, 'logoUrl'>>, newLogoDataUrl?: string) {
   try {
     const partnerDoc = doc(db, 'partners', id);
     const updateData: Partial<Partner> = { ...data };
 
-    if (newLogoFile) {
+    if (newLogoDataUrl) {
         // Optional: Delete old logo if you want to save space
         const currentPartner = await getPartner(id);
         if (currentPartner?.logoUrl) {
@@ -75,8 +75,8 @@ export async function updatePartner(id: string, data: Partial<Omit<Partner, 'log
             }
         }
 
-        const logoRef = ref(storage, `partners/${Date.now()}_${newLogoFile.name}`);
-        await uploadBytes(logoRef, newLogoFile);
+        const logoRef = ref(storage, `partners/${Date.now()}_${data.name?.replace(/\s+/g, '_')}.png`);
+        await uploadString(logoRef, newLogoDataUrl, 'data_url');
         updateData.logoUrl = await getDownloadURL(logoRef);
     }
     
@@ -102,8 +102,15 @@ export async function deletePartner(id: string) {
     
     // Delete logo from Storage
     if (partner?.logoUrl) {
-        const logoRef = ref(storage, partner.logoUrl);
-        await deleteObject(logoRef);
+        try {
+            const logoRef = ref(storage, partner.logoUrl);
+            await deleteObject(logoRef);
+        } catch (storageError) {
+            // Ignore if file doesn't exist
+            if ((storageError as any).code !== 'storage/object-not-found') {
+                 console.error("Error deleting partner logo:", storageError);
+            }
+        }
     }
 
     revalidatePath('/panel/partners');
