@@ -41,24 +41,8 @@ export default function GenerateBeritaPage() {
 
     try {
       const articleResult = await generateNewsArticle(data);
-      let finalContent = articleResult.content;
-      
-      // Since cover image is already generated, we just need to process inline images.
-      // But the current flow already does that by replacing placeholders.
-      // Let's refine the replacement logic slightly.
-      
-      const imageRegex = /<!-- IMAGE_HINT: (.*?) -->/g;
-      
-      // Let's assume for now the flow correctly generates all images and replaces hints.
-      // If it doesn't, we'd need to call generateImage here for remaining hints.
-      
-      // For simplicity and based on the latest flow, we trust the output.
-      // We'll clean any leftover hints just in case.
-      finalContent = finalContent.replace(imageRegex, '');
-
-      setGeneratedContent({ ...articleResult, content: finalContent });
+      setGeneratedContent(articleResult);
       toast({ title: 'Berita dan gambar berhasil dibuat!', description: 'Silakan tinjau dan simpan.' });
-
     } catch (error) {
       console.error("Error during news generation:", error);
       toast({ variant: 'destructive', title: 'Gagal membuat berita', description: (error as Error).message });
@@ -99,6 +83,7 @@ export default function GenerateBeritaPage() {
         title: 'Gagal Menyimpan',
         description: (error as Error).message || 'Terjadi kesalahan saat menyimpan berita.',
       });
+    } finally {
       setLoading(false);
     }
   };

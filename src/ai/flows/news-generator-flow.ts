@@ -20,10 +20,10 @@ export type NewsGeneratorInput = z.infer<typeof NewsGeneratorInputSchema>;
 
 const NewsGeneratorOutputSchema = z.object({
   title: z.string().describe('The generated, catchy title for the news article.'),
-  content: z.string().describe('The full article content in HTML format. This content MUST include at least two image placeholders in the format <!-- IMAGE_HINT: a descriptive hint for an image --> where images would be visually appropriate.'),
+  content: z.string().describe('The full article content in HTML format. This content is final and includes actual <img> tags for the generated images.'),
   excerpt: z.string().describe('A short, engaging summary of the article (max 150 characters).'),
   category: z.string().describe('A suggested category for the news article (e.g., Pertanian, Perikanan, Kehutanan, Konservasi, Teknologi, Komunitas, Acara).'),
-  imageHints: z.array(z.string()).describe('An array of descriptive text hints for images to be generated, extracted from the placeholders in the content.'),
+  imageHints: z.array(z.string()).describe('An array of descriptive text hints for images that were generated, extracted from the initial placeholders.'),
   coverImageUrl: z.string().describe('The URL of the generated cover image for the article.'),
 });
 export type NewsGeneratorOutput = z.infer<typeof NewsGeneratorOutputSchema>;
@@ -47,7 +47,7 @@ Your response must be in JSON format and adhere to the specified schema.
 2.  **Title**: Write a compelling, SEO-friendly title.
 3.  **Content**: Write a full, well-structured news article.
     - The content MUST be in HTML format (using <p>, <h2>, <ul>, <li>, <strong> tags).
-    - CRITICAL: You must strategically embed at least TWO, but no more than three, image placeholders within the article's content. An image placeholder MUST look exactly like this: \`<!-- IMAGE_HINT: a very descriptive hint for an image -->\`. For example: \`<!-- IMAGE_HINT: young farmers smiling while holding fresh vegetables in a lush green field -->\`. Place these where an image would naturally fit to break up text and add visual interest.
+    - CRITICAL: You must strategically embed AT LEAST TWO, but no more than three, image placeholders within the article's content. An image placeholder MUST look exactly like this: \`<!-- IMAGE_HINT: a very descriptive hint for an image -->\`. For example: \`<!-- IMAGE_HINT: young farmers smiling while holding fresh vegetables in a lush green field -->\`. Place these where an image would naturally fit to break up text and add visual interest.
     - The first placeholder hint will be used for the cover image. Make it a good one.
 4.  **Excerpt**: Write a short summary (max 150 characters) for the article preview.
 5.  **Category**: Suggest a single, relevant category from this list: Pertanian, Perikanan, Kehutanan, Konservasi, Teknologi, Komunitas, Acara.
@@ -79,17 +79,33 @@ const newsGeneratorFlow = ai.defineFlow(
       throw new Error('AI gagal membuat petunjuk gambar. Coba lagi dengan deskripsi yang lebih detail.');
     }
     
-    // Generate the cover image using the first hint
-    const coverImageResult = await generateImage({ prompt: hints[0] });
-    if (!coverImageResult.imageUrl) {
-        throw new Error('Gagal membuat gambar utama untuk artikel.');
+    // Generate all images in parallel
+    const imagePromises = hints.map(hint => generateImage({ prompt: hint }));
+    const imageResults = await Promise.all(imagePromises);
+    
+    const imageUrls = imageResults.map(res => res.imageUrl);
+    if (imageUrls.some(url => !url)) {
+        throw new Error('Satu atau lebih gambar gagal dibuat oleh AI.');
     }
+
+    // Replace placeholders with actual image tags
+    let finalContent = output.content;
+    const placeholders = Array.from(output.content.matchAll(regex), match => match[0]);
+
+    placeholders.forEach((placeholder, index) => {
+        const imageUrl = imageUrls[index];
+        const imageTag = `<img src="${imageUrl}" alt="${hints[index]}" style="width:100%;height:auto;border-radius:0.5rem;margin:1rem 0;" />`;
+        finalContent = finalContent.replace(placeholder, imageTag);
+    });
+
+    const coverImageUrl = imageUrls[0];
 
     // Return the final combined output
     return {
       ...output,
+      content: finalContent,
       imageHints: hints,
-      coverImageUrl: coverImageResult.imageUrl,
+      coverImageUrl: coverImageUrl,
     };
   }
 );
