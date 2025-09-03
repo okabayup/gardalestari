@@ -33,8 +33,11 @@ const verificationStatuses: { value: VerificationStatus, label: string }[] = [
     { value: 'rejected', label: 'Ditolak'},
 ];
 
+// Use a non-empty string for the "no position" value.
+const NO_POSITION_VALUE = "NONE";
+
 export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSaving }: EditMemberDialogProps) {
-  const [positionId, setPositionId] = useState(member.positionId || '');
+  const [positionId, setPositionId] = useState(member.positionId || NO_POSITION_VALUE);
   const [type, setType] = useState<MemberType | 'anggota' | undefined>(member.type || 'anggota');
   const [region, setRegion] = useState(member.region || '');
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>(member.verificationStatus || 'unverified');
@@ -45,7 +48,7 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
   }, []);
 
   useEffect(() => {
-    setPositionId(member.positionId || '');
+    setPositionId(member.positionId || NO_POSITION_VALUE);
     setType(member.type || 'anggota');
     setRegion(member.region || '');
     setVerificationStatus(member.verificationStatus || 'unverified');
@@ -59,7 +62,7 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
 
   const handleSave = () => {
     const detailsToSave: { positionId?: string, type?: MemberType, region?: string, verificationStatus?: VerificationStatus } = {
-        positionId: positionId || undefined,
+        positionId: positionId === NO_POSITION_VALUE ? undefined : positionId,
         type: type === 'anggota' ? undefined : type,
         region: region,
         verificationStatus: verificationStatus,
@@ -84,7 +87,7 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
                     <SelectValue placeholder="Pilih Jabatan" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="">Anggota Biasa</SelectItem>
+                    <SelectItem value={NO_POSITION_VALUE}>Anggota Biasa</SelectItem>
                     {positions.map(p => (
                         <SelectItem key={p.id} value={p.id!}>{p.name}</SelectItem>
                     ))}
