@@ -93,7 +93,7 @@ export default function GenerateBeritaPage() {
         slug: generateSlug(generatedContent.title),
         author: user?.displayName || 'Admin',
         date: new Date().toISOString(),
-        imageUrl: generatedContent.coverImageUrl || '',
+        imageUrl: generatedContent.coverImageUrl,
         imageHint: generatedContent.imageHints[0] || 'AI generated',
         content: generatedContent.content,
         excerpt: generatedContent.excerpt,

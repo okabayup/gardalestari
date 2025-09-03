@@ -3,7 +3,7 @@
 /**
  * @fileOverview A flow to generate a full news article from a topic and description.
  *
- * - generateNewsArticle - A function that generates a title, content with image placeholders, an excerpt, a category, and image hints.
+ * - generateNewsArticle - A function that generates a title, content with image placeholders, an excerpt, a category, and a cover image.
  * - NewsGeneratorInput - The input type for the generateNewsArticle function.
  * - NewsGeneratorOutput - The return type for the generateNewsArticle function.
  */
@@ -35,7 +35,9 @@ export async function generateNewsArticle(input: NewsGeneratorInput): Promise<Ne
 const prompt = ai.definePrompt({
   name: 'newsGeneratorPrompt',
   input: { schema: NewsGeneratorInputSchema },
-  output: { schema: NewsGeneratorOutputSchema.omit({ imageHints: true, coverImageUrl: true }) }, // The prompt itself doesn't generate the final hints array or URL
+  // The prompt itself doesn't generate the final hints array or URL
+  // We specify the direct text-based output schema for the LLM call.
+  output: { schema: NewsGeneratorOutputSchema.omit({ imageHints: true, coverImageUrl: true }) },
   prompt: `You are an expert journalist and content creator for Garda Lestari, a youth-led environmental and agricultural organization.
 Your task is to write a complete news article based on the provided topic and description.
 
