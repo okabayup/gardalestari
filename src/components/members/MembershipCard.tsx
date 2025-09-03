@@ -2,7 +2,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { VerifiedBadge } from './VerifiedBadge';
 import { MemberType } from '@/app/actions/members';
@@ -23,26 +23,39 @@ export default function MembershipCard({ name, photoUrl, memberId, nik, profileU
     const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('') : '';
 
     return (
-        <Card className="w-full max-w-sm bg-white text-foreground shadow-lg relative overflow-hidden border-2 border-gray-100">
-             <div className="absolute top-0 left-0 w-full h-24 bg-primary" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 60%, 0 100%)' }}></div>
-             <div className="absolute inset-0 bg-[url(/logo.png)] bg-repeat bg-center opacity-[0.02]"></div>
-
-            <CardHeader className="relative z-10 pt-4 px-4 text-center">
-                <div className="flex items-center justify-center gap-2">
-                     <div className="bg-white/90 rounded-full p-1 w-10 h-10 flex items-center justify-center">
-                        <Image src="/logo.png" alt="Garda Lestari Logo" width={32} height={32} />
+        <Card className="w-full max-w-sm shadow-lg relative overflow-hidden border-2 border-gray-100 font-sans bg-gradient-to-br from-green-50 to-white">
+            {/* Background Pattern */}
+            <div
+              className="absolute inset-0 bg-repeat bg-center opacity-[0.03]"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+              }}
+            ></div>
+            
+            {/* Header Curve */}
+            <div className="absolute top-0 left-0 w-full h-32 bg-primary" style={{ clipPath: 'ellipse(100% 70% at 50% 0%)' }}></div>
+            
+            <CardContent className="flex flex-col items-center gap-4 relative z-10 p-6 pt-4 text-center">
+                
+                {/* Header Section */}
+                <div className="flex w-full justify-center items-center gap-3 mb-2">
+                    <div className="bg-white/90 rounded-full p-1.5 shadow-md">
+                        <Image src="/logo.png" alt="Garda Lestari Logo" width={36} height={36} />
                     </div>
-                    <CardTitle className="font-headline text-xl text-primary">Garda Lestari</CardTitle>
+                    <div>
+                        <h2 className="font-headline text-2xl font-bold text-white tracking-wider">Garda Lestari</h2>
+                    </div>
                 </div>
-                 <p className="text-sm text-primary/90 font-bold tracking-widest mt-1">E-KTA</p>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center gap-4 relative z-10 p-4 pt-8 text-center">
-                <Avatar className="h-28 w-28 border-4 border-white shadow-md -mt-16">
-                    <AvatarImage src={photoUrl} alt={name} />
+
+                {/* Avatar */}
+                <Avatar className="h-28 w-28 border-4 border-white shadow-xl">
+                    <AvatarImage src={photoUrl} alt={name} crossOrigin="anonymous" />
                     <AvatarFallback className="text-3xl text-primary">{getInitials(name)}</AvatarFallback>
                 </Avatar>
 
-                <div className="space-y-1">
+                {/* Info Section */}
+                <div className="space-y-1 -mt-2">
+                     <p className="font-bold text-sm text-primary tracking-widest">E-KTA</p>
                     <div className="flex items-center justify-center gap-2">
                       <p className="text-xl font-bold font-headline leading-tight text-primary">{name}</p>
                       <VerifiedBadge type={memberType} className="h-5 w-5 flex-shrink-0" />
@@ -50,7 +63,7 @@ export default function MembershipCard({ name, photoUrl, memberId, nik, profileU
                     <p className="text-sm text-muted-foreground -mt-1">{position || 'Anggota'}</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-x-6 gap-y-4 w-full text-left pt-2">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-4 w-full text-left pt-2 text-foreground">
                     <div>
                         <p className="text-xs text-muted-foreground uppercase">NIK</p>
                         <p className="font-mono tracking-wide text-sm">{nik || 'Belum Terverifikasi'}</p>
@@ -67,7 +80,7 @@ export default function MembershipCard({ name, photoUrl, memberId, nik, profileU
                     )}
                 </div>
 
-                <div className="bg-white p-2 rounded-md shadow mt-2">
+                <div className="bg-white p-2 rounded-lg shadow-inner mt-2">
                     <QRCode value={profileUrl} size={80} level="L" />
                 </div>
             </CardContent>
