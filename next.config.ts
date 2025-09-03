@@ -7,27 +7,6 @@ const withPWA = require('next-pwa')({
   skipWaiting: true,
   sw: 'firebase-messaging-sw.js', // Use the custom FCM service worker
   disable: process.env.NODE_ENV === 'development',
-  manifest: {
-    name: 'Garda Lestari',
-    short_name: 'GardaLestari',
-    start_url: '/feed',
-    display: 'standalone',
-    theme_color: '#347C45',
-    background_color: '#E8F0E5',
-    description: 'Garda Lestari Membership App',
-    icons: [
-        {
-            src: '/icon-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-        },
-        {
-            src: '/icon-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-        }
-    ]
-  },
   runtimeCaching: [
     {
       urlPattern: /^https?.*/,
