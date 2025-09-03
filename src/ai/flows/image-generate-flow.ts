@@ -35,10 +35,6 @@ const generateImageFlow = ai.defineFlow(
     const { media } = await ai.generate({
       model: 'googleai/gemini-2.5-flash-image-preview',
       prompt: `A high-quality, professional photograph of: ${input.prompt}`,
-      config: {
-        numImages: 1,
-        aspectRatio: '16:9',
-      }
     });
 
     const imageUrl = media.url;
