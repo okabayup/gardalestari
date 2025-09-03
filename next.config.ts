@@ -38,18 +38,6 @@ const withPWA = require('next-pwa')({
         },
       },
     },
-    // Cache pages under /app
-    {
-      urlPattern: /\/app\/.*/,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'app-pages',
-        expiration: {
-          maxEntries: 64,
-          maxAgeSeconds: 24 * 60 * 60, // 1 day
-        },
-      },
-    },
   ],
 });
 
