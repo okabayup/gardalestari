@@ -1,13 +1,13 @@
 
 'use client';
 
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { getAppSettings } from '@/app/actions/settings';
-import { useEffect, useState } from 'react';
 
 export default function LandingHeader() {
   const { user, loading } = useAuth();
