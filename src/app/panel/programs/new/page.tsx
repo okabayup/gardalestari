@@ -19,7 +19,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { addDays, format } from 'date-fns';
-import { createProgram, getProgramTags, ProgramTag } from '@/app/actions/programs';
+import { createProgram, getProgramTags, ProgramTag, ProgramFormData } from '@/app/actions/programs';
 import { getPartners, Partner } from '@/app/actions/partners';
 import { getForms, ProgramForm } from '@/app/actions/forms';
 import { generateImage } from '@/ai/flows/image-generate-flow';
@@ -158,7 +158,7 @@ export default function NewProgramPage() {
 
     try {
       const { dateRange, attachment, imageFile, imageSource, ...rest } = data;
-      const programPayload = {
+      const programPayload: ProgramFormData = {
         ...rest,
         startDate: dateRange.from,
         endDate: dateRange.to,

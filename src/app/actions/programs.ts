@@ -64,7 +64,7 @@ export async function getProgram(id: string): Promise<Program | null> {
 
 
 // Create a new program
-export async function createProgram(programData: Omit<Program, 'id' | 'startDate' | 'endDate'>, attachmentFile?: File, imageFile?: File) {
+export async function createProgram(programData: ProgramFormData, attachmentFile?: File, imageFile?: File) {
   try {
     const dataToCreate: Omit<Program, 'id'> = {
         ...programData,
@@ -159,6 +159,21 @@ export async function deleteProgram(id: string) {
              }
         }
     }
+
+    if (programToDelete?.imageUrl) {
+        try {
+            // Only delete if it's a firebase storage URL
+            if (programToDelete.imageUrl.includes('firebasestorage.googleapis.com')) {
+                const imageRef = ref(storage, programToDelete.imageUrl);
+                await deleteObject(imageRef);
+            }
+        } catch (storageError: any) {
+             if (storageError.code !== 'storage/object-not-found') {
+                console.error("Could not delete program image:", storageError);
+             }
+        }
+    }
+
 
     revalidatePath('/panel/programs');
     revalidatePath('/programs');
