@@ -23,7 +23,7 @@ export default function MembershipCard({ name, photoUrl, memberId, nik, profileU
     const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('') : '';
 
     return (
-        <Card className="w-full max-w-sm shadow-lg relative overflow-hidden font-sans bg-white">
+        <Card className="w-full max-w-sm shadow-lg relative overflow-hidden font-sans bg-gradient-to-br from-green-50 via-white to-white">
              {/* Background Pattern */}
              <div
               className="absolute inset-0 bg-repeat bg-center opacity-[0.03]"
@@ -39,11 +39,10 @@ export default function MembershipCard({ name, photoUrl, memberId, nik, profileU
                 
                 {/* Header Section */}
                  <div className="w-full flex flex-col items-center text-white mb-2">
-                    <div className="flex items-center gap-2">
-                         <Image src="/logo.png" alt="Garda Lestari Logo" width={24} height={24} className="brightness-0 invert" />
-                         <h2 className="font-headline text-xl font-bold tracking-wider">Garda Lestari</h2>
+                    <div className="flex items-center gap-2 mb-1">
+                         <Image src="/logo.png" alt="Garda Lestari Logo" width={32} height={32} className="brightness-0 invert" />
                     </div>
-                    <p className="text-xs opacity-80">Kartu Tanda Anggota</p>
+                     <p className="font-bold text-lg tracking-wider">E-KTA</p>
                 </div>
 
 
