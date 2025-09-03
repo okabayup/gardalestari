@@ -2,8 +2,9 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, updateDoc, deleteField, query, setDoc, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteField, query, setDoc, Timestamp, getDoc } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
+import type { PermissionId, Position } from '@/lib/definitions';
 
 export type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected';
 export type MemberType = 'pusat' | 'daerah' | 'cabang' | 'pembina';
@@ -13,7 +14,7 @@ export interface Member {
   id: string;
   name: string;
   username: string;
-  positionId?: string; // Changed from position to positionId
+  positionId?: string; 
   type?: MemberType;
   region?: string;
   avatarUrl?: string;
@@ -27,21 +28,29 @@ export interface MemberWithStatus extends Member {
     selfieImageUrl?: string;
     nik?: string;
     createdAt?: Timestamp;
-    position?: string; // Keep this for display purposes, will be denormalized
+    position?: string; 
+    permissions: PermissionId[];
 }
 
 
 const usersCollection = collection(db, 'users');
 const positionsCollection = collection(db, 'positions');
 
-// Helper to get position name from ID
-async function getPositionName(positionId?: string): Promise<string> {
-    if (!positionId) return 'Anggota';
+// Helper to get position details from ID
+async function getPositionDetails(positionId?: string): Promise<{ name: string, permissions: PermissionId[] }> {
+    if (!positionId) return { name: 'Anggota', permissions: [] };
     try {
         const positionDoc = await getDoc(doc(positionsCollection, positionId));
-        return positionDoc.exists() ? positionDoc.data().name : 'Anggota';
+        if (positionDoc.exists()) {
+            const positionData = positionDoc.data() as Position;
+            return {
+                name: positionData.name,
+                permissions: positionData.permissions || []
+            };
+        }
+        return { name: 'Anggota', permissions: [] };
     } catch {
-        return 'Anggota';
+        return { name: 'Anggota', permissions: [] };
     }
 }
 
@@ -52,8 +61,8 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
   const snapshot = await getDocs(q);
   const members: MemberWithStatus[] = [];
 
-  for (const doc of snapshot.docs) {
-    const data = doc.data();
+  for (const docSnap of snapshot.docs) {
+    const data = docSnap.data();
     let joinDate: string | undefined;
     if (data.createdAt && typeof data.createdAt.toDate === 'function') {
         joinDate = data.createdAt.toDate().toLocaleDateString('id-ID', {
@@ -63,17 +72,17 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
         });
     }
     
-    // Denormalize position name for easier display
-    const positionName = await getPositionName(data.positionId);
+    // Denormalize position name and get permissions
+    const { name: positionName, permissions } = await getPositionDetails(data.positionId);
 
     members.push({
-      id: doc.id,
+      id: docSnap.id,
       name: data.fullName || data.displayName || 'Nama Tidak Diketahui',
-      username: data.username || `user_${doc.id.substring(0, 5)}`,
+      username: data.username || `user_${docSnap.id.substring(0, 5)}`,
       phoneNumber: data.phoneNumber || 'N/A',
       verificationStatus: data.verificationStatus,
       avatarUrl: data.avatarUrl,
-      position: positionName, // Denormalized name
+      position: positionName,
       positionId: data.positionId,
       type: data.type || undefined,
       region: data.region || undefined,
@@ -81,7 +90,8 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
       ktpImageUrl: data.ktpImageUrl,
       selfieImageUrl: data.selfieImageUrl,
       nik: data.nik,
-      createdAt: data.createdAt, // Pass createdAt for sorting
+      createdAt: data.createdAt, 
+      permissions: permissions,
     });
   }
 

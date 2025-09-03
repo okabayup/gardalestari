@@ -27,19 +27,20 @@ import { getPartners, deletePartner, Partner } from '@/app/actions/partners';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function AdminPartnersPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { hasPermission } = useAuth();
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [partnerToDelete, setPartnerToDelete] = useState<Partner | null>(null);
 
-  // TODO: Replace with real permission check
-  const canCreate = true; // user.permissions.includes('manage_partners');
-  const canDelete = true; // user.permissions.includes('delete_partners');
+  const canManage = hasPermission('manage_partners');
+  const canDelete = hasPermission('delete_partners');
 
   const fetchPartners = async () => {
       setLoading(true);
@@ -58,6 +59,7 @@ export default function AdminPartnersPage() {
 
   useEffect(() => {
     fetchPartners();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleDeleteClick = (partner: Partner) => {
@@ -94,7 +96,7 @@ export default function AdminPartnersPage() {
             <h1 className="font-headline text-2xl font-bold">Manajemen Mitra</h1>
             <p className="text-muted-foreground">Kelola semua mitra strategis Garda Lestari.</p>
           </div>
-          {canCreate && (
+          {canManage && (
             <Button onClick={() => router.push('/panel/partners/new')}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Tambah Mitra Baru
@@ -149,9 +151,11 @@ export default function AdminPartnersPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => router.push(`/panel/partners/edit/${partner.id}`)}>
-                              Edit
-                            </DropdownMenuItem>
+                            {canManage && (
+                              <DropdownMenuItem onClick={() => router.push(`/panel/partners/edit/${partner.id}`)}>
+                                Edit
+                              </DropdownMenuItem>
+                            )}
                             {canDelete && (
                                 <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(partner)}>
                                     <Trash2 className="mr-2 h-4 w-4" />

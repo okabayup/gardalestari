@@ -27,19 +27,20 @@ import { getEvents, deleteEvent, Event } from '@/app/actions/events';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function AdminEventsPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { hasPermission } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<Event | null>(null);
 
-  // TODO: Replace with real permission check
-  const canCreate = true; // user.permissions.includes('manage_events');
-  const canDelete = true; // user.permissions.includes('delete_events');
+  const canManage = hasPermission('manage_events');
+  const canDelete = hasPermission('delete_events');
 
   const fetchEvents = async () => {
       setLoading(true);
@@ -58,6 +59,7 @@ export default function AdminEventsPage() {
 
   useEffect(() => {
     fetchEvents();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleDeleteClick = (event: Event) => {
@@ -94,7 +96,7 @@ export default function AdminEventsPage() {
             <h1 className="font-headline text-2xl font-bold">Manajemen Acara</h1>
             <p className="text-muted-foreground">Buat, edit, dan kelola semua acara.</p>
           </div>
-          {canCreate && (
+          {canManage && (
             <Button onClick={() => router.push('/panel/events/new')}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Buat Acara Baru
@@ -138,9 +140,11 @@ export default function AdminEventsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => router.push(`/panel/events/edit/${event.id}`)}>
-                              Edit
-                            </DropdownMenuItem>
+                            {canManage && (
+                              <DropdownMenuItem onClick={() => router.push(`/panel/events/edit/${event.id}`)}>
+                                Edit
+                              </DropdownMenuItem>
+                            )}
                             {canDelete && (
                                 <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(event)}>
                                     <Trash2 className="mr-2 h-4 w-4" />

@@ -30,36 +30,33 @@ import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Button } from '../ui/button';
+import type { PermissionId } from '@/lib/definitions';
 
-const ADMIN_PHONE_NUMBER = '+6285176752610';
+const navItems: { href: string; icon: React.ElementType; label: string, permission?: PermissionId }[] = [
+    { href: '/panel/dashboard', icon: Home, label: 'Dasbor' },
+    { href: '/panel/notifications', icon: Bell, label: 'Notifikasi', permission: 'send_notifications' },
+    { href: '/panel/berita', icon: Newspaper, label: 'Berita', permission: 'manage_news' },
+    { href: '/panel/events', icon: Calendar, label: 'Acara', permission: 'manage_events' },
+    { href: '/panel/programs', icon: Megaphone, label: 'Program', permission: 'manage_programs' },
+    { href: '/panel/members', icon: Users, label: 'Anggota', permission: 'manage_users' },
+    { href: '/panel/positions', icon: UserCheck, label: 'Jabatan', permission: 'manage_positions' },
+    { href: '/panel/partners', icon: Handshake, label: 'Mitra', permission: 'manage_partners' },
+    { href: '/panel/forms', icon: FileText, label: 'Formulir', permission: 'manage_forms' },
+    { href: '/panel/landing', icon: Landmark, label: 'Halaman Utama', permission: 'manage_landing_page' },
+    { href: '/panel/settings', icon: Settings, label: 'Pengaturan', permission: 'manage_settings' },
+];
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
+  const { user, signOut, hasPermission } = useAuth();
   const router = useRouter();
 
   const handleSignOut = async () => {
     await signOut();
     router.push('/login');
   };
-
-  const isAdmin = user?.phoneNumber === ADMIN_PHONE_NUMBER;
-
-  const navItems = [
-    { href: '/panel/dashboard', icon: Home, label: 'Dasbor' },
-    { href: '/panel/notifications', icon: Bell, label: 'Notifikasi' },
-    { href: '/panel/berita', icon: Newspaper, label: 'Berita' },
-    { href: '/panel/events', icon: Calendar, label: 'Acara' },
-    { href: '/panel/programs', icon: Megaphone, label: 'Program' },
-    { href: '/panel/members', icon: Users, label: 'Anggota' },
-    { href: '/panel/positions', icon: UserCheck, label: 'Jabatan' },
-    { href: '/panel/partners', icon: Handshake, label: 'Mitra' },
-    { href: '/panel/forms', icon: FileText, label: 'Formulir' },
-    { href: '/panel/landing', icon: Landmark, label: 'Halaman Utama' },
-    { href: '/panel/settings', icon: Settings, label: 'Pengaturan' },
-  ];
   
-  if (!isAdmin) return null;
+  if (!user || !user.permissions || user.permissions.length === 0) return null;
 
 
   return (
@@ -73,7 +70,11 @@ export function Sidebar() {
         </div>
         <div className="flex-1">
           <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-            {navItems.map((item) => (
+            {navItems.map((item) => {
+              if (item.permission && !hasPermission(item.permission)) {
+                return null;
+              }
+              return (
                <Link
                 key={item.href}
                 href={item.href}
@@ -85,7 +86,8 @@ export function Sidebar() {
                 <item.icon className="h-4 w-4" />
                 {item.label}
               </Link>
-            ))}
+              )
+            })}
           </nav>
         </div>
         <div className="mt-auto p-4">

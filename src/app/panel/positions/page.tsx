@@ -9,10 +9,9 @@ import {
     createPosition, 
     updatePosition,
     deletePosition, 
-    Position,
-    PermissionId,
-    ALL_PERMISSIONS 
 } from '@/app/actions/positions';
+import { ALL_PERMISSIONS } from '@/lib/definitions';
+import type { Position } from '@/lib/definitions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';

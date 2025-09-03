@@ -29,21 +29,18 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from '@/components/ui/badge';
 
-// const ADMIN_PHONE_NUMBER = '+6285176752610';
-
 export default function AdminBeritaPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { hasPermission } = useAuth();
   const [posts, setPosts] = useState<BeritaPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isDeleting, setIsDeleting] = useState<string | null>(null); // State to track deleting post
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [postToDelete, setPostToDelete] = useState<BeritaPost | null>(null);
 
-  // TODO: Replace with real permission check
-  const canCreate = true; // user.permissions.includes('manage_news');
-  const canDelete = true; // user.permissions.includes('delete_news');
+  const canManage = hasPermission('manage_news');
+  const canDelete = hasPermission('delete_news');
 
 
   useEffect(() => {
@@ -103,7 +100,7 @@ export default function AdminBeritaPage() {
             <h1 className="font-headline text-2xl font-bold">Manajemen Berita</h1>
             <p className="text-muted-foreground">Buat, edit, dan kelola semua artikel berita.</p>
           </div>
-          {canCreate && (
+          {canManage && (
              <div className="flex gap-2">
                 <Button variant="outline" onClick={() => router.push('/panel/berita/generate')}>
                     <Sparkles className="mr-2 h-4 w-4" />
@@ -122,9 +119,11 @@ export default function AdminBeritaPage() {
                 <CardTitle>Daftar Artikel</CardTitle>
                 <CardDescription>Total {posts.length} artikel dipublikasikan.</CardDescription>
              </div>
-             <Button variant="outline" size="sm" onClick={() => router.push('/panel/berita/kategori')}>
-                Kelola Kategori
-            </Button>
+             {canManage && (
+                <Button variant="outline" size="sm" onClick={() => router.push('/panel/berita/kategori')}>
+                    Kelola Kategori
+                </Button>
+             )}
           </CardHeader>
           <CardContent className="p-0">
             <Table>
@@ -162,9 +161,11 @@ export default function AdminBeritaPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => router.push(`/panel/berita/edit/${post.slug}`)}>
-                              Edit
-                            </DropdownMenuItem>
+                            {canManage && (
+                                <DropdownMenuItem onClick={() => router.push(`/panel/berita/edit/${post.slug}`)}>
+                                Edit
+                                </DropdownMenuItem>
+                            )}
                             {canDelete && (
                                 <>
                                 <DropdownMenuSeparator />

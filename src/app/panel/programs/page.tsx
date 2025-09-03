@@ -28,19 +28,20 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function AdminProgramsPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { hasPermission } = useAuth();
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [programToDelete, setProgramToDelete] = useState<Program | null>(null);
 
-  // TODO: Replace with real permission check
-  const canCreate = true; // user.permissions.includes('manage_programs');
-  const canDelete = true; // user.permissions.includes('delete_programs');
+  const canManage = hasPermission('manage_programs');
+  const canDelete = hasPermission('delete_programs');
 
   const fetchPrograms = async () => {
     setLoading(true);
@@ -59,6 +60,7 @@ export default function AdminProgramsPage() {
 
   useEffect(() => {
     fetchPrograms();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleDeleteClick = (program: Program) => {
@@ -95,7 +97,7 @@ export default function AdminProgramsPage() {
             <h1 className="font-headline text-2xl font-bold">Manajemen Program</h1>
             <p className="text-muted-foreground">Buat, edit, dan kelola semua program.</p>
           </div>
-          {canCreate && (
+          {canManage && (
              <Button onClick={() => router.push('/panel/programs/new')}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Buat Program Baru
@@ -108,10 +110,12 @@ export default function AdminProgramsPage() {
               <CardTitle>Daftar Program</CardTitle>
               <CardDescription>Total {programs.length} program ditemukan.</CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={() => router.push('/panel/programs/tags')}>
-                <Tags className="mr-2 h-4 w-4" />
-                Kelola Tag
-            </Button>
+            {canManage && (
+              <Button variant="outline" size="sm" onClick={() => router.push('/panel/programs/tags')}>
+                  <Tags className="mr-2 h-4 w-4" />
+                  Kelola Tag
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="p-0">
             <Table>
@@ -148,9 +152,11 @@ export default function AdminProgramsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => router.push(`/panel/programs/edit/${program.id}`)}>
-                              Edit
-                            </DropdownMenuItem>
+                            {canManage && (
+                              <DropdownMenuItem onClick={() => router.push(`/panel/programs/edit/${program.id}`)}>
+                                Edit
+                              </DropdownMenuItem>
+                            )}
                             {canDelete && (
                                 <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(program)}>
                                     <Trash2 className="mr-2 h-4 w-4" />

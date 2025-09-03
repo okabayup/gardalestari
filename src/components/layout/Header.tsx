@@ -24,8 +24,6 @@ import { getNotificationsForUser, markNotificationsAsRead, Notification } from '
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
 
-const ADMIN_PHONE_NUMBER = '+6285176752610';
-
 const NotificationItem = ({ title, body, time, read, link }: { title: string, body: string, time: string, read: boolean, link?: string }) => (
     <Link href={link || '#'} className="block p-3 hover:bg-muted/50 rounded-lg">
         <div className="flex items-start gap-3">
@@ -40,7 +38,7 @@ const NotificationItem = ({ title, body, time, read, link }: { title: string, bo
 );
 
 export default function Header() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, hasPermission } = useAuth();
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
@@ -87,7 +85,7 @@ export default function Header() {
     router.push('/login');
   };
   
-  const isAdmin = user?.phoneNumber === ADMIN_PHONE_NUMBER;
+  const canAccessPanel = user?.permissions && user.permissions.length > 0;
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -152,7 +150,7 @@ export default function Header() {
                     <UserCircle className="mr-2 h-4 w-4" />
                     <span>Profil Saya</span>
                   </DropdownMenuItem>
-                  {isAdmin && (
+                  {canAccessPanel && (
                       <DropdownMenuItem onClick={() => router.push('/panel/dashboard')} className="cursor-pointer">
                           <Shield className="mr-2 h-4 w-4" />
                           <span>Panel Admin</span>

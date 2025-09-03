@@ -1,14 +1,14 @@
 
 'use client';
 
-import { useRequireAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 import { Sidebar } from '@/components/panel/Sidebar';
 import { redirect } from 'next/navigation';
 import PanelBottomNav from '@/components/panel/PanelBottomNav';
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useRequireAuth('/login');
+  const { user, loading } = useAuth();
 
   if (loading || !user) {
     return (
@@ -18,10 +18,10 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
     );
   }
   
-  // A simple check for access. Can be expanded with roles.
-  // if (!user.isAdmin) {
-  //   redirect('/feed');
-  // }
+  // A simple check for access. If user has no permissions, they can't access the panel.
+  if (!user.permissions || user.permissions.length === 0) {
+    redirect('/feed');
+  }
 
 
   return (

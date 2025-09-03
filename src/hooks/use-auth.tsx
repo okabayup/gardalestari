@@ -17,6 +17,9 @@ import { auth, db } from '@/lib/firebase';
 import { redirect, usePathname } from 'next/navigation';
 import { useToast } from './use-toast';
 import { checkUsernameExists } from '@/app/actions/user';
+import type { PermissionId, Position } from '@/lib/definitions';
+import { ALL_PERMISSIONS } from '@/lib/definitions';
+
 
 type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected';
 
@@ -27,12 +30,15 @@ type ExtendedUser = User & {
   fullName?: string;
   username?: string;
   nik?: string;
+  positionId?: string;
   position?: string;
+  permissions?: PermissionId[];
 };
 
 interface AuthContextType {
   user: ExtendedUser | null;
   loading: boolean;
+  hasPermission: (permission: PermissionId) => boolean;
   signInWithPhone: (phoneNumber: string, appVerifierContainerId: string) => Promise<void>;
   verifyOtp: (otp: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -55,31 +61,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // User is signed in, now fetch additional data from Firestore.
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists()) {
           const userData = userDoc.data();
+          let permissions: PermissionId[] = [];
+          let positionName = 'Anggota';
+
+          if (userData.positionId) {
+              const positionDocRef = doc(db, 'positions', userData.positionId);
+              const positionDoc = await getDoc(positionDocRef);
+              if (positionDoc.exists()) {
+                  const positionData = positionDoc.data() as Position;
+                  permissions = positionData.permissions || [];
+                  positionName = positionData.name;
+              }
+          }
+          
+          // Grant all permissions if phone number matches admin
+          if (user.phoneNumber === process.env.NEXT_PUBLIC_ADMIN_PHONE_NUMBER) {
+              permissions = ALL_PERMISSIONS.map(p => p.id);
+              positionName = 'Super Admin';
+          }
+
           const extendedUser: ExtendedUser = {
               ...user, 
               points: userData.points || 0,
               level: userData.level || 'Bronze',
               verificationStatus: userData.verificationStatus,
-              // Use Firestore data as the source of truth
               displayName: userData.fullName || user.displayName,
               photoURL: userData.avatarUrl || user.photoURL,
               fullName: userData.fullName,
               username: userData.username,
               nik: userData.nik,
-              position: userData.position,
+              positionId: userData.positionId,
+              position: positionName,
+              permissions: permissions,
           };
           setUser(extendedUser);
         } else {
-          // Fallback if doc doesn't exist for some reason
           setUser({ ...user, points: 0, level: 'Bronze', verificationStatus: 'unverified' });
         }
       } else {
-        // User is signed out
         setUser(null);
       }
       setLoading(false);
@@ -87,20 +110,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, []);
 
+  const hasPermission = (permission: PermissionId): boolean => {
+      if (!user || !user.permissions) return false;
+      return user.permissions.includes(permission);
+  }
+
   const setupRecaptcha = (containerId: string) => {
     if (recaptchaVerifier) {
-        // In some cases, you might want to clear previous instance
         const oldContainer = document.getElementById(containerId);
         if(oldContainer) oldContainer.innerHTML = '';
     }
     
     recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
       'size': 'normal',
-      'callback': () => {
-        // reCAPTCHA solved, allow sign-in button.
-      },
+      'callback': () => {},
       'expired-callback': () => {
-        // Response expired. Ask user to solve reCAPTCHA again.
         toast({
             variant: 'destructive',
             title: 'reCAPTCHA Kedaluwarsa',
@@ -128,10 +152,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 
   const signInWithPhone = async (phoneNumber: string, appVerifierContainerId: string) => {
-    // Ensure reCAPTCHA is only set up on the client and in the correct path
     if (typeof window !== 'undefined' && (pathname === '/login' || pathname === '/register')) {
         if (!document.getElementById(appVerifierContainerId)) {
-            // Wait for the container to be in the DOM
             await new Promise(resolve => setTimeout(resolve, 100));
         }
         setupRecaptcha(appVerifierContainerId);
@@ -150,18 +172,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     const userCredential = await confirmationResult.confirm(otp);
     
-    // Check if it's a new user
     const userDocRef = doc(db, 'users', userCredential.user.uid);
     const userDoc = await getDoc(userDocRef);
 
     if (!userDoc.exists()) {
         const newUser = userCredential.user;
         const tempName = `Anggota ${String(newUser.phoneNumber).slice(-4)}`;
-        // For brand new users, username is generated from a temp name.
-        // They will be prompted to set a proper one later or during verification.
         const username = await generateUniqueUsername(tempName);
 
-        // Create user document in Firestore
         await setDoc(userDocRef, {
             uid: newUser.uid,
             displayName: tempName,
@@ -172,20 +190,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             photoURL: newUser.photoURL || `https://picsum.photos/seed/${newUser.uid}/100/100`,
             avatarUrl: newUser.photoURL || `https://picsum.photos/seed/${newUser.uid}/100/100`,
             createdAt: serverTimestamp(),
-            points: 0, // Default points
-            level: 'Bronze', // Default level for new users
+            points: 0,
+            level: 'Bronze',
             verificationStatus: 'unverified',
-            position: 'Anggota'
         });
     }
 
-    setConfirmationResult(null); // Clear confirmation result
+    setConfirmationResult(null);
   };
   
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
-      // Clear recaptcha
       if (recaptchaVerifier) {
         recaptchaVerifier.clear();
         recaptchaVerifier = null;
@@ -200,7 +216,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const updateData: { [key: string]: any } = {};
 
-    // Handle photo upload
     if (updates.photoFile) {
         const storage = getStorage();
         const storageRef = ref(storage, `profile-pictures/${auth.currentUser.uid}`);
@@ -212,7 +227,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await updateProfile(auth.currentUser, { photoURL: newPhotoURL });
     }
 
-    // Handle username update
     if (updates.username) {
       const isAvailable = !(await checkUsernameExists(updates.username));
       if (!isAvailable) {
@@ -221,23 +235,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateData.username = updates.username;
     }
     
-    // Update user document in Firestore for consistency
     const userDocRef = doc(db, 'users', auth.currentUser.uid);
     await setDoc(userDocRef, updateData, { merge: true });
 
-    // Manually update the user state to reflect changes immediately
     setUser(prevUser => prevUser ? { ...prevUser, ...updateData } : null);
 };
 
 const submitForVerification = async (data: { fullName: string; nik: string; ktpFile: File; selfieFile: File; photoFile?: File; }) => {
     if (!auth.currentUser) throw new Error("Pengguna tidak ditemukan.");
 
-    // **Step 1: Check if NIK already exists for another user**
     const nikQuery = query(collection(db, 'users'), where("nik", "==", data.nik));
     const nikSnapshot = await getDocs(nikQuery);
     if (!nikSnapshot.empty) {
         const existingDoc = nikSnapshot.docs[0];
-        // If a document with this NIK exists and it's not the current user's document
         if (existingDoc.id !== auth.currentUser.uid) {
             throw new Error("NIK ini sudah terdaftar pada akun lain.");
         }
@@ -247,12 +257,10 @@ const submitForVerification = async (data: { fullName: string; nik: string; ktpF
     const { uid } = auth.currentUser;
     const storage = getStorage();
     
-    // Define storage refs
     const ktpRef = ref(storage, `kyc/${uid}/ktp.jpg`);
     const selfieRef = ref(storage, `kyc/${uid}/selfie.jpg`);
     const profilePicRef = ref(storage, `profile-pictures/${uid}`);
 
-    // Upload files and get URLs
     const [ktpUploadResult, selfieUploadResult] = await Promise.all([
       uploadBytes(ktpRef, data.ktpFile),
       uploadBytes(selfieRef, data.selfieFile)
@@ -273,7 +281,7 @@ const submitForVerification = async (data: { fullName: string; nik: string; ktpF
         displayName: data.fullName,
         username: username,
         nik: data.nik,
-        verificationStatus: 'permanent' as VerificationStatus, // Set status to permanent
+        verificationStatus: 'permanent' as VerificationStatus,
         ktpImageUrl,
         selfieImageUrl,
         avatarUrl: newPhotoURL,
@@ -281,11 +289,9 @@ const submitForVerification = async (data: { fullName: string; nik: string; ktpF
         submittedAt: serverTimestamp()
     };
 
-    // Update user document in Firestore
     const userDocRef = doc(db, 'users', uid);
     await setDoc(userDocRef, verificationData, { merge: true });
     
-    // Update Firebase Auth profile as well for consistency
     if (auth.currentUser) {
         await updateProfile(auth.currentUser, { 
             displayName: data.fullName, 
@@ -293,10 +299,8 @@ const submitForVerification = async (data: { fullName: string; nik: string; ktpF
         });
     }
 
-    // Update local state to reflect all changes immediately
     setUser(prevUser => {
         if (!prevUser) return null;
-        // Merge existing user data with new verification data
         return {
             ...prevUser,
             ...verificationData
@@ -306,7 +310,7 @@ const submitForVerification = async (data: { fullName: string; nik: string; ktpF
 
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithPhone, verifyOtp, signOut, updateUserProfile, submitForVerification }}>
+    <AuthContext.Provider value={{ user, loading, hasPermission, signInWithPhone, verifyOtp, signOut, updateUserProfile, submitForVerification }}>
       {children}
     </AuthContext.Provider>
   );
@@ -328,11 +332,7 @@ export const useRequireAuth = (redirectTo = '/login') => {
     if (!loading && !user) {
       redirect(redirectTo);
     }
-    // Redirect unverified users to verification, but allow access to profile pages
-    if (!loading && user && user.verificationStatus === 'unverified' && !pathname.startsWith('/profile') && pathname !== '/register') {
-        redirect('/profile');
-    }
-  }, [user, loading, redirectTo, pathname]);
+  }, [user, loading, redirectTo]);
 
   return { user, loading };
 };
