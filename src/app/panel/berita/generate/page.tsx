@@ -31,6 +31,7 @@ export default function GenerateBeritaPage() {
   const { register, handleSubmit } = useForm<GenerateForm>();
   
   const generateSlug = (title: string) => {
+    if (!title) return '';
     return title.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
   };
 
@@ -45,7 +46,7 @@ export default function GenerateBeritaPage() {
       toast({ title: 'Berita dan gambar berhasil dibuat!', description: 'Silakan tinjau dan simpan.' });
     } catch (error) {
       console.error("Error during news generation:", error);
-      toast({ variant: 'destructive', title: 'Gagal membuat berita', description: (error as Error).message });
+      toast({ variant: 'destructive', title: 'Gagal membuat berita', description: (error as Error).message, duration: 8000 });
     } finally {
       setLoading(false);
     }
@@ -59,29 +60,34 @@ export default function GenerateBeritaPage() {
     setLoading(true);
 
     try {
+      // Ensure all required fields have a safe default value to prevent Firestore errors
       const newPost: Omit<BeritaPost, 'id'> = {
         title: generatedContent.title || 'Judul Dibuat AI',
         slug: generateSlug(generatedContent.title || 'judul-dibuat-ai'),
         author: user?.displayName || 'Admin',
         date: new Date().toISOString(),
         imageUrl: generatedContent.coverImageUrl || '',
-        imageHint: generatedContent.imageHints[0] || 'AI generated image',
+        imageHint: generatedContent.imageHints?.[0] || 'AI generated image',
         content: generatedContent.content || '<p>Konten tidak dapat dibuat.</p>',
         excerpt: generatedContent.excerpt || 'Ringkasan singkat...',
         category: generatedContent.category || 'Umum',
       };
+      
       await createBeritaPost(newPost);
+
       toast({
         title: 'Berita Disimpan!',
         description: 'Berita baru telah berhasil disimpan dan dipublikasikan.',
       });
       router.push('/panel/berita');
+
     } catch (error) {
       console.error("Error saving news post:", error);
       toast({
         variant: 'destructive',
         title: 'Gagal Menyimpan',
         description: (error as Error).message || 'Terjadi kesalahan saat menyimpan berita.',
+        duration: 8000,
       });
     } finally {
       setLoading(false);

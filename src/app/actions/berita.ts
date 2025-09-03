@@ -48,8 +48,8 @@ export async function getBeritaPost(slug: string) {
 // Create a new berita post
 export async function createBeritaPost(post: Omit<BeritaPost, 'id'>) {
   try {
+    // Firestore does not allow undefined values. Ensure all fields have a fallback.
     const postData = {
-      ...post,
       title: post.title || 'Judul Default',
       slug: post.slug || 'slug-default',
       content: post.content || '<p>Konten default.</p>',
@@ -65,7 +65,9 @@ export async function createBeritaPost(post: Omit<BeritaPost, 'id'>) {
     revalidatePath('/berita');
   } catch (error) {
     console.error("Error creating berita post:", error);
-    throw new Error("Gagal membuat berita. Pastikan semua data terisi dengan benar.");
+    // Include the original error message for better debugging
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Gagal membuat berita. Pastikan semua data terisi dengan benar. Error: ${errorMessage}`);
   }
 }
 
