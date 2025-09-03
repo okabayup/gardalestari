@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,18 +12,19 @@ import PublicProfileLayout from '@/components/layout/PublicProfileLayout';
 import { Loader2, ShieldAlert, BadgeCheck, MapPin, Calendar, Briefcase, UserCircle, QrCode } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { VerifiedBadge } from '@/components/members/VerifiedBadge';
-import { Badge } from '@/components/ui/badge';
 import QRCode from 'qrcode.react';
 import { cn } from '@/lib/utils';
+import { MemberLevelBadge } from '@/components/members/MemberLevelBadge';
 
-const ProfileInfoRow = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string | undefined }) => {
-    if (!value) return null;
+
+const ProfileInfoRow = ({ icon: Icon, label, value, children }: { icon: React.ElementType, label: string, value?: string | undefined, children?: React.ReactNode }) => {
+    if (!value && !children) return null;
     return (
         <div className="flex items-start gap-3">
             <Icon className="h-5 w-5 text-muted-foreground mt-1" />
             <div>
                 <p className="text-xs text-muted-foreground">{label}</p>
-                <p className="font-medium">{value}</p>
+                {value ? <p className="font-medium">{value}</p> : children}
             </div>
         </div>
     )
@@ -75,8 +77,10 @@ const UserProfileCard = ({ user }: { user: PublicProfile }) => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <ProfileInfoRow icon={Briefcase} label="Jabatan" value={user.position} />
                     <ProfileInfoRow icon={Calendar} label="Tanggal Registrasi" value={user.joinDate} />
-                    <ProfileInfoRow icon={MapPin} label="Lokasi Registrasi" value={user.region} />
-                    <ProfileInfoRow icon={UserCircle} label="Tingkat" value={user.level} />
+                    <ProfileInfoRow icon={MapPin} label="Wilayah" value={user.region || 'Nasional'} />
+                    <ProfileInfoRow icon={UserCircle} label="Level">
+                         <MemberLevelBadge level={user.level || 'Bronze'} />
+                    </ProfileInfoRow>
                 </div>
                  <div className="flex flex-col items-center justify-center pt-4">
                     <QRCode value={profileUrl} size={100} level="L" />

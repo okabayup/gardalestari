@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { cn } from '@/lib/utils';
@@ -46,7 +47,7 @@ export const MemberLevelBadge = ({ level, size = 'sm' }: MemberLevelBadgeProps) 
   }
 
   return (
-    <Badge variant="outline" className={cn("gap-1 pl-1.5 pr-2", config.className)}>
+    <Badge variant="outline" className={cn("gap-1.5 pl-2 pr-2.5", config.className)}>
       <Icon className={cn("h-3 w-3", config.iconClassName)} />
       {level}
     </Badge>
