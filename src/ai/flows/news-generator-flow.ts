@@ -22,7 +22,7 @@ const NewsGeneratorOutputSchema = z.object({
   title: z.string().describe('The generated, catchy title for the news article.'),
   content: z.string().describe('The full article content in HTML format. This content MUST include at least two image placeholders in the format <!-- IMAGE_HINT: a descriptive hint for an image --> where images would be visually appropriate.'),
   excerpt: z.string().describe('A short, engaging summary of the article (max 150 characters).'),
-  category: z.string().describe('A suggested category for the news article (e.g., Pertanian, Perikanan, Konservasi, Teknologi, Komunitas).'),
+  category: z.string().describe('A suggested category for the news article (e.g., Pertanian, Perikanan, Kehutanan, Konservasi, Teknologi, Komunitas, Acara).'),
   imageHints: z.array(z.string()).describe('An array of descriptive text hints for images to be generated, extracted from the placeholders in the content.'),
   coverImageUrl: z.string().describe('The URL of the generated cover image for the article.'),
 });
@@ -68,7 +68,7 @@ const newsGeneratorFlow = ai.defineFlow(
     // Generate the article text and initial data from the main prompt
     const { output } = await prompt(input);
     if (!output) {
-      throw new Error('Gagal mendapatkan draf artikel dari AI.');
+      throw new Error('AI Gagal mendapatkan draf artikel. Coba lagi.');
     }
 
     // Extract image hints from the generated HTML content

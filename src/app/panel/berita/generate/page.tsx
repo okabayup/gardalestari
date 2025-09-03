@@ -84,7 +84,10 @@ export default function GenerateBeritaPage() {
   };
 
   const onSave = async () => {
-    if (!generatedContent || !user) return;
+    if (!generatedContent || !user) {
+        toast({ variant: 'destructive', title: 'Konten belum dibuat', description: 'Silakan generate berita terlebih dahulu sebelum menyimpan.' });
+        return;
+    }
     setLoading(true);
 
     try {
@@ -165,11 +168,11 @@ export default function GenerateBeritaPage() {
                 <>
                   <div className="space-y-2">
                     <Label>Judul</Label>
-                    <Input readOnly value={generatedContent.title} />
+                    <Input value={generatedContent.title} onChange={(e) => setGeneratedContent(prev => prev ? {...prev, title: e.target.value} : null)} />
                   </div>
                    <div className="space-y-2">
                     <Label>Kategori</Label>
-                    <Input readOnly value={generatedContent.category} />
+                    <Input value={generatedContent.category} onChange={(e) => setGeneratedContent(prev => prev ? {...prev, category: e.target.value} : null)} />
                   </div>
                   <div className="space-y-2">
                     <Label>Konten</Label>
