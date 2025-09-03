@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Image as ImageIcon, Wand2 } from 'lucide-react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { createBeritaPost, BeritaPost } from '@/app/actions/berita';
 import { useAuth } from '@/hooks/use-auth';
 import { enhanceText, EnhanceTextOutput } from '@/ai/flows/enhance-text-flow';
@@ -318,3 +318,5 @@ export default function NewBeritaPostPage() {
     </form>
   );
 }
+
+    
