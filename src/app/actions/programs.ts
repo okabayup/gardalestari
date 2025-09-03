@@ -64,7 +64,7 @@ export async function getProgram(id: string): Promise<Program | null> {
 
 
 // Create a new program
-export async function createProgram(program: Omit<ProgramFormData, 'id'>, attachmentFile?: File) {
+export async function createProgram(program: Omit<ProgramFormData, 'id'>, attachmentFile?: File, imageFile?: File) {
   try {
     const { startDate, endDate, ...rest } = program;
     const programData: Omit<Program, 'id'> = {
@@ -72,6 +72,12 @@ export async function createProgram(program: Omit<ProgramFormData, 'id'>, attach
         startDate: Timestamp.fromDate(new Date(startDate)),
         endDate: Timestamp.fromDate(new Date(endDate)),
     };
+
+    if (imageFile) {
+        const imageRef = ref(storage, `program-images/${Date.now()}_${imageFile.name}`);
+        await uploadBytes(imageRef, imageFile);
+        programData.imageUrl = await getDownloadURL(imageRef);
+    }
 
     if (attachmentFile) {
         const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachmentFile.name}`);
@@ -89,7 +95,7 @@ export async function createProgram(program: Omit<ProgramFormData, 'id'>, attach
 }
 
 // Update an existing program
-export async function updateProgram(id: string, program: Partial<ProgramFormData>, attachmentFile?: File) {
+export async function updateProgram(id: string, program: Partial<ProgramFormData>, attachmentFile?: File, imageFile?: File) {
   try {
     const programDoc = doc(db, 'programs', id);
     
@@ -102,6 +108,12 @@ export async function updateProgram(id: string, program: Partial<ProgramFormData
         dataToUpdate.endDate = Timestamp.fromDate(new Date(program.endDate));
     }
     
+    if (imageFile) {
+        const imageRef = ref(storage, `program-images/${Date.now()}_${imageFile.name}`);
+        await uploadBytes(imageRef, imageFile);
+        dataToUpdate.imageUrl = await getDownloadURL(imageRef);
+    }
+
     if (attachmentFile) {
         const currentProgram = await getProgram(id);
         if (currentProgram?.attachmentUrl) {

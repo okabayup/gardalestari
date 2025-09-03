@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Calendar as CalendarIcon, Wand2, Paperclip } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, Wand2, Paperclip, Upload, Link as LinkIcon, Sparkles } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -26,12 +26,16 @@ import { generateImage } from '@/ai/flows/image-generate-flow';
 import { cn } from '@/lib/utils';
 import { DateRange } from "react-day-picker";
 
+const imageSourceSchema = z.enum(['ai', 'url', 'upload']);
+
 const formSchema = z.object({
   title: z.string().min(1, 'Judul wajib diisi'),
   description: z.string().min(1, 'Deskripsi wajib diisi'),
   category: z.enum(['flagship', 'ongoing'], { required_error: 'Kategori program wajib dipilih' }),
-  imageUrl: z.string().url('URL gambar tidak valid').optional().or(z.literal('')),
-  imageHint: z.string().min(1, 'Petunjuk gambar wajib diisi'),
+  imageSource: imageSourceSchema.default('ai'),
+  imageUrl: z.string().optional(),
+  imageHint: z.string().optional(),
+  imageFile: z.any().optional(),
   tags: z.array(z.string()).min(1, 'Minimal satu tag harus dipilih'),
   dateRange: z.object({
     from: z.date({ required_error: 'Tanggal mulai wajib diisi' }),
@@ -46,16 +50,32 @@ const formSchema = z.object({
   formId: z.string().optional(),
   requiresRecommendation: z.boolean().default(false),
   attachment: z.any().optional(),
-}).refine(data => data.source !== 'mitra' || !!data.partnerId, {
+})
+.refine(data => data.source !== 'mitra' || !!data.partnerId, {
     message: "Mitra harus dipilih jika sumbernya adalah mitra",
     path: ["partnerId"],
-}).refine(data => data.submissionType !== 'external' || (!!data.applicationUrl && z.string().url().safeParse(data.applicationUrl).success), {
+})
+.refine(data => data.submissionType !== 'external' || (!!data.applicationUrl && z.string().url().safeParse(data.applicationUrl).success), {
     message: "URL pendaftaran eksternal harus valid",
     path: ["applicationUrl"],
-}).refine(data => data.submissionType !== 'internal' || !!data.formId, {
+})
+.refine(data => data.submissionType !== 'internal' || !!data.formId, {
     message: "Formulir internal harus dipilih",
     path: ["formId"],
-});
+})
+.refine(data => {
+    if (data.imageSource === 'url') return !!data.imageUrl && z.string().url().safeParse(data.imageUrl).success;
+    return true;
+}, { message: "URL Gambar tidak valid", path: ["imageUrl"]})
+.refine(data => {
+    if (data.imageSource === 'ai') return !!data.imageHint;
+    return true;
+}, { message: "Petunjuk AI wajib diisi", path: ["imageHint"]})
+.refine(data => {
+    if (data.imageSource === 'upload') return !!data.imageFile && data.imageFile.length > 0;
+    return true;
+}, { message: "File gambar wajib diunggah", path: ["imageFile"]});
+
 
 type FormData = z.infer<typeof formSchema>;
 
@@ -79,7 +99,7 @@ export default function NewProgramPage() {
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: '', description: '', category: 'ongoing', imageUrl: '', imageHint: '',
+      title: '', description: '', category: 'ongoing', imageUrl: '', imageHint: '', imageSource: 'ai',
       tags: [],
       dateRange: { from: new Date(), to: addDays(new Date(), 7) },
       source: 'garda_lestari',
@@ -90,6 +110,7 @@ export default function NewProgramPage() {
 
   const watchSource = watch('source');
   const watchSubmissionType = watch('submissionType');
+  const watchImageSource = watch('imageSource');
   const watchTags = watch('tags');
   const attachmentFile = watch("attachment");
   const attachmentFileName = attachmentFile?.[0]?.name;
@@ -115,41 +136,40 @@ export default function NewProgramPage() {
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
+
+    let finalImageUrl = data.imageUrl || '';
+    if (data.imageSource === 'ai' && data.imageHint) {
+        toast({ title: 'AI sedang membuat gambar sampul...' });
+        setLoadingImage(true);
+        try {
+            const result = await generateImage({ prompt: data.imageHint });
+            if (!result.imageUrl) throw new Error("AI gagal membuat gambar.");
+            finalImageUrl = result.imageUrl;
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Gagal membuat gambar AI', description: (error as Error).message });
+            setLoading(false);
+            setLoadingImage(false);
+            return;
+        }
+        setLoadingImage(false);
+    }
+
+
     try {
-      const { dateRange, attachment, ...rest } = data;
+      const { dateRange, attachment, imageFile, imageSource, ...rest } = data;
       const programPayload = {
         ...rest,
         startDate: dateRange.from,
         endDate: dateRange.to,
-        imageUrl: data.imageUrl || `https://picsum.photos/seed/${data.title.replace(/\s+/g, '-')}/600/400`
+        imageUrl: finalImageUrl || `https://picsum.photos/seed/${data.title.replace(/\s+/g, '-')}/600/400`
       };
-      await createProgram(programPayload, attachment?.[0]);
+      await createProgram(programPayload, attachment?.[0], imageFile?.[0]);
       toast({ title: 'Program berhasil dibuat!' });
       router.push('/panel/programs');
     } catch (error) {
       toast({ variant: 'destructive', title: 'Gagal membuat program', description: (error as Error).message });
       setLoading(false);
     }
-  };
-
-  const handleGenerateImage = async () => {
-      const imageHint = getValues('imageHint');
-      if (!imageHint.trim()) {
-          toast({ variant: 'destructive', title: 'Petunjuk gambar kosong' });
-          return;
-      }
-      setLoadingImage(true);
-      try {
-          const result = await generateImage({ prompt: imageHint });
-          if (result.imageUrl) {
-              setValue('imageUrl', result.imageUrl);
-              toast({ title: 'Gambar berhasil dibuat!' });
-          }
-      } catch (error) {
-          toast({ variant: 'destructive', title: 'Gagal membuat gambar', description: (error as Error).message });
-      } finally {
-          setLoadingImage(false);
-      }
   };
 
   const handleTagToggle = (tagName: string) => {
@@ -170,7 +190,7 @@ export default function NewProgramPage() {
         <div className="flex gap-2">
             <Button variant="outline" type="button" onClick={() => router.push('/panel/programs')}>Batal</Button>
             <Button type="submit" disabled={loading || loadingImage}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {(loading || loadingImage) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Simpan Program
             </Button>
         </div>
@@ -307,19 +327,55 @@ export default function NewProgramPage() {
             <CardHeader><CardTitle>Media & Kategori</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                  <Label htmlFor="imageHint">Petunjuk Gambar Sampul</Label>
-                  <div className="flex gap-2">
-                      <Input id="imageHint" {...register('imageHint')} />
-                      <Button type="button" onClick={handleGenerateImage} disabled={loadingImage} size="icon"><Wand2 className="h-4 w-4" /></Button>
-                  </div>
-                  {errors.imageHint && <p className="text-sm text-destructive">{errors.imageHint.message}</p>}
+                <Label>Sumber Gambar Sampul</Label>
+                <Controller
+                    name="imageSource"
+                    control={control}
+                    render={({ field }) => (
+                        <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-3 gap-2">
+                             <Label className="flex flex-col items-center justify-center gap-2 cursor-pointer rounded-md border p-2 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
+                                <Sparkles className="h-5 w-5" />
+                                <span className="text-xs">AI</span>
+                                <RadioGroupItem value="ai" className="sr-only" />
+                             </Label>
+                             <Label className="flex flex-col items-center justify-center gap-2 cursor-pointer rounded-md border p-2 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
+                                <LinkIcon className="h-5 w-5" />
+                                <span className="text-xs">URL</span>
+                                <RadioGroupItem value="url" className="sr-only" />
+                             </Label>
+                             <Label className="flex flex-col items-center justify-center gap-2 cursor-pointer rounded-md border p-2 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
+                                <Upload className="h-5 w-5" />
+                                <span className="text-xs">Unggah</span>
+                                <RadioGroupItem value="upload" className="sr-only" />
+                             </Label>
+                        </RadioGroup>
+                    )}
+                />
               </div>
-              <div className="space-y-2">
-                  <Label htmlFor="imageUrl">URL Gambar Sampul</Label>
-                  <Input id="imageUrl" {...register('imageUrl')} />
-                  {errors.imageUrl && <p className="text-sm text-destructive">{errors.imageUrl.message}</p>}
-              </div>
-              <div className="space-y-2">
+
+               {watchImageSource === 'ai' && (
+                 <div className="space-y-2">
+                    <Label htmlFor="imageHint">Petunjuk Gambar (AI)</Label>
+                    <Input id="imageHint" {...register('imageHint')} placeholder="Contoh: pemuda menanam pohon di hutan"/>
+                    {errors.imageHint && <p className="text-sm text-destructive">{errors.imageHint.message}</p>}
+                 </div>
+               )}
+                {watchImageSource === 'url' && (
+                    <div className="space-y-2">
+                        <Label htmlFor="imageUrl">URL Gambar</Label>
+                        <Input id="imageUrl" {...register('imageUrl')} placeholder="https://..."/>
+                        {errors.imageUrl && <p className="text-sm text-destructive">{errors.imageUrl.message}</p>}
+                    </div>
+                )}
+                {watchImageSource === 'upload' && (
+                    <div className="space-y-2">
+                        <Label htmlFor="imageFile">Unggah File Gambar</Label>
+                        <Input id="imageFile" type="file" {...register('imageFile')} accept="image/*" />
+                        {errors.imageFile && <p className="text-sm text-destructive">{(errors.imageFile as any).message}</p>}
+                    </div>
+                )}
+
+              <div className="space-y-2 pt-4">
                   <Label>Tag Program</Label>
                   <div className="flex flex-wrap gap-2">
                       {allTags.map(tag => (
