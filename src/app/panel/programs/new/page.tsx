@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Calendar as CalendarIcon, Wand2, Plus, X } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, Wand2, Paperclip } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -46,6 +46,7 @@ const formSchema = z.object({
   applicationUrl: z.string().optional(),
   formId: z.string().optional(),
   requiresRecommendation: z.boolean().default(false),
+  attachment: z.any().optional(),
 }).refine(data => data.source !== 'mitra' || !!data.partnerId, {
     message: "Mitra harus dipilih jika sumbernya adalah mitra",
     path: ["partnerId"],
@@ -91,6 +92,9 @@ export default function NewProgramPage() {
   const watchSource = watch('source');
   const watchSubmissionType = watch('submissionType');
   const watchTags = watch('tags');
+  const attachmentFile = watch("attachment");
+  const attachmentFileName = attachmentFile?.[0]?.name;
+
 
   useEffect(() => {
     async function fetchData() {
@@ -113,14 +117,14 @@ export default function NewProgramPage() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      const { dateRange, ...rest } = data;
+      const { dateRange, attachment, ...rest } = data;
       const programPayload = {
         ...rest,
         startDate: Timestamp.fromDate(dateRange.from),
         endDate: Timestamp.fromDate(dateRange.to),
         imageUrl: data.imageUrl || `https://picsum.photos/seed/${data.title.replace(/\s+/g, '-')}/600/400`
       };
-      await createProgram(programPayload);
+      await createProgram(programPayload, attachment?.[0]);
       toast({ title: 'Program berhasil dibuat!' });
       router.push('/panel/programs');
     } catch (error) {
@@ -342,6 +346,12 @@ export default function NewProgramPage() {
                     <Textarea id="requiredDocuments" {...register('requiredDocuments')} placeholder="- CV&#10;- KTP&#10;- Esai" />
                     {errors.requiredDocuments && <p className="text-sm text-destructive">{errors.requiredDocuments.message}</p>}
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="attachment">Berkas Lampiran (Opsional)</Label>
+                    <Input id="attachment" type="file" {...register('attachment')} />
+                    {attachmentFileName && <p className="text-sm text-muted-foreground flex items-center gap-2"><Paperclip className="h-4 w-4"/> {attachmentFileName}</p>}
+                    {errors.attachment && <p className="text-sm text-destructive">{(errors.attachment as any).message}</p>}
+                 </div>
              </CardContent>
           </Card>
         </div>

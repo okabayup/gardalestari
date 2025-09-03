@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Calendar as CalendarIcon, Wand2 } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, Wand2, Paperclip } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -29,6 +29,7 @@ const formSchema = z.object({
   location: z.string().min(1, 'Lokasi wajib diisi'),
   imageUrl: z.string().url('URL gambar tidak valid').optional().or(z.literal('')),
   imageHint: z.string().min(1, 'Petunjuk gambar wajib diisi'),
+  attachment: z.any().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -45,6 +46,7 @@ export default function NewEventPage() {
     handleSubmit,
     setValue,
     getValues,
+    watch,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -57,15 +59,20 @@ export default function NewEventPage() {
     },
   });
 
+  const attachmentFile = watch("attachment");
+  const attachmentFileName = attachmentFile?.[0]?.name;
+
+
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
+      const { attachment, ...eventData } = data;
       const eventPayload = {
-        ...data,
+        ...eventData,
         date: Timestamp.fromDate(data.date),
         imageUrl: data.imageUrl || `https://picsum.photos/seed/${data.title.replace(/\s+/g, '-')}/600/400`
       };
-      await createEvent(eventPayload);
+      await createEvent(eventPayload, attachment?.[0]);
       toast({ title: 'Acara berhasil dibuat!' });
       router.push('/panel/events');
     } catch (error) {
@@ -185,6 +192,12 @@ export default function NewEventPage() {
                 <Label htmlFor="imageUrl">URL Gambar</Label>
                 <Input id="imageUrl" {...register('imageUrl')} placeholder="Generate dengan AI atau tempel URL di sini" />
                 {errors.imageUrl && <p className="text-sm text-destructive">{errors.imageUrl.message}</p>}
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="attachment">Berkas Lampiran (Opsional)</Label>
+                <Input id="attachment" type="file" {...register('attachment')} />
+                {attachmentFileName && <p className="text-sm text-muted-foreground flex items-center gap-2"><Paperclip className="h-4 w-4"/> {attachmentFileName}</p>}
+                {errors.attachment && <p className="text-sm text-destructive">{(errors.attachment as any).message}</p>}
             </div>
         </CardContent>
       </Card>

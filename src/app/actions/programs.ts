@@ -1,8 +1,9 @@
 
 'use server';
 
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 
 export type ProgramSource = 'garda_lestari' | 'mitra';
@@ -18,15 +19,16 @@ export interface Program {
   tags: string[];
   startDate: Timestamp;
   endDate: Timestamp;
-  // New fields
   source: ProgramSource;
-  partnerId?: string; // Optional, only if source is 'mitra'
+  partnerId?: string; 
   benefits: string;
   requiredDocuments: string;
   submissionType: SubmissionType;
-  applicationUrl?: string; // Optional, only if submissionType is 'external'
-  formId?: string; // Optional, only if submissionType is 'internal'
+  applicationUrl?: string; 
+  formId?: string;
   requiresRecommendation: boolean;
+  attachmentUrl?: string;
+  attachmentName?: string;
 }
 
 const programsCollection = collection(db, 'programs');
@@ -55,9 +57,16 @@ export async function getProgram(id: string): Promise<Program | null> {
 
 
 // Create a new program
-export async function createProgram(program: Omit<Program, 'id'>) {
+export async function createProgram(program: Omit<Program, 'id'>, attachmentFile?: File) {
   try {
-    await addDoc(programsCollection, program);
+    const programData = { ...program };
+    if (attachmentFile) {
+        const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachmentFile.name}`);
+        await uploadBytes(attachmentRef, attachmentFile);
+        programData.attachmentUrl = await getDownloadURL(attachmentRef);
+        programData.attachmentName = attachmentFile.name;
+    }
+    await addDoc(programsCollection, programData);
     revalidatePath('/panel/programs');
     revalidatePath('/programs');
   } catch (error) {
@@ -67,10 +76,30 @@ export async function createProgram(program: Omit<Program, 'id'>) {
 }
 
 // Update an existing program
-export async function updateProgram(id: string, program: Partial<Program>) {
+export async function updateProgram(id: string, program: Partial<Program>, attachmentFile?: File) {
   try {
     const programDoc = doc(db, 'programs', id);
-    await updateDoc(programDoc, program);
+    const programData: Partial<Program> = { ...program };
+    
+    if (attachmentFile) {
+        const currentProgram = await getProgram(id);
+        if (currentProgram?.attachmentUrl) {
+            try {
+                const oldAttachmentRef = ref(storage, currentProgram.attachmentUrl);
+                await deleteObject(oldAttachmentRef);
+            } catch (storageError: any) {
+                if (storageError.code !== 'storage/object-not-found') {
+                    console.warn("Could not delete old attachment, it might not exist.", storageError);
+                }
+            }
+        }
+        const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachmentFile.name}`);
+        await uploadBytes(attachmentRef, attachmentFile);
+        programData.attachmentUrl = await getDownloadURL(attachmentRef);
+        programData.attachmentName = attachmentFile.name;
+    }
+
+    await updateDoc(programDoc, programData);
     revalidatePath('/panel/programs');
     revalidatePath(`/panel/programs/edit/${id}`);
     revalidatePath('/programs');
@@ -84,8 +113,21 @@ export async function updateProgram(id: string, program: Partial<Program>) {
 // Delete a program
 export async function deleteProgram(id: string) {
   try {
+    const programToDelete = await getProgram(id);
     const programDoc = doc(db, 'programs', id);
     await deleteDoc(programDoc);
+
+    if (programToDelete?.attachmentUrl) {
+        try {
+            const attachmentRef = ref(storage, programToDelete.attachmentUrl);
+            await deleteObject(attachmentRef);
+        } catch (storageError: any) {
+             if (storageError.code !== 'storage/object-not-found') {
+                console.error("Could not delete attachment:", storageError);
+             }
+        }
+    }
+
     revalidatePath('/panel/programs');
     revalidatePath('/programs');
   } catch (error) {

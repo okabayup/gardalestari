@@ -12,13 +12,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Calendar as CalendarIcon, Wand2, Plus, X } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, Wand2, Paperclip } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { addDays, format } from 'date-fns';
+import { format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
 import { getProgram, updateProgram, getProgramTags, ProgramTag } from '@/app/actions/programs';
 import { getPartners, Partner } from '@/app/actions/partners';
@@ -26,6 +26,7 @@ import { getForms, ProgramForm } from '@/app/actions/forms';
 import { generateImage } from '@/ai/flows/image-generate-flow';
 import { cn } from '@/lib/utils';
 import { DateRange } from "react-day-picker";
+import Link from 'next/link';
 
 const formSchema = z.object({
   title: z.string().min(1, 'Judul wajib diisi'),
@@ -46,6 +47,7 @@ const formSchema = z.object({
   applicationUrl: z.string().optional(),
   formId: z.string().optional(),
   requiresRecommendation: z.boolean().default(false),
+  attachment: z.any().optional(),
 }).refine(data => data.source !== 'mitra' || !!data.partnerId, {
     message: "Mitra harus dipilih jika sumbernya adalah mitra",
     path: ["partnerId"],
@@ -72,6 +74,8 @@ export default function EditProgramPage() {
   const [allTags, setAllTags] = useState<ProgramTag[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [forms, setForms] = useState<ProgramForm[]>([]);
+  const [currentAttachment, setCurrentAttachment] = useState<{name: string, url: string} | null>(null);
+
   
   const {
     control,
@@ -87,6 +91,9 @@ export default function EditProgramPage() {
   const watchSource = watch('source');
   const watchSubmissionType = watch('submissionType');
   const watchTags = watch('tags', []);
+  const attachmentFile = watch("attachment");
+  const attachmentFileName = attachmentFile?.[0]?.name;
+
 
   useEffect(() => {
     async function fetchData() {
@@ -106,6 +113,9 @@ export default function EditProgramPage() {
                 ...programData,
                 dateRange: { from: programData.startDate.toDate(), to: programData.endDate.toDate() },
             });
+            if (programData.attachmentUrl && programData.attachmentName) {
+                setCurrentAttachment({name: programData.attachmentName, url: programData.attachmentUrl});
+            }
         } else {
              toast({ variant: 'destructive', title: 'Program tidak ditemukan' });
              router.push('/panel/programs');
@@ -122,13 +132,13 @@ export default function EditProgramPage() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      const { dateRange, ...rest } = data;
+      const { dateRange, attachment, ...rest } = data;
       const programPayload = {
         ...rest,
         startDate: Timestamp.fromDate(dateRange.from),
         endDate: Timestamp.fromDate(dateRange.to),
       };
-      await updateProgram(programId, programPayload);
+      await updateProgram(programId, programPayload, attachment?.[0]);
       toast({ title: 'Program berhasil diperbarui!' });
       router.push('/panel/programs');
     } catch (error) {
@@ -347,6 +357,19 @@ export default function EditProgramPage() {
                     <Textarea id="requiredDocuments" {...register('requiredDocuments')} placeholder="- CV&#10;- KTP&#10;- Esai" />
                     {errors.requiredDocuments && <p className="text-sm text-destructive">{errors.requiredDocuments.message}</p>}
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="attachment">Berkas Lampiran (Opsional)</Label>
+                    <Input id="attachment" type="file" {...register('attachment')} />
+                     {attachmentFileName ? (
+                        <p className="text-sm text-muted-foreground flex items-center gap-2"><Paperclip className="h-4 w-4"/> {attachmentFileName}</p>
+                    ) : currentAttachment ? (
+                        <p className="text-sm text-muted-foreground flex items-center gap-2">
+                            <Paperclip className="h-4 w-4"/> 
+                            <Link href={currentAttachment.url} target="_blank" className="hover:underline text-primary">{currentAttachment.name}</Link>
+                        </p>
+                    ) : null}
+                    {errors.attachment && <p className="text-sm text-destructive">{(errors.attachment as any).message}</p>}
+                 </div>
              </CardContent>
           </Card>
         </div>

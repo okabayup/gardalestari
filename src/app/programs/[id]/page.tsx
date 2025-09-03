@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { ArrowRight, Award, Briefcase, Calendar, Check, FileText, Globe, Handshake, Info, Target, Landmark } from 'lucide-react';
+import { ArrowRight, Award, Briefcase, Calendar, Check, FileText, Globe, Handshake, Info, Target, Landmark, Download } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -126,6 +126,14 @@ export default async function ProgramDetailPage({ params }: ProgramDetailPagePro
             </InfoCard>
              <InfoCard icon={<FileText className="h-6 w-6" />} title="Berkas Pendaftaran">
                 <div dangerouslySetInnerHTML={{ __html: renderHtml(program.requiredDocuments) }} />
+                 {program.attachmentUrl && (
+                    <Button asChild variant="outline" className="mt-4">
+                        <Link href={program.attachmentUrl} target="_blank">
+                            <Download className="mr-2 h-4 w-4" />
+                            {program.attachmentName || 'Unduh Lampiran'}
+                        </Link>
+                    </Button>
+                )}
             </InfoCard>
              <InfoCard icon={<Target className="h-6 w-6" />} title="Informasi Pendaftaran">
                 <ul>

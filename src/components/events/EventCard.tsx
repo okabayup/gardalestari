@@ -7,6 +7,8 @@ import { Button } from '../ui/button';
 import { Event } from '@/app/actions/events';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import Link from 'next/link';
+import { Download } from 'lucide-react';
 
 interface EventCardProps {
   event: Event;
@@ -39,8 +41,15 @@ export default function EventCard({ event }: EventCardProps) {
             <div className="flex-1">
                 <h3 className="font-semibold">{event.title}</h3>
                 <p className="text-sm text-muted-foreground">{event.location}</p>
+                 {event.attachmentUrl && (
+                    <Button variant="outline" size="sm" asChild className="mt-2">
+                        <Link href={event.attachmentUrl} target="_blank">
+                           <Download className="mr-2 h-4 w-4" /> {event.attachmentName || 'Lampiran'}
+                        </Link>
+                    </Button>
+                )}
             </div>
-            <Button size="sm">Detail</Button>
+            {/* <Button size="sm">Detail</Button> */}
         </div>
     </Card>
   );

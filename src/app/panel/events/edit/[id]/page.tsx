@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Calendar as CalendarIcon, Wand2 } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, Wand2, Paperclip } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
@@ -20,6 +20,7 @@ import { Timestamp } from 'firebase/firestore';
 import { getEvent, updateEvent } from '@/app/actions/events';
 import { generateImage } from '@/ai/flows/image-generate-flow';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 const formSchema = z.object({
   title: z.string().min(1, 'Judul wajib diisi'),
@@ -28,6 +29,7 @@ const formSchema = z.object({
   location: z.string().min(1, 'Lokasi wajib diisi'),
   imageUrl: z.string().url('URL gambar tidak valid').optional().or(z.literal('')),
   imageHint: z.string().min(1, 'Petunjuk gambar wajib diisi'),
+  attachment: z.any().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -40,6 +42,7 @@ export default function EditEventPage() {
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [loadingImage, setLoadingImage] = useState(false);
+  const [currentAttachment, setCurrentAttachment] = useState<{name: string, url: string} | null>(null);
 
   const {
     control,
@@ -48,8 +51,13 @@ export default function EditEventPage() {
     setValue,
     reset,
     getValues,
+    watch,
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(formSchema) });
+
+  const attachmentFile = watch("attachment");
+  const attachmentFileName = attachmentFile?.[0]?.name;
+
 
   useEffect(() => {
     if (eventId) {
@@ -62,6 +70,9 @@ export default function EditEventPage() {
               ...event,
               date: event.date.toDate(),
             });
+            if(event.attachmentUrl && event.attachmentName) {
+                setCurrentAttachment({name: event.attachmentName, url: event.attachmentUrl})
+            }
           } else {
             toast({ variant: 'destructive', title: 'Acara tidak ditemukan' });
             router.push('/panel/events');
@@ -79,11 +90,12 @@ export default function EditEventPage() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
+      const { attachment, ...eventData } = data;
       const eventPayload = {
-        ...data,
+        ...eventData,
         date: Timestamp.fromDate(data.date),
       };
-      await updateEvent(eventId, eventPayload);
+      await updateEvent(eventId, eventPayload, attachment?.[0]);
       toast({ title: 'Acara berhasil diperbarui!' });
       router.push('/panel/events');
     } catch (error) {
@@ -205,6 +217,19 @@ export default function EditEventPage() {
                 <Label htmlFor="imageUrl">URL Gambar</Label>
                 <Input id="imageUrl" {...register('imageUrl')} placeholder="Generate dengan AI atau tempel URL di sini" />
                 {errors.imageUrl && <p className="text-sm text-destructive">{errors.imageUrl.message}</p>}
+            </div>
+             <div className="space-y-2">
+                <Label htmlFor="attachment">Berkas Lampiran</Label>
+                <Input id="attachment" type="file" {...register('attachment')} />
+                 {attachmentFileName ? (
+                     <p className="text-sm text-muted-foreground flex items-center gap-2"><Paperclip className="h-4 w-4"/> {attachmentFileName}</p>
+                 ) : currentAttachment ? (
+                     <p className="text-sm text-muted-foreground flex items-center gap-2">
+                        <Paperclip className="h-4 w-4"/> 
+                        <Link href={currentAttachment.url} target="_blank" className="hover:underline text-primary">{currentAttachment.name}</Link>
+                    </p>
+                 ) : null}
+                {errors.attachment && <p className="text-sm text-destructive">{(errors.attachment as any).message}</p>}
             </div>
         </CardContent>
       </Card>
