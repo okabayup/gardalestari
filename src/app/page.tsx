@@ -3,14 +3,16 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Leaf, Users, Sprout, Ship, TreePine, Handshake, HandHeart, Target, Newspaper, Calendar, Heart } from 'lucide-react';
+import { Leaf, Users, Sprout, Ship, TreePine, Handshake, HandHeart, Target, Newspaper, Calendar, Heart, ArrowRight } from 'lucide-react';
 import LandingHeader from '@/components/layout/LandingHeader';
 import { getAppSettings } from './actions/settings';
 import { getEvents } from './actions/events';
 import { getPrograms } from './actions/programs';
 import { getMembers } from './actions/members';
 import { getPartners } from './actions/partners';
+import { getBeritaPosts } from './actions/berita';
 import { Separator } from '@/components/ui/separator';
+import BeritaPostCard from '@/components/berita/BeritaPostCard';
 
 const StatCard = ({ icon, value, label }: { icon: React.ReactNode, value: string, label: string }) => (
     <div className="flex flex-col items-center text-center">
@@ -75,6 +77,7 @@ export default async function LandingPage() {
   const programs = await getPrograms();
   const members = await getMembers();
   const partners = await getPartners();
+  const latestPosts = await getBeritaPosts();
   const featuredPartners = partners.filter(p => p.isFeatured);
   const WHATSAPP_LINK = "https://wa.me/6285937010409";
 
@@ -99,10 +102,10 @@ export default async function LandingPage() {
             </div>
             <div className="animate-in fade-in slide-in-from-bottom-12 duration-1000">
                 <h1 className="font-headline text-4xl font-bold tracking-tight text-primary sm:text-5xl md:text-6xl lg:text-7xl">
-                Bersama, Kita Lestarikan Masa Depan
+                  Aksi Nyata Anda untuk Bumi, Dimulai dari Sini.
                 </h1>
                 <p className="mx-auto mt-6 max-w-3xl text-lg text-muted-foreground md:text-xl">
-                Garda Lestari adalah wadah bagi Anda yang peduli dan ingin beraksi untuk kelestarian agro, maritim, dan kehutanan Indonesia.
+                  Garda Lestari adalah wadah bagi Anda yang peduli dan ingin beraksi untuk kelestarian agro, maritim, dan kehutanan Indonesia.
                 </p>
                 <div className="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
                   <Button size="lg" asChild className="shadow-lg">
@@ -139,7 +142,7 @@ export default async function LandingPage() {
                   <StatCard icon={<Users size={32} />} value={`${members.length.toLocaleString()}+`} label="Anggota Aktif" />
                   <StatCard icon={<Sprout size={32} />} value={`${programs.length}+`} label="Program Berjalan" />
                   <StatCard icon={<Calendar size={32} />} value={`${events.length}+`} label="Acara Terselenggara" />
-                  <StatCard icon={<Newspaper size={32} />} value="50+" label="Publikasi & Riset" />
+                  <StatCard icon={<Newspaper size={32} />} value={`${latestPosts.length}+`} label="Publikasi & Riset" />
               </div>
           </div>
         </section>
@@ -190,8 +193,33 @@ export default async function LandingPage() {
           </div>
         </section>
 
+        {/* Latest News Section */}
+        {latestPosts.length > 0 && (
+          <section id="news" className="w-full bg-secondary py-16 md:py-28">
+            <div className="container">
+              <div className="mb-14 text-center">
+                <span className="text-sm font-semibold uppercase text-primary">Kabar Terbaru</span>
+                <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl mt-2">Berita & Wawasan</h2>
+                <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Ikuti perkembangan terbaru dari program, acara, dan riset yang kami lakukan.</p>
+              </div>
+              <div className="grid gap-6 md:grid-cols-3">
+                {latestPosts.slice(0, 3).map((post) => (
+                  <BeritaPostCard key={post.id} {...post} />
+                ))}
+              </div>
+              <div className="mt-12 text-center">
+                <Button asChild>
+                  <Link href="/berita">
+                    Lihat Semua Berita <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </section>
+        )}
+
          {/* Call to Action Section */}
-        <section id="partnership" className="w-full bg-secondary py-16 md:py-28 overflow-hidden">
+        <section id="partnership" className="w-full bg-background py-16 md:py-28 overflow-hidden">
           <div className="container">
             <div className="mb-14 text-center animate-in fade-in zoom-in-95 duration-500">
               <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">Jadilah Bagian dari Dampak</h2>

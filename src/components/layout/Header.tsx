@@ -13,7 +13,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, UserCircle, Shield } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { LogOut, UserCircle, Shield, Bell } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const ADMIN_PHONE_NUMBER = '+6285176752610';
@@ -43,34 +44,41 @@ export default function Header() {
         <Link href="/feed" className="flex items-center">
           <Image src="/logo.png" alt="Garda Lestari Logo" width={120} height={32} className="h-8 w-auto" />
         </Link>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
           {user && (
-            <DropdownMenu>
-              <DropdownMenuTrigger>
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
-                  <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
-                </Avatar>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>@{user.username || user.displayName}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                 <DropdownMenuItem onClick={() => router.push('/profile/me')} className="cursor-pointer">
-                  <UserCircle className="mr-2 h-4 w-4" />
-                  <span>Profil Saya</span>
-                </DropdownMenuItem>
-                {isAdmin && (
-                    <DropdownMenuItem onClick={() => router.push('/panel/dashboard')} className="cursor-pointer">
-                        <Shield className="mr-2 h-4 w-4" />
-                        <span>Panel Admin</span>
-                    </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Keluar</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <>
+              <Button variant="ghost" size="icon">
+                <Bell className="h-5 w-5" />
+                <span className="sr-only">Notifikasi</span>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger>
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
+                    <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+                  </Avatar>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>@{user.username || user.displayName}</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.push('/profile/me')} className="cursor-pointer">
+                    <UserCircle className="mr-2 h-4 w-4" />
+                    <span>Profil Saya</span>
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                      <DropdownMenuItem onClick={() => router.push('/panel/dashboard')} className="cursor-pointer">
+                          <Shield className="mr-2 h-4 w-4" />
+                          <span>Panel Admin</span>
+                      </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Keluar</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           )}
         </div>
       </div>
