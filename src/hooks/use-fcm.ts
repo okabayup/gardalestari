@@ -29,7 +29,7 @@ export const useFcm = () => {
           console.log('Notification permission granted.');
 
           const currentToken = await getToken(messaging, { 
-            vapidKey: 'BFvP8Xp_lZ6T9fPz-8yqXfJ3yQ...YOUR_VAPID_KEY...wKVw', // Replace with your actual VAPID key from Firebase Console
+            vapidKey: 'BK-uYpO5l_ZLQPL1tLSQyGi2gw7tDrW0yoGKNYoSLwlEgxGgcHB4yx8OdCVfjzPUHJ4GHdDnHy_bhgCiiYXOgrQ',
             serviceWorkerRegistration: await navigator.serviceWorker.ready,
           });
 
