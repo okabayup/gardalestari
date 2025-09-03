@@ -3,8 +3,9 @@
 
 import { db } from '@/lib/firebase';
 import { getMessaging } from 'firebase-admin/messaging';
-import { collection, addDoc, query, where, getDocs, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, serverTimestamp, updateDoc, documentId, FieldPath } from 'firebase/firestore';
 import { initializeAdminApp } from '@/lib/firebase-admin';
+import type { MemberType } from './members';
 
 export interface PushSubscription {
   userId: string;
@@ -13,6 +14,7 @@ export interface PushSubscription {
 }
 
 const subscriptionsCollection = collection(db, 'pushSubscriptions');
+const usersCollection = collection(db, 'users');
 
 /**
  * Saves a new push notification subscription token for a user.
@@ -67,17 +69,47 @@ interface NotificationPayload {
     link?: string;
 }
 
-export async function sendNotificationToAll(payload: NotificationPayload) {
+interface NotificationTarget {
+  type: 'all' | 'users' | 'memberType';
+  userIds?: string[];
+  memberType?: MemberType;
+}
+
+export async function sendNotification(payload: NotificationPayload, target: NotificationTarget) {
     try {
         await initializeAdminApp();
-        const subscriptionsSnapshot = await getDocs(subscriptionsCollection);
-        const tokens: string[] = [];
-        subscriptionsSnapshot.forEach(doc => {
-            tokens.push(doc.data().token);
-        });
+        let targetUserIds: string[] = [];
+
+        // Determine the target user IDs based on the strategy
+        if (target.type === 'memberType' && target.memberType) {
+            const usersQuery = query(usersCollection, where('type', '==', target.memberType));
+            const usersSnapshot = await getDocs(usersQuery);
+            targetUserIds = usersSnapshot.docs.map(doc => doc.id);
+        } else if (target.type === 'users' && target.userIds && target.userIds.length > 0) {
+            targetUserIds = target.userIds;
+        }
+
+        // Fetch tokens based on the determined user IDs or fetch all if target is 'all'
+        let tokensQuery;
+        if (target.type === 'all') {
+            tokensQuery = query(subscriptionsCollection);
+        } else if (targetUserIds.length > 0) {
+            // Firestore 'in' query is limited to 30 items. If more, we need to batch.
+            // For now, assuming we won't target more than 30 specific users at once.
+             if (targetUserIds.length > 30) {
+                console.warn("Targeting more than 30 specific users, this might fail. Consider batching.");
+            }
+            tokensQuery = query(subscriptionsCollection, where('userId', 'in', targetUserIds));
+        } else if (target.type !== 'all') {
+            // If target is specific but no IDs are found/provided
+             return { successCount: 0, failureCount: 0, message: "Tidak ada pengguna target yang cocok dengan kriteria." };
+        }
+
+        const subscriptionsSnapshot = await getDocs(tokensQuery);
+        const tokens = subscriptionsSnapshot.docs.map(doc => doc.data().token);
 
         if (tokens.length === 0) {
-            return { successCount: 0, failureCount: 0, message: "Tidak ada pengguna yang terdaftar untuk notifikasi." };
+            return { successCount: 0, failureCount: 0, message: "Tidak ada pengguna yang terdaftar untuk notifikasi pada target ini." };
         }
 
         const message = {
@@ -109,11 +141,12 @@ export async function sendNotificationToAll(payload: NotificationPayload) {
         return { successCount: response.successCount, failureCount: response.failureCount };
 
     } catch (error: any) {
-        console.error('Error sending notification to all:', error);
-        // Log the full error for server-side debugging
+        console.error('Error sending notification:', error);
         if (error.code === 'messaging/invalid-argument') {
             throw new Error("Payload notifikasi tidak valid. Pastikan judul dan pesan terisi.");
         }
         throw new Error("Gagal mengirim notifikasi: " + error.message);
     }
 }
+
+    
