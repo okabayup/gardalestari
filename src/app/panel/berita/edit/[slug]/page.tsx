@@ -18,51 +18,9 @@ import { marked } from 'marked';
 import { Separator } from '@/components/ui/separator';
 import { getBeritaCategories, BeritaCategory } from '@/app/actions/berita-kategori';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
+import RichTextEditor from '@/components/panel/RichTextEditor';
 
 type FormData = Omit<BeritaPost, 'id' | 'author' | 'date' | 'excerpt'>;
-
-// Re-using components from the "new" page
-const RichTextEditor = ({ value, onChange }: { value: string, onChange: (value: string) => void }) => {
-    const editorRef = useRef<HTMLDivElement>(null);
-    
-    // Function to convert Markdown to HTML and set it
-    const updateHtml = (markdownText: string) => {
-        if (editorRef.current) {
-            editorRef.current.innerHTML = marked(markdownText) as string;
-        }
-    };
-    
-    useEffect(() => {
-        // When the component mounts or the initial value changes, populate the editor
-        updateHtml(value);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [value]);
-
-    const handleInput = () => {
-        if (editorRef.current) {
-            // This is tricky with rich text. For simplicity, we get innerText.
-            // A real implementation would use a library to convert HTML back to Markdown.
-            onChange(editorRef.current.innerText);
-        }
-    };
-
-    // Expose updateHtml to parent component
-    React.useImperativeHandle(editorRef, () => ({
-      ...editorRef.current,
-      updateHtml,
-    }));
-
-    return (
-        <div
-            ref={editorRef}
-            onInput={handleInput}
-            contentEditable
-            suppressContentEditableWarning
-            className="prose dark:prose-invert min-h-[300px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-        />
-    );
-};
 
 const AnalysisPanel = ({ analysis }: { analysis: EnhanceTextOutput | null }) => {
   if (!analysis) {
@@ -116,7 +74,7 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
   const [aiAnalysis, setAiAnalysis] = useState<EnhanceTextOutput | null>(null);
 
   const { register, handleSubmit, reset, setValue, getValues, control } = useForm<FormData>();
-  const editorRef = useRef<{ updateHtml: (markdown: string) => void }>(null);
+  const editorRef = useRef<{ updateHtml: (markdown: string) => void; editor: HTMLDivElement | null }>(null);
 
   useEffect(() => {
     const fetchPostAndCategories = async () => {
@@ -133,9 +91,15 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
           notFound();
         } else {
           setPost(fetchedPost);
+          // Convert HTML back to something editable.
+          // A real implementation would use a library for this.
+          // For now, we'll strip HTML for the text area.
           const plainTextContent = fetchedPost.content.replace(/<[^>]*>?/gm, '');
           const postData = { ...fetchedPost, content: plainTextContent };
           reset(postData);
+           if (editorRef.current) {
+            editorRef.current.updateHtml(postData.content);
+          }
         }
       } catch (error) {
          toast({ variant: 'destructive', title: 'Gagal memuat data' });
@@ -319,7 +283,6 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
                             </Button>
                         </div>
                         <RichTextEditor
-                            // @ts-ignore
                             ref={editorRef}
                             value={getValues('content')}
                             onChange={(newContent) => setValue('content', newContent)}

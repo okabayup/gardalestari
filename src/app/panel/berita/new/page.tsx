@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Image as ImageIcon, Wand2 } from 'lucide-react';
+import { Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { createBeritaPost, BeritaPost } from '@/app/actions/berita';
 import { useAuth } from '@/hooks/use-auth';
@@ -19,46 +19,9 @@ import { marked } from 'marked';
 import { Separator } from '@/components/ui/separator';
 import { getBeritaCategories, BeritaCategory } from '@/app/actions/berita-kategori';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import RichTextEditor from '@/components/panel/RichTextEditor';
 
 type FormData = Omit<BeritaPost, 'id' | 'author' | 'date' | 'excerpt'>;
-
-const RichTextEditor = ({ value, onChange }: { value: string, onChange: (value: string) => void }) => {
-    const editorRef = useRef<HTMLDivElement>(null);
-    const [htmlValue, setHtmlValue] = useState(marked(value));
-
-    const handleInput = () => {
-        if (editorRef.current) {
-            onChange(editorRef.current.innerText); // Store as plain text/markdown
-        }
-    };
-    
-    // Update innerHTML when the value prop changes from outside
-    const updateHtml = (markdownText: string) => {
-      if (editorRef.current) {
-        const newHtml = marked(markdownText);
-        setHtmlValue(newHtml as string);
-        editorRef.current.innerHTML = newHtml as string;
-      }
-    };
-    
-    // Expose updateHtml to parent
-    React.useImperativeHandle(editorRef, () => ({
-      ...editorRef.current,
-      updateHtml,
-    }));
-
-
-    return (
-        <div
-            ref={editorRef}
-            onInput={handleInput}
-            contentEditable
-            suppressContentEditableWarning
-            className="prose dark:prose-invert min-h-[300px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            dangerouslySetInnerHTML={{ __html: htmlValue as string }}
-        />
-    );
-};
 
 const AnalysisPanel = ({ analysis }: { analysis: EnhanceTextOutput | null }) => {
   if (!analysis) {
@@ -69,12 +32,6 @@ const AnalysisPanel = ({ analysis }: { analysis: EnhanceTextOutput | null }) => 
       </div>
     );
   }
-
-  const getScoreColor = (score: number) => {
-    if (score < 50) return 'bg-red-500';
-    if (score < 80) return 'bg-yellow-500';
-    return 'bg-green-500';
-  };
 
   return (
     <Card className="h-full">
@@ -126,7 +83,7 @@ export default function NewBeritaPostPage() {
     }
   });
 
-  const editorRef = useRef<{ updateHtml: (markdown: string) => void }>(null);
+  const editorRef = useRef<{ updateHtml: (markdown: string) => void; editor: HTMLDivElement | null }>(null);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -301,7 +258,6 @@ export default function NewBeritaPostPage() {
                             </Button>
                         </div>
                         <RichTextEditor
-                            // @ts-ignore
                             ref={editorRef}
                             value={getValues('content')}
                             onChange={(newContent) => setValue('content', newContent)}
@@ -318,5 +274,3 @@ export default function NewBeritaPostPage() {
     </form>
   );
 }
-
-    
