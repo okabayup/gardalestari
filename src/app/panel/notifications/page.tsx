@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -44,7 +44,7 @@ const UserSearch = ({ onAddUser }: { onAddUser: (user: PublicUser) => void }) =>
     const [results, setResults] = useState<PublicUser[]>([]);
     const [loading, setLoading] = useState(false);
 
-    React.useEffect(() => {
+    useEffect(() => {
         const fetchUsers = async () => {
             if (debouncedSearch.length < 2) {
                 setResults([]);
