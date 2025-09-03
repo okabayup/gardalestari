@@ -74,7 +74,7 @@ const newsGeneratorFlow = ai.defineFlow(
     const hints = Array.from(output.content.matchAll(regex), match => match[1]);
 
     if (hints.length === 0) {
-      throw new Error('AI gagal membuat petunjuk gambar. Coba lagi dengan deskripsi yang berbeda.');
+      throw new Error('AI gagal membuat petunjuk gambar. Coba lagi dengan deskripsi yang lebih detail.');
     }
     
     // Generate the cover image using the first hint
