@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,6 @@ import { useAuth } from '@/hooks/use-auth';
 import { enhanceText, EnhanceTextOutput } from '@/ai/flows/enhance-text-flow';
 import { generateImage } from '@/ai/flows/image-generate-flow';
 import { Progress } from '@/components/ui/progress';
-import { marked } from 'marked';
 import { Separator } from '@/components/ui/separator';
 import { getBeritaCategories, BeritaCategory } from '@/app/actions/berita-kategori';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -83,8 +82,6 @@ export default function NewBeritaPostPage() {
     }
   });
 
-  const editorRef = useRef<{ updateHtml: (markdown: string) => void; editor: HTMLDivElement | null }>(null);
-
   useEffect(() => {
     const fetchCategories = async () => {
       const fetchedCategories = await getBeritaCategories();
@@ -116,7 +113,6 @@ export default function NewBeritaPostPage() {
       setValue('title', result.suggestedTitle);
       setValue('slug', generateSlug(result.suggestedTitle));
       setValue('content', result.improvedText);
-      editorRef.current?.updateHtml(result.improvedText);
       toast({ title: 'Teks disempurnakan!', description: 'Konten, judul, dan analisis telah diperbarui oleh AI.' });
     } catch (error) {
       toast({ variant: 'destructive', title: 'Gagal', description: (error as Error).message });
@@ -158,8 +154,8 @@ export default function NewBeritaPostPage() {
         date: new Date().toISOString(),
         imageUrl: data.imageUrl,
         imageHint: data.imageHint,
-        content: marked(data.content) as string, // Simpan sebagai HTML
-        excerpt: data.content.substring(0, 150) + '...',
+        content: data.content,
+        excerpt: data.content.replace(/<[^>]*>?/gm, '').substring(0, 150) + '...',
         category: data.category,
       };
       await createBeritaPost(newPost);
@@ -257,10 +253,15 @@ export default function NewBeritaPostPage() {
                                 Sempurnakan dengan AI
                             </Button>
                         </div>
-                        <RichTextEditor
-                            ref={editorRef}
-                            value={getValues('content')}
-                            onChange={(newContent) => setValue('content', newContent)}
+                        <Controller
+                            name="content"
+                            control={control}
+                            render={({ field }) => (
+                                <RichTextEditor
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                />
+                            )}
                         />
                     </div>
                 </CardContent>

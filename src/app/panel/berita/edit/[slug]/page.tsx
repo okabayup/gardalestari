@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,6 @@ import { getBeritaPost, updateBeritaPost, BeritaPost } from '@/app/actions/berit
 import { enhanceText, EnhanceTextOutput } from '@/ai/flows/enhance-text-flow';
 import { generateImage } from '@/ai/flows/image-generate-flow';
 import { Progress } from '@/components/ui/progress';
-import { marked } from 'marked';
 import { Separator } from '@/components/ui/separator';
 import { getBeritaCategories, BeritaCategory } from '@/app/actions/berita-kategori';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -74,7 +73,6 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
   const [aiAnalysis, setAiAnalysis] = useState<EnhanceTextOutput | null>(null);
 
   const { register, handleSubmit, reset, setValue, getValues, control } = useForm<FormData>();
-  const editorRef = useRef<{ updateHtml: (markdown: string) => void; editor: HTMLDivElement | null }>(null);
 
   useEffect(() => {
     const fetchPostAndCategories = async () => {
@@ -91,15 +89,7 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
           notFound();
         } else {
           setPost(fetchedPost);
-          // Convert HTML back to something editable.
-          // A real implementation would use a library for this.
-          // For now, we'll strip HTML for the text area.
-          const plainTextContent = fetchedPost.content.replace(/<[^>]*>?/gm, '');
-          const postData = { ...fetchedPost, content: plainTextContent };
-          reset(postData);
-           if (editorRef.current) {
-            editorRef.current.updateHtml(postData.content);
-          }
+          reset(fetchedPost);
         }
       } catch (error) {
          toast({ variant: 'destructive', title: 'Gagal memuat data' });
@@ -133,7 +123,6 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
       setValue('title', result.suggestedTitle);
       setValue('slug', generateSlug(result.suggestedTitle));
       setValue('content', result.improvedText);
-      editorRef.current?.updateHtml(result.improvedText);
       toast({ title: 'Teks disempurnakan!', description: 'Konten telah diperbarui oleh AI.' });
     } catch (error) {
       toast({ variant: 'destructive', title: 'Gagal', description: (error as Error).message });
@@ -170,8 +159,7 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
     
     const updatedData: Partial<BeritaPost> = {
         ...data,
-        content: marked(data.content) as string, // Convert back to HTML
-        excerpt: data.content.substring(0, 150) + '...'
+        excerpt: data.content.replace(/<[^>]*>?/gm, '').substring(0, 150) + '...'
     };
 
     try {
@@ -282,10 +270,15 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
                                 Sempurnakan dengan AI
                             </Button>
                         </div>
-                        <RichTextEditor
-                            ref={editorRef}
-                            value={getValues('content')}
-                            onChange={(newContent) => setValue('content', newContent)}
+                        <Controller
+                            name="content"
+                            control={control}
+                            render={({ field }) => (
+                                <RichTextEditor
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                />
+                            )}
                         />
                     </div>
                 </CardContent>

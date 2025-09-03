@@ -53,7 +53,7 @@ export default async function BeritaPostPage({ params }: { params: { slug: strin
             </div>
           </div>
           <div
-            className="prose prose-green dark:prose-invert mt-8 max-w-none"
+            className="prose dark:prose-invert mt-8 max-w-none prose-h1:font-headline prose-h2:font-headline prose-p:text-base prose-p:leading-relaxed prose-a:text-primary hover:prose-a:underline"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
         </div>
