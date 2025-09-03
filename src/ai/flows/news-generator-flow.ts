@@ -99,6 +99,10 @@ const newsGeneratorFlow = ai.defineFlow(
     });
 
     const coverImageUrl = imageUrls[0];
+    if (!coverImageUrl) {
+      throw new Error('Gagal membuat gambar sampul. URL gambar sampul tidak tersedia.');
+    }
+
 
     // Return the final combined output
     return {

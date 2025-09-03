@@ -48,12 +48,24 @@ export async function getBeritaPost(slug: string) {
 // Create a new berita post
 export async function createBeritaPost(post: Omit<BeritaPost, 'id'>) {
   try {
-    await addDoc(beritaPostsCollection, post);
+    const postData = {
+      ...post,
+      title: post.title || 'Judul Default',
+      slug: post.slug || 'slug-default',
+      content: post.content || '<p>Konten default.</p>',
+      author: post.author || 'Admin',
+      date: post.date || new Date().toISOString(),
+      imageUrl: post.imageUrl || '',
+      imageHint: post.imageHint || '',
+      excerpt: post.excerpt || '',
+      category: post.category || 'Umum'
+    };
+    await addDoc(beritaPostsCollection, postData);
     revalidatePath('/panel/berita');
     revalidatePath('/berita');
   } catch (error) {
     console.error("Error creating berita post:", error);
-    throw new Error("Gagal membuat berita.");
+    throw new Error("Gagal membuat berita. Pastikan semua data terisi dengan benar.");
   }
 }
 

@@ -92,7 +92,7 @@ export default function GenerateBeritaPage() {
     <div className="space-y-6">
        <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-headline text-2xl font-bold">Generator Berita AI</h1>
+          <h1 className="font-headline text-2xl font-bold">News Full Generator</h1>
           <p className="text-muted-foreground">Buat draf berita lengkap dengan gambar hanya dengan satu klik.</p>
         </div>
         <Button variant="outline" onClick={() => router.push('/panel/berita')}>

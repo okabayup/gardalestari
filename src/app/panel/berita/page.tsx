@@ -147,7 +147,7 @@ export default function AdminBeritaPage() {
                       <TableCell className="font-medium">{post.title}</TableCell>
                       <TableCell><Badge variant="secondary">{post.category}</Badge></TableCell>
                       <TableCell className="hidden md:table-cell">{post.author}</TableCell>
-                      <TableCell className="hidden md:table-cell">{post.date}</TableCell>
+                      <TableCell className="hidden md:table-cell">{new Date(post.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
