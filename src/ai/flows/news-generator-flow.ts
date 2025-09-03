@@ -11,6 +11,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { generateImage } from './image-generate-flow';
+import { storage } from '@/lib/firebase';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 
 const NewsGeneratorInputSchema = z.object({
   topic: z.string().optional().describe('The topic of the news article. If empty, the AI will generate one.'),
@@ -80,15 +82,26 @@ const newsGeneratorFlow = ai.defineFlow(
     }
     
     // Generate all images in parallel
-    const imagePromises = hints.map(hint => generateImage({ prompt: hint }));
-    const imageResults = await Promise.all(imagePromises);
+    const imageGenerationPromises = hints.map(hint => generateImage({ prompt: hint }));
+    const imageResults = await Promise.all(imageGenerationPromises);
     
-    const imageUrls = imageResults.map(res => res.imageUrl);
+    // Upload generated images to Firebase Storage and get URLs
+    const imageUrlPromises = imageResults.map(async (result, index) => {
+        if (!result.imageUrl) {
+            throw new Error(`Gambar untuk petunjuk "${hints[index]}" gagal dibuat.`);
+        }
+        const storageRef = ref(storage, `news-images/${Date.now()}_${index}.png`);
+        await uploadString(storageRef, result.imageUrl, 'data_url');
+        return getDownloadURL(storageRef);
+    });
+
+    const imageUrls = await Promise.all(imageUrlPromises);
+
     if (imageUrls.some(url => !url)) {
-        throw new Error('Satu atau lebih gambar gagal dibuat oleh AI.');
+        throw new Error('Satu atau lebih gambar gagal diunggah ke penyimpanan.');
     }
 
-    // Replace placeholders with actual image tags
+    // Replace placeholders with actual image tags using the public URLs
     let finalContent = output.content;
     const placeholders = Array.from(output.content.matchAll(regex), match => match[0]);
 
