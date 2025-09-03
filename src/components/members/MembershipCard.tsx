@@ -24,16 +24,17 @@ export default function MembershipCard({ name, photoUrl, memberId, nik, profileU
 
     return (
         <Card className="w-full max-w-sm bg-white text-foreground shadow-lg relative overflow-hidden border-2 border-gray-100">
-             <div className="absolute top-0 left-0 w-full h-24 bg-primary/80" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 60%, 0 100%)' }}></div>
+             <div className="absolute top-0 left-0 w-full h-24 bg-primary" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 60%, 0 100%)' }}></div>
              <div className="absolute inset-0 bg-[url(/logo.png)] bg-repeat bg-center opacity-[0.02]"></div>
 
-            <CardHeader className="relative z-10 pt-4 px-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                         <Image src="/logo.png" alt="Garda Lestari Logo" width={32} height={32} className="bg-white/50 rounded-full p-1" />
-                        <CardTitle className="font-headline text-xl text-white">Garda Lestari</CardTitle>
+            <CardHeader className="relative z-10 pt-4 px-4 text-center">
+                <div className="flex items-center justify-center gap-2">
+                     <div className="bg-white/90 rounded-full p-1 w-10 h-10 flex items-center justify-center">
+                        <Image src="/logo.png" alt="Garda Lestari Logo" width={32} height={32} />
                     </div>
+                    <CardTitle className="font-headline text-xl text-white">Garda Lestari</CardTitle>
                 </div>
+                 <p className="text-xs text-white/80 font-medium tracking-wider">KARTU TANDA ANGGOTA</p>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4 relative z-10 p-4 pt-8 text-center">
                 <Avatar className="h-28 w-28 border-4 border-white shadow-md -mt-16">
