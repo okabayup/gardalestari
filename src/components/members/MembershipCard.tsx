@@ -32,9 +32,9 @@ export default function MembershipCard({ name, photoUrl, memberId, nik, profileU
                      <div className="bg-white/90 rounded-full p-1 w-10 h-10 flex items-center justify-center">
                         <Image src="/logo.png" alt="Garda Lestari Logo" width={32} height={32} />
                     </div>
-                    <CardTitle className="font-headline text-xl text-white">Garda Lestari</CardTitle>
+                    <CardTitle className="font-headline text-xl text-primary">Garda Lestari</CardTitle>
                 </div>
-                 <p className="text-xs text-white/80 font-medium tracking-wider">KARTU TANDA ANGGOTA</p>
+                 <p className="text-sm text-primary/90 font-bold tracking-widest mt-1">E-KTA</p>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4 relative z-10 p-4 pt-8 text-center">
                 <Avatar className="h-28 w-28 border-4 border-white shadow-md -mt-16">
