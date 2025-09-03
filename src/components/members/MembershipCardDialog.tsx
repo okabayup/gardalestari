@@ -1,13 +1,13 @@
 
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import MembershipCard from './MembershipCard';
 import type { User } from 'firebase/auth';
 import { Button } from '../ui/button';
 import { toPng } from 'html-to-image';
-import { Download } from 'lucide-react';
+import { Download, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface MembershipCardDialogProps {
@@ -26,6 +26,50 @@ interface MembershipCardDialogProps {
 export default function MembershipCardDialog({ isOpen, onClose, user }: MembershipCardDialogProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const [localPhotoUrl, setLocalPhotoUrl] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(true);
+
+  useEffect(() => {
+    if (isOpen && user.photoURL) {
+      setIsImageLoading(true);
+      
+      const convertImageToLocalUrl = async () => {
+        try {
+          // Fetch the image from the original URL
+          const response = await fetch(user.photoURL as string);
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          const imageBlob = await response.blob();
+          // Create a local URL for the blob
+          const localUrl = URL.createObjectURL(imageBlob);
+          setLocalPhotoUrl(localUrl);
+        } catch (error) {
+          console.error("Failed to fetch and create local URL for image:", error);
+          // Fallback to original URL if fetching fails
+          setLocalPhotoUrl(user.photoURL); 
+          toast({
+            variant: 'destructive',
+            title: 'Gagal Memuat Gambar',
+            description: 'Menggunakan gambar asli, unduhan mungkin gagal.'
+          })
+        } finally {
+          setIsImageLoading(false);
+        }
+      };
+
+      convertImageToLocalUrl();
+    }
+
+    // Cleanup function to revoke the object URL when the component unmounts or the dialog closes
+    return () => {
+      if (localPhotoUrl && localPhotoUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(localPhotoUrl);
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, user.photoURL]);
 
   if (!user) return null;
   
@@ -45,27 +89,27 @@ export default function MembershipCardDialog({ isOpen, onClose, user }: Membersh
   }
   
   const getProfileUrl = () => {
-    // Make sure to use the correct domain in production
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
     return `${baseUrl}/profile/${user.username}`;
   }
 
   const handleDownload = async () => {
     if (!cardRef.current) return;
+    setIsDownloading(true);
     try {
         const dataUrl = await toPng(cardRef.current, { 
             cacheBust: true,
-            // Filter out external stylesheets to prevent CORS errors
+            pixelRatio: 2, // Increase quality
+            // Filter out external stylesheets to prevent CORS errors with fonts
             filter: (node) => {
               if (node.tagName === 'LINK' && node.getAttribute('rel') === 'stylesheet') {
-                  const href = node.getAttribute('href');
-                  return href ? !href.startsWith('https://fonts.googleapis.com') : true;
+                  return false;
               }
               return true;
             }
         });
         const link = document.createElement('a');
-        link.download = `kta-${user.username}.png`;
+        link.download = `KTA-${user.username || 'GardaLestari'}.png`;
         link.href = dataUrl;
         link.click();
     } catch (err) {
@@ -73,22 +117,24 @@ export default function MembershipCardDialog({ isOpen, onClose, user }: Membersh
         toast({
             variant: 'destructive',
             title: 'Gagal Mengunduh',
-            description: 'Terjadi kesalahan saat membuat gambar KTA.'
+            description: 'Terjadi kesalahan saat membuat gambar KTA. Coba lagi nanti.'
         })
+    } finally {
+      setIsDownloading(false);
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-transparent border-none shadow-none max-w-sm p-0">
-        <DialogHeader>
-          {/* This title is visually hidden but required for accessibility */}
-          <DialogTitle className="sr-only">Kartu Tanda Anggota</DialogTitle>
+         <DialogHeader>
+          <DialogTitle>Kartu Tanda Anggota</DialogTitle>
+          <p className="sr-only">Tinjau atau unduh Kartu Tanda Anggota Elektronik Anda.</p>
         </DialogHeader>
         <div ref={cardRef}>
             <MembershipCard 
                 name={user.displayName || 'Anggota'}
-                photoUrl={user.photoURL || ''}
+                photoUrl={localPhotoUrl || ''} // Use the local URL
                 memberId={getMemberId()}
                 nik={user.nik}
                 profileUrl={getProfileUrl()}
@@ -98,9 +144,12 @@ export default function MembershipCardDialog({ isOpen, onClose, user }: Membersh
             />
         </div>
          <DialogFooter className="pt-4">
-            <Button onClick={handleDownload} className="w-full">
-                <Download className="mr-2 h-4 w-4" />
-                Unduh Kartu
+            <Button onClick={handleDownload} className="w-full" disabled={isDownloading || isImageLoading}>
+                {(isDownloading || isImageLoading) ? 
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 
+                  <Download className="mr-2 h-4 w-4" />
+                }
+                {isImageLoading ? 'Memuat Gambar...' : isDownloading ? 'Mengunduh...' : 'Unduh Kartu'}
             </Button>
         </DialogFooter>
       </DialogContent>
