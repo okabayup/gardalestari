@@ -76,7 +76,7 @@ export default function GenerateBeritaPage() {
       toast({ title: 'Berita dan gambar berhasil dibuat!', description: 'Silakan tinjau dan simpan.' });
 
     } catch (error) {
-      console.error(error);
+      console.error("Error during news generation:", error);
       toast({ variant: 'destructive', title: 'Gagal membuat berita', description: (error as Error).message });
     } finally {
       setLoading(false);
@@ -106,6 +106,7 @@ export default function GenerateBeritaPage() {
       });
       router.push('/panel/berita');
     } catch (error) {
+      console.error("Error saving news post:", error);
       toast({
         variant: 'destructive',
         title: 'Gagal Menyimpan',
