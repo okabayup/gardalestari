@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useRouter, notFound } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { getBeritaPost, updateBeritaPost, BeritaPost } from '@/app/actions/berita';

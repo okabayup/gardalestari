@@ -1,13 +1,13 @@
 
 'use client';
 
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useRef } from 'react';
 import { Loader2, Sparkles, Image as ImageIcon, Wand2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { createBeritaPost, BeritaPost } from '@/app/actions/berita';
