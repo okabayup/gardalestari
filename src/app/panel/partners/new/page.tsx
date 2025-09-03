@@ -8,18 +8,18 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Image as ImageIcon } from 'lucide-react';
-import { createPartner } from '@/app/actions/partners';
+import { Loader2 } from 'lucide-react';
+import { createPartner, Partner } from '@/app/actions/partners';
 import Image from 'next/image';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Nama wajib diisi'),
   websiteUrl: z.string().url('URL website tidak valid'),
-  logo: z.any().refine(files => files?.length === 1, "Logo wajib diunggah."),
+  logoUrl: z.string().url('URL logo wajib diisi'),
   isFeatured: z.boolean().default(false),
 });
 
@@ -29,7 +29,6 @@ export default function NewPartnerPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   const {
     control,
@@ -37,41 +36,30 @@ export default function NewPartnerPage() {
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm<FormData>({ resolver: zodResolver(formSchema) });
+  } = useForm<FormData>({ 
+      resolver: zodResolver(formSchema),
+      defaultValues: {
+          isFeatured: false,
+          name: '',
+          websiteUrl: '',
+          logoUrl: ''
+      }
+  });
 
-  const logoFile = watch('logo');
-  
-  if (logoFile && logoFile[0] && typeof logoFile[0] !== 'string') {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setLogoPreview(reader.result as string);
-    };
-    reader.readAsDataURL(logoFile[0]);
-  }
-
+  const logoUrl = watch('logoUrl');
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
-    const reader = new FileReader();
-    reader.readAsDataURL(data.logo[0]);
-    reader.onload = async () => {
-        try {
-            const logoDataUrl = reader.result as string;
-            const partnerPayload = {
-                name: data.name,
-                websiteUrl: data.websiteUrl,
-                isFeatured: data.isFeatured,
-            };
-            await createPartner(partnerPayload, logoDataUrl);
-            toast({ title: 'Mitra berhasil ditambahkan!' });
-            router.push('/panel/partners');
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Gagal menambahkan mitra', description: (error as Error).message });
-            setLoading(false);
-        }
-    };
-    reader.onerror = () => {
-        toast({ variant: 'destructive', title: 'Gagal membaca file logo' });
+    try {
+        const partnerPayload: Omit<Partner, 'id'> = {
+            ...data
+        };
+        await createPartner(partnerPayload);
+        toast({ title: 'Mitra berhasil ditambahkan!' });
+        router.push('/panel/partners');
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Gagal menambahkan mitra', description: (error as Error).message });
+    } finally {
         setLoading(false);
     }
   };
@@ -108,16 +96,14 @@ export default function NewPartnerPage() {
             {errors.websiteUrl && <p className="text-sm text-destructive">{errors.websiteUrl.message}</p>}
           </div>
            <div className="space-y-2">
-            <Label htmlFor="logo">Logo Mitra</Label>
-            {logoPreview ? (
-                <Image src={logoPreview} alt="Logo preview" width={120} height={60} className="object-contain border p-2 rounded-md" />
-            ) : (
-                <div className="w-32 h-16 flex items-center justify-center bg-muted rounded-md">
-                    <ImageIcon className="h-8 w-8 text-muted-foreground"/>
+            <Label htmlFor="logoUrl">URL Logo</Label>
+            <Input id="logoUrl" type="url" {...register('logoUrl')} placeholder="https://example.com/logo.png" />
+            {errors.logoUrl && <p className="text-sm text-destructive">{errors.logoUrl.message}</p>}
+            {logoUrl && (
+                <div className="mt-2">
+                    <Image src={logoUrl} alt="Pratinjau logo" width={120} height={60} className="object-contain border p-2 rounded-md bg-white" />
                 </div>
             )}
-            <Input id="logo" type="file" {...register('logo')} accept="image/png, image/jpeg, image/svg+xml" />
-            {errors.logo && <p className="text-sm text-destructive">{(errors.logo as any).message}</p>}
           </div>
            <div className="flex items-center space-x-2 pt-2">
               <Controller

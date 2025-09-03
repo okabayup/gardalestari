@@ -19,7 +19,7 @@ import Image from 'next/image';
 const formSchema = z.object({
   name: z.string().min(1, 'Nama wajib diisi'),
   websiteUrl: z.string().url('URL website tidak valid'),
-  logo: z.any().optional(),
+  logoUrl: z.string().url('URL logo tidak valid'),
   isFeatured: z.boolean().default(false),
 });
 
@@ -32,7 +32,6 @@ export default function EditPartnerPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   const {
     control,
@@ -43,16 +42,8 @@ export default function EditPartnerPage() {
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(formSchema) });
 
-  const logoFile = watch('logo');
+  const logoUrl = watch('logoUrl');
   
-  useEffect(() => {
-    if (logoFile && logoFile[0]) {
-      const reader = new FileReader();
-      reader.onloadend = () => setLogoPreview(reader.result as string);
-      reader.readAsDataURL(logoFile[0]);
-    }
-  }, [logoFile]);
-
   useEffect(() => {
     const fetchPartner = async () => {
       setPageLoading(true);
@@ -60,7 +51,6 @@ export default function EditPartnerPage() {
         const partner = await getPartner(partnerId);
         if (partner) {
           reset(partner);
-          setLogoPreview(partner.logoUrl);
         } else {
           toast({ variant: 'destructive', title: 'Mitra tidak ditemukan' });
           router.push('/panel/partners');
@@ -77,23 +67,7 @@ export default function EditPartnerPage() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-        const partnerPayload: Partial<Omit<FormData, 'logo'>> = {
-            name: data.name,
-            websiteUrl: data.websiteUrl,
-            isFeatured: data.isFeatured,
-        };
-
-        let logoDataUrl: string | undefined;
-        if (data.logo && data.logo[0]) {
-            logoDataUrl = await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(data.logo[0]);
-                reader.onload = () => resolve(reader.result as string);
-                reader.onerror = error => reject(error);
-            });
-        }
-        
-        await updatePartner(partnerId, partnerPayload, logoDataUrl);
+        await updatePartner(partnerId, data);
         toast({ title: 'Mitra berhasil diperbarui!' });
         router.push('/panel/partners');
     } catch (error) {
@@ -137,16 +111,14 @@ export default function EditPartnerPage() {
             {errors.websiteUrl && <p className="text-sm text-destructive">{errors.websiteUrl.message}</p>}
           </div>
            <div className="space-y-2">
-            <Label htmlFor="logo">Ganti Logo Mitra</Label>
-            {logoPreview ? (
-                <Image src={logoPreview} alt="Logo preview" width={120} height={60} className="object-contain border p-2 rounded-md" />
-            ) : (
-                <div className="w-32 h-16 flex items-center justify-center bg-muted rounded-md">
-                    <ImageIcon className="h-8 w-8 text-muted-foreground"/>
-                </div>
+            <Label htmlFor="logoUrl">URL Logo</Label>
+            <Input id="logoUrl" type="url" {...register('logoUrl')} placeholder="https://example.com/logo.png" />
+            {errors.logoUrl && <p className="text-sm text-destructive">{errors.logoUrl.message}</p>}
+            {logoUrl && (
+              <div className="mt-2">
+                 <Image src={logoUrl} alt="Pratinjau logo" width={120} height={60} className="object-contain border p-2 rounded-md bg-white" />
+              </div>
             )}
-            <Input id="logo" type="file" {...register('logo')} accept="image/png, image/jpeg, image/svg+xml" />
-            {errors.logo && <p className="text-sm text-destructive">{(errors.logo as any).message}</p>}
           </div>
            <div className="flex items-center space-x-2 pt-2">
               <Controller
