@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { VerifiedBadge } from '@/components/members/VerifiedBadge';
 import { Badge } from '@/components/ui/badge';
 import QRCode from 'qrcode.react';
+import { cn } from '@/lib/utils';
 
 const ProfileInfoRow = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string | undefined }) => {
     if (!value) return null;
