@@ -103,11 +103,11 @@ export default function AdminBeritaPage() {
           <div className="flex gap-2">
              <Button variant="outline" onClick={() => router.push('/panel/berita/generate')}>
                 <Sparkles className="mr-2 h-4 w-4" />
-                Buat dengan AI
+                News Full Generator
             </Button>
             <Button onClick={() => router.push('/panel/berita/new')}>
               <PlusCircle className="mr-2 h-4 w-4" />
-              Tulis Manual
+              Editor Cerdas
             </Button>
           </div>
         </div>
