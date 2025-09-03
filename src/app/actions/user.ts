@@ -2,7 +2,10 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, DocumentData, limit } from 'firebase/firestore';
+import { collection, query, where, getDocs, DocumentData, limit, getDoc, doc } from 'firebase/firestore';
+import type { MemberWithStatus, MemberType } from './members';
+import type { Position } from '@/lib/definitions';
+
 
 export interface PublicUser {
   id: string;
@@ -11,6 +14,11 @@ export interface PublicUser {
   avatarUrl: string;
   level: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
 }
+
+export interface PublicProfile extends MemberWithStatus {
+    // This interface just combines the existing types for clarity.
+}
+
 
 /**
  * Checks if a username already exists in the database.
@@ -32,14 +40,14 @@ export async function checkUsernameExists(username: string): Promise<boolean> {
 }
 
 /**
- * Gets public user data by username.
+ * Gets public user data by username for KTA verification.
  * @param username The username to fetch.
- * @returns {Promise<PublicUser | null>} The public user data or null if not found.
+ * @returns {Promise<PublicProfile | null>} The public user data or null if not found.
  */
-export async function getUserByUsername(username: string): Promise<PublicUser | null> {
+export async function getUserByUsername(username: string): Promise<PublicProfile | null> {
     if (!username) return null;
     try {
-        const q = query(collection(db, 'users'), where('username', '==', username));
+        const q = query(collection(db, 'users'), where('username', '==', username), limit(1));
         const querySnapshot = await getDocs(q);
         
         if (querySnapshot.empty) {
@@ -49,12 +57,37 @@ export async function getUserByUsername(username: string): Promise<PublicUser | 
         const userDoc = querySnapshot.docs[0];
         const data = userDoc.data();
 
+         let positionName = 'Anggota';
+         if (data.positionId) {
+            const positionDoc = await getDoc(doc(db, 'positions', data.positionId));
+            if (positionDoc.exists()) {
+                positionName = (positionDoc.data() as Position).name;
+            }
+         }
+
+        let joinDate: string | undefined;
+        if (data.createdAt && typeof data.createdAt.toDate === 'function') {
+            joinDate = data.createdAt.toDate().toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+            });
+        }
+
         return {
             id: userDoc.id,
+            name: data.fullName || data.displayName || 'Nama Tidak Diketahui',
             username: data.username,
-            fullName: data.fullName || data.displayName,
             avatarUrl: data.avatarUrl,
             level: data.level || 'Bronze',
+            phoneNumber: data.phoneNumber || 'N/A',
+            verificationStatus: data.verificationStatus || 'unverified',
+            position: positionName,
+            positionId: data.positionId,
+            type: data.type,
+            region: data.region,
+            joinDate: joinDate,
+            permissions: [], // Permissions are not needed for public profile
         };
 
     } catch (error) {
