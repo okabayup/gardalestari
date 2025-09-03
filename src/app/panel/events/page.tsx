@@ -37,6 +37,10 @@ export default function AdminEventsPage() {
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<Event | null>(null);
 
+  // TODO: Replace with real permission check
+  const canCreate = true; // user.permissions.includes('manage_events');
+  const canDelete = true; // user.permissions.includes('delete_events');
+
   const fetchEvents = async () => {
       setLoading(true);
       try {
@@ -90,10 +94,12 @@ export default function AdminEventsPage() {
             <h1 className="font-headline text-2xl font-bold">Manajemen Acara</h1>
             <p className="text-muted-foreground">Buat, edit, dan kelola semua acara.</p>
           </div>
-          <Button onClick={() => router.push('/panel/events/new')}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Buat Acara Baru
-          </Button>
+          {canCreate && (
+            <Button onClick={() => router.push('/panel/events/new')}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Buat Acara Baru
+            </Button>
+          )}
         </div>
         <Card>
           <CardHeader>
@@ -135,10 +141,12 @@ export default function AdminEventsPage() {
                             <DropdownMenuItem onClick={() => router.push(`/panel/events/edit/${event.id}`)}>
                               Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(event)}>
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Hapus
-                            </DropdownMenuItem>
+                            {canDelete && (
+                                <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(event)}>
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Hapus
+                                </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

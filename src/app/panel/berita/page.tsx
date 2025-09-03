@@ -29,7 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from '@/components/ui/badge';
 
-const ADMIN_PHONE_NUMBER = '+6285176752610';
+// const ADMIN_PHONE_NUMBER = '+6285176752610';
 
 export default function AdminBeritaPage() {
   const router = useRouter();
@@ -41,7 +41,10 @@ export default function AdminBeritaPage() {
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [postToDelete, setPostToDelete] = useState<BeritaPost | null>(null);
 
-  const isAdmin = user?.phoneNumber === ADMIN_PHONE_NUMBER;
+  // TODO: Replace with real permission check
+  const canCreate = true; // user.permissions.includes('manage_news');
+  const canDelete = true; // user.permissions.includes('delete_news');
+
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -100,16 +103,18 @@ export default function AdminBeritaPage() {
             <h1 className="font-headline text-2xl font-bold">Manajemen Berita</h1>
             <p className="text-muted-foreground">Buat, edit, dan kelola semua artikel berita.</p>
           </div>
-          <div className="flex gap-2">
-             <Button variant="outline" onClick={() => router.push('/panel/berita/generate')}>
-                <Sparkles className="mr-2 h-4 w-4" />
-                News Full Generator
-            </Button>
-            <Button onClick={() => router.push('/panel/berita/new')}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Editor Cerdas
-            </Button>
-          </div>
+          {canCreate && (
+             <div className="flex gap-2">
+                <Button variant="outline" onClick={() => router.push('/panel/berita/generate')}>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    News Full Generator
+                </Button>
+                <Button onClick={() => router.push('/panel/berita/new')}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Editor Cerdas
+                </Button>
+            </div>
+          )}
         </div>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -160,7 +165,7 @@ export default function AdminBeritaPage() {
                             <DropdownMenuItem onClick={() => router.push(`/panel/berita/edit/${post.slug}`)}>
                               Edit
                             </DropdownMenuItem>
-                            {isAdmin && (
+                            {canDelete && (
                                 <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(post)}>

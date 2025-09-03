@@ -38,6 +38,10 @@ export default function AdminProgramsPage() {
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [programToDelete, setProgramToDelete] = useState<Program | null>(null);
 
+  // TODO: Replace with real permission check
+  const canCreate = true; // user.permissions.includes('manage_programs');
+  const canDelete = true; // user.permissions.includes('delete_programs');
+
   const fetchPrograms = async () => {
     setLoading(true);
     try {
@@ -91,10 +95,12 @@ export default function AdminProgramsPage() {
             <h1 className="font-headline text-2xl font-bold">Manajemen Program</h1>
             <p className="text-muted-foreground">Buat, edit, dan kelola semua program.</p>
           </div>
-          <Button onClick={() => router.push('/panel/programs/new')}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Buat Program Baru
-          </Button>
+          {canCreate && (
+             <Button onClick={() => router.push('/panel/programs/new')}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Buat Program Baru
+            </Button>
+          )}
         </div>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -145,10 +151,12 @@ export default function AdminProgramsPage() {
                             <DropdownMenuItem onClick={() => router.push(`/panel/programs/edit/${program.id}`)}>
                               Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(program)}>
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Hapus
-                            </DropdownMenuItem>
+                            {canDelete && (
+                                <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(program)}>
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Hapus
+                                </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
