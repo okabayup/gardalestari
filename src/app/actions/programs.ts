@@ -64,28 +64,27 @@ export async function getProgram(id: string): Promise<Program | null> {
 
 
 // Create a new program
-export async function createProgram(program: Omit<ProgramFormData, 'id'>, attachmentFile?: File, imageFile?: File) {
+export async function createProgram(programData: Omit<Program, 'id' | 'startDate' | 'endDate'>, attachmentFile?: File, imageFile?: File) {
   try {
-    const { startDate, endDate, ...rest } = program;
-    const programData: Omit<Program, 'id'> = {
-        ...rest,
-        startDate: Timestamp.fromDate(new Date(startDate)),
-        endDate: Timestamp.fromDate(new Date(endDate)),
+    const dataToCreate: Omit<Program, 'id'> = {
+        ...programData,
+        startDate: Timestamp.fromDate(new Date(programData.startDate)),
+        endDate: Timestamp.fromDate(new Date(programData.endDate)),
     };
 
     if (imageFile) {
         const imageRef = ref(storage, `program-images/${Date.now()}_${imageFile.name}`);
         await uploadBytes(imageRef, imageFile);
-        programData.imageUrl = await getDownloadURL(imageRef);
+        dataToCreate.imageUrl = await getDownloadURL(imageRef);
     }
 
     if (attachmentFile) {
         const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachmentFile.name}`);
         await uploadBytes(attachmentRef, attachmentFile);
-        programData.attachmentUrl = await getDownloadURL(attachmentRef);
-        programData.attachmentName = attachmentFile.name;
+        dataToCreate.attachmentUrl = await getDownloadURL(attachmentRef);
+        dataToCreate.attachmentName = attachmentFile.name;
     }
-    await addDoc(programsCollection, programData);
+    await addDoc(programsCollection, dataToCreate);
     revalidatePath('/panel/programs');
     revalidatePath('/programs');
   } catch (error) {

@@ -146,6 +146,7 @@ export default function NewProgramPage() {
             if (!result.imageUrl) throw new Error("AI gagal membuat gambar.");
             finalImageUrl = result.imageUrl;
         } catch (error) {
+            console.error("AI image generation error:", error);
             toast({ variant: 'destructive', title: 'Gagal membuat gambar AI', description: (error as Error).message });
             setLoading(false);
             setLoadingImage(false);
@@ -161,12 +162,18 @@ export default function NewProgramPage() {
         ...rest,
         startDate: dateRange.from,
         endDate: dateRange.to,
-        imageUrl: finalImageUrl || `https://picsum.photos/seed/${data.title.replace(/\s+/g, '-')}/600/400`
+        imageUrl: finalImageUrl || `https://picsum.photos/seed/${data.title.replace(/\s+/g, '-')}/600/400`,
+        imageHint: data.imageHint || ''
       };
-      await createProgram(programPayload, attachment?.[0], imageFile?.[0]);
+      
+      const imageFileToUpload = imageSource === 'upload' ? imageFile?.[0] : undefined;
+      
+      await createProgram(programPayload, attachment?.[0], imageFileToUpload);
+
       toast({ title: 'Program berhasil dibuat!' });
       router.push('/panel/programs');
     } catch (error) {
+      console.error("Error creating program:", error);
       toast({ variant: 'destructive', title: 'Gagal membuat program', description: (error as Error).message });
       setLoading(false);
     }
@@ -226,7 +233,7 @@ export default function NewProgramPage() {
                   <Controller name="dateRange" control={control} render={({ field }) => (
                       <Popover>
                           <PopoverTrigger asChild>
-                          <Button id="date" variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
+                          <Button id="date" variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value?.from && "text-muted-foreground")}>
                               <CalendarIcon className="mr-2 h-4 w-4" />
                               {field.value?.from ? (field.value.to ? (
                                   <>{format(field.value.from, "LLL dd, y")} - {format(field.value.to, "LLL dd, y")}</>

@@ -19,7 +19,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { format } from 'date-fns';
-import { getProgram, updateProgram, getProgramTags, ProgramTag } from '@/app/actions/programs';
+import { getProgram, updateProgram, getProgramTags, ProgramTag, ProgramFormData } from '@/app/actions/programs';
 import { getPartners, Partner } from '@/app/actions/partners';
 import { getForms, ProgramForm } from '@/app/actions/forms';
 import { generateImage } from '@/ai/flows/image-generate-flow';
@@ -170,6 +170,7 @@ export default function EditProgramPage() {
             if (!result.imageUrl) throw new Error("AI gagal membuat gambar.");
             finalImageUrl = result.imageUrl;
         } catch (error) {
+            console.error("AI image generation error:", error);
             toast({ variant: 'destructive', title: 'Gagal membuat gambar AI', description: (error as Error).message });
             setLoading(false);
             setLoadingImage(false);
@@ -180,16 +181,21 @@ export default function EditProgramPage() {
     
     try {
       const { dateRange, attachment, imageFile, imageSource, ...rest } = data;
-      const programPayload = {
+      const programPayload: Partial<ProgramFormData> = {
         ...rest,
         startDate: dateRange.from,
         endDate: dateRange.to,
-        imageUrl: data.imageSource === 'upload' ? data.imageUrl : finalImageUrl // Don't overwrite if uploading
+        imageUrl: data.imageSource !== 'upload' ? finalImageUrl : data.imageUrl, // Keep existing URL if not changing via upload
+        imageHint: data.imageHint || ''
       };
-      await updateProgram(programId, programPayload, attachment?.[0], imageFile?.[0]);
+
+      const imageFileToUpload = imageSource === 'upload' ? imageFile?.[0] : undefined;
+      
+      await updateProgram(programId, programPayload, attachment?.[0], imageFileToUpload);
       toast({ title: 'Program berhasil diperbarui!' });
       router.push('/panel/programs');
     } catch (error) {
+      console.error("Error updating program:", error);
       toast({ variant: 'destructive', title: 'Gagal memperbarui program', description: (error as Error).message });
       setLoading(false);
     }
