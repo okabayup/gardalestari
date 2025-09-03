@@ -13,6 +13,9 @@ import { getPartners } from './actions/partners';
 import { getBeritaPosts } from './actions/berita';
 import { Separator } from '@/components/ui/separator';
 import BeritaPostCard from '@/components/berita/BeritaPostCard';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import ProgramCard from '@/components/programs/ProgramCard';
 
 const StatCard = ({ icon, value, label }: { icon: React.ReactNode, value: string, label: string }) => (
     <div className="flex flex-col items-center text-center">
@@ -79,6 +82,7 @@ export default async function LandingPage() {
   const partners = await getPartners();
   const latestPosts = await getBeritaPosts();
   const featuredPartners = partners.filter(p => p.isFeatured);
+  const flagshipPrograms = programs.filter(p => p.category === 'flagship' && new Date() < p.endDate.toDate());
   const WHATSAPP_LINK = "https://wa.me/6285937010409";
 
   return (
@@ -193,20 +197,72 @@ export default async function LandingPage() {
           </div>
         </section>
 
+        {/* Flagship Programs Section */}
+        {flagshipPrograms.length > 0 && (
+          <section id="programs" className="w-full bg-secondary py-16 md:py-28">
+            <div className="container">
+              <div className="mb-14 text-center">
+                <span className="text-sm font-semibold uppercase text-primary">Program Unggulan</span>
+                <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl mt-2">Inisiatif Utama Kami</h2>
+                <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Lihat program-program unggulan yang sedang berjalan dan jadilah bagian dari dampaknya.</p>
+              </div>
+              
+              <div className="md:hidden"> {/* Carousel for Mobile */}
+                 <Carousel opts={{ loop: true, align: "start" }} className="w-full">
+                    <CarouselContent className="-ml-4">
+                      {flagshipPrograms.map((program) => (
+                        <CarouselItem key={program.id} className="pl-4 basis-4/5">
+                           <div className="p-1">
+                             <ProgramCard {...program} />
+                           </div>
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    <CarouselPrevious className="hidden sm:flex" />
+                    <CarouselNext className="hidden sm:flex" />
+                  </Carousel>
+              </div>
+
+              <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6"> {/* Grid for Desktop */}
+                 {flagshipPrograms.slice(0, 3).map((program) => (
+                    <ProgramCard key={program.id} {...program} />
+                  ))}
+              </div>
+
+            </div>
+          </section>
+        )}
+
+
         {/* Latest News Section */}
         {latestPosts.length > 0 && (
-          <section id="news" className="w-full bg-secondary py-16 md:py-28">
+          <section id="news" className="w-full bg-background py-16 md:py-28">
             <div className="container">
               <div className="mb-14 text-center">
                 <span className="text-sm font-semibold uppercase text-primary">Kabar Terbaru</span>
                 <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl mt-2">Berita & Wawasan</h2>
                 <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Ikuti perkembangan terbaru dari program, acara, dan riset yang kami lakukan.</p>
               </div>
-              <div className="grid gap-6 md:grid-cols-3">
+              
+              <div className="md:hidden"> {/* Horizontal Scroll for Mobile */}
+                 <ScrollArea className="w-full">
+                    <div className="flex space-x-4 pb-4">
+                      {latestPosts.slice(0, 3).map((post) => (
+                        <div key={post.id} className="w-72 flex-shrink-0">
+                           <BeritaPostCard {...post} />
+                        </div>
+                      ))}
+                    </div>
+                    <ScrollBar orientation="horizontal" />
+                  </ScrollArea>
+              </div>
+
+              <div className="hidden md:grid md:grid-cols-3 gap-6"> {/* Grid for Desktop */}
                 {latestPosts.slice(0, 3).map((post) => (
                   <BeritaPostCard key={post.id} {...post} />
                 ))}
               </div>
+
               <div className="mt-12 text-center">
                 <Button asChild>
                   <Link href="/berita">
@@ -258,3 +314,5 @@ export default async function LandingPage() {
     </div>
   );
 }
+
+    
