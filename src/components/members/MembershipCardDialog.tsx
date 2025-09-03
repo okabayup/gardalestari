@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useRef, useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import MembershipCard from './MembershipCard';
 import type { User } from 'firebase/auth';
 import { Button } from '../ui/button';
