@@ -14,6 +14,10 @@ export interface AppSettings {
   isRegistrationOpen: boolean;
   heroImageUrl: string;
   aboutImageUrl: string;
+  dummyMembers: number;
+  dummyPrograms: number;
+  dummyEvents: number;
+  dummyNews: number;
 }
 
 const settingsDocRef = doc(db, 'settings', 'global');
@@ -23,6 +27,7 @@ export async function getAppSettings(): Promise<AppSettings> {
     const docSnap = await getDoc(settingsDocRef);
     if (docSnap.exists()) {
       const data = docSnap.data();
+      // Provide defaults for all fields, including new dummy fields
       return {
         isRegistrationOpen: true,
         linkedin: '#',
@@ -31,6 +36,10 @@ export async function getAppSettings(): Promise<AppSettings> {
         facebook: '#',
         heroImageUrl: 'https://picsum.photos/seed/paddy-field/1920/1080',
         aboutImageUrl: 'https://picsum.photos/seed/youth-farmers/800/600',
+        dummyMembers: 0,
+        dummyPrograms: 0,
+        dummyEvents: 0,
+        dummyNews: 0,
         ...data,
       } as AppSettings;
     }
@@ -46,6 +55,10 @@ export async function getAppSettings(): Promise<AppSettings> {
     isRegistrationOpen: true,
     heroImageUrl: 'https://picsum.photos/seed/paddy-field/1920/1080',
     aboutImageUrl: 'https://picsum.photos/seed/youth-farmers/800/600',
+    dummyMembers: 0,
+    dummyPrograms: 0,
+    dummyEvents: 0,
+    dummyNews: 0,
   };
 }
 
@@ -53,6 +66,12 @@ export async function getAppSettings(): Promise<AppSettings> {
 export async function updateAppSettings(settings: Partial<Omit<AppSettings, 'heroImageUrl' | 'aboutImageUrl'>> & { heroImageFile?: File, aboutImageFile?: File }) {
   try {
     const dataToUpdate: { [key: string]: any } = { ...settings };
+
+    // Convert dummy numbers to actual numbers before saving
+    dataToUpdate.dummyMembers = Number(settings.dummyMembers) || 0;
+    dataToUpdate.dummyPrograms = Number(settings.dummyPrograms) || 0;
+    dataToUpdate.dummyEvents = Number(settings.dummyEvents) || 0;
+    dataToUpdate.dummyNews = Number(settings.dummyNews) || 0;
     
     if (settings.heroImageFile) {
         const heroImageRef = ref(storage, 'landing/hero-image.jpg');

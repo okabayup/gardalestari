@@ -86,6 +86,11 @@ export default async function LandingPage() {
   const featuredPartners = partners.filter(p => p.isFeatured);
   const WHATSAPP_LINK = "https://wa.me/6285937010409";
 
+  const totalMembers = members.length + (settings.dummyMembers || 0);
+  const totalPrograms = programs.length + (settings.dummyPrograms || 0);
+  const totalEvents = events.length + (settings.dummyEvents || 0);
+  const totalNews = latestPosts.length + (settings.dummyNews || 0);
+
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <LandingHeader />
@@ -138,10 +143,10 @@ export default async function LandingPage() {
         <section id="impact" className="w-full bg-secondary py-16 md:py-20">
           <div className="container">
               <div className="grid gap-8 grid-cols-2 md:grid-cols-4">
-                  <StatCard icon={<Users size={32} />} value={`${members.length.toLocaleString()}+`} label="Anggota Aktif" />
-                  <StatCard icon={<Sprout size={32} />} value={`${programs.length}+`} label="Program Berjalan" />
-                  <StatCard icon={<Calendar size={32} />} value={`${events.length}+`} label="Acara Terselenggara" />
-                  <StatCard icon={<Newspaper size={32} />} value={`${latestPosts.length}+`} label="Publikasi & Riset" />
+                  <StatCard icon={<Users size={32} />} value={`${totalMembers.toLocaleString()}+`} label="Anggota Aktif" />
+                  <StatCard icon={<Sprout size={32} />} value={`${totalPrograms}+`} label="Program Berjalan" />
+                  <StatCard icon={<Calendar size={32} />} value={`${totalEvents}+`} label="Acara Terselenggara" />
+                  <StatCard icon={<Newspaper size={32} />} value={`${totalNews}+`} label="Publikasi & Riset" />
               </div>
           </div>
         </section>

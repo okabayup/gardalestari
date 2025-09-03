@@ -75,10 +75,7 @@ export default function LandingPageSettings() {
     setIsSubmitting(true);
     try {
         const updatePayload = {
-            linkedin: data.linkedin,
-            instagram: data.instagram,
-            twitter: data.twitter,
-            facebook: data.facebook,
+            ...data,
             heroImageFile: data.heroImageFile?.[0],
             aboutImageFile: data.aboutImageFile?.[0],
         };
@@ -125,6 +122,31 @@ export default function LandingPageSettings() {
           </CardContent>
         </Card>
         
+        <Card>
+          <CardHeader>
+            <CardTitle>Statistik Landing Page</CardTitle>
+            <CardDescription>Tambahkan angka "dummy" untuk dijumlahkan dengan data asli.</CardDescription>
+          </CardHeader>
+          <CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+             <div className="space-y-2">
+                <Label htmlFor="dummyMembers">Anggota (Tambahan)</Label>
+                <Input id="dummyMembers" type="number" {...register("dummyMembers")} placeholder="0" />
+            </div>
+             <div className="space-y-2">
+                <Label htmlFor="dummyPrograms">Program (Tambahan)</Label>
+                <Input id="dummyPrograms" type="number" {...register("dummyPrograms")} placeholder="0" />
+            </div>
+             <div className="space-y-2">
+                <Label htmlFor="dummyEvents">Acara (Tambahan)</Label>
+                <Input id="dummyEvents" type="number" {...register("dummyEvents")} placeholder="0" />
+            </div>
+             <div className="space-y-2">
+                <Label htmlFor="dummyNews">Publikasi (Tambahan)</Label>
+                <Input id="dummyNews" type="number" {...register("dummyNews")} placeholder="0" />
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Media Sosial</CardTitle>
