@@ -82,17 +82,11 @@ export default function MembershipCardDialog({ isOpen, onClose, user }: Membersh
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-transparent border-none shadow-none max-w-sm p-0">
+      <DialogContent className="max-w-sm p-4">
         <DialogHeader className="sr-only">
           <DialogTitle>Kartu Tanda Anggota</DialogTitle>
           <p>Tinjau atau unduh Kartu Tanda Anggota Elektronik Anda.</p>
         </DialogHeader>
-        
-        {/* Manual Close Button */}
-        <DialogClose className="absolute -top-2 -right-2 z-10 rounded-full p-1 bg-background border shadow-md opacity-100 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-          <X className="h-4 w-4" />
-          <span className="sr-only">Close</span>
-        </DialogClose>
         
         <div ref={cardRef}>
             <MembershipCard 
