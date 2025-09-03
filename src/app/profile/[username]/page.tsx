@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from 'react';
 import { notFound, useParams } from 'next/navigation';
-import MainLayout from '@/components/layout/MainLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 import { getPostsByUserId, getTaggedPosts, PostWithAuthor } from '@/app/actions/posts';
@@ -13,6 +12,7 @@ import { Grid3x3, Loader2, Tag } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import PublicProfileLayout from '@/components/layout/PublicProfileLayout';
 
 const ProfileHeader = ({ user, postCount }: { user: PublicUser | null, postCount: number }) => (
   <div className="flex items-center gap-4 w-full px-4">
@@ -126,16 +126,16 @@ export default function UserProfilePage() {
 
   if (loading) {
     return (
-      <MainLayout>
+      <PublicProfileLayout>
         <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
         </div>
-      </MainLayout>
+      </PublicProfileLayout>
     );
   }
 
   return (
-    <MainLayout>
+    <PublicProfileLayout>
         <div className="space-y-4 py-4">
             <ProfileHeader user={user} postCount={userPosts.length} />
             <ProfileBio user={user} />
@@ -157,6 +157,6 @@ export default function UserProfilePage() {
                 </TabsContent>
             </Tabs>
         </div>
-    </MainLayout>
+    </PublicProfileLayout>
   );
 }
