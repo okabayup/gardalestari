@@ -19,7 +19,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { addDays, format } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
 import { createProgram, getProgramTags, ProgramTag } from '@/app/actions/programs';
 import { getPartners, Partner } from '@/app/actions/partners';
 import { getForms, ProgramForm } from '@/app/actions/forms';
@@ -120,8 +119,8 @@ export default function NewProgramPage() {
       const { dateRange, attachment, ...rest } = data;
       const programPayload = {
         ...rest,
-        startDate: Timestamp.fromDate(dateRange.from),
-        endDate: Timestamp.fromDate(dateRange.to),
+        startDate: dateRange.from,
+        endDate: dateRange.to,
         imageUrl: data.imageUrl || `https://picsum.photos/seed/${data.title.replace(/\s+/g, '-')}/600/400`
       };
       await createProgram(programPayload, attachment?.[0]);

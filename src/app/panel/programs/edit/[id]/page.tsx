@@ -19,7 +19,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { format } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
 import { getProgram, updateProgram, getProgramTags, ProgramTag } from '@/app/actions/programs';
 import { getPartners, Partner } from '@/app/actions/partners';
 import { getForms, ProgramForm } from '@/app/actions/forms';
@@ -135,8 +134,8 @@ export default function EditProgramPage() {
       const { dateRange, attachment, ...rest } = data;
       const programPayload = {
         ...rest,
-        startDate: Timestamp.fromDate(dateRange.from),
-        endDate: Timestamp.fromDate(dateRange.to),
+        startDate: dateRange.from,
+        endDate: dateRange.to,
       };
       await updateProgram(programId, programPayload, attachment?.[0]);
       toast({ title: 'Program berhasil diperbarui!' });

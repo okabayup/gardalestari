@@ -31,6 +31,13 @@ export interface Program {
   attachmentName?: string;
 }
 
+// The data type received from the client-side form
+export interface ProgramFormData extends Omit<Program, 'id' | 'startDate' | 'endDate' > {
+    startDate: Date;
+    endDate: Date;
+}
+
+
 const programsCollection = collection(db, 'programs');
 const tagsCollection = collection(db, 'programTags');
 
@@ -57,9 +64,15 @@ export async function getProgram(id: string): Promise<Program | null> {
 
 
 // Create a new program
-export async function createProgram(program: Omit<Program, 'id'>, attachmentFile?: File) {
+export async function createProgram(program: Omit<ProgramFormData, 'id'>, attachmentFile?: File) {
   try {
-    const programData = { ...program };
+    const { startDate, endDate, ...rest } = program;
+    const programData: Omit<Program, 'id'> = {
+        ...rest,
+        startDate: Timestamp.fromDate(new Date(startDate)),
+        endDate: Timestamp.fromDate(new Date(endDate)),
+    };
+
     if (attachmentFile) {
         const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachmentFile.name}`);
         await uploadBytes(attachmentRef, attachmentFile);
@@ -76,10 +89,18 @@ export async function createProgram(program: Omit<Program, 'id'>, attachmentFile
 }
 
 // Update an existing program
-export async function updateProgram(id: string, program: Partial<Program>, attachmentFile?: File) {
+export async function updateProgram(id: string, program: Partial<ProgramFormData>, attachmentFile?: File) {
   try {
     const programDoc = doc(db, 'programs', id);
-    const programData: Partial<Program> = { ...program };
+    
+    // Convert dates to Timestamps before updating
+    const dataToUpdate: { [key: string]: any } = { ...program };
+    if (program.startDate) {
+        dataToUpdate.startDate = Timestamp.fromDate(new Date(program.startDate));
+    }
+    if (program.endDate) {
+        dataToUpdate.endDate = Timestamp.fromDate(new Date(program.endDate));
+    }
     
     if (attachmentFile) {
         const currentProgram = await getProgram(id);
@@ -95,11 +116,11 @@ export async function updateProgram(id: string, program: Partial<Program>, attac
         }
         const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachmentFile.name}`);
         await uploadBytes(attachmentRef, attachmentFile);
-        programData.attachmentUrl = await getDownloadURL(attachmentRef);
-        programData.attachmentName = attachmentFile.name;
+        dataToUpdate.attachmentUrl = await getDownloadURL(attachmentRef);
+        dataToUpdate.attachmentName = attachmentFile.name;
     }
 
-    await updateDoc(programDoc, programData);
+    await updateDoc(programDoc, dataToUpdate);
     revalidatePath('/panel/programs');
     revalidatePath(`/panel/programs/edit/${id}`);
     revalidatePath('/programs');
