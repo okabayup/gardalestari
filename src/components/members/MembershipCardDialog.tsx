@@ -7,9 +7,10 @@ import MembershipCard from './MembershipCard';
 import type { User } from 'firebase/auth';
 import { Button } from '../ui/button';
 import { toPng } from 'html-to-image';
-import { Download, Loader2, X } from 'lucide-react';
+import { Download, Loader2, X, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '../ui/badge';
+import Link from 'next/link';
 
 interface MembershipCardDialogProps {
   isOpen: boolean;
@@ -50,6 +51,9 @@ export default function MembershipCardDialog({ isOpen, onClose, user }: Membersh
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
     return `${baseUrl}/profile/${user.username}`;
   }
+  
+  const publicProfilePath = `/profile/${user.username}`;
+
 
   const handleDownload = async () => {
     if (!cardRef.current) return;
@@ -100,7 +104,7 @@ export default function MembershipCardDialog({ isOpen, onClose, user }: Membersh
                 position={user.position || 'Anggota'}
             />
         </div>
-         <div className="pt-4">
+         <div className="pt-4 space-y-2">
             <Button onClick={handleDownload} className="w-full" disabled={isDownloading}>
                 {isDownloading ? 
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 
@@ -108,6 +112,12 @@ export default function MembershipCardDialog({ isOpen, onClose, user }: Membersh
                 }
                 {isDownloading ? 'Mengunduh...' : 'Unduh Kartu'}
                 <Badge variant="secondary" className="ml-2">Uji Coba</Badge>
+            </Button>
+            <Button asChild variant="outline" className="w-full">
+                <Link href={publicProfilePath} target="_blank">
+                    <Eye className="mr-2 h-4 w-4" />
+                    Lihat Profil Publik
+                </Link>
             </Button>
         </div>
       </DialogContent>
