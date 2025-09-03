@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,8 @@ import { generateImage } from '@/ai/flows/image-generate-flow';
 import { Progress } from '@/components/ui/progress';
 import { marked } from 'marked';
 import { Separator } from '@/components/ui/separator';
+import { getBeritaCategories, BeritaCategory } from '@/app/actions/berita-kategori';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type FormData = Omit<BeritaPost, 'id' | 'author' | 'date' | 'excerpt'>;
 
@@ -111,18 +113,28 @@ export default function NewBeritaPostPage() {
   const [loadingAi, setLoadingAi] = useState(false);
   const [loadingImage, setLoadingImage] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<EnhanceTextOutput | null>(null);
+  const [categories, setCategories] = useState<BeritaCategory[]>([]);
 
-  const { register, handleSubmit, watch, setValue, getValues } = useForm<FormData>({
+  const { register, handleSubmit, watch, setValue, getValues, control } = useForm<FormData>({
     defaultValues: {
       title: '',
       slug: '',
       imageUrl: '',
       imageHint: '',
-      content: ''
+      content: '',
+      category: ''
     }
   });
 
   const editorRef = useRef<{ updateHtml: (markdown: string) => void }>(null);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const fetchedCategories = await getBeritaCategories();
+      setCategories(fetchedCategories);
+    };
+    fetchCategories();
+  }, []);
 
   const generateSlug = (title: string) => {
     return title.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/\s+/g, '-').replace(/-+/g, '-');
@@ -186,11 +198,12 @@ export default function NewBeritaPostPage() {
         title: data.title,
         slug: data.slug || generateSlug(data.title),
         author: user?.displayName || 'Admin',
-        date: new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }),
+        date: new Date().toISOString(),
         imageUrl: data.imageUrl,
         imageHint: data.imageHint,
         content: marked(data.content) as string, // Simpan sebagai HTML
         excerpt: data.content.substring(0, 150) + '...',
+        category: data.category,
       };
       await createBeritaPost(newPost);
       toast({
@@ -242,6 +255,28 @@ export default function NewBeritaPostPage() {
                     <div className="space-y-2">
                         <Label htmlFor="slug">Slug</Label>
                         <Input id="slug" placeholder="contoh: berita-baru-saya" {...register('slug')} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="category">Kategori</Label>
+                      <Controller
+                          name="category"
+                          control={control}
+                          rules={{ required: 'Kategori harus dipilih' }}
+                          render={({ field }) => (
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <SelectTrigger id="category">
+                                      <SelectValue placeholder="Pilih kategori berita" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                      {categories.map((cat) => (
+                                          <SelectItem key={cat.id} value={cat.name}>
+                                              {cat.name}
+                                          </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                              </Select>
+                          )}
+                      />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="imageHint">Petunjuk Gambar (untuk AI)</Label>

@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, where, orderBy } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 
 export interface BeritaPost {
@@ -11,17 +11,19 @@ export interface BeritaPost {
   slug: string;
   content: string;
   author: string;
-  date: string; // Consider using a Firestore timestamp
+  date: string; 
   imageUrl: string;
   imageHint: string;
   excerpt: string;
+  category: string; // New field
 }
 
 const beritaPostsCollection = collection(db, 'beritaPosts');
 
 // Get all berita posts
 export async function getBeritaPosts() {
-  const snapshot = await getDocs(beritaPostsCollection);
+  const q = query(beritaPostsCollection, orderBy('date', 'desc'));
+  const snapshot = await getDocs(q);
   const posts: BeritaPost[] = [];
   snapshot.forEach(doc => {
     posts.push({ id: doc.id, ...doc.data() } as BeritaPost);

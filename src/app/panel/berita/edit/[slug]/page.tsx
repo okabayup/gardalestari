@@ -1,21 +1,24 @@
 
 'use client';
 
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useRouter, notFound } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import React, { useState, useEffect, useRef } from 'react';
 import { Loader2, Sparkles, Wand2 } from 'lucide-react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { getBeritaPost, updateBeritaPost, BeritaPost } from '@/app/actions/berita';
 import { enhanceText, EnhanceTextOutput } from '@/ai/flows/enhance-text-flow';
 import { generateImage } from '@/ai/flows/image-generate-flow';
 import { Progress } from '@/components/ui/progress';
 import { marked } from 'marked';
 import { Separator } from '@/components/ui/separator';
+import { getBeritaCategories, BeritaCategory } from '@/app/actions/berita-kategori';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 type FormData = Omit<BeritaPost, 'id' | 'author' | 'date' | 'excerpt'>;
 
@@ -104,6 +107,7 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
   const router = useRouter();
   const { toast } = useToast();
   const [post, setPost] = useState<BeritaPost | null>(null);
+  const [categories, setCategories] = useState<BeritaCategory[]>([]);
   
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
@@ -111,28 +115,36 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
   const [loadingImage, setLoadingImage] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<EnhanceTextOutput | null>(null);
 
-  const { register, handleSubmit, reset, setValue, getValues } = useForm<FormData>();
+  const { register, handleSubmit, reset, setValue, getValues, control } = useForm<FormData>();
   const editorRef = useRef<{ updateHtml: (markdown: string) => void }>(null);
 
   useEffect(() => {
-    const fetchPost = async () => {
+    const fetchPostAndCategories = async () => {
       setPageLoading(true);
-      const fetchedPost = await getBeritaPost(params.slug);
-      if (!fetchedPost) {
-        notFound();
-      } else {
-        setPost(fetchedPost);
-        // Assuming content is stored as HTML, we need a way to convert it back to MD for editing
-        // For now, we'll just display it. A proper implementation needs an HTML-to-MD converter.
-        // A simple workaround: strip HTML tags for the raw text value.
-        const plainTextContent = fetchedPost.content.replace(/<[^>]*>?/gm, '');
-        const postData = { ...fetchedPost, content: plainTextContent };
-        reset(postData);
+      try {
+        const [fetchedPost, fetchedCategories] = await Promise.all([
+          getBeritaPost(params.slug),
+          getBeritaCategories()
+        ]);
+        
+        setCategories(fetchedCategories);
+
+        if (!fetchedPost) {
+          notFound();
+        } else {
+          setPost(fetchedPost);
+          const plainTextContent = fetchedPost.content.replace(/<[^>]*>?/gm, '');
+          const postData = { ...fetchedPost, content: plainTextContent };
+          reset(postData);
+        }
+      } catch (error) {
+         toast({ variant: 'destructive', title: 'Gagal memuat data' });
+      } finally {
+        setPageLoading(false);
       }
-      setPageLoading(false);
     };
-    fetchPost();
-  }, [params.slug, reset]);
+    fetchPostAndCategories();
+  }, [params.slug, reset, toast]);
 
   const generateSlug = (title: string) => {
     return title.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
@@ -261,6 +273,28 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
                     <div className="space-y-2">
                         <Label htmlFor="slug">Slug</Label>
                         <Input id="slug" {...register('slug', { required: true })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="category">Kategori</Label>
+                      <Controller
+                          name="category"
+                          control={control}
+                          rules={{ required: 'Kategori harus dipilih' }}
+                          render={({ field }) => (
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                  <SelectTrigger id="category">
+                                      <SelectValue placeholder="Pilih kategori berita" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                      {categories.map((cat) => (
+                                          <SelectItem key={cat.id} value={cat.name}>
+                                              {cat.name}
+                                          </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                              </Select>
+                          )}
+                      />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="imageHint">Petunjuk Gambar (untuk AI)</Label>

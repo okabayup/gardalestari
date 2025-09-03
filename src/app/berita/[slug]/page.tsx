@@ -4,6 +4,9 @@ import { notFound } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getBeritaPosts, getBeritaPost } from '@/app/actions/berita';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
+import { Badge } from '@/components/ui/badge';
 
 // This function tells Next.js which slugs to pre-render at build time
 export async function generateStaticParams() {
@@ -20,6 +23,9 @@ export default async function BeritaPostPage({ params }: { params: { slug: strin
     notFound();
   }
 
+  const formattedDate = format(new Date(post.date), "dd MMMM yyyy", { locale: id });
+
+
   return (
     <MainLayout>
       <article>
@@ -33,16 +39,17 @@ export default async function BeritaPostPage({ params }: { params: { slug: strin
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
         </div>
-        <div className="p-6 -mt-16 relative z-10">
+        <div className="p-6 -mt-24 relative z-10 space-y-4">
+          <Badge variant="secondary">{post.category}</Badge>
           <h1 className="font-headline text-3xl md:text-4xl font-bold">{post.title}</h1>
-          <div className="mt-4 flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarImage />
               <AvatarFallback>{post.author ? post.author.charAt(0) : 'A'}</AvatarFallback>
             </Avatar>
             <div>
               <p className="font-semibold">{post.author}</p>
-              <p className="text-sm text-muted-foreground">{post.date}</p>
+              <p className="text-sm text-muted-foreground">{formattedDate}</p>
             </div>
           </div>
           <div

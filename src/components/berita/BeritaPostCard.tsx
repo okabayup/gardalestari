@@ -1,7 +1,10 @@
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight } from 'lucide-react';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
 
 interface BeritaPostCardProps {
   slug: string;
@@ -14,6 +17,8 @@ interface BeritaPostCardProps {
 }
 
 export default function BeritaPostCard({ slug, title, excerpt, imageUrl, imageHint, date }: BeritaPostCardProps) {
+  const formattedDate = format(new Date(date), "dd MMMM yyyy", { locale: id });
+  
   return (
     <Card className="overflow-hidden">
       <Link href={`/berita/${slug}`} className="block">
@@ -28,7 +33,7 @@ export default function BeritaPostCard({ slug, title, excerpt, imageUrl, imageHi
         </div>
         <CardHeader>
           <CardTitle className="leading-tight">{title}</CardTitle>
-          <p className="text-xs text-muted-foreground pt-1">{date}</p>
+          <p className="text-xs text-muted-foreground pt-1">{formattedDate}</p>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-sm mb-4">{excerpt}</p>

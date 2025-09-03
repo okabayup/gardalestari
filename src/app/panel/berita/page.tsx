@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -28,6 +27,7 @@ import { useEffect, useState } from 'react';
 import { getBeritaPosts, deleteBeritaPost, BeritaPost } from '@/app/actions/berita';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { Badge } from '@/components/ui/badge';
 
 const ADMIN_PHONE_NUMBER = '+6285176752610';
 
@@ -100,10 +100,15 @@ export default function AdminBeritaPage() {
             <h1 className="font-headline text-2xl font-bold">Manajemen Berita</h1>
             <p className="text-muted-foreground">Buat, edit, dan hapus berita.</p>
           </div>
-          <Button onClick={() => router.push('/panel/berita/new')}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Buat Berita Baru
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => router.push('/panel/berita/kategori')}>
+                Kelola Kategori
+            </Button>
+            <Button onClick={() => router.push('/panel/berita/new')}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Buat Berita Baru
+            </Button>
+          </div>
         </div>
         <Card>
           <CardContent className="p-0">
@@ -111,6 +116,7 @@ export default function AdminBeritaPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Judul</TableHead>
+                  <TableHead>Kategori</TableHead>
                   <TableHead className="hidden md:table-cell">Penulis</TableHead>
                   <TableHead className="hidden md:table-cell">Tanggal</TableHead>
                   <TableHead>
@@ -121,7 +127,7 @@ export default function AdminBeritaPage() {
               <TableBody>
                 {loading ? (
                     <TableRow>
-                        <TableCell colSpan={4} className="text-center py-10">
+                        <TableCell colSpan={5} className="text-center py-10">
                             <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                         </TableCell>
                     </TableRow>
@@ -129,6 +135,7 @@ export default function AdminBeritaPage() {
                   posts.map((post) => (
                     <TableRow key={post.id}>
                       <TableCell className="font-medium">{post.title}</TableCell>
+                      <TableCell><Badge variant="secondary">{post.category}</Badge></TableCell>
                       <TableCell className="hidden md:table-cell">{post.author}</TableCell>
                       <TableCell className="hidden md:table-cell">{post.date}</TableCell>
                       <TableCell>
@@ -159,7 +166,7 @@ export default function AdminBeritaPage() {
                   ))
                 ) : (
                     <TableRow>
-                        <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
+                        <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
                             Belum ada berita.
                         </TableCell>
                     </TableRow>
