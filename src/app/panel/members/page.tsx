@@ -67,7 +67,7 @@ export default function AdminMembersPage() {
     if (dialog === 'verify') setIsVerificationDialogOpen(true);
   };
   
-  const handleSaveDetails = async (id: string, details: { position: string; type?: MemberType; region?: string, verificationStatus?: VerificationStatus }) => {
+  const handleSaveDetails = async (id: string, details: { positionId?: string; type?: MemberType; region?: string, verificationStatus?: VerificationStatus }) => {
     setIsSavingDetails(true);
     try {
         await updateMemberDetails(id, details);
@@ -187,5 +187,3 @@ export default function AdminMembersPage() {
     </>
   );
 }
-
-    

@@ -23,6 +23,7 @@ import {
   ChevronRight,
   Tags,
   Bell,
+  UserCheck,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
@@ -51,6 +52,7 @@ export function Sidebar() {
     { href: '/panel/events', icon: Calendar, label: 'Acara' },
     { href: '/panel/programs', icon: Megaphone, label: 'Program' },
     { href: '/panel/members', icon: Users, label: 'Anggota' },
+    { href: '/panel/positions', icon: UserCheck, label: 'Jabatan' },
     { href: '/panel/partners', icon: Handshake, label: 'Mitra' },
     { href: '/panel/forms', icon: FileText, label: 'Formulir' },
     { href: '/panel/landing', icon: Landmark, label: 'Halaman Utama' },

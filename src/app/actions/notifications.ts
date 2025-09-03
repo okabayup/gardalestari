@@ -3,7 +3,7 @@
 
 import { db } from '@/lib/firebase';
 import { getMessaging } from 'firebase-admin/messaging';
-import { collection, addDoc, query, where, getDocs, serverTimestamp, updateDoc, documentId, FieldPath } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, serverTimestamp, updateDoc, documentId, FieldPath, orderBy, limit, writeBatch } from 'firebase/firestore';
 import { initializeAdminApp } from '@/lib/firebase-admin';
 import type { MemberType } from './members';
 
@@ -13,8 +13,20 @@ export interface PushSubscription {
   createdAt: any;
 }
 
+export interface Notification {
+  id: string;
+  userId: string;
+  title: string;
+  body: string;
+  link?: string;
+  read: boolean;
+  createdAt: any;
+}
+
 const subscriptionsCollection = collection(db, 'pushSubscriptions');
 const usersCollection = collection(db, 'users');
+const notificationsCollection = collection(db, 'notifications');
+
 
 /**
  * Saves a new push notification subscription token for a user.
@@ -29,31 +41,25 @@ export async function saveSubscription(userId: string, token: string) {
   }
 
   try {
-    // Check if this token already exists
     const q = query(subscriptionsCollection, where('token', '==', token));
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
-      // Token doesn't exist, create new subscription
       await addDoc(subscriptionsCollection, {
         userId,
         token,
         createdAt: serverTimestamp(),
       });
     } else {
-      // Token exists, check if it belongs to the current user
       const doc = querySnapshot.docs[0];
       if (doc.data().userId !== userId) {
-        // Token is registered to another user, update it to the current user
         await updateDoc(doc.ref, {
           userId,
           updatedAt: serverTimestamp(),
         });
       }
-      // If it already belongs to the current user, do nothing.
     }
     
-    // No revalidation needed as this is a background task.
     return { success: true };
 
   } catch (error) {
@@ -78,10 +84,13 @@ interface NotificationTarget {
 export async function sendNotification(payload: NotificationPayload, target: NotificationTarget) {
     try {
         await initializeAdminApp();
+        const batch = writeBatch(db);
         let targetUserIds: string[] = [];
 
-        // Determine the target user IDs based on the strategy
-        if (target.type === 'memberType' && target.memberType) {
+        if (target.type === 'all') {
+            const allUsersSnapshot = await getDocs(query(usersCollection));
+            targetUserIds = allUsersSnapshot.docs.map(doc => doc.id);
+        } else if (target.type === 'memberType' && target.memberType) {
             const usersQuery = query(usersCollection, where('type', '==', target.memberType));
             const usersSnapshot = await getDocs(usersQuery);
             targetUserIds = usersSnapshot.docs.map(doc => doc.id);
@@ -89,64 +98,95 @@ export async function sendNotification(payload: NotificationPayload, target: Not
             targetUserIds = target.userIds;
         }
 
-        // Fetch tokens based on the determined user IDs or fetch all if target is 'all'
-        let tokensQuery;
-        if (target.type === 'all') {
-            tokensQuery = query(subscriptionsCollection);
-        } else if (targetUserIds.length > 0) {
-            // Firestore 'in' query is limited to 30 items. If more, we need to batch.
-            // For now, assuming we won't target more than 30 specific users at once.
-             if (targetUserIds.length > 30) {
-                console.warn("Targeting more than 30 specific users, this might fail. Consider batching.");
-            }
-            tokensQuery = query(subscriptionsCollection, where('userId', 'in', targetUserIds));
-        } else if (target.type !== 'all') {
-            // If target is specific but no IDs are found/provided
-             return { successCount: 0, failureCount: 0, message: "Tidak ada pengguna target yang cocok dengan kriteria." };
+        if (targetUserIds.length === 0) {
+            return { successCount: 0, failureCount: 0, message: "Tidak ada pengguna target yang cocok dengan kriteria." };
         }
 
-        const subscriptionsSnapshot = await getDocs(tokensQuery);
-        const tokens = subscriptionsSnapshot.docs.map(doc => doc.data().token);
-
-        if (tokens.length === 0) {
-            return { successCount: 0, failureCount: 0, message: "Tidak ada pengguna yang terdaftar untuk notifikasi pada target ini." };
-        }
-
-        const message = {
-            notification: {
+        // Save notification to Firestore for each user
+        targetUserIds.forEach(userId => {
+            const newNotifRef = doc(notificationsCollection);
+            batch.set(newNotifRef, {
+                userId,
                 title: payload.title,
                 body: payload.body,
-            },
-            webpush: {
-                notification: {
-                    icon: payload.icon || '/icon-192x192.png',
-                },
-                fcm_options: {
-                    link: payload.link || '/',
-                },
-            },
-            tokens: tokens,
-        };
-
-        const response = await getMessaging().sendEachForMulticast(message);
-        console.log(`Successfully sent message to ${response.successCount} devices.`);
-        if (response.failureCount > 0) {
-            console.error(`Failed to send to ${response.failureCount} devices.`);
-            response.responses.forEach(resp => {
-                if (!resp.success) {
-                    console.error('Failure reason:', resp.error);
-                }
+                link: payload.link || '/',
+                read: false,
+                createdAt: serverTimestamp(),
             });
+        });
+
+        // Fetch tokens for push notification
+        const tokens: string[] = [];
+        for (let i = 0; i < targetUserIds.length; i += 30) {
+            const chunk = targetUserIds.slice(i, i + 30);
+            const tokensQuery = query(subscriptionsCollection, where('userId', 'in', chunk));
+            const subscriptionsSnapshot = await getDocs(tokensQuery);
+            subscriptionsSnapshot.forEach(doc => tokens.push(doc.data().token));
         }
-        return { successCount: response.successCount, failureCount: response.failureCount };
+
+        let pushSuccessCount = 0;
+        let pushFailureCount = 0;
+
+        if (tokens.length > 0) {
+             const message = {
+                notification: {
+                    title: payload.title,
+                    body: payload.body,
+                },
+                webpush: {
+                    notification: {
+                        icon: payload.icon || '/icon-192x192.png',
+                    },
+                    fcm_options: {
+                        link: payload.link || '/',
+                    },
+                },
+                tokens: tokens,
+            };
+
+            const response = await getMessaging().sendEachForMulticast(message);
+            pushSuccessCount = response.successCount;
+            pushFailureCount = response.failureCount;
+            console.log(`Successfully sent message to ${response.successCount} devices.`);
+            if (response.failureCount > 0) {
+                console.error(`Failed to send to ${response.failureCount} devices.`);
+            }
+        }
+        
+        // Commit Firestore writes
+        await batch.commit();
+
+        return { successCount: pushSuccessCount, failureCount: pushFailureCount, message: `Disimpan untuk ${targetUserIds.length} pengguna.` };
 
     } catch (error: any) {
         console.error('Error sending notification:', error);
-        if (error.code === 'messaging/invalid-argument') {
-            throw new Error("Payload notifikasi tidak valid. Pastikan judul dan pesan terisi.");
-        }
         throw new Error("Gagal mengirim notifikasi: " + error.message);
     }
 }
 
-    
+// Get notifications for a specific user
+export async function getNotificationsForUser(userId: string): Promise<Notification[]> {
+    const q = query(
+        notificationsCollection, 
+        where('userId', '==', userId),
+        orderBy('createdAt', 'desc'),
+        limit(20)
+    );
+    const snapshot = await getDocs(q);
+    const notifications: Notification[] = [];
+    snapshot.forEach(doc => {
+        notifications.push({ id: doc.id, ...doc.data() } as Notification);
+    });
+    return notifications;
+}
+
+// Mark notifications as read for a user
+export async function markNotificationsAsRead(userId: string, notificationIds: string[]) {
+    if (notificationIds.length === 0) return;
+    const batch = writeBatch(db);
+    notificationIds.forEach(id => {
+        const notifRef = doc(db, 'notifications', id);
+        batch.update(notifRef, { read: true });
+    });
+    await batch.commit();
+}

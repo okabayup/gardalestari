@@ -13,7 +13,7 @@ export interface Member {
   id: string;
   name: string;
   username: string;
-  position?: string;
+  positionId?: string; // Changed from position to positionId
   type?: MemberType;
   region?: string;
   avatarUrl?: string;
@@ -27,20 +27,32 @@ export interface MemberWithStatus extends Member {
     selfieImageUrl?: string;
     nik?: string;
     createdAt?: Timestamp;
+    position?: string; // Keep this for display purposes, will be denormalized
 }
 
 
 const usersCollection = collection(db, 'users');
+const positionsCollection = collection(db, 'positions');
+
+// Helper to get position name from ID
+async function getPositionName(positionId?: string): Promise<string> {
+    if (!positionId) return 'Anggota';
+    try {
+        const positionDoc = await getDoc(doc(positionsCollection, positionId));
+        return positionDoc.exists() ? positionDoc.data().name : 'Anggota';
+    } catch {
+        return 'Anggota';
+    }
+}
+
 
 // Get all members, sorted by creation time
 export async function getMembers(): Promise<MemberWithStatus[]> {
-  // Removed orderBy from the query to avoid indexing issues.
-  // Sorting will be done on the server after fetching.
   const q = query(usersCollection); 
   const snapshot = await getDocs(q);
   const members: MemberWithStatus[] = [];
 
-  snapshot.forEach(doc => {
+  for (const doc of snapshot.docs) {
     const data = doc.data();
     let joinDate: string | undefined;
     if (data.createdAt && typeof data.createdAt.toDate === 'function') {
@@ -50,6 +62,9 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
             year: 'numeric'
         });
     }
+    
+    // Denormalize position name for easier display
+    const positionName = await getPositionName(data.positionId);
 
     members.push({
       id: doc.id,
@@ -58,7 +73,8 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
       phoneNumber: data.phoneNumber || 'N/A',
       verificationStatus: data.verificationStatus,
       avatarUrl: data.avatarUrl,
-      position: data.position || 'Anggota',
+      position: positionName, // Denormalized name
+      positionId: data.positionId,
       type: data.type || undefined,
       region: data.region || undefined,
       joinDate: joinDate,
@@ -67,7 +83,7 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
       nik: data.nik,
       createdAt: data.createdAt, // Pass createdAt for sorting
     });
-  });
+  }
 
   // Sort members by creation date in descending order (newest first)
   members.sort((a, b) => {
@@ -80,12 +96,16 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
 }
 
 // Update member details (position, type, region, verification status)
-export async function updateMemberDetails(id: string, details: { position: string, type?: MemberType, region?: string, verificationStatus?: VerificationStatus }) {
+export async function updateMemberDetails(id: string, details: { positionId?: string, type?: MemberType, region?: string, verificationStatus?: VerificationStatus }) {
     try {
         const memberDoc = doc(db, 'users', id);
-        const dataToUpdate: { [key: string]: any } = {
-            position: details.position
-        };
+        const dataToUpdate: { [key: string]: any } = {};
+
+        if (details.positionId) {
+            dataToUpdate.positionId = details.positionId;
+        } else {
+            dataToUpdate.positionId = deleteField();
+        }
 
         if (details.type) {
             dataToUpdate.type = details.type;

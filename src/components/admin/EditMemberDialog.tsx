@@ -9,12 +9,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { MemberWithStatus, MemberType, VerificationStatus } from '@/app/actions/members';
+import { getPositions, Position } from '@/app/actions/positions';
 
 interface EditMemberDialogProps {
   member: MemberWithStatus;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (id: string, details: { position: string, type?: MemberType, region?: string, verificationStatus?: VerificationStatus }) => void;
+  onSave: (id: string, details: { positionId?: string, type?: MemberType, region?: string, verificationStatus?: VerificationStatus }) => void;
   isSaving: boolean;
 }
 
@@ -33,14 +34,18 @@ const verificationStatuses: { value: VerificationStatus, label: string }[] = [
 ];
 
 export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSaving }: EditMemberDialogProps) {
-  const [position, setPosition] = useState(member.position || '');
+  const [positionId, setPositionId] = useState(member.positionId || '');
   const [type, setType] = useState<MemberType | 'anggota' | undefined>(member.type || 'anggota');
   const [region, setRegion] = useState(member.region || '');
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>(member.verificationStatus || 'unverified');
-
+  const [positions, setPositions] = useState<Position[]>([]);
 
   useEffect(() => {
-    setPosition(member.position || 'Anggota');
+    getPositions().then(setPositions);
+  }, []);
+
+  useEffect(() => {
+    setPositionId(member.positionId || '');
     setType(member.type || 'anggota');
     setRegion(member.region || '');
     setVerificationStatus(member.verificationStatus || 'unverified');
@@ -53,8 +58,8 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
   }, [type]);
 
   const handleSave = () => {
-    const detailsToSave: { position: string, type?: MemberType, region?: string, verificationStatus?: VerificationStatus } = {
-        position: position,
+    const detailsToSave: { positionId?: string, type?: MemberType, region?: string, verificationStatus?: VerificationStatus } = {
+        positionId: positionId || undefined,
         type: type === 'anggota' ? undefined : type,
         region: region,
         verificationStatus: verificationStatus,
@@ -74,12 +79,17 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="position">Jabatan</Label>
-            <Input
-              id="position"
-              value={position}
-              onChange={(e) => setPosition(e.target.value)}
-              placeholder="Contoh: Ketua Divisi"
-            />
+            <Select value={positionId} onValueChange={setPositionId}>
+                <SelectTrigger id="position">
+                    <SelectValue placeholder="Pilih Jabatan" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="">Anggota Biasa</SelectItem>
+                    {positions.map(p => (
+                        <SelectItem key={p.id} value={p.id!}>{p.name}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="type">Jenis Keanggotaan</Label>
@@ -131,5 +141,3 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
     </Dialog>
   );
 }
-
-    
