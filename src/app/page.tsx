@@ -196,10 +196,46 @@ export default async function LandingPage() {
             </div>
           </div>
         </section>
+        
+        {/* Call to Action Section */}
+        <section id="partnership" className="w-full bg-secondary py-16 md:py-28 overflow-hidden">
+          <div className="container">
+            <div className="mb-14 text-center animate-in fade-in zoom-in-95 duration-500">
+              <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">Jadilah Bagian dari Dampak</h2>
+              <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Setiap kontribusi, sekecil apapun, membawa kita selangkah lebih dekat menuju Indonesia yang lebih hijau dan sejahtera.</p>
+            </div>
+            <div className="grid gap-8 sm:grid-cols-1 lg:grid-cols-3">
+                <Card className="p-6 flex flex-col">
+                  <HandHeart size={32} className="text-primary mb-4" />
+                  <h3 className="font-headline text-xl mb-2">Dukung Sebagai Donatur</h3>
+                  <p className="text-muted-foreground text-sm flex-grow">Donasi Anda akan langsung mendanai program-program kami di lapangan, dari penanaman pohon hingga pelatihan petani muda. Jadilah pahlawan bagi bumi.</p>
+                  <Button variant="outline" className="mt-6 w-full" asChild>
+                    <Link href={WHATSAPP_LINK} target="_blank">Beri Donasi</Link>
+                  </Button>
+                </Card>
+                 <Card className="p-6 flex flex-col bg-primary text-primary-foreground border-none">
+                  <Target size={32} className="mb-4" />
+                  <h3 className="font-headline text-xl mb-2">Gabung Sebagai Anggota</h3>
+                  <p className="text-sm opacity-90 flex-grow">Jadilah agen perubahan. Dapatkan akses ke jaringan, pelatihan, dan kesempatan untuk terlibat langsung dalam proyek-proyek yang bermakna.</p>
+                  <Button variant="secondary" className="mt-6 w-full" asChild>
+                    <Link href="/register">Daftar Sekarang</Link>
+                  </Button>
+                </Card>
+                <Card className="p-6 flex flex-col">
+                  <Handshake size={32} className="text-primary mb-4" />
+                  <h3 className="font-headline text-xl mb-2">Jalin Kemitraan</h3>
+                  <p className="text-muted-foreground text-sm flex-grow">Kami membuka pintu kolaborasi bagi perusahaan, pemerintah, dan NGO. Mari kita bersinergi untuk menciptakan dampak yang lebih besar dan berkelanjutan.</p>
+                  <Button variant="outline" className="mt-6 w-full" asChild>
+                    <Link href={WHATSAPP_LINK} target="_blank">Hubungi Kami</Link>
+                  </Button>
+                </Card>
+            </div>
+          </div>
+        </section>
 
         {/* Flagship Programs Section */}
         {flagshipPrograms.length > 0 && (
-          <section id="programs" className="w-full bg-secondary py-16 md:py-28">
+          <section id="programs" className="w-full bg-background py-16 md:py-28">
             <div className="container">
               <div className="mb-14 text-center">
                 <span className="text-sm font-semibold uppercase text-primary">Program Unggulan</span>
@@ -236,7 +272,7 @@ export default async function LandingPage() {
 
         {/* Latest News Section */}
         {latestPosts.length > 0 && (
-          <section id="news" className="w-full bg-background py-16 md:py-28">
+          <section id="news" className="w-full bg-secondary py-16 md:py-28">
             <div className="container">
               <div className="mb-14 text-center">
                 <span className="text-sm font-semibold uppercase text-primary">Kabar Terbaru</span>
@@ -274,45 +310,8 @@ export default async function LandingPage() {
           </section>
         )}
 
-         {/* Call to Action Section */}
-        <section id="partnership" className="w-full bg-background py-16 md:py-28 overflow-hidden">
-          <div className="container">
-            <div className="mb-14 text-center animate-in fade-in zoom-in-95 duration-500">
-              <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">Jadilah Bagian dari Dampak</h2>
-              <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Setiap kontribusi, sekecil apapun, membawa kita selangkah lebih dekat menuju Indonesia yang lebih hijau dan sejahtera.</p>
-            </div>
-            <div className="grid gap-8 sm:grid-cols-1 lg:grid-cols-3">
-                <Card className="p-6 flex flex-col">
-                  <HandHeart size={32} className="text-primary mb-4" />
-                  <h3 className="font-headline text-xl mb-2">Dukung Sebagai Donatur</h3>
-                  <p className="text-muted-foreground text-sm flex-grow">Donasi Anda akan langsung mendanai program-program kami di lapangan, dari penanaman pohon hingga pelatihan petani muda. Jadilah pahlawan bagi bumi.</p>
-                  <Button variant="outline" className="mt-6 w-full" asChild>
-                    <Link href={WHATSAPP_LINK} target="_blank">Beri Donasi</Link>
-                  </Button>
-                </Card>
-                 <Card className="p-6 flex flex-col bg-primary text-primary-foreground border-none">
-                  <Target size={32} className="mb-4" />
-                  <h3 className="font-headline text-xl mb-2">Gabung Sebagai Anggota</h3>
-                  <p className="text-sm opacity-90 flex-grow">Jadilah agen perubahan. Dapatkan akses ke jaringan, pelatihan, dan kesempatan untuk terlibat langsung dalam proyek-proyek yang bermakna.</p>
-                  <Button variant="secondary" className="mt-6 w-full" asChild>
-                    <Link href="/register">Daftar Sekarang</Link>
-                  </Button>
-                </Card>
-                <Card className="p-6 flex flex-col">
-                  <Handshake size={32} className="text-primary mb-4" />
-                  <h3 className="font-headline text-xl mb-2">Jalin Kemitraan</h3>
-                  <p className="text-muted-foreground text-sm flex-grow">Kami membuka pintu kolaborasi bagi perusahaan, pemerintah, dan NGO. Mari kita bersinergi untuk menciptakan dampak yang lebih besar dan berkelanjutan.</p>
-                  <Button variant="outline" className="mt-6 w-full" asChild>
-                    <Link href={WHATSAPP_LINK} target="_blank">Hubungi Kami</Link>
-                  </Button>
-                </Card>
-            </div>
-          </div>
-        </section>
       </main>
       <Footer />
     </div>
   );
 }
-
-    
