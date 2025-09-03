@@ -41,26 +41,35 @@ export default function GenerateBeritaPage() {
     toast({ title: 'AI sedang bekerja...', description: 'Mohon tunggu, ini mungkin memakan waktu beberapa saat.' });
 
     try {
-      // 1. Generate the article text and image hints
+      // 1. Generate the article text, cover image, and image hints
       const articleResult = await generateNewsArticle(data);
       let finalContent = articleResult.content;
       
-      toast({ title: 'Artikel dibuat!', description: 'Sekarang, AI akan membuat gambar...' });
+      toast({ title: 'Artikel & sampul dibuat!', description: 'Sekarang, AI akan membuat gambar sisipan...' });
 
-      // 2. Generate images for all hints
-      if (articleResult.imageHints && articleResult.imageHints.length > 0) {
-        const imagePromises = articleResult.imageHints.map(hint => generateImage({ prompt: hint }));
+      // 2. Generate images for the rest of the hints (excluding the first one which is the cover)
+      const remainingHints = articleResult.imageHints.slice(1);
+      if (remainingHints.length > 0) {
+        const imagePromises = remainingHints.map(hint => generateImage({ prompt: hint }));
         const images = await Promise.all(imagePromises);
         
         // 3. Replace placeholders with actual image tags
-        finalContent = finalContent.replace(/<!-- IMAGE_HINT: (.*?) -->/g, () => {
-           const image = images.shift();
+        // We skip the first placeholder as it was for the cover
+        let imageIndex = 0;
+        finalContent = finalContent.replace(/<!-- IMAGE_HINT: (.*?) -->/g, (match, hint) => {
+           // The first hint is the cover, so we don't replace its placeholder in the content
+           if (hint === articleResult.imageHints[0]) {
+               return match; // Keep the first placeholder or remove it
+           }
+           const image = images[imageIndex++];
            if (image && image.imageUrl) {
-               // Simple image tag, can be enhanced with Image component logic if needed, but this is server-side.
                return `<img src="${image.imageUrl}" alt="${articleResult.title}" style="width:100%;height:auto;border-radius:0.5rem;margin:1rem 0;" />`;
            }
            return ''; // Remove placeholder if image generation fails
         });
+
+        // Clean up the cover image hint from the final content
+        finalContent = finalContent.replace(`<!-- IMAGE_HINT: ${articleResult.imageHints[0]} -->`, '');
       }
 
       setGeneratedContent({ ...articleResult, content: finalContent });
@@ -163,7 +172,7 @@ export default function GenerateBeritaPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Konten</Label>
-                    <RichTextEditor value={generatedContent.content} onChange={() => {}} />
+                    <RichTextEditor value={generatedContent.content} onChange={(value) => setGeneratedContent(prev => prev ? {...prev, content: value} : null)} />
                   </div>
                   <Button onClick={onSave} disabled={loading} className="w-full">
                     {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
