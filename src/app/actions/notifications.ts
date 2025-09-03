@@ -2,8 +2,9 @@
 'use server';
 
 import { db } from '@/lib/firebase';
+import { getMessaging } from 'firebase-admin/messaging';
 import { collection, addDoc, query, where, getDocs, serverTimestamp, updateDoc } from 'firebase/firestore';
-import { revalidatePath } from 'next/cache';
+import { initializeAdminApp } from '@/lib/firebase-admin';
 
 export interface PushSubscription {
   userId: string;
@@ -57,4 +58,62 @@ export async function saveSubscription(userId: string, token: string) {
     console.error("Error saving subscription:", error);
     throw new Error('Failed to save subscription on the server.');
   }
+}
+
+interface NotificationPayload {
+    title: string;
+    body: string;
+    icon?: string;
+    link?: string;
+}
+
+export async function sendNotificationToAll(payload: NotificationPayload) {
+    try {
+        await initializeAdminApp();
+        const subscriptionsSnapshot = await getDocs(subscriptionsCollection);
+        const tokens: string[] = [];
+        subscriptionsSnapshot.forEach(doc => {
+            tokens.push(doc.data().token);
+        });
+
+        if (tokens.length === 0) {
+            return { successCount: 0, failureCount: 0, message: "Tidak ada pengguna yang terdaftar untuk notifikasi." };
+        }
+
+        const message = {
+            notification: {
+                title: payload.title,
+                body: payload.body,
+            },
+            webpush: {
+                notification: {
+                    icon: payload.icon || '/icon-192x192.png',
+                },
+                fcm_options: {
+                    link: payload.link || '/',
+                },
+            },
+            tokens: tokens,
+        };
+
+        const response = await getMessaging().sendEachForMulticast(message);
+        console.log(`Successfully sent message to ${response.successCount} devices.`);
+        if (response.failureCount > 0) {
+            console.error(`Failed to send to ${response.failureCount} devices.`);
+            response.responses.forEach(resp => {
+                if (!resp.success) {
+                    console.error('Failure reason:', resp.error);
+                }
+            });
+        }
+        return { successCount: response.successCount, failureCount: response.failureCount };
+
+    } catch (error: any) {
+        console.error('Error sending notification to all:', error);
+        // Log the full error for server-side debugging
+        if (error.code === 'messaging/invalid-argument') {
+            throw new Error("Payload notifikasi tidak valid. Pastikan judul dan pesan terisi.");
+        }
+        throw new Error("Gagal mengirim notifikasi: " + error.message);
+    }
 }
