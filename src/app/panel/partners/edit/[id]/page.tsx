@@ -12,16 +12,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Loader2, Image as ImageIcon } from 'lucide-react';
-import { getPartner, updatePartner } from '@/app/actions/partners';
+import { Loader2 } from 'lucide-react';
+import { getPartner, updatePartner, updatePartnerWithUrl } from '@/app/actions/partners';
 import Image from 'next/image';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Nama wajib diisi'),
   websiteUrl: z.string().url('URL website tidak valid'),
-  logoUrl: z.string().url('URL logo tidak valid'),
   isFeatured: z.boolean().default(false),
-});
+  logoSource: z.enum(['url', 'upload']).default('url'),
+  logoUrl: z.string().optional(),
+  logoFile: z.any().optional(),
+}).refine(data => {
+    if (data.logoSource === 'url') return !!data.logoUrl && z.string().url().safeParse(data.logoUrl).success;
+    return true;
+}, { message: 'URL Logo tidak valid', path: ['logoUrl'] });
+// Note: We don't require logoFile on edit, as the user may not want to change it.
 
 type FormData = z.infer<typeof formSchema>;
 
@@ -43,6 +50,16 @@ export default function EditPartnerPage() {
   } = useForm<FormData>({ resolver: zodResolver(formSchema) });
 
   const logoUrl = watch('logoUrl');
+  const logoFile = watch('logoFile');
+  const logoSource = watch('logoSource');
+
+  const [initialLogoUrl, setInitialLogoUrl] = useState<string | null>(null);
+
+  const previewUrl = logoSource === 'url' 
+    ? logoUrl 
+    : logoFile?.[0] 
+    ? URL.createObjectURL(logoFile[0]) 
+    : initialLogoUrl;
   
   useEffect(() => {
     const fetchPartner = async () => {
@@ -50,7 +67,11 @@ export default function EditPartnerPage() {
       try {
         const partner = await getPartner(partnerId);
         if (partner) {
-          reset(partner);
+          reset({
+              ...partner,
+              logoSource: 'url' // Default to URL for existing partners
+          });
+          setInitialLogoUrl(partner.logoUrl);
         } else {
           toast({ variant: 'destructive', title: 'Mitra tidak ditemukan' });
           router.push('/panel/partners');
@@ -67,11 +88,24 @@ export default function EditPartnerPage() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-        await updatePartner(partnerId, data);
+        if (data.logoSource === 'upload') {
+            const { logoUrl, logoFile, ...rest } = data;
+            await updatePartner(partnerId, rest, logoFile?.[0]);
+        } else {
+             const { logoFile, ...rest } = data;
+             if (!rest.logoUrl) throw new Error("Logo URL is required");
+             await updatePartnerWithUrl(partnerId, {
+                 name: rest.name,
+                 websiteUrl: rest.websiteUrl,
+                 isFeatured: rest.isFeatured,
+                 logoUrl: rest.logoUrl
+             });
+        }
         toast({ title: 'Mitra berhasil diperbarui!' });
         router.push('/panel/partners');
     } catch (error) {
         toast({ variant: 'destructive', title: 'Gagal memperbarui mitra', description: (error as Error).message });
+    } finally {
         setLoading(false);
     }
   };
@@ -110,16 +144,37 @@ export default function EditPartnerPage() {
             <Input id="websiteUrl" type="url" {...register('websiteUrl')} />
             {errors.websiteUrl && <p className="text-sm text-destructive">{errors.websiteUrl.message}</p>}
           </div>
-           <div className="space-y-2">
-            <Label htmlFor="logoUrl">URL Logo</Label>
-            <Input id="logoUrl" type="url" {...register('logoUrl')} placeholder="https://example.com/logo.png" />
-            {errors.logoUrl && <p className="text-sm text-destructive">{errors.logoUrl.message}</p>}
-            {logoUrl && (
+          <div className="space-y-2">
+            <Label>Sumber Logo</Label>
+             <Controller name="logoSource" control={control} render={({ field }) => (
+                <RadioGroup onValueChange={field.onChange} value={field.value} className="flex gap-4">
+                    <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="upload" /> Unggah File</Label>
+                    <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="url" /> Gunakan URL</Label>
+                </RadioGroup>
+            )} />
+           </div>
+
+            {logoSource === 'upload' && (
+                <div className="space-y-2">
+                    <Label htmlFor="logoFile">File Logo (Kosongkan jika tidak ingin mengubah)</Label>
+                    <Input id="logoFile" type="file" {...register('logoFile')} accept="image/*" />
+                    {errors.logoFile && <p className="text-sm text-destructive">{(errors.logoFile as any).message}</p>}
+                </div>
+            )}
+            {logoSource === 'url' && (
+                <div className="space-y-2">
+                    <Label htmlFor="logoUrl">URL Logo</Label>
+                    <Input id="logoUrl" type="url" {...register('logoUrl')} placeholder="https://example.com/logo.png" />
+                    {errors.logoUrl && <p className="text-sm text-destructive">{errors.logoUrl.message}</p>}
+                </div>
+            )}
+            
+            {previewUrl && (
               <div className="mt-2">
-                 <Image src={logoUrl} alt="Pratinjau logo" width={120} height={60} className="object-contain border p-2 rounded-md bg-white" />
+                 <Image src={previewUrl} alt="Pratinjau logo" width={120} height={60} className="object-contain border p-2 rounded-md bg-white" />
               </div>
             )}
-          </div>
+
            <div className="flex items-center space-x-2 pt-2">
               <Controller
                 name="isFeatured"

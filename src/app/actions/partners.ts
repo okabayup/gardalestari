@@ -3,7 +3,7 @@
 
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
-import { ref, deleteObject } from 'firebase/storage';
+import { ref, deleteObject, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 
 export interface Partner {
@@ -37,9 +37,20 @@ export async function getPartner(id: string): Promise<Partner | null> {
 }
 
 // Create a new partner
-export async function createPartner(data: Omit<Partner, 'id'>) {
+export async function createPartner(data: Omit<Partner, 'id' | 'logoUrl'>, logoFile?: File) {
   try {
-    await addDoc(partnersCollection, data);
+    let logoUrl = '';
+    if (logoFile) {
+        const logoRef = ref(storage, `partner-logos/${Date.now()}_${logoFile.name}`);
+        await uploadBytes(logoRef, logoFile);
+        logoUrl = await getDownloadURL(logoRef);
+    } else {
+        throw new Error("Logo harus diunggah.");
+    }
+    
+    const partnerData = { ...data, logoUrl };
+    await addDoc(partnersCollection, partnerData);
+    
     revalidatePath('/panel/partners');
     revalidatePath('/');
   } catch (error) {
@@ -48,16 +59,43 @@ export async function createPartner(data: Omit<Partner, 'id'>) {
   }
 }
 
+// Create a new partner using a URL for the logo
+export async function createPartnerWithUrl(data: Omit<Partner, 'id'>) {
+    try {
+        await addDoc(partnersCollection, data);
+        revalidatePath('/panel/partners');
+        revalidatePath('/');
+    } catch (error) {
+        console.error("Error creating partner with URL:", error);
+        throw new Error("Gagal membuat data mitra dengan URL.");
+    }
+}
+
+
 // Update an existing partner
-export async function updatePartner(id: string, data: Partial<Omit<Partner, 'id'>>) {
+export async function updatePartner(id: string, data: Partial<Omit<Partner, 'id' | 'logoUrl'>>, logoFile?: File) {
   try {
     const partnerDoc = doc(db, 'partners', id);
-    
-    // If the logo URL is changing, we might want to delete the old one if it was a Firebase Storage URL.
-    // However, for simplicity now, we assume URLs are external and don't need deletion.
-    // If you store logos in Firebase Storage, you would add logic here to delete the old logo.
+    const dataToUpdate: { [key: string]: any } = { ...data };
 
-    await updateDoc(partnerDoc, data);
+    if (logoFile) {
+        const currentPartner = await getPartner(id);
+        if (currentPartner?.logoUrl && currentPartner.logoUrl.includes('firebasestorage.googleapis.com')) {
+             try {
+                const oldLogoRef = ref(storage, currentPartner.logoUrl);
+                await deleteObject(oldLogoRef);
+            } catch (storageError: any) {
+                if (storageError.code !== 'storage/object-not-found') {
+                    console.warn("Could not delete old logo, it might not exist.", storageError);
+                }
+            }
+        }
+        const newLogoRef = ref(storage, `partner-logos/${Date.now()}_${logoFile.name}`);
+        await uploadBytes(newLogoRef, logoFile);
+        dataToUpdate.logoUrl = await getDownloadURL(newLogoRef);
+    }
+    
+    await updateDoc(partnerDoc, dataToUpdate);
 
     revalidatePath('/panel/partners');
     revalidatePath(`/panel/partners/edit/${id}`);
@@ -67,6 +105,21 @@ export async function updatePartner(id: string, data: Partial<Omit<Partner, 'id'
     throw new Error("Gagal memperbarui data mitra.");
   }
 }
+
+// Update partner that uses a URL for logo
+export async function updatePartnerWithUrl(id: string, data: Partial<Omit<Partner, 'id'>>) {
+    try {
+        const partnerDoc = doc(db, 'partners', id);
+        await updateDoc(partnerDoc, data);
+        revalidatePath('/panel/partners');
+        revalidatePath(`/panel/partners/edit/${id}`);
+        revalidatePath('/');
+    } catch (error) {
+        console.error("Error updating partner with URL:", error);
+        throw new Error("Gagal memperbarui data mitra dengan URL.");
+    }
+}
+
 
 // Delete a partner
 export async function deletePartner(id: string) {

@@ -13,15 +13,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Loader2 } from 'lucide-react';
-import { createPartner, Partner } from '@/app/actions/partners';
+import { createPartner, createPartnerWithUrl } from '@/app/actions/partners';
 import Image from 'next/image';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Nama wajib diisi'),
   websiteUrl: z.string().url('URL website tidak valid'),
-  logoUrl: z.string().url('URL logo wajib diisi'),
   isFeatured: z.boolean().default(false),
-});
+  logoSource: z.enum(['url', 'upload']).default('upload'),
+  logoUrl: z.string().optional(),
+  logoFile: z.any().optional(),
+}).refine(data => {
+    if (data.logoSource === 'url') return !!data.logoUrl && z.string().url().safeParse(data.logoUrl).success;
+    return true;
+}, { message: 'URL Logo tidak valid', path: ['logoUrl'] })
+.refine(data => {
+    if (data.logoSource === 'upload') return !!data.logoFile && data.logoFile.length > 0;
+    return true;
+}, { message: 'File logo wajib diunggah', path: ['logoFile'] });
+
 
 type FormData = z.infer<typeof formSchema>;
 
@@ -42,19 +53,37 @@ export default function NewPartnerPage() {
           isFeatured: false,
           name: '',
           websiteUrl: '',
-          logoUrl: ''
+          logoSource: 'upload'
       }
   });
 
   const logoUrl = watch('logoUrl');
+  const logoFile = watch('logoFile');
+  const logoSource = watch('logoSource');
+
+  const previewUrl = logoSource === 'url' 
+    ? logoUrl 
+    : logoFile?.[0] 
+    ? URL.createObjectURL(logoFile[0]) 
+    : null;
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-        const partnerPayload: Omit<Partner, 'id'> = {
-            ...data
-        };
-        await createPartner(partnerPayload);
+        if (data.logoSource === 'upload') {
+            const { logoUrl, logoFile, ...rest } = data;
+            await createPartner(rest, logoFile[0]);
+        } else {
+             const { logoFile, ...rest } = data;
+             if (!rest.logoUrl) throw new Error("Logo URL is required");
+             await createPartnerWithUrl({
+                 name: rest.name,
+                 websiteUrl: rest.websiteUrl,
+                 isFeatured: rest.isFeatured,
+                 logoUrl: rest.logoUrl
+             });
+        }
+        
         toast({ title: 'Mitra berhasil ditambahkan!' });
         router.push('/panel/partners');
     } catch (error) {
@@ -96,15 +125,35 @@ export default function NewPartnerPage() {
             {errors.websiteUrl && <p className="text-sm text-destructive">{errors.websiteUrl.message}</p>}
           </div>
            <div className="space-y-2">
-            <Label htmlFor="logoUrl">URL Logo</Label>
-            <Input id="logoUrl" type="url" {...register('logoUrl')} placeholder="https://example.com/logo.png" />
-            {errors.logoUrl && <p className="text-sm text-destructive">{errors.logoUrl.message}</p>}
-            {logoUrl && (
-                <div className="mt-2">
-                    <Image src={logoUrl} alt="Pratinjau logo" width={120} height={60} className="object-contain border p-2 rounded-md bg-white" />
+            <Label>Sumber Logo</Label>
+             <Controller name="logoSource" control={control} render={({ field }) => (
+                <RadioGroup onValueChange={field.onChange} value={field.value} className="flex gap-4">
+                    <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="upload" /> Unggah File</Label>
+                    <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="url" /> Gunakan URL</Label>
+                </RadioGroup>
+            )} />
+           </div>
+
+            {logoSource === 'upload' && (
+                <div className="space-y-2">
+                    <Label htmlFor="logoFile">File Logo</Label>
+                    <Input id="logoFile" type="file" {...register('logoFile')} accept="image/*" />
+                    {errors.logoFile && <p className="text-sm text-destructive">{(errors.logoFile as any).message}</p>}
                 </div>
             )}
-          </div>
+            {logoSource === 'url' && (
+                <div className="space-y-2">
+                    <Label htmlFor="logoUrl">URL Logo</Label>
+                    <Input id="logoUrl" type="url" {...register('logoUrl')} placeholder="https://example.com/logo.png" />
+                    {errors.logoUrl && <p className="text-sm text-destructive">{errors.logoUrl.message}</p>}
+                </div>
+            )}
+            {previewUrl && (
+                <div className="mt-2">
+                    <Image src={previewUrl} alt="Pratinjau logo" width={120} height={60} className="object-contain border p-2 rounded-md bg-white" />
+                </div>
+            )}
+            
            <div className="flex items-center space-x-2 pt-2">
               <Controller
                 name="isFeatured"
