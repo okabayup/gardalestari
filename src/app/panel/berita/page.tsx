@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, MoreHorizontal, Loader2, Trash2 } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Loader2, Trash2, Sparkles } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -98,19 +98,29 @@ export default function AdminBeritaPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="font-headline text-2xl font-bold">Manajemen Berita</h1>
-            <p className="text-muted-foreground">Buat, edit, dan hapus berita.</p>
+            <p className="text-muted-foreground">Buat, edit, dan kelola semua artikel berita.</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => router.push('/panel/berita/kategori')}>
-                Kelola Kategori
+             <Button variant="outline" onClick={() => router.push('/panel/berita/generate')}>
+                <Sparkles className="mr-2 h-4 w-4" />
+                Buat dengan AI
             </Button>
             <Button onClick={() => router.push('/panel/berita/new')}>
               <PlusCircle className="mr-2 h-4 w-4" />
-              Buat Berita Baru
+              Tulis Manual
             </Button>
           </div>
         </div>
         <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+             <div>
+                <CardTitle>Daftar Artikel</CardTitle>
+                <CardDescription>Total {posts.length} artikel dipublikasikan.</CardDescription>
+             </div>
+             <Button variant="outline" size="sm" onClick={() => router.push('/panel/berita/kategori')}>
+                Kelola Kategori
+            </Button>
+          </CardHeader>
           <CardContent className="p-0">
             <Table>
               <TableHeader>

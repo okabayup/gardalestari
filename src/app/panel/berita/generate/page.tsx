@@ -1,0 +1,185 @@
+
+'use client';
+
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, Sparkles } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { createBeritaPost, BeritaPost } from '@/app/actions/berita';
+import { useAuth } from '@/hooks/use-auth';
+import { generateNewsArticle, NewsGeneratorOutput } from '@/ai/flows/news-generator-flow';
+import { generateImage } from '@/ai/flows/image-generate-flow';
+import RichTextEditor from '@/components/panel/RichTextEditor';
+
+interface GenerateForm {
+  topic: string;
+  description: string;
+}
+
+export default function GenerateBeritaPage() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [generatedContent, setGeneratedContent] = useState<NewsGeneratorOutput | null>(null);
+
+  const { register, handleSubmit } = useForm<GenerateForm>();
+  
+  const generateSlug = (title: string) => {
+    return title.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
+  };
+
+  const onGenerate = async (data: GenerateForm) => {
+    setLoading(true);
+    setGeneratedContent(null);
+    toast({ title: 'AI sedang bekerja...', description: 'Mohon tunggu, ini mungkin memakan waktu beberapa saat.' });
+
+    try {
+      // 1. Generate the article text and image hints
+      const articleResult = await generateNewsArticle(data);
+      let finalContent = articleResult.content;
+      
+      toast({ title: 'Artikel dibuat!', description: 'Sekarang, AI akan membuat gambar...' });
+
+      // 2. Generate images for all hints
+      if (articleResult.imageHints && articleResult.imageHints.length > 0) {
+        const imagePromises = articleResult.imageHints.map(hint => generateImage({ prompt: hint }));
+        const images = await Promise.all(imagePromises);
+        
+        // 3. Replace placeholders with actual image tags
+        finalContent = finalContent.replace(/<!-- IMAGE_HINT: (.*?) -->/g, () => {
+           const image = images.shift();
+           if (image && image.imageUrl) {
+               // Simple image tag, can be enhanced with Image component logic if needed, but this is server-side.
+               return `<img src="${image.imageUrl}" alt="${articleResult.title}" style="width:100%;height:auto;border-radius:0.5rem;margin:1rem 0;" />`;
+           }
+           return ''; // Remove placeholder if image generation fails
+        });
+      }
+
+      setGeneratedContent({ ...articleResult, content: finalContent });
+      toast({ title: 'Berita dan gambar berhasil dibuat!', description: 'Silakan tinjau dan simpan.' });
+
+    } catch (error) {
+      console.error(error);
+      toast({ variant: 'destructive', title: 'Gagal membuat berita', description: (error as Error).message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onSave = async () => {
+    if (!generatedContent || !user) return;
+    setLoading(true);
+
+    try {
+      const newPost: Omit<BeritaPost, 'id'> = {
+        title: generatedContent.title,
+        slug: generateSlug(generatedContent.title),
+        author: user?.displayName || 'Admin',
+        date: new Date().toISOString(),
+        imageUrl: generatedContent.coverImageUrl || '',
+        imageHint: generatedContent.imageHints[0] || 'AI generated',
+        content: generatedContent.content,
+        excerpt: generatedContent.excerpt,
+        category: generatedContent.category,
+      };
+      await createBeritaPost(newPost);
+      toast({
+        title: 'Berita Disimpan!',
+        description: 'Berita baru telah berhasil disimpan dan dipublikasikan.',
+      });
+      router.push('/panel/berita');
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Gagal Menyimpan',
+        description: (error as Error).message || 'Terjadi kesalahan saat menyimpan berita.',
+      });
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+       <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-headline text-2xl font-bold">Generator Berita AI</h1>
+          <p className="text-muted-foreground">Buat draf berita lengkap dengan gambar hanya dengan satu klik.</p>
+        </div>
+        <Button variant="outline" onClick={() => router.push('/panel/berita')}>
+          Kembali
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle>Input AI</CardTitle>
+              <CardDescription>Berikan AI sedikit konteks untuk memulai.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit(onGenerate)} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="topic">Topik Berita (Opsional)</Label>
+                  <Input id="topic" {...register('topic')} placeholder="Contoh: Panen raya di desa X" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="description">Deskripsi Singkat</Label>
+                  <Textarea id="description" {...register('description', { required: true })} placeholder="Jelaskan poin-poin utama atau ide untuk berita tersebut." />
+                </div>
+                <Button type="submit" disabled={loading} className="w-full">
+                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                  {loading ? 'AI sedang menulis...' : 'Buat Berita'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Hasil Generator</CardTitle>
+              <CardDescription>Tinjau hasil di bawah ini. Anda dapat mengeditnya sebelum menyimpan.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {generatedContent ? (
+                <>
+                  <div className="space-y-2">
+                    <Label>Judul</Label>
+                    <Input readOnly value={generatedContent.title} />
+                  </div>
+                   <div className="space-y-2">
+                    <Label>Kategori</Label>
+                    <Input readOnly value={generatedContent.category} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Konten</Label>
+                    <RichTextEditor value={generatedContent.content} onChange={() => {}} />
+                  </div>
+                  <Button onClick={onSave} disabled={loading} className="w-full">
+                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Simpan & Publikasikan Berita
+                  </Button>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center text-center text-muted-foreground p-10 border-2 border-dashed rounded-lg min-h-[300px]">
+                  <Sparkles className="h-12 w-12 mb-4" />
+                  <p>Hasil berita yang dibuat oleh AI akan muncul di sini.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
