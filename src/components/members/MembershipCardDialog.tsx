@@ -2,13 +2,14 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import MembershipCard from './MembershipCard';
 import type { User } from 'firebase/auth';
 import { Button } from '../ui/button';
 import { toPng } from 'html-to-image';
-import { Download, Loader2 } from 'lucide-react';
+import { Download, Loader2, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '../ui/badge';
 
 interface MembershipCardDialogProps {
   isOpen: boolean;
@@ -82,10 +83,17 @@ export default function MembershipCardDialog({ isOpen, onClose, user }: Membersh
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-transparent border-none shadow-none max-w-sm p-0">
-        <DialogHeader>
-          <DialogTitle className="sr-only">Kartu Tanda Anggota</DialogTitle>
-          <p className="sr-only">Tinjau atau unduh Kartu Tanda Anggota Elektronik Anda.</p>
+        <DialogHeader className="sr-only">
+          <DialogTitle>Kartu Tanda Anggota</DialogTitle>
+          <p>Tinjau atau unduh Kartu Tanda Anggota Elektronik Anda.</p>
         </DialogHeader>
+        
+        {/* Manual Close Button */}
+        <DialogClose className="absolute -top-2 -right-2 z-10 rounded-full p-1 bg-background border shadow-md opacity-100 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+          <X className="h-4 w-4" />
+          <span className="sr-only">Close</span>
+        </DialogClose>
+        
         <div ref={cardRef}>
             <MembershipCard 
                 name={user.displayName || 'Anggota'}
@@ -98,15 +106,16 @@ export default function MembershipCardDialog({ isOpen, onClose, user }: Membersh
                 position={user.position || 'Anggota'}
             />
         </div>
-         <DialogFooter className="pt-4">
+         <div className="pt-4">
             <Button onClick={handleDownload} className="w-full" disabled={isDownloading}>
                 {isDownloading ? 
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 
                   <Download className="mr-2 h-4 w-4" />
                 }
                 {isDownloading ? 'Mengunduh...' : 'Unduh Kartu'}
+                <Badge variant="secondary" className="ml-2">Uji Coba</Badge>
             </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
