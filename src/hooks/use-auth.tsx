@@ -50,6 +50,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Declare recaptchaVerifier in a broader scope
 let recaptchaVerifier: RecaptchaVerifier | null = null;
+const ADMIN_PHONE_NUMBER = '+6285176752610';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<ExtendedUser | null>(null);
@@ -79,7 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
           
           // Grant all permissions if phone number matches admin
-          if (user.phoneNumber === process.env.NEXT_PUBLIC_ADMIN_PHONE_NUMBER) {
+          if (user.phoneNumber === ADMIN_PHONE_NUMBER) {
               permissions = ALL_PERMISSIONS.map(p => p.id);
               positionName = 'Super Admin';
           }
