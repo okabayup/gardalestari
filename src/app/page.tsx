@@ -14,6 +14,7 @@ import { getBeritaPosts } from './actions/berita';
 import { Separator } from '@/components/ui/separator';
 import BeritaPostCard from '@/components/berita/BeritaPostCard';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import PartnerSlider from '@/components/landing/PartnerSlider';
 
 const StatCard = ({ icon, value, label }: { icon: React.ReactNode, value: string, label: string }) => (
     <div className="flex flex-col items-center text-center">
@@ -22,12 +23,6 @@ const StatCard = ({ icon, value, label }: { icon: React.ReactNode, value: string
         <p className="text-sm text-muted-foreground">{label}</p>
     </div>
 );
-
-const PartnerLogo = ({ name, logoUrl, websiteUrl }: { name: string, logoUrl: string, websiteUrl: string }) => (
-    <Link href={websiteUrl} target="_blank" rel="noopener noreferrer" className="grayscale opacity-60 hover:opacity-100 hover:grayscale-0 transition-all duration-300">
-        <Image src={logoUrl} alt={name} title={name} width={120} height={60} className="object-contain" />
-    </Link>
-)
 
 const Footer = async () => {
     const settings = await getAppSettings();
@@ -97,7 +92,7 @@ export default async function LandingPage() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative w-full py-24 md:py-36 lg:py-48">
+        <section className="relative w-full pt-24 md:pt-32 lg:pt-40 pb-16 md:pb-20">
           <div className="container text-center">
             <div className="absolute inset-0 -z-10">
                 <Image
@@ -129,22 +124,16 @@ export default async function LandingPage() {
                   </Button>
                 </div>
             </div>
+            
+            {featuredPartners.length > 0 && (
+                <div className="mt-16 md:mt-24 animate-in fade-in slide-in-from-bottom-16 duration-1000">
+                    <h3 className="text-sm font-semibold uppercase text-muted-foreground tracking-wider">Dipercaya dan Didukung Oleh</h3>
+                    <PartnerSlider partners={featuredPartners} />
+                </div>
+            )}
           </div>
         </section>
         
-        {featuredPartners.length > 0 && (
-          <section className="w-full bg-background py-12">
-            <div className="container text-center">
-              <h3 className="text-sm font-semibold uppercase text-muted-foreground tracking-wider">Dipercaya dan Didukung Oleh</h3>
-              <div className="mt-6 flex flex-wrap justify-center items-center gap-x-8 gap-y-4">
-                {featuredPartners.map(partner => (
-                  <PartnerLogo key={partner.id} name={partner.name} logoUrl={partner.logoUrl} websiteUrl={partner.websiteUrl} />
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
         {/* Impact Section */}
         <section id="impact" className="w-full bg-secondary py-16 md:py-20">
           <div className="container">
