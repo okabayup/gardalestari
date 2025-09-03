@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRequireAuth } from '@/hooks/use-auth';
@@ -5,9 +6,11 @@ import Header from './Header';
 import BottomNav from './BottomNav';
 import { Loader2 } from 'lucide-react';
 import InstallPWA from './InstallPWA';
+import { useFcm } from '@/hooks/use-fcm';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useRequireAuth();
+  useFcm(); // Initialize FCM and request permission
 
   if (loading || !user) {
     return (
