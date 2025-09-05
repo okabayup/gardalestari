@@ -12,6 +12,19 @@ import { Loader2, PlusCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { Timestamp } from 'firebase/firestore';
+
+// Helper to convert Firestore Timestamp-like objects to Date
+const toJsDate = (timestamp: any): Date => {
+    if (timestamp instanceof Timestamp) {
+        return timestamp.toDate();
+    }
+    if (timestamp && typeof timestamp.seconds === 'number' && typeof timestamp.nanoseconds === 'number') {
+        return new Timestamp(timestamp.seconds, timestamp.nanoseconds).toDate();
+    }
+    return new Date();
+};
+
 
 export default function ProgramsPage() {
   const [allPrograms, setAllPrograms] = useState<Program[]>([]);
@@ -46,13 +59,13 @@ export default function ProgramsPage() {
     return allPrograms.filter(p => p.tags.includes(selectedTag));
   }, [allPrograms, selectedTag]);
 
-  const ongoingPrograms = useMemo(() => filteredPrograms.filter(p => new Date() < p.endDate.toDate()), [filteredPrograms]);
-  const pastPrograms = useMemo(() => filteredPrograms.filter(p => new Date() >= p.endDate.toDate()), [filteredPrograms]);
+  const ongoingPrograms = useMemo(() => filteredPrograms.filter(p => new Date() < toJsDate(p.endDate)), [filteredPrograms]);
+  const pastPrograms = useMemo(() => filteredPrograms.filter(p => new Date() >= toJsDate(p.endDate)), [filteredPrograms]);
 
   const formatProgramForCard = (program: Program) => ({
       ...program,
-      formattedStartDate: format(program.startDate.toDate(), "d MMM yyyy", { locale: id }),
-      formattedEndDate: format(program.endDate.toDate(), "d MMM yyyy", { locale: id }),
+      formattedStartDate: format(toJsDate(program.startDate), "d MMM yyyy", { locale: id }),
+      formattedEndDate: format(toJsDate(program.endDate), "d MMM yyyy", { locale: id }),
   });
 
 
