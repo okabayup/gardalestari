@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
 
 export default function ProgramsPage() {
   const [allPrograms, setAllPrograms] = useState<Program[]>([]);
@@ -46,6 +48,13 @@ export default function ProgramsPage() {
 
   const ongoingPrograms = useMemo(() => filteredPrograms.filter(p => new Date() < p.endDate.toDate()), [filteredPrograms]);
   const pastPrograms = useMemo(() => filteredPrograms.filter(p => new Date() >= p.endDate.toDate()), [filteredPrograms]);
+
+  const formatProgramForCard = (program: Program) => ({
+      ...program,
+      formattedStartDate: format(program.startDate.toDate(), "d MMM yyyy", { locale: id }),
+      formattedEndDate: format(program.endDate.toDate(), "d MMM yyyy", { locale: id }),
+  });
+
 
   return (
     <MainLayout>
@@ -90,7 +99,7 @@ export default function ProgramsPage() {
                 <h2 className="font-headline text-2xl font-semibold">Sedang Berlangsung</h2>
                 <div className="grid gap-6">
                   {ongoingPrograms.map((program) => (
-                    <ProgramCard key={program.id} {...program} />
+                    <ProgramCard key={program.id} {...formatProgramForCard(program)} />
                   ))}
                 </div>
               </div>
@@ -103,7 +112,7 @@ export default function ProgramsPage() {
                     <h2 className="font-headline text-2xl font-semibold">Telah Berakhir</h2>
                     <div className="grid gap-6">
                         {pastPrograms.map((program) => (
-                        <ProgramCard key={program.id} {...program} isPast />
+                           <ProgramCard key={program.id} {...formatProgramForCard(program)} isPast />
                         ))}
                     </div>
                 </div>
