@@ -15,7 +15,9 @@ import {
   increment,
   writeBatch,
   where,
-  updateDoc
+  updateDoc,
+  startAfter,
+  limit
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
@@ -194,21 +196,44 @@ export async function createPost(caption: string, mediaPayload: {file: File, men
   }
 }
 
-// Get all posts
-export async function getPosts(currentUserId: string): Promise<PostWithAuthor[]> {
-  const q = query(
-    postsCollection, 
-    where('status', '==', 'published'),
-    orderBy('createdAt', 'desc')
-  );
+// Get all posts with pagination
+export async function getPosts(currentUserId: string, lastVisibleId?: string) {
+  
+  let q;
+  if (lastVisibleId) {
+      const lastVisibleDoc = await getDoc(doc(db, 'posts', lastVisibleId));
+       q = query(
+        postsCollection, 
+        where('status', '==', 'published'),
+        orderBy('createdAt', 'desc'),
+        startAfter(lastVisibleDoc),
+        limit(5)
+      );
+  } else {
+       q = query(
+        postsCollection, 
+        where('status', '==', 'published'),
+        orderBy('createdAt', 'desc'),
+        limit(5)
+      );
+  }
+ 
   const postsSnapshot = await getDocs(q);
   
   const posts = await Promise.all(postsSnapshot.docs.map(doc => 
     buildPostWithAuthor(doc as any, currentUserId)
   ));
   
-  return posts;
+  // Get the ID of the last document
+  const lastDoc = postsSnapshot.docs[postsSnapshot.docs.length - 1];
+  const newLastVisibleId = lastDoc ? lastDoc.id : null;
+  
+  return {
+    posts,
+    lastVisibleId: newLastVisibleId
+  };
 }
+
 
 // Get a single post by ID
 export async function getPostById(postId: string, currentUserId?: string): Promise<PostWithAuthor | null> {

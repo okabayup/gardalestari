@@ -24,7 +24,6 @@ import {
   Tags,
   Bell,
   UserCheck,
-  Mail,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
@@ -32,6 +31,7 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Button } from '../ui/button';
 import type { PermissionId } from '@/lib/definitions';
+
 
 const navItems: { href: string; icon: React.ElementType; label: string, permission?: PermissionId }[] = [
     { href: '/panel/dashboard', icon: Home, label: 'Dasbor' },
@@ -43,7 +43,6 @@ const navItems: { href: string; icon: React.ElementType; label: string, permissi
     { href: '/panel/positions', icon: UserCheck, label: 'Jabatan', permission: 'manage_positions' },
     { href: '/panel/partners', icon: Handshake, label: 'Mitra', permission: 'manage_partners' },
     { href: '/panel/forms', icon: FileText, label: 'Formulir', permission: 'manage_forms' },
-    { href: '/panel/email', icon: Mail, label: 'Manajemen Email', permission: 'manage_positions' },
     { href: '/panel/landing', icon: Landmark, label: 'Halaman Utama', permission: 'manage_landing_page' },
     { href: '/panel/settings', icon: Settings, label: 'Pengaturan', permission: 'manage_settings' },
 ];

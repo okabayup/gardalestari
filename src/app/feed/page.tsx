@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import PostCard from '@/components/feed/PostCard';
 import { getPosts, togglePostLike, PostWithAuthor, archivePost } from '@/app/actions/posts';
@@ -10,55 +10,86 @@ import { Loader2, Plus, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Input } from '@/components/ui/input';
 
+// Function to shuffle an array
+const shuffleArray = (array: any[]) => {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+};
 
 export default function FeedPage() {
-  const [allPosts, setAllPosts] = useState<PostWithAuthor[]>([]);
+  const [posts, setPosts] = useState<PostWithAuthor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [lastVisibleId, setLastVisibleId] = useState<string | null | undefined>(undefined);
   const { user } = useAuth();
   const { toast } = useToast();
-  const [searchTerm, setSearchTerm] = useState('');
-
-  useEffect(() => {
-    const fetchPosts = async () => {
+  const loaderRef = useRef<HTMLDivElement>(null);
+  
+  const fetchPosts = useCallback(async () => {
       if (!user) return;
-      setLoading(true);
+      setLoadingMore(true);
+
       try {
-        const fetchedPosts = await getPosts(user.uid);
-        setAllPosts(fetchedPosts);
+        const { posts: newPosts, lastVisibleId: newLastVisibleId } = await getPosts(user.uid, lastVisibleId);
+        // Shuffle new posts before adding them to the state
+        const shuffledPosts = shuffleArray(newPosts);
+        
+        setPosts(prevPosts => [...prevPosts, ...shuffledPosts]);
+        setLastVisibleId(newLastVisibleId);
       } catch (error) {
         toast({
           variant: 'destructive',
           title: 'Gagal memuat feed',
           description: 'Terjadi kesalahan saat mengambil data postingan.'
-        })
+        });
         console.error(error);
       } finally {
-        setLoading(false);
+        setLoadingMore(false);
+        if (loading) setLoading(false);
+      }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user, toast, lastVisibleId, loading]);
+
+  // Initial fetch
+  useEffect(() => {
+    if (user && posts.length === 0) {
+      fetchPosts();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loadingMore && lastVisibleId) {
+          fetchPosts();
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (loaderRef.current) {
+      observer.observe(loaderRef.current);
+    }
+
+    return () => {
+      if (loaderRef.current) {
+        observer.unobserve(loaderRef.current);
       }
     };
-    fetchPosts();
-  }, [user, toast]);
-  
-  const filteredPosts = useMemo(() => {
-    if (!searchTerm) {
-      return allPosts;
-    }
-    const lowercasedFilter = searchTerm.toLowerCase();
-    return allPosts.filter(post => 
-      post.caption.toLowerCase().includes(lowercasedFilter) ||
-      post.author.name.toLowerCase().includes(lowercasedFilter) ||
-      post.author.username.toLowerCase().includes(lowercasedFilter)
-    );
-  }, [searchTerm, allPosts]);
+  }, [fetchPosts, lastVisibleId, loadingMore]);
 
 
   const handleToggleLike = async (postId: string) => {
     if (!user) return;
 
     // Optimistic UI update
-    setAllPosts(prevPosts =>
+    setPosts(prevPosts =>
       prevPosts.map(post => {
         if (post.id === postId) {
           const wasLiked = post.isLiked;
@@ -79,16 +110,27 @@ export default function FeedPage() {
           variant: 'destructive',
           title: 'Gagal',
           description: 'Gagal menyimpan perubahan.'
-        })
-      // Revert optimistic update on error
-      const freshPosts = await getPosts(user.uid);
-      setAllPosts(freshPosts);
+        });
+        // Revert on error - not perfect, a re-fetch might be better
+        setPosts(prevPosts =>
+          prevPosts.map(post => {
+            if (post.id === postId) {
+              const wasLiked = !post.isLiked; // Revert the change
+              return {
+                ...post,
+                isLiked: wasLiked,
+                likesCount: wasLiked ? post.likesCount - 1 : post.likesCount + 1,
+              };
+            }
+            return post;
+          })
+        );
     }
   };
 
   const handleArchivePost = async (postId: string) => {
     // Optimistic UI update
-    setAllPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
+    setPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
 
     try {
         await archivePost(postId);
@@ -99,10 +141,12 @@ export default function FeedPage() {
             title: 'Gagal Mengarsipkan',
             description: (error as Error).message,
         });
-        // Revert UI update
+        // On failure, we should re-fetch to get consistent state
         if (user) {
-            const freshPosts = await getPosts(user.uid);
-            setAllPosts(freshPosts);
+          setLoading(true);
+          setPosts([]);
+          setLastVisibleId(undefined);
+          fetchPosts();
         }
     }
   };
@@ -120,31 +164,27 @@ export default function FeedPage() {
   return (
     <MainLayout>
        <div className="p-4 space-y-4 md:p-6 md:space-y-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Cari postingan atau pengguna..."
-            className="pl-9"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        {filteredPosts.length > 0 ? (
-           filteredPosts.map((post) => (
+        {posts.length > 0 ? (
+           posts.map((post) => (
             <PostCard
               key={post.id}
               post={post}
               onToggleLike={() => handleToggleLike(post.id)}
               onArchive={() => handleArchivePost(post.id)}
               currentUserId={user?.uid}
+              onUnarchive={()=>{}}
             />
           ))
         ) : (
           <div className="text-center py-20">
-            <h3 className="text-lg font-semibold">{searchTerm ? 'Tidak ada hasil' : 'Selamat Datang!'}</h3>
-            <p className="text-muted-foreground">{searchTerm ? 'Coba kata kunci lain.' : 'Belum ada postingan. Jadilah yang pertama!'}</p>
+            <h3 className="text-lg font-semibold">Selamat Datang!</h3>
+            <p className="text-muted-foreground">Belum ada postingan. Jadilah yang pertama!</p>
           </div>
         )}
+        <div ref={loaderRef} className="flex justify-center py-4">
+            {loadingMore && <Loader2 className="h-8 w-8 animate-spin text-primary" />}
+            {!loadingMore && !lastVisibleId && posts.length > 0 && <p className="text-sm text-muted-foreground">Anda telah mencapai akhir.</p>}
+        </div>
       </div>
       <Button asChild className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg" size="icon">
         <Link href="/feed/new">
