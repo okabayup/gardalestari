@@ -6,7 +6,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import PostCard from '@/components/feed/PostCard';
 import { getPosts, togglePostLike, PostWithAuthor, archivePost } from '@/app/actions/posts';
 import { useAuth } from '@/hooks/use-auth';
-import { Loader2, Plus, Search } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -29,16 +29,28 @@ export default function FeedPage() {
   const { toast } = useToast();
   const loaderRef = useRef<HTMLDivElement>(null);
   
-  const fetchPosts = useCallback(async () => {
+  const fetchPosts = useCallback(async (isInitial = false) => {
       if (!user) return;
-      setLoadingMore(true);
+      
+      if(isInitial) {
+        setLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
 
       try {
-        const { posts: newPosts, lastVisibleId: newLastVisibleId } = await getPosts(user.uid, lastVisibleId);
+        const lastId = isInitial ? undefined : lastVisibleId;
+        const { posts: newPosts, lastVisibleId: newLastVisibleId } = await getPosts(user.uid, lastId);
+        
         // Shuffle new posts before adding them to the state
         const shuffledPosts = shuffleArray(newPosts);
         
-        setPosts(prevPosts => [...prevPosts, ...shuffledPosts]);
+        setPosts(prevPosts => {
+            const existingIds = new Set(prevPosts.map(p => p.id));
+            const uniqueNewPosts = shuffledPosts.filter(p => !existingIds.has(p.id));
+            return isInitial ? uniqueNewPosts : [...prevPosts, ...uniqueNewPosts];
+        });
+
         setLastVisibleId(newLastVisibleId);
       } catch (error) {
         toast({
@@ -48,16 +60,15 @@ export default function FeedPage() {
         });
         console.error(error);
       } finally {
+        setLoading(false);
         setLoadingMore(false);
-        if (loading) setLoading(false);
       }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user, toast, lastVisibleId, loading]);
+    }, [user, toast, lastVisibleId]);
 
   // Initial fetch
   useEffect(() => {
     if (user && posts.length === 0) {
-      fetchPosts();
+      fetchPosts(true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
@@ -66,23 +77,24 @@ export default function FeedPage() {
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !loadingMore && lastVisibleId) {
+        if (entries[0].isIntersecting && !loadingMore && !loading && lastVisibleId) {
           fetchPosts();
         }
       },
       { threshold: 1.0 }
     );
 
-    if (loaderRef.current) {
-      observer.observe(loaderRef.current);
+    const currentLoader = loaderRef.current;
+    if (currentLoader) {
+      observer.observe(currentLoader);
     }
 
     return () => {
-      if (loaderRef.current) {
-        observer.unobserve(loaderRef.current);
+      if (currentLoader) {
+        observer.unobserve(currentLoader);
       }
     };
-  }, [fetchPosts, lastVisibleId, loadingMore]);
+  }, [fetchPosts, lastVisibleId, loadingMore, loading]);
 
 
   const handleToggleLike = async (postId: string) => {
@@ -143,10 +155,9 @@ export default function FeedPage() {
         });
         // On failure, we should re-fetch to get consistent state
         if (user) {
-          setLoading(true);
           setPosts([]);
           setLastVisibleId(undefined);
-          fetchPosts();
+          fetchPosts(true);
         }
     }
   };
@@ -171,8 +182,8 @@ export default function FeedPage() {
               post={post}
               onToggleLike={() => handleToggleLike(post.id)}
               onArchive={() => handleArchivePost(post.id)}
-              currentUserId={user?.uid}
               onUnarchive={()=>{}}
+              currentUserId={user?.uid}
             />
           ))
         ) : (
