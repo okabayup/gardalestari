@@ -113,32 +113,43 @@ const formatTimestamp = (timestamp: Timestamp): string => {
 };
 
 // Helper function to build a PostWithAuthor object
-const buildPostWithAuthor = async (postDoc: any, currentUserId?: string): Promise<PostWithAuthor> => {
-    const postData = { id: postDoc.id, ...postDoc.data() } as Post;
-    const authorRef = doc(usersCollection, postData.authorId);
-    const authorDoc = await getDoc(authorRef);
-    const authorData = authorDoc.data();
+const buildPostWithAuthor = async (postDoc: any, currentUserId?: string): Promise<PostWithAuthor | null> => {
+    try {
+        const postData = { id: postDoc.id, ...postDoc.data() } as Post;
+        const authorRef = doc(usersCollection, postData.authorId);
+        const authorDoc = await getDoc(authorRef);
+        
+        if (!authorDoc.exists()) {
+            console.warn(`Author with ID ${postData.authorId} not found for post ${postData.id}. Skipping post.`);
+            return null;
+        }
+        
+        const authorData = authorDoc.data();
 
-    const author: Author = {
-        id: postData.authorId,
-        name: authorData?.fullName || authorData?.displayName || 'Unknown User',
-        username: authorData?.username || `user_${postData.authorId.substring(0,5)}`,
-        avatarUrl: authorData?.avatarUrl || '',
-        level: authorData?.level || 'Bronze',
-        type: authorData?.type,
-    };
+        const author: Author = {
+            id: postData.authorId,
+            name: authorData?.fullName || authorData?.displayName || 'Unknown User',
+            username: authorData?.username || `user_${postData.authorId.substring(0,5)}`,
+            avatarUrl: authorData?.avatarUrl || '',
+            level: authorData?.level || 'Bronze',
+            type: authorData?.type,
+        };
 
-    return {
-      id: postData.id,
-      author: author,
-      media: postData.media || [{url: (postDoc.data() as any).imageUrl, type: 'image', hint: (postDoc.data() as any).imageHint, mentions: []}], // Fallback for old single-image posts
-      caption: postData.caption,
-      likesCount: postData.likes.length,
-      commentsCount: postData.commentsCount,
-      timestamp: formatTimestamp(postData.createdAt),
-      isLiked: currentUserId ? postData.likes.includes(currentUserId) : false,
-      status: postData.status || 'published',
-    };
+        return {
+          id: postData.id,
+          author: author,
+          media: postData.media || [{url: (postDoc.data() as any).imageUrl, type: 'image', hint: (postDoc.data() as any).imageHint, mentions: []}], // Fallback for old single-image posts
+          caption: postData.caption,
+          likesCount: postData.likes.length,
+          commentsCount: postData.commentsCount,
+          timestamp: formatTimestamp(postData.createdAt),
+          isLiked: currentUserId ? postData.likes.includes(currentUserId) : false,
+          status: postData.status || 'published',
+        };
+    } catch (error) {
+        console.error(`Error building post ${postDoc.id}:`, error);
+        return null; // Return null if any error occurs
+    }
 }
 
 
@@ -220,9 +231,11 @@ export async function getPosts(currentUserId: string, lastVisibleId?: string) {
  
   const postsSnapshot = await getDocs(q);
   
-  const posts = await Promise.all(postsSnapshot.docs.map(doc => 
+  const postPromises = postsSnapshot.docs.map(doc => 
     buildPostWithAuthor(doc as any, currentUserId)
-  ));
+  );
+
+  const posts = (await Promise.all(postPromises)).filter((p): p is PostWithAuthor => p !== null);
   
   // Get the ID of the last document
   const lastDoc = postsSnapshot.docs[postsSnapshot.docs.length - 1];
@@ -259,9 +272,8 @@ export async function getPostsByUserId(userId: string): Promise<PostWithAuthor[]
   );
   const postsSnapshot = await getDocs(q);
 
-  const posts = await Promise.all(postsSnapshot.docs.map(doc => 
-    buildPostWithAuthor(doc as any)
-  ));
+  const postPromises = postsSnapshot.docs.map(doc => buildPostWithAuthor(doc as any));
+  const posts = (await Promise.all(postPromises)).filter((p): p is PostWithAuthor => p !== null);
   return posts;
 }
 
@@ -276,9 +288,8 @@ export async function getArchivedPosts(userId: string): Promise<PostWithAuthor[]
     );
     const postsSnapshot = await getDocs(q);
 
-    const posts = await Promise.all(postsSnapshot.docs.map(doc =>
-        buildPostWithAuthor(doc as any, userId)
-    ));
+    const postPromises = postsSnapshot.docs.map(doc => buildPostWithAuthor(doc as any, userId));
+    const posts = (await Promise.all(postPromises)).filter((p): p is PostWithAuthor => p !== null);
     return posts;
 }
 
@@ -292,9 +303,8 @@ export async function getTaggedPosts(userId: string): Promise<PostWithAuthor[]> 
     );
     const postsSnapshot = await getDocs(q);
     
-    const posts = await Promise.all(postsSnapshot.docs.map(doc =>
-        buildPostWithAuthor(doc as any, userId)
-    ));
+    const postPromises = postsSnapshot.docs.map(doc => buildPostWithAuthor(doc as any, userId));
+    const posts = (await Promise.all(postPromises)).filter((p): p is PostWithAuthor => p !== null);
     return posts;
 }
 
