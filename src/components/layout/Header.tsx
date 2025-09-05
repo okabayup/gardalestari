@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { LogOut, UserCircle, Shield, Bell, Loader2 } from 'lucide-react';
+import { LogOut, UserCircle, Shield, Bell, Loader2, Award } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { Badge } from '../ui/badge';
@@ -149,6 +149,10 @@ export default function Header() {
                   <DropdownMenuItem onClick={() => router.push('/profile/me')} className="cursor-pointer">
                     <UserCircle className="mr-2 h-4 w-4" />
                     <span>Profil Saya</span>
+                  </DropdownMenuItem>
+                   <DropdownMenuItem onClick={() => router.push('/benefits')} className="cursor-pointer">
+                    <Award className="mr-2 h-4 w-4" />
+                    <span>Level & Misi</span>
                   </DropdownMenuItem>
                   {canAccessPanel && (
                       <DropdownMenuItem onClick={() => router.push('/panel/dashboard')} className="cursor-pointer">

@@ -4,16 +4,59 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutGrid, Users, Sprout, CalendarDays, Award } from 'lucide-react';
+import { LayoutGrid, Users, Sprout, CalendarDays, Briefcase, Award, FolderKanban } from 'lucide-react';
 import { Badge } from '../ui/badge';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
+import { Button } from '../ui/button';
+import { Separator } from '../ui/separator';
 
 const navItems = [
   { href: '/feed', label: 'Beranda', icon: LayoutGrid },
   { href: '/members', label: 'Anggota', icon: Users },
   { href: '/programs', label: 'Program', icon: Sprout },
   { href: '/events', label: 'Acara', icon: CalendarDays },
-  { href: '/benefits', label: 'Level', icon: Award, special: true },
 ];
+
+const directoryItems = [
+    { href: '#', label: 'Loker', icon: Briefcase },
+    { href: '#', label: 'Prestasi', icon: Award },
+    { href: '#', label: 'Mitra', icon: Users }
+]
+
+const DirectorySheet = () => {
+    return (
+        <Sheet>
+            <SheetTrigger asChild>
+                 <div
+                    className={cn(
+                        'relative flex flex-col items-center justify-center gap-1 text-sm transition-colors hover:text-primary',
+                        'text-muted-foreground'
+                    )}
+                    >
+                    <FolderKanban className="h-5 w-5" />
+                    <span className="text-xs">Direktori</span>
+                </div>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="rounded-t-lg">
+                <SheetHeader className="text-left">
+                    <SheetTitle>Direktori</SheetTitle>
+                    <SheetDescription>
+                        Jelajahi peluang, lihat prestasi, dan kenali mitra kami.
+                    </SheetDescription>
+                </SheetHeader>
+                <Separator className="my-4" />
+                <div className="grid grid-cols-3 gap-4">
+                    {directoryItems.map(item => (
+                         <Link key={item.label} href={item.href} className="flex flex-col items-center gap-2 p-4 rounded-lg bg-secondary/50 hover:bg-secondary">
+                            <item.icon className="h-6 w-6 text-primary" />
+                            <span className="font-medium text-sm">{item.label}</span>
+                         </Link>
+                    ))}
+                </div>
+            </SheetContent>
+        </Sheet>
+    )
+}
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -34,14 +77,10 @@ export default function BottomNav() {
             >
               <item.icon className="h-5 w-5" />
               <span className="text-xs">{item.label}</span>
-              {item.special && (
-                 <Badge variant="secondary" className="absolute top-0 right-1 text-[10px] px-1 py-0 h-4 leading-none">
-                    Segera
-                 </Badge>
-              )}
             </Link>
           );
         })}
+        <DirectorySheet />
       </nav>
     </div>
   );
