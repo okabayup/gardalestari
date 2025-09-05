@@ -4,10 +4,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutGrid, Users, Sprout, CalendarDays, Briefcase, Award, FolderKanban } from 'lucide-react';
-import { Badge } from '../ui/badge';
+import { LayoutGrid, Users, Sprout, CalendarDays, Briefcase, Award, FolderKanban, Megaphone, FileText, Anchor } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
-import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
 
 const navItems = [
@@ -20,7 +18,10 @@ const navItems = [
 const directoryItems = [
     { href: '#', label: 'Loker', icon: Briefcase },
     { href: '#', label: 'Prestasi', icon: Award },
-    { href: '#', label: 'Mitra', icon: Users }
+    { href: '#', label: 'Mitra', icon: Users },
+    { href: '#', label: 'Pengumuman', icon: Megaphone },
+    { href: '#', label: 'Dokumen', icon: FileText },
+    { href: '#', label: 'Struktur', icon: Anchor },
 ]
 
 const DirectorySheet = () => {
@@ -41,7 +42,7 @@ const DirectorySheet = () => {
                 <SheetHeader className="text-left">
                     <SheetTitle>Direktori</SheetTitle>
                     <SheetDescription>
-                        Jelajahi peluang, lihat prestasi, dan kenali mitra kami.
+                        Jelajahi informasi, peluang, dan sumber daya penting lainnya.
                     </SheetDescription>
                 </SheetHeader>
                 <Separator className="my-4" />
@@ -49,7 +50,7 @@ const DirectorySheet = () => {
                     {directoryItems.map(item => (
                          <Link key={item.label} href={item.href} className="flex flex-col items-center gap-2 p-4 rounded-lg bg-secondary/50 hover:bg-secondary">
                             <item.icon className="h-6 w-6 text-primary" />
-                            <span className="font-medium text-sm">{item.label}</span>
+                            <span className="font-medium text-sm text-center">{item.label}</span>
                          </Link>
                     ))}
                 </div>

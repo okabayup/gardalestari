@@ -14,6 +14,8 @@ export const ALL_PERMISSIONS = [
     { id: 'manage_landing_page', label: 'Kelola Halaman Utama' },
     { id: 'manage_settings', label: 'Kelola Pengaturan Aplikasi' },
     { id: 'manage_positions', label: 'Kelola Jabatan & Hak Akses' },
+    { id: 'manage_announcements', label: 'Kelola Pengumuman' },
+    { id: 'manage_documents', label: 'Kelola Dokumen' },
 ] as const;
 
 export type PermissionId = typeof ALL_PERMISSIONS[number]['id'];

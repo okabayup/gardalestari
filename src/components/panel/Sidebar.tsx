@@ -24,6 +24,8 @@ import {
   Tags,
   Bell,
   UserCheck,
+  FolderArchive,
+  Megaphone as MegaphoneIcon,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
@@ -36,6 +38,8 @@ import type { PermissionId } from '@/lib/definitions';
 const navItems: { href: string; icon: React.ElementType; label: string, permission?: PermissionId }[] = [
     { href: '/panel/dashboard', icon: Home, label: 'Dasbor' },
     { href: '/panel/notifications', icon: Bell, label: 'Notifikasi', permission: 'send_notifications' },
+    { href: '/panel/announcements', icon: MegaphoneIcon, label: 'Pengumuman', permission: 'manage_announcements'},
+    { href: '/panel/documents', icon: FolderArchive, label: 'Dokumen', permission: 'manage_documents'},
     { href: '/panel/berita', icon: Newspaper, label: 'Berita', permission: 'manage_news' },
     { href: '/panel/events', icon: Calendar, label: 'Acara', permission: 'manage_events' },
     { href: '/panel/programs', icon: Megaphone, label: 'Program', permission: 'manage_programs' },
