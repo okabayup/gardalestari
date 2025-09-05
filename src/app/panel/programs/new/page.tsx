@@ -248,7 +248,7 @@ export default function NewProgramPage() {
                               defaultMonth={field.value.from}
                               selected={{ from: field.value.from, to: field.value.to }}
                               onSelect={(range) => field.onChange(range || { from: undefined, to: undefined })}
-                              numberOfMonths={2}
+                              numberOfMonths={1}
                           />
                           </PopoverContent>
                       </Popover>
