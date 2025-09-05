@@ -1,4 +1,5 @@
 
+
 export const ALL_PERMISSIONS = [
     { id: 'manage_users', label: 'Kelola Anggota & Verifikasi' },
     { id: 'manage_news', label: 'Kelola Berita (Buat/Edit)' },
@@ -16,6 +17,8 @@ export const ALL_PERMISSIONS = [
     { id: 'manage_positions', label: 'Kelola Jabatan & Hak Akses' },
     { id: 'manage_announcements', label: 'Kelola Pengumuman' },
     { id: 'manage_documents', label: 'Kelola Dokumen' },
+    { id: 'manage_jobs', label: 'Kelola Loker' },
+    { id: 'manage_achievements', label: 'Kelola Prestasi' },
 ] as const;
 
 export type PermissionId = typeof ALL_PERMISSIONS[number]['id'];

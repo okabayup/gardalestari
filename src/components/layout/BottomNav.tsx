@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -16,11 +17,11 @@ const navItems = [
 ];
 
 const directoryItems = [
-    { href: '#', label: 'Loker', icon: Briefcase },
-    { href: '#', label: 'Prestasi', icon: Award },
-    { href: '#', label: 'Mitra', icon: Users },
-    { href: '#', label: 'Pengumuman', icon: Megaphone },
-    { href: '#', label: 'Dokumen', icon: FileText },
+    { href: '/jobs', label: 'Loker', icon: Briefcase },
+    { href: '/achievements', label: 'Prestasi', icon: Award },
+    { href: '/panel/partners', label: 'Mitra', icon: Users },
+    { href: '/panel/announcements', label: 'Pengumuman', icon: Megaphone },
+    { href: '/panel/documents', label: 'Dokumen', icon: FileText },
     { href: '#', label: 'Struktur', icon: Anchor },
 ]
 
