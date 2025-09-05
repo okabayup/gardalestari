@@ -31,9 +31,9 @@ const InfoCard = ({ icon, title, children }: { icon: React.ReactNode, title: str
     </Card>
 )
 
-const ProgramSourceInfo = async ({ program }: { program: Program }) => {
-    if (program.source === 'mitra' && program.partnerId) {
-        const partner = await getPartner(program.partnerId);
+const ProgramSourceInfo = async ({ source, partnerId }: { source: Program['source'], partnerId?: Program['partnerId'] }) => {
+    if (source === 'mitra' && partnerId) {
+        const partner = await getPartner(partnerId);
         return (
             <div className="flex items-center gap-2">
                 <Handshake className="h-4 w-4" />
@@ -92,7 +92,7 @@ export default async function ProgramDetailPage({ params }: ProgramDetailPagePro
             </div>
             <h1 className="font-headline text-3xl md:text-4xl font-bold">{program.title}</h1>
             <div className="text-muted-foreground text-sm">
-                <ProgramSourceInfo program={program} />
+                <ProgramSourceInfo source={program.source} partnerId={program.partnerId} />
             </div>
         </div>
 
