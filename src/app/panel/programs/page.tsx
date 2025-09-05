@@ -29,6 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useAuth } from '@/hooks/use-auth';
+import { Timestamp } from 'firebase/firestore';
 
 export default function AdminProgramsPage() {
   const router = useRouter();
@@ -88,6 +89,18 @@ export default function AdminProgramsPage() {
         }
     }
   };
+  
+  const toJsDate = (timestamp: any): Date => {
+      if (timestamp instanceof Timestamp) {
+          return timestamp.toDate();
+      }
+      // Handle case where it's already a plain object
+      if (timestamp && typeof timestamp.seconds === 'number' && typeof timestamp.nanoseconds === 'number') {
+          return new Timestamp(timestamp.seconds, timestamp.nanoseconds).toDate();
+      }
+      // Fallback for unexpected types
+      return new Date();
+  };
 
   return (
     <>
@@ -143,7 +156,7 @@ export default function AdminProgramsPage() {
                               {program.category === 'flagship' ? 'Unggulan' : 'Berkelanjutan'}
                           </Badge>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell">{format(program.endDate.toDate(), 'dd MMM yyyy', {locale: id})}</TableCell>
+                      <TableCell className="hidden md:table-cell">{format(toJsDate(program.endDate), 'dd MMM yyyy', {locale: id})}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
