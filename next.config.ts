@@ -55,6 +55,12 @@ const nextConfig: NextConfig = {
         hostname: 'firebasestorage.googleapis.com',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'encrypted-tbn0.gstatic.com',
+        port: '',
+        pathname: '/**',
       }
       // Untuk menggunakan URL logo eksternal dari mitra,
       // tambahkan hostname mereka di sini. Contoh:
