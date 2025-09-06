@@ -11,15 +11,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
-// Function to shuffle an array
-const shuffleArray = (array: any[]) => {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-};
-
 export default function FeedPage() {
   const [posts, setPosts] = useState<PostWithAuthor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,14 +33,7 @@ export default function FeedPage() {
         const lastId = isInitial ? undefined : lastVisibleId;
         const { posts: newPosts, lastVisibleId: newLastVisibleId } = await getPosts(user.uid, lastId);
         
-        // Shuffle new posts before adding them to the state
-        const shuffledPosts = shuffleArray(newPosts);
-        
-        setPosts(prevPosts => {
-            const existingIds = new Set(prevPosts.map(p => p.id));
-            const uniqueNewPosts = shuffledPosts.filter(p => !existingIds.has(p.id));
-            return isInitial ? uniqueNewPosts : [...prevPosts, ...uniqueNewPosts];
-        });
+        setPosts(prevPosts => isInitial ? newPosts : [...prevPosts, ...newPosts]);
 
         setLastVisibleId(newLastVisibleId);
       } catch (error) {
