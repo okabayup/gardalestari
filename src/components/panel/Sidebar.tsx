@@ -46,7 +46,7 @@ const navItems: { href: string; icon: React.ElementType; label: string, permissi
     { href: '/panel/announcements', icon: MegaphoneIcon, label: 'Pengumuman', permission: 'manage_announcements'},
     { href: '/panel/documents', icon: FolderArchive, label: 'Dokumen', permission: 'manage_documents'},
     { href: '/panel/evoting', icon: Vote, label: 'E-Voting', permission: 'manage_evoting' },
-    { href: '/panel/jobs', icon: Briefcase, label: 'Loker', permission: 'manage_jobs' },
+    { href: '/panel/recruitments', icon: Briefcase, label: 'Rekrutmen', permission: 'manage_recruitments' },
     { href: '/panel/achievements', icon: Award, label: 'Prestasi', permission: 'manage_achievements' },
     { href: '/panel/map-data', icon: Map, label: 'Data Peta', permission: 'manage_map_data' },
     { href: '/panel/berita', icon: Newspaper, label: 'Berita', permission: 'manage_news' },

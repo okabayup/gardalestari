@@ -17,7 +17,7 @@ const navItems = [
 ];
 
 const directoryItems = [
-    { href: '/jobs', label: 'Loker', icon: Briefcase },
+    { href: '/recruitments', label: 'Rekrutmen', icon: Briefcase },
     { href: '/achievements', label: 'Prestasi', icon: Award },
     { href: '/panel/partners', label: 'Mitra', icon: Handshake },
     { href: '/announcements', label: 'Pengumuman', icon: Megaphone },

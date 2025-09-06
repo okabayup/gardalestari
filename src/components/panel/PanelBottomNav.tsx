@@ -16,6 +16,10 @@ import {
   FileText,
   Handshake,
   Landmark,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+  Tags,
   Bell,
   UserCheck,
   FolderArchive,
@@ -35,7 +39,7 @@ const navItems: { href: string; icon: React.ElementType; label: string, permissi
     { href: '/panel/announcements', icon: MegaphoneIcon, label: 'Pengumuman', permission: 'manage_announcements'},
     { href: '/panel/documents', icon: FolderArchive, label: 'Dokumen', permission: 'manage_documents'},
     { href: '/panel/evoting', icon: Vote, label: 'E-Voting', permission: 'manage_evoting' },
-    { href: '/panel/jobs', icon: Briefcase, label: 'Loker', permission: 'manage_jobs' },
+    { href: '/panel/recruitments', icon: Briefcase, label: 'Rekrutmen', permission: 'manage_recruitments' },
     { href: '/panel/achievements', icon: Award, label: 'Prestasi', permission: 'manage_achievements' },
     { href: '/panel/map-data', icon: Map, label: 'Data Peta', permission: 'manage_map_data' },
     { href: '/panel/berita', icon: Newspaper, label: 'Berita', permission: 'manage_news' },
@@ -45,7 +49,7 @@ const navItems: { href: string; icon: React.ElementType; label: string, permissi
     { href: '/panel/positions', icon: UserCheck, label: 'Jabatan', permission: 'manage_positions' },
     { href: '/panel/partners', icon: Handshake, label: 'Mitra', permission: 'manage_partners' },
     { href: '/panel/forms', icon: FileText, label: 'Formulir', permission: 'manage_forms' },
-    { href: '/panel/landing', icon: Landmark, label: 'Landing', permission: 'manage_landing_page' },
+    { href: '/panel/landing', icon: Landmark, label: 'Halaman Utama', permission: 'manage_landing_page' },
     { href: '/panel/settings', icon: Settings, label: 'Pengaturan', permission: 'manage_settings' },
 ];
 

@@ -16,7 +16,7 @@ export const ALL_PERMISSIONS = [
     { id: 'manage_positions', label: 'Kelola Jabatan & Hak Akses' },
     { id: 'manage_announcements', label: 'Kelola Pengumuman' },
     { id: 'manage_documents', label: 'Kelola Dokumen' },
-    { id: 'manage_jobs', label: 'Kelola Loker' },
+    { id: 'manage_recruitments', label: 'Kelola Rekrutmen' },
     { id: 'manage_achievements', label: 'Kelola Prestasi' },
     { id: 'manage_map_data', label: 'Kelola Data Peta' },
     { id: 'manage_evoting', label: 'Kelola E-Voting' },
