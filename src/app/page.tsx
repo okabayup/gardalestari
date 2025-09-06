@@ -40,7 +40,7 @@ const Footer = async () => {
                     <div className="space-y-2">
                         <h4 className="font-semibold">Navigasi</h4>
                         <nav className="flex flex-col gap-1 text-sm text-muted-foreground">
-                            <Link href="#about" className="hover:text-primary">Tentang Kami</Link>
+                            <Link href="/tentang" className="hover:text-primary">Tentang Kami</Link>
                             <Link href="#focus" className="hover:text-primary">Fokus</Link>
                             <Link href="/berita" className="hover:text-primary">Berita</Link>
                         </nav>
@@ -162,7 +162,11 @@ export default async function LandingPage() {
                     <span className="text-sm font-semibold uppercase text-primary">Tentang Garda Lestari</span>
                     <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">Garda Muda Lestari: Inovasi untuk Negeri</h2>
                     <p className="text-muted-foreground">Kami adalah perkumpulan yang berdedikasi untuk pemberdayaan pemuda Indonesia. Kami berfungsi sebagai inkubator bagi para inovator muda untuk mengembangkan potensi dan solusi mereka di bidang agro-maritim dan kehutanan, dengan penekanan kuat pada keberlanjutan dan pembangunan ekonomi yang inklusif.</p>
-                    <p className="text-muted-foreground">Melalui serangkaian program yang mencakup pelatihan, pendampingan, dan kolaborasi strategis, kami berkomitmen untuk membentuk generasi pemimpin yang tangguh, terampil, dan berintegritas.</p>
+                     <Button asChild>
+                        <Link href="/tentang">
+                           Selengkapnya Tentang Kami <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                    </Button>
                 </div>
             </div>
         </section>
@@ -197,31 +201,8 @@ export default async function LandingPage() {
           </div>
         </section>
         
-        {/* Org Chart Section */}
-        <section id="org-chart" className="w-full bg-secondary py-16 md:py-28">
-            <div className="container">
-              <div className="mb-14 text-center">
-                <span className="text-sm font-semibold uppercase text-primary">Struktur Organisasi</span>
-                <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl mt-2">Tim Kami</h2>
-                <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Mengenal orang-orang di balik pergerakan kami.</p>
-              </div>
-              <div className="flex justify-center">
-                  <div className="relative w-full max-w-4xl p-2 border-4 border-muted rounded-lg shadow-lg bg-background">
-                     <Image 
-                        src={settings.orgChartImageUrl} 
-                        alt="Struktur Organisasi Garda Lestari" 
-                        width={1200}
-                        height={1600}
-                        className="rounded-md w-full h-auto"
-                        data-ai-hint="organization chart"
-                    />
-                  </div>
-              </div>
-            </div>
-        </section>
-
         {/* Flagship Programs Section */}
-        <section id="programs" className="w-full bg-background py-16 md:py-28">
+        <section id="programs" className="w-full bg-secondary py-16 md:py-28">
             <div className="container">
               <div className="mb-14 text-center">
                 <span className="text-sm font-semibold uppercase text-primary">Program Unggulan</span>
@@ -248,11 +229,11 @@ export default async function LandingPage() {
 
         {/* Latest News Section */}
         {latestPosts.length > 0 && (
-          <section id="news" className="w-full bg-secondary py-16 md:py-28">
+          <section id="news" className="w-full bg-background py-16 md:py-28">
             <div className="container">
               <div className="mb-14 text-center">
                 <span className="text-sm font-semibold uppercase text-primary">Kabar Terbaru</span>
-                <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl mt-2">Berita & Wawasan</h2>
+                <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl mt-2">Berita &amp; Wawasan</h2>
                 <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Ikuti perkembangan terbaru dari program, acara, dan riset yang kami lakukan.</p>
               </div>
               
@@ -287,7 +268,7 @@ export default async function LandingPage() {
         )}
         
         {/* Call to Action Section */}
-        <section id="partnership" className="w-full bg-background py-16 md:py-28 overflow-hidden">
+        <section id="partnership" className="w-full bg-secondary py-16 md:py-28 overflow-hidden">
           <div className="container">
             <div className="mb-14 text-center animate-in fade-in zoom-in-95 duration-500">
               <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">Jadilah Bagian dari Dampak</h2>

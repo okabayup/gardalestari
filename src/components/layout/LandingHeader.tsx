@@ -9,27 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Menu } from 'lucide-react';
 import { getAppSettings } from '@/app/actions/settings';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Separator } from '../ui/separator';
 
 const navItems = [
   { href: '/berita', label: 'Berita' },
-  { 
-    label: 'Tentang Kami', 
-    subItems: [
-      { href: '/#about', label: 'Struktur Organisasi' },
-      { href: '/#about', label: 'Lambang' },
-      { href: '/#about', label: 'Dewan Kehormatan' },
-      { href: '/#about', label: 'DPP' },
-      { href: '/#about', label: 'DPD' },
-      { href: '/#about', label: 'DPC' },
-    ]
-  },
+  { href: '/tentang', label: 'Tentang Kami' },
   { href: '/programs', label: 'Program' },
 ];
 
@@ -53,20 +37,9 @@ export default function LandingHeader() {
           <Image src="/logo.png" alt="Garda Lestari Logo" width={120} height={32} className="h-8 w-auto" />
         </Link>
         <nav className="ml-auto hidden items-center gap-6 md:flex">
-            <Link href="/berita" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Berita</Link>
-             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary p-0">
-                  Tentang Kami
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {navItems.find(i => i.label === 'Tentang Kami')?.subItems?.map(sub => (
-                   <DropdownMenuItem key={sub.label} asChild><Link href={sub.href}>{sub.label}</Link></DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Link href="/programs" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">Program</Link>
+            {navItems.map(item => (
+                 <Link key={item.href} href={item.href} className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">{item.label}</Link>
+            ))}
         </nav>
         <div className="ml-auto flex items-center gap-2 md:ml-4">
           {loading ? (
@@ -107,22 +80,11 @@ export default function LandingHeader() {
                     </div>
                     <Separator />
                     <nav className="p-6 space-y-4">
-                        <SheetClose asChild>
-                            <Link href="/berita" className="block text-lg font-medium text-foreground">Berita</Link>
-                        </SheetClose>
-                         <div>
-                            <p className="text-lg font-medium text-foreground">Tentang Kami</p>
-                            <div className="pl-4 mt-2 space-y-2 text-muted-foreground">
-                                {navItems.find(i => i.label === 'Tentang Kami')?.subItems?.map(sub => (
-                                    <SheetClose asChild key={sub.label}>
-                                       <Link href={sub.href} className="block hover:text-primary">{sub.label}</Link>
-                                    </SheetClose>
-                                ))}
-                            </div>
-                         </div>
-                        <SheetClose asChild>
-                           <Link href="/programs" className="block text-lg font-medium text-foreground">Program</Link>
-                        </SheetClose>
+                         {navItems.map(item => (
+                            <SheetClose asChild key={item.href}>
+                                <Link href={item.href} className="block text-lg font-medium text-foreground">{item.label}</Link>
+                            </SheetClose>
+                         ))}
                     </nav>
                     {!user && (
                          <div className="absolute bottom-6 left-6 right-6 space-y-2">
