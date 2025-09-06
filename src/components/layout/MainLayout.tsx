@@ -7,9 +7,11 @@ import BottomNav from './BottomNav';
 import { Loader2 } from 'lucide-react';
 import InstallPWA from './InstallPWA';
 import { useFcm } from '@/hooks/use-fcm';
+import { usePathname } from 'next/navigation';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useRequireAuth();
+  const pathname = usePathname();
   useFcm(); // Initialize FCM and request permission
 
   if (loading || !user) {
@@ -19,13 +21,19 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       </div>
     );
   }
+  
+  const isMapPage = pathname === '/map';
 
   return (
     <div className="relative mx-auto flex min-h-screen w-full max-w-lg flex-col bg-background">
-      <Header />
+      {!isMapPage && <Header />}
       <main className="flex-1 pb-20">{children}</main>
-      <BottomNav />
-      <InstallPWA />
+      {!isMapPage && (
+        <>
+          <BottomNav />
+          <InstallPWA />
+        </>
+      )}
     </div>
   );
 }
