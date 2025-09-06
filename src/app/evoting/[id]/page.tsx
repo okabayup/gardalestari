@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { getVotingTopic, castVote, VotingTopic } from '@/app/actions/voting';
+import { getVotingTopic, castVote, VotingTopicDTO } from '@/app/actions/voting';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, ArrowLeft, Check, Info } from 'lucide-react';
-import { Timestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
 
 const ChartTooltipContent = ({ active, payload, label }: any) => {
@@ -48,7 +47,7 @@ export default function EVotingDetailPage() {
   const { user } = useAuth();
   const topicId = params.id as string;
 
-  const [topic, setTopic] = useState<VotingTopic | null>(null);
+  const [topic, setTopic] = useState<VotingTopicDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
@@ -109,7 +108,7 @@ export default function EVotingDetailPage() {
     );
   }
   
-  const isVotingActive = topic && Timestamp.now() >= topic.startDate && Timestamp.now() <= topic.endDate;
+  const isVotingActive = topic && new Date() >= new Date(topic.startDate) && new Date() <= new Date(topic.endDate);
   const chartData = topic.options.map(opt => ({ name: opt.name, total: opt.voteCount }));
 
   return (
@@ -143,7 +142,7 @@ export default function EVotingDetailPage() {
                         <Info className="h-4 w-4" />
                         <AlertTitle>{hasVoted ? 'Anda Sudah Memilih' : 'Voting Telah Berakhir'}</AlertTitle>
                         <AlertDescription>
-                            {hasVoted ? 'Terima kasih telah berpartisipasi.' : `Voting untuk topik ini telah berakhir pada ${format(topic.endDate.toDate(), 'dd MMMM yyyy')}.`}
+                            {hasVoted ? 'Terima kasih telah berpartisipasi.' : `Voting untuk topik ini telah berakhir pada ${format(new Date(topic.endDate), 'dd MMMM yyyy')}.`}
                         </AlertDescription>
                     </Alert>
                 </div>

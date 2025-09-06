@@ -67,7 +67,7 @@ export default function EditEVotingPage() {
           if (topic) {
             reset({
               ...topic,
-              dateRange: { from: topic.startDate.toDate(), to: topic.endDate.toDate() },
+              dateRange: { from: new Date(topic.startDate), to: new Date(topic.endDate) },
             });
           } else {
             toast({ variant: 'destructive', title: 'Topik tidak ditemukan' });

@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
-import { getVotingTopics, VotingTopic } from '@/app/actions/voting';
+import { getVotingTopics, VotingTopicDTO } from '@/app/actions/voting';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,12 +12,11 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Timestamp } from 'firebase/firestore';
 
 export default function EVotingListPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [topics, setTopics] = useState<VotingTopic[]>([]);
+  const [topics, setTopics] = useState<VotingTopicDTO[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,10 +34,13 @@ export default function EVotingListPage() {
     fetchTopics();
   }, [toast]);
 
-  const getStatus = (topic: VotingTopic): { text: string; color: string; isActionable: boolean } => {
-    const now = Timestamp.now();
-    if (now < topic.startDate) return { text: 'Akan Datang', color: 'bg-blue-500', isActionable: false };
-    if (now > topic.endDate) return { text: 'Selesai', color: 'bg-gray-500', isActionable: true };
+  const getStatus = (topic: VotingTopicDTO): { text: string; color: string; isActionable: boolean } => {
+    const now = new Date();
+    const startDate = new Date(topic.startDate);
+    const endDate = new Date(topic.endDate);
+
+    if (now < startDate) return { text: 'Akan Datang', color: 'bg-blue-500', isActionable: false };
+    if (now > endDate) return { text: 'Selesai', color: 'bg-gray-500', isActionable: true };
     return { text: 'Aktif', color: 'bg-green-500', isActionable: true };
   };
 
@@ -66,7 +68,7 @@ export default function EVotingListPage() {
                       <Badge className={status.color}>{status.text}</Badge>
                     </div>
                     <CardDescription className="text-xs">
-                      {format(topic.startDate.toDate(), 'dd MMM')} - {format(topic.endDate.toDate(), 'dd MMM yyyy')}
+                      {format(new Date(topic.startDate), 'dd MMM')} - {format(new Date(topic.endDate), 'dd MMM yyyy')}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>

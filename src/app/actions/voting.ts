@@ -37,10 +37,20 @@ export interface VotingTopic {
   voterIds: string[];
 }
 
-interface VoterInfo {
-    id: string;
-    isSpecialMember: boolean;
+// Data Transfer Object (DTO) for client-side consumption
+// This converts Timestamps to strings to avoid serialization errors
+export interface VotingTopicDTO {
+  id: string;
+  title: string;
+  description: string;
+  options: VotingOption[];
+  startDate: string; // ISO string
+  endDate: string; // ISO string
+  createdAt: string; // ISO string
+  totalVotes: number;
+  voterIds: string[];
 }
+
 
 const votingCollection = collection(db, 'votingTopics');
 const usersCollection = collection(db, 'users');
@@ -88,17 +98,39 @@ export async function deleteVotingTopic(id: string) {
   }
 }
 
-export async function getVotingTopics(): Promise<VotingTopic[]> {
+// This function returns a DTO to be safely used by client components
+export async function getVotingTopics(): Promise<VotingTopicDTO[]> {
   const q = query(votingCollection, orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VotingTopic));
+  return snapshot.docs.map(doc => {
+    const data = doc.data() as VotingTopic;
+    return {
+        id: doc.id,
+        ...data,
+        startDate: data.startDate.toDate().toISOString(),
+        endDate: data.endDate.toDate().toISOString(),
+        createdAt: data.createdAt.toDate().toISOString(),
+    }
+  });
 }
 
-export async function getVotingTopic(id: string): Promise<VotingTopic | null> {
+// This function returns a DTO to be safely used by client components
+export async function getVotingTopic(id: string): Promise<VotingTopicDTO | null> {
   const docRef = doc(db, 'votingTopics', id);
   const docSnap = await getDoc(docRef);
-  return docSnap.exists() ? ({ id: docSnap.id, ...docSnap.data() } as VotingTopic) : null;
+  if (!docSnap.exists()) {
+    return null;
+  }
+  const data = docSnap.data() as VotingTopic;
+  return {
+    id: docSnap.id,
+    ...data,
+    startDate: data.startDate.toDate().toISOString(),
+    endDate: data.endDate.toDate().toISOString(),
+    createdAt: data.createdAt.toDate().toISOString(),
+  };
 }
+
 
 // --- User Actions ---
 

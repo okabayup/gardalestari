@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { getVotingTopics, deleteVotingTopic, VotingTopic } from '@/app/actions/voting';
+import { getVotingTopics, deleteVotingTopic, VotingTopicDTO } from '@/app/actions/voting';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -29,31 +29,16 @@ import {
 import { PlusCircle, MoreHorizontal, Loader2, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Timestamp } from 'firebase/firestore';
-
-// Helper to safely convert Firestore Timestamps
-const toJsDate = (timestamp: any): Date => {
-  if (timestamp instanceof Timestamp) {
-    return timestamp.toDate();
-  }
-  // Handle case where it might already be a plain object from server component
-  if (timestamp && typeof timestamp.seconds === 'number' && typeof timestamp.nanoseconds === 'number') {
-    return new Timestamp(timestamp.seconds, timestamp.nanoseconds).toDate();
-  }
-  // Fallback for unexpected types, although this shouldn't be hit
-  return new Date();
-};
-
 
 export default function AdminEVotingPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { hasPermission } = useAuth();
-  const [topics, setTopics] = useState<VotingTopic[]>([]);
+  const [topics, setTopics] = useState<VotingTopicDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<VotingTopic | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<VotingTopicDTO | null>(null);
 
   const canManage = hasPermission('manage_evoting');
 
@@ -74,14 +59,16 @@ export default function AdminEVotingPage() {
     }
   };
 
-  const getStatus = (topic: VotingTopic) => {
-    const now = Timestamp.now();
-    if (now < topic.startDate) return { text: 'Akan Datang', color: 'bg-blue-500' };
-    if (now > topic.endDate) return { text: 'Selesai', color: 'bg-gray-500' };
+  const getStatus = (topic: VotingTopicDTO) => {
+    const now = new Date();
+    const startDate = new Date(topic.startDate);
+    const endDate = new Date(topic.endDate);
+    if (now < startDate) return { text: 'Akan Datang', color: 'bg-blue-500' };
+    if (now > endDate) return { text: 'Selesai', color: 'bg-gray-500' };
     return { text: 'Aktif', color: 'bg-green-500' };
   };
 
-  const handleDeleteClick = (topic: VotingTopic) => {
+  const handleDeleteClick = (topic: VotingTopicDTO) => {
     setItemToDelete(topic);
     setShowDeleteAlert(true);
   };
@@ -150,7 +137,7 @@ export default function AdminEVotingPage() {
                           <Badge className={status.color}>{status.text}</Badge>
                         </TableCell>
                         <TableCell>
-                          {format(toJsDate(item.startDate), 'dd/MM/yy')} - {format(toJsDate(item.endDate), 'dd/MM/yy')}
+                          {format(new Date(item.startDate), 'dd/MM/yy')} - {format(new Date(item.endDate), 'dd/MM/yy')}
                         </TableCell>
                          <TableCell className="text-right">{item.totalVotes.toLocaleString()}</TableCell>
                         <TableCell className="text-right">
