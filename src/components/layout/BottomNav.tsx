@@ -5,7 +5,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutGrid, Users, Sprout, CalendarDays, Briefcase, Award, FolderKanban, Megaphone, FileText, Handshake, Map } from 'lucide-react';
+import { LayoutGrid, Users, Sprout, CalendarDays, Briefcase, Award, FolderKanban, Megaphone, FileText, Handshake, Map, Vote } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { Separator } from '../ui/separator';
 
@@ -23,6 +23,7 @@ const directoryItems = [
     { href: '/announcements', label: 'Pengumuman', icon: Megaphone },
     { href: '/documents', label: 'Dokumen', icon: FileText },
     { href: '/map', label: 'Peta', icon: Map },
+    { href: '/evoting', label: 'E-Voting', icon: Vote },
 ]
 
 const DirectorySheet = () => {

@@ -23,6 +23,7 @@ import {
   Briefcase,
   Award,
   Map,
+  Vote,
 } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import type { PermissionId } from '@/lib/definitions';
@@ -33,6 +34,7 @@ const navItems: { href: string; icon: React.ElementType; label: string, permissi
     { href: '/panel/notifications', icon: Bell, label: 'Notifikasi', permission: 'send_notifications' },
     { href: '/panel/announcements', icon: MegaphoneIcon, label: 'Pengumuman', permission: 'manage_announcements'},
     { href: '/panel/documents', icon: FolderArchive, label: 'Dokumen', permission: 'manage_documents'},
+    { href: '/panel/evoting', icon: Vote, label: 'E-Voting', permission: 'manage_evoting' },
     { href: '/panel/jobs', icon: Briefcase, label: 'Loker', permission: 'manage_jobs' },
     { href: '/panel/achievements', icon: Award, label: 'Prestasi', permission: 'manage_achievements' },
     { href: '/panel/map-data', icon: Map, label: 'Data Peta', permission: 'manage_map_data' },
