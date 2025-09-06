@@ -37,6 +37,21 @@ const BoardSection = ({ title, members }: { title: string, members: MemberWithSt
     </div>
 );
 
+const ExecutiveBoardSection = ({ title, members }: { title: string, members: MemberWithStatus[] }) => {
+    if (members.length === 0) return null;
+
+    return (
+        <div>
+            <h3 className="font-headline text-xl font-semibold mt-6 mb-4">{title}</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {members.map(member => (
+                    <MemberCard key={member.id} name={member.name} position={member.position || 'Anggota'} avatarUrl={member.avatarUrl} />
+                ))}
+            </div>
+        </div>
+    );
+};
+
 
 export default async function AboutPage() {
     const settings = await getAppSettings();
@@ -46,6 +61,8 @@ export default async function AboutPage() {
     const dewanPengawas = members.filter(m => m.type === 'pengawas');
     const dewanPenasehat = members.filter(m => m.type === 'penasehat');
     const dpp = members.filter(m => m.type === 'pusat');
+    const dpd = members.filter(m => m.type === 'daerah');
+    const dpc = members.filter(m => m.type === 'cabang');
 
 
     return (
@@ -106,9 +123,11 @@ export default async function AboutPage() {
                                 <BoardSection title="Dewan Penasehat" members={dewanPenasehat} />
                             </div>
                             <div className="mt-8">
-                                <h3 className="text-xl font-bold font-headline">Dewan Pengurus Pusat (DPP)</h3>
-                                <p className="text-muted-foreground">Tim inti yang bertanggung jawab atas operasional dan pelaksanaan program skala nasional.</p>
-                                <BoardSection title="" members={dpp} />
+                                <h3 className="text-xl font-bold font-headline">Badan Pengurus</h3>
+                                <p className="text-muted-foreground">Tim inti yang bertanggung jawab atas operasional dan pelaksanaan program.</p>
+                                <ExecutiveBoardSection title="Dewan Pengurus Pusat (DPP)" members={dpp} />
+                                <ExecutiveBoardSection title="Dewan Pengurus Daerah (DPD)" members={dpd} />
+                                <ExecutiveBoardSection title="Dewan Pengurus Cabang (DPC)" members={dpc} />
                             </div>
                              <div className="flex justify-center mt-6">
                                 <div className="relative w-full max-w-4xl p-2 border-4 border-muted rounded-lg shadow-lg bg-background">

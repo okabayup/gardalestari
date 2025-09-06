@@ -22,10 +22,12 @@ import type { MemberType } from '@/app/actions/members';
 
 
 const memberTypes: { value: MemberType, label: string }[] = [
-  { value: 'pusat', label: 'Pengurus Pusat' },
-  { value: 'daerah', label: 'Pengurus Daerah' },
-  { value: 'cabang', label: 'Pengurus Cabang' },
+  { value: 'pusat', label: 'DPP' },
+  { value: 'daerah', label: 'DPD' },
+  { value: 'cabang', label: 'DPC' },
   { value: 'pembina', label: 'Dewan Pembina' },
+  { value: 'pengawas', label: 'Dewan Pengawas' },
+  { value: 'penasehat', label: 'Dewan Penasehat' },
 ];
 
 const notificationSchema = z.object({
@@ -277,5 +279,3 @@ export default function NotificationsPage() {
     </div>
   );
 }
-
-    

@@ -19,7 +19,7 @@ import { getMembers, Member } from '@/app/actions/members';
 import { useToast } from '@/hooks/use-toast';
 
 
-const TABS = ['Semua', 'Pengurus Pusat', 'Pengurus Daerah', 'Dewan Pembina', 'Dewan Pengawas', 'Dewan Penasehat', 'Anggota Istimewa'];
+const TABS = ['Semua', 'DPP', 'DPD', 'DPC', 'Dewan Pembina', 'Dewan Pengawas', 'Dewan Penasehat', 'Anggota Istimewa'];
 
 export default function MembersPage() {
   const { toast } = useToast();
@@ -59,10 +59,12 @@ export default function MembersPage() {
     let members = allMembers;
 
     // Filter berdasarkan tab
-    if (activeTab === 'Pengurus Pusat') {
+    if (activeTab === 'DPP') {
       members = members.filter((member) => member.type === 'pusat');
-    } else if (activeTab === 'Pengurus Daerah') {
+    } else if (activeTab === 'DPD') {
       members = members.filter((member) => member.type === 'daerah');
+    } else if (activeTab === 'DPC') {
+      members = members.filter((member) => member.type === 'cabang');
     } else if (activeTab === 'Dewan Pembina') {
         members = members.filter((member) => member.type === 'pembina');
     } else if (activeTab === 'Dewan Pengawas') {
@@ -80,8 +82,8 @@ export default function MembersPage() {
       );
     }
 
-    // Filter berdasarkan wilayah (hanya jika tab adalah 'Semua' atau 'Pengurus Daerah')
-    if ((activeTab === 'Semua' || activeTab === 'Pengurus Daerah') && selectedRegion !== 'Semua Wilayah') {
+    // Filter berdasarkan wilayah (hanya jika tab adalah 'Semua' atau 'DPD')
+    if ((activeTab === 'Semua' || activeTab === 'DPD') && selectedRegion !== 'Semua Wilayah') {
         members = members.filter((member) => member.region === selectedRegion);
     }
 
@@ -90,7 +92,7 @@ export default function MembersPage() {
   
   const handleTabClick = (tab: string) => {
     setActiveTab(tab);
-    if (tab !== 'Pengurus Daerah' && tab !== 'Semua') {
+    if (tab !== 'DPD' && tab !== 'Semua') {
       setSelectedRegion('Semua Wilayah');
     }
   };
@@ -114,7 +116,7 @@ export default function MembersPage() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
-             {(activeTab === 'Semua' || activeTab === 'Pengurus Daerah') && (
+             {(activeTab === 'Semua' || activeTab === 'DPD') && (
                 <Select value={selectedRegion} onValueChange={setSelectedRegion}>
                     <SelectTrigger>
                         <SelectValue placeholder="Filter berdasarkan wilayah" />
