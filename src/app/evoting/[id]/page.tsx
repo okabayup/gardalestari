@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, ArrowLeft, Check, Info } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
+import { format } from 'date-fns';
 
 const ChartTooltipContent = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -74,10 +75,10 @@ export default function EVotingDetailPage() {
   }, [topicId, user, toast]);
 
   const handleVote = async () => {
-    if (!user || !selectedOption || !topic) return;
+    if (!user || !selectedOption || !topic || !topic.id) return;
     setSubmitting(true);
     try {
-      await castVote(topic.id!, selectedOption, user.uid, user.type as any);
+      await castVote(topic.id, selectedOption, user.uid, user.type as any);
       toast({ title: 'Suara berhasil dikirim!', description: 'Terima kasih atas partisipasi Anda.' });
       setHasVoted(true);
       // Re-fetch data to show updated results
@@ -90,8 +91,6 @@ export default function EVotingDetailPage() {
     }
   };
   
-  const isVotingActive = topic && Timestamp.now() >= topic.startDate && Timestamp.now() <= topic.endDate;
-
   if (loading) {
     return (
       <MainLayout>
@@ -109,7 +108,8 @@ export default function EVotingDetailPage() {
       </MainLayout>
     );
   }
-
+  
+  const isVotingActive = topic && Timestamp.now() >= topic.startDate && Timestamp.now() <= topic.endDate;
   const chartData = topic.options.map(opt => ({ name: opt.name, total: opt.voteCount }));
 
   return (
