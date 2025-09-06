@@ -7,6 +7,8 @@ import { Sprout, Ship, TreePine, Eye, Shield, Scale } from 'lucide-react';
 import LandingHeader from '@/components/layout/LandingHeader';
 import { getAppSettings } from '../actions/settings';
 import { Separator } from '@/components/ui/separator';
+import { getMembers, MemberWithStatus } from '../actions/members';
+import { MemberCard } from '@/components/members/MemberCard';
 
 const InfoSection = ({ title, children, icon: Icon }: { title: string, children: React.ReactNode, icon: React.ElementType }) => (
     <div className="space-y-4">
@@ -20,9 +22,31 @@ const InfoSection = ({ title, children, icon: Icon }: { title: string, children:
     </div>
 )
 
+const BoardSection = ({ title, members }: { title: string, members: MemberWithStatus[] }) => (
+    <div>
+        <h3 className="font-headline text-xl font-semibold mt-6 mb-4">{title}</h3>
+        {members.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {members.map(member => (
+                    <MemberCard key={member.id} name={member.name} position={member.position || 'Anggota'} avatarUrl={member.avatarUrl} />
+                ))}
+            </div>
+        ) : (
+            <p className="text-sm text-muted-foreground">Data anggota untuk dewan ini akan segera ditampilkan.</p>
+        )}
+    </div>
+);
+
 
 export default async function AboutPage() {
     const settings = await getAppSettings();
+    const members = await getMembers();
+
+    const dewanPembina = members.filter(m => m.type === 'pembina');
+    const dewanPengawas = members.filter(m => m.type === 'pengawas');
+    const dewanPenasehat = members.filter(m => m.type === 'penasehat');
+    const dpp = members.filter(m => m.type === 'pusat');
+
 
     return (
         <div className="flex min-h-screen flex-col bg-background text-foreground">
@@ -74,7 +98,18 @@ export default async function AboutPage() {
                         <Separator />
 
                         <InfoSection title="Struktur Organisasi" icon={Scale}>
-                            <p>Garda Lestari dipimpin oleh struktur yang kolaboratif dan dinamis, memastikan setiap program berjalan dengan efektif. Berikut adalah bagan struktur organisasi kami.</p>
+                           <div>
+                                <h3 className="text-xl font-bold font-headline">Dewan Kehormatan</h3>
+                                <p className="text-muted-foreground">Terdiri dari para tokoh dan pakar yang memberikan arahan strategis dan pengawasan untuk kemajuan organisasi.</p>
+                                <BoardSection title="Dewan Pembina" members={dewanPembina} />
+                                <BoardSection title="Dewan Pengawas" members={dewanPengawas} />
+                                <BoardSection title="Dewan Penasehat" members={dewanPenasehat} />
+                            </div>
+                            <div className="mt-8">
+                                <h3 className="text-xl font-bold font-headline">Dewan Pengurus Pusat (DPP)</h3>
+                                <p className="text-muted-foreground">Tim inti yang bertanggung jawab atas operasional dan pelaksanaan program skala nasional.</p>
+                                <BoardSection title="" members={dpp} />
+                            </div>
                              <div className="flex justify-center mt-6">
                                 <div className="relative w-full max-w-4xl p-2 border-4 border-muted rounded-lg shadow-lg bg-background">
                                     <Image 
@@ -88,35 +123,6 @@ export default async function AboutPage() {
                                 </div>
                             </div>
                         </InfoSection>
-
-                        <Separator />
-
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                             <Card className="text-center">
-                                <CardHeader>
-                                    <CardTitle>Dewan Kehormatan</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-sm text-muted-foreground">Tokoh-tokoh yang memberikan arahan dan nasihat strategis bagi Garda Lestari.</p>
-                                </CardContent>
-                             </Card>
-                             <Card className="text-center">
-                                <CardHeader>
-                                    <CardTitle>Dewan Pengurus Pusat (DPP)</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-sm text-muted-foreground">Bertanggung jawab atas operasional dan program skala nasional.</p>
-                                </CardContent>
-                             </Card>
-                              <Card className="text-center">
-                                <CardHeader>
-                                    <CardTitle>Dewan Pengurus Daerah (DPD/DPC)</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-sm text-muted-foreground">Perwakilan kami di tingkat provinsi dan kota/kabupaten yang menjalankan program lokal.</p>
-                                </CardContent>
-                             </Card>
-                        </div>
                     </div>
                 </section>
             </main>

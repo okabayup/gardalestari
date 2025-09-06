@@ -25,6 +25,8 @@ const memberTypes: { value: MemberType, label: string }[] = [
   { value: 'daerah', label: 'Pengurus Daerah' },
   { value: 'cabang', label: 'Pengurus Cabang' },
   { value: 'pembina', label: 'Dewan Pembina' },
+  { value: 'pengawas', label: 'Dewan Pengawas' },
+  { value: 'penasehat', label: 'Dewan Penasehat' },
 ];
 
 const verificationStatuses: { value: VerificationStatus, label: string }[] = [

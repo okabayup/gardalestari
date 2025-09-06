@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache';
 import type { PermissionId, Position } from '@/lib/definitions';
 
 export type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected';
-export type MemberType = 'pusat' | 'daerah' | 'cabang' | 'pembina';
+export type MemberType = 'pusat' | 'daerah' | 'cabang' | 'pembina' | 'pengawas' | 'penasehat';
 
 
 export interface Member {

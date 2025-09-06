@@ -16,16 +16,20 @@ const typeConfig: Record<MemberType, string> = {
   daerah: 'fill-blue-500 stroke-background dark:stroke-background',
   cabang: 'fill-yellow-500 stroke-background dark:stroke-background',
   pembina: 'fill-purple-500 stroke-background dark:stroke-background',
+  pengawas: 'fill-red-500 stroke-background dark:stroke-background',
+  penasehat: 'fill-green-500 stroke-background dark:stroke-background',
 };
 
 
 export const VerifiedBadge = ({ type, className }: VerifiedBadgeProps) => {
-  if (!type || !['pusat', 'daerah', 'cabang', 'pembina'].includes(type)) {
+  if (!type || !typeConfig[type]) {
     return null;
   }
 
+  const title = type.charAt(0).toUpperCase() + type.slice(1);
+
   return (
-    <div className="flex-shrink-0" title={`Anggota Terverifikasi: ${type.charAt(0).toUpperCase() + type.slice(1)}`}>
+    <div className="flex-shrink-0" title={`Anggota Terverifikasi: ${title}`}>
         <BadgeCheck className={cn('h-4 w-4', typeConfig[type], className)} />
     </div>
   );
