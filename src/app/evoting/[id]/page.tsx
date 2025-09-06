@@ -64,6 +64,7 @@ export default function EVotingDetailPage() {
             setHasVoted(true);
           }
         } catch (error) {
+          console.error("Failed to fetch voting topic:", error);
           toast({ variant: 'destructive', title: 'Gagal memuat topik' });
         } finally {
           setLoading(false);
@@ -84,6 +85,7 @@ export default function EVotingDetailPage() {
       const data = await getVotingTopic(topicId);
       setTopic(data);
     } catch (error) {
+      console.error("Failed to cast vote:", error);
       toast({ variant: 'destructive', title: 'Gagal memberikan suara', description: (error as Error).message });
     } finally {
       setSubmitting(false);

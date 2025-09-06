@@ -26,6 +26,7 @@ export default function EVotingListPage() {
         const data = await getVotingTopics();
         setTopics(data);
       } catch (error) {
+        console.error("Failed to fetch e-voting topics:", error);
         toast({ variant: 'destructive', title: 'Gagal memuat data E-Voting' });
       } finally {
         setLoading(false);
