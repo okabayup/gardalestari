@@ -22,6 +22,7 @@ import {
   Megaphone as MegaphoneIcon,
   Briefcase,
   Award,
+  Map,
 } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import type { PermissionId } from '@/lib/definitions';
@@ -34,6 +35,7 @@ const navItems: { href: string; icon: React.ElementType; label: string, permissi
     { href: '/panel/documents', icon: FolderArchive, label: 'Dokumen', permission: 'manage_documents'},
     { href: '/panel/jobs', icon: Briefcase, label: 'Loker', permission: 'manage_jobs' },
     { href: '/panel/achievements', icon: Award, label: 'Prestasi', permission: 'manage_achievements' },
+    { href: '/panel/map-data', icon: Map, label: 'Data Peta', permission: 'manage_map_data' },
     { href: '/panel/berita', icon: Newspaper, label: 'Berita', permission: 'manage_news' },
     { href: '/panel/events', icon: Calendar, label: 'Acara', permission: 'manage_events' },
     { href: '/panel/programs', icon: Megaphone, label: 'Program', permission: 'manage_programs' },

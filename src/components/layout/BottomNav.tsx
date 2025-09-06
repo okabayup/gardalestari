@@ -5,7 +5,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutGrid, Users, Sprout, CalendarDays, Briefcase, Award, FolderKanban, Megaphone, FileText, Anchor } from 'lucide-react';
+import { LayoutGrid, Users, Sprout, CalendarDays, Briefcase, Award, FolderKanban, Megaphone, FileText, Handshake, Map } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { Separator } from '../ui/separator';
 
@@ -19,10 +19,10 @@ const navItems = [
 const directoryItems = [
     { href: '/jobs', label: 'Loker', icon: Briefcase },
     { href: '/achievements', label: 'Prestasi', icon: Award },
-    { href: '/panel/partners', label: 'Mitra', icon: Users },
-    { href: '/panel/announcements', label: 'Pengumuman', icon: Megaphone },
-    { href: '/panel/documents', label: 'Dokumen', icon: FileText },
-    { href: '#', label: 'Struktur', icon: Anchor },
+    { href: '/panel/partners', label: 'Mitra', icon: Handshake },
+    { href: '/announcements', label: 'Pengumuman', icon: Megaphone },
+    { href: '/documents', label: 'Dokumen', icon: FileText },
+    { href: '/map', label: 'Peta', icon: Map },
 ]
 
 const DirectorySheet = () => {

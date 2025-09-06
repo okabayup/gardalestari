@@ -19,6 +19,7 @@ export const ALL_PERMISSIONS = [
     { id: 'manage_documents', label: 'Kelola Dokumen' },
     { id: 'manage_jobs', label: 'Kelola Loker' },
     { id: 'manage_achievements', label: 'Kelola Prestasi' },
+    { id: 'manage_map_data', label: 'Kelola Data Peta' },
 ] as const;
 
 export type PermissionId = typeof ALL_PERMISSIONS[number]['id'];
