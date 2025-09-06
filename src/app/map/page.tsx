@@ -1,12 +1,13 @@
-
 'use client';
 
 import dynamic from 'next/dynamic';
-import { Loader2, HandCoins, Sprout, Siren, ClipboardList, HelpingHand } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import type { MapDataCategory } from '@/app/actions/map-data';
+import { Sprout, Siren, ClipboardList, HelpingHand, HandCoins } from 'lucide-react';
 
-// Dynamically import the Map component to avoid SSR issues with Leaflet
-const MapComponent = dynamic(() => import('@/components/map/Map'), { 
+// This remains a client component that dynamically imports the map.
+// The MapWrapper will ensure the map is only rendered on the client.
+const MapWrapper = dynamic(() => import('@/components/map/Map'), { 
     ssr: false,
     loading: () => <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
 });
@@ -23,7 +24,7 @@ export const categoryConfig: Record<MapDataCategory, { label: string; icon: Reac
 export default function MapPage() {
     return (
         <div className="relative h-full w-full">
-            <MapComponent />
+            <MapWrapper />
         </div>
     );
 }

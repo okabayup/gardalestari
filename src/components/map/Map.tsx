@@ -1,12 +1,10 @@
-
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Tooltip } from 'react-leaflet';
+import { useState, useEffect, useRef } from 'react';
+import L, { Map as LeafletMap } from 'leaflet';
 import MarkerClusterGroup from 'react-leaflet-markercluster';
 import 'leaflet/dist/leaflet.css';
 import 'react-leaflet-markercluster/dist/styles.min.css';
-import L from 'leaflet';
 import { MapData, MapDataCategory, getMapData } from '@/app/actions/map-data';
 import { categoryConfig } from '@/app/map/page';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -17,13 +15,11 @@ import { Label } from '@/components/ui/label';
 import { Layers, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-
+// Helper to create a custom marker icon
 const getMarkerIcon = (category: MapDataCategory) => {
     const config = categoryConfig[category];
     const color = config.color.match(/text-(.*)-500/)?.[1] || 'gray';
-    
     const iconHtml = `<div style="background-color: ${color};" class="w-4 h-4 rounded-full border-2 border-white shadow-lg"></div>`;
-
     return L.divIcon({
         html: iconHtml,
         className: 'custom-marker-icon',
@@ -33,6 +29,7 @@ const getMarkerIcon = (category: MapDataCategory) => {
     });
 };
 
+// Helper to create a custom icon for clusters
 const createClusterCustomIcon = (cluster: any) => {
     return new L.DivIcon({
         html: `<span>${cluster.getChildCount()}</span>`,
@@ -42,165 +39,130 @@ const createClusterCustomIcon = (cluster: any) => {
 };
 
 
-export default function MapComponent() {
+export default function Map() {
+    const mapRef = useRef<HTMLDivElement>(null);
+    const mapInstance = useRef<LeafletMap | null>(null);
+    const markerClusterGroup = useRef<L.MarkerClusterGroup | null>(null);
+    
     const { toast } = useToast();
     const [allData, setAllData] = useState<MapData[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedCategories, setSelectedCategories] = useState<MapDataCategory[]>(['potensi', 'permasalahan', 'program', 'kegiatan', 'dana']);
 
+    // Fetch data on initial render
     useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                const data = await getMapData();
-                setAllData(data);
-            } catch (error) {
-                toast({ variant: 'destructive', title: 'Gagal memuat data peta' });
-            } finally {
-                setLoading(false);
+        setLoading(true);
+        getMapData()
+            .then(setAllData)
+            .catch(() => toast({ variant: 'destructive', title: 'Gagal memuat data peta' }))
+            .finally(() => setLoading(false));
+    }, [toast]);
+    
+    // Initialize the map
+    useEffect(() => {
+        if (mapRef.current && !mapInstance.current) {
+            mapInstance.current = L.map(mapRef.current, {
+                center: [-2.548926, 118.014863],
+                zoom: 5,
+                scrollWheelZoom: true,
+            });
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(mapInstance.current);
+
+            markerClusterGroup.current = L.markerClusterGroup({
+                iconCreateFunction: createClusterCustomIcon,
+            });
+            mapInstance.current.addLayer(markerClusterGroup.current);
+        }
+
+        // Cleanup on unmount
+        return () => {
+            if (mapInstance.current) {
+                mapInstance.current.remove();
+                mapInstance.current = null;
             }
         };
-        fetchData();
-    }, [toast]);
+    }, []);
 
-    const filteredData = useMemo(() => {
-        return allData.filter(item => selectedCategories.includes(item.category));
+    // Update markers when data or filters change
+    useEffect(() => {
+        if (!markerClusterGroup.current) return;
+
+        markerClusterGroup.current.clearLayers();
+
+        const filteredData = allData.filter(item => selectedCategories.includes(item.category));
+        
+        filteredData.forEach(item => {
+            const popupContent = `
+                <div class="space-y-1">
+                    <h3 class="font-bold">${item.title}</h3>
+                    <p class="text-sm">${item.description}</p>
+                    ${(item.category === 'program' || item.category === 'dana') ? `
+                        <p class="text-xs">Anggaran: ${item.budget?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p>
+                        <p class="text-xs">Tersalurkan: ${item.disbursed?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p>
+                    ` : ''}
+                </div>
+            `;
+            const marker = L.marker([item.latitude, item.longitude], {
+                icon: getMarkerIcon(item.category)
+            }).bindPopup(popupContent);
+            markerClusterGroup.current?.addLayer(marker);
+        });
+
     }, [allData, selectedCategories]);
     
-    if (loading) {
-        return <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-    }
-    
+    const handleCategoryChange = (category: MapDataCategory, checked: boolean) => {
+        setSelectedCategories(prev => 
+            checked ? [...prev, category] : prev.filter(c => c !== category)
+        );
+    };
+
     return (
-       <>
-        <style jsx global>{`
-                .leaflet-container {
-                    height: 100%;
-                    width: 100%;
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    z-index: 10;
-                }
-                .marker-cluster-small,
-                .marker-cluster-medium,
-                .marker-cluster-large {
-                    background-color: hsla(var(--primary) / 0.6) !important;
-                }
-                .marker-cluster-small div,
-                .marker-cluster-medium div,
-                .marker-cluster-large div {
-                    background-color: hsla(var(--primary) / 0.8) !important;
-                }
-                .marker-cluster div {
-                    width: 30px;
-                    height: 30px;
-                    margin-left: 5px;
-                    margin-top: 5px;
-                    color: hsl(var(--primary-foreground));
-                    text-align: center;
-                    border-radius: 15px;
-                    font: 12px "Helvetica Neue", Arial, Helvetica, sans-serif;
-                }
-                .marker-cluster span {
-                    line-height: 30px;
-                }
-             `}</style>
+        <div className="h-full w-full relative">
+            <style jsx global>{`
+                .leaflet-container { height: 100%; width: 100%; }
+                .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background-color: hsla(var(--primary) / 0.6) !important; }
+                .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div { background-color: hsla(var(--primary) / 0.8) !important; }
+                .marker-cluster div { color: hsl(var(--primary-foreground)); }
+            `}</style>
+
             <div className="absolute top-4 right-4 z-[1000] space-y-2 md:top-20">
-                 <Sheet>
+                <Sheet>
                     <SheetTrigger asChild>
-                        <Button variant="outline" size="icon" className="bg-background/80 shadow-md"><Layers className="h-4 w-4" /></Button>
+                        <Button variant="secondary" size="icon">
+                            <Layers className="h-5 w-5" />
+                            <span className="sr-only">Filter Lapisan</span>
+                        </Button>
                     </SheetTrigger>
-                    <SheetContent side="right">
+                    <SheetContent>
                         <SheetHeader>
-                            <SheetTitle>Filter Layer Peta</SheetTitle>
+                            <SheetTitle>Filter Lapisan Peta</SheetTitle>
                         </SheetHeader>
-                        <div className="py-4 space-y-4">
-                            {Object.entries(categoryConfig).map(([key, { label, icon: Icon }]) => (
+                        <div className="space-y-4 py-4">
+                            {Object.entries(categoryConfig).map(([key, { label }]) => (
                                 <div key={key} className="flex items-center space-x-2">
                                     <Checkbox
                                         id={key}
                                         checked={selectedCategories.includes(key as MapDataCategory)}
-                                        onCheckedChange={(checked) => {
-                                            setSelectedCategories(prev => 
-                                                checked ? [...prev, key as MapDataCategory] : prev.filter(c => c !== key)
-                                            );
-                                        }}
+                                        onCheckedChange={(checked) => handleCategoryChange(key as MapDataCategory, !!checked)}
                                     />
-                                    <Label htmlFor={key} className="flex items-center gap-2">
-                                        <Icon className="h-4 w-4" /> {label}
-                                    </Label>
+                                    <Label htmlFor={key} className="flex-1 cursor-pointer">{label}</Label>
                                 </div>
                             ))}
                         </div>
                     </SheetContent>
                 </Sheet>
-                 <Sheet>
-                    <SheetTrigger asChild>
-                       <Button variant="outline" size="icon" className="bg-background/80 shadow-md"><Table className="h-4 w-4" /></Button>
-                    </SheetTrigger>
-                    <SheetContent side="bottom" className="h-4/5 flex flex-col">
-                        <SheetHeader>
-                            <SheetTitle>Tabel Data Peta</SheetTitle>
-                        </SheetHeader>
-                        <div className="flex-1 overflow-y-auto">
-                           <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Judul</TableHead>
-                                        <TableHead>Kategori</TableHead>
-                                        <TableHead>Deskripsi</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredData.map(item => (
-                                        <TableRow key={item.id}>
-                                            <TableCell>{item.title}</TableCell>
-                                            <TableCell>{categoryConfig[item.category].label}</TableCell>
-                                            <TableCell>{item.description}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                           </Table>
-                        </div>
-                    </SheetContent>
-                </Sheet>
             </div>
-        <MapContainer
-            center={[-2.548926, 118.014863]}
-            zoom={5}
-            scrollWheelZoom={true}
-            style={{ height: 'calc(100vh)', position: 'absolute', top: 0, left: 0 }}
-        >
-            <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
+
+            {loading && (
+                <div className="absolute inset-0 bg-background/50 z-[1001] flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            )}
             
-            <MarkerClusterGroup iconCreateFunction={createClusterCustomIcon}>
-                {filteredData.map(item => (
-                    <Marker 
-                        key={item.id} 
-                        position={[item.latitude, item.longitude]}
-                        icon={getMarkerIcon(item.category)}
-                    >
-                        <Tooltip>{categoryConfig[item.category].label}: {item.title}</Tooltip>
-                        <Popup>
-                            <div className="space-y-1">
-                                <h3 className="font-bold">{item.title}</h3>
-                                <p className="text-sm">{item.description}</p>
-                                {(item.category === 'program' || item.category === 'dana') && (
-                                    <>
-                                        <p className="text-xs">Anggaran: {item.budget?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p>
-                                        <p className="text-xs">Tersalurkan: {item.disbursed?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p>
-                                    </>
-                                )}
-                            </div>
-                        </Popup>
-                    </Marker>
-                ))}
-            </MarkerClusterGroup>
-        </MapContainer>
-       </>
+            <div ref={mapRef} className="z-10" />
+        </div>
     );
 }
