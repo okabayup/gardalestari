@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
 import type { MapDataCategory } from '@/app/actions/map-data';
 import { Sprout, Siren, ClipboardList, HelpingHand, HandCoins } from 'lucide-react';
+import { useMemo } from 'react';
 
 const Map = dynamic(() => import('@/components/map/Map'), { 
     ssr: false,
@@ -21,9 +22,13 @@ export const categoryConfig: Record<MapDataCategory, { label: string; icon: Reac
 };
 
 export default function MapPage() {
+    // Memoizing the component prevents it from being re-rendered unnecessarily,
+    // which is a key cause of the "Map container already initialized" error in Strict Mode.
+    const mapComponent = useMemo(() => <Map />, []);
+
     return (
         <div className="h-screen w-full">
-            <Map />
+            {mapComponent}
         </div>
     );
 }
