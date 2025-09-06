@@ -19,7 +19,7 @@ import { getMembers, Member } from '@/app/actions/members';
 import { useToast } from '@/hooks/use-toast';
 
 
-const TABS = ['Semua', 'Pengurus Pusat', 'Pengurus Daerah', 'Dewan Pembina'];
+const TABS = ['Semua', 'Pengurus Pusat', 'Pengurus Daerah', 'Anggota Istimewa'];
 
 export default function MembersPage() {
   const { toast } = useToast();
@@ -63,7 +63,7 @@ export default function MembersPage() {
       members = members.filter((member) => member.type === 'pusat');
     } else if (activeTab === 'Pengurus Daerah') {
       members = members.filter((member) => member.type === 'daerah');
-    } else if (activeTab === 'Dewan Pembina') {
+    } else if (activeTab === 'Anggota Istimewa') {
       members = members.filter((member) => member.type === 'pembina');
     }
 

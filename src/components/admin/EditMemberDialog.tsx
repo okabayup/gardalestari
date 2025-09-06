@@ -23,7 +23,7 @@ const memberTypes: { value: MemberType, label: string }[] = [
   { value: 'pusat', label: 'Pengurus Pusat' },
   { value: 'daerah', label: 'Pengurus Daerah' },
   { value: 'cabang', label: 'Pengurus Cabang' },
-  { value: 'pembina', label: 'Dewan Pembina' },
+  { value: 'pembina', label: 'Anggota Istimewa' },
 ];
 
 const verificationStatuses: { value: VerificationStatus, label: string }[] = [

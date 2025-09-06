@@ -121,7 +121,8 @@ export async function castVote(topicId: string, optionId: string, userId: string
     
     // --- Weighted Vote Logic ---
     let voteWeight = 1; // Default for regular members
-    if (userType === 'pembina') { // 'pembina' is our "anggota istimewa"
+    // 'pembina' type is used for "Anggota Istimewa" (special members)
+    if (userType === 'pembina') {
         const regularVoters = topicData.voterIds.length; // Before this vote
         // Calculate the base for 25% - total regular votes so far
         const specialVoteTotalWeight = Math.ceil(regularVoters * 0.25);
