@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Loader2, Menu } from 'lucide-react';
 import { getAppSettings } from '@/app/actions/settings';
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -96,6 +96,10 @@ export default function LandingHeader() {
                     </Button>
                 </SheetTrigger>
                 <SheetContent side="left">
+                    <SheetHeader className="sr-only">
+                        <SheetTitle>Menu Utama</SheetTitle>
+                        <SheetDescription>Navigasi utama untuk halaman Garda Lestari.</SheetDescription>
+                    </SheetHeader>
                    <div className="p-6">
                         <Link href="/" className="flex items-center">
                             <Image src="/logo.png" alt="Garda Lestari Logo" width={120} height={32} className="h-8 w-auto" />
