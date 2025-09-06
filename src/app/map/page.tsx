@@ -22,7 +22,7 @@ export const categoryConfig: Record<MapDataCategory, { label: string; icon: Reac
 
 export default function MapPage() {
     return (
-        <div className="relative h-full w-full">
+        <div className="h-screen w-full">
             <Map />
         </div>
     );
