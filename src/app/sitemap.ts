@@ -18,6 +18,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/benefits',
     '/berita',
     '/profile',
+    '/tentang',
+    '/recruitments',
+    '/evoting',
+    '/map',
   ].map((route) => ({
     url: `${BASE_URL}${route}`,
     lastModified: new Date().toISOString(),
@@ -42,17 +46,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: 'weekly' as const,
     priority: 0.7,
   }));
-
-  // Rute dinamis untuk acara (jika ada halaman detail di masa depan)
-  // Untuk saat ini, halaman /events sudah ada di rute statis.
-  // Jika setiap acara punya halaman sendiri, kita bisa menambahkannya seperti ini:
-  // const events = await getEvents();
-  // const eventRoutes = events.map((event) => ({
-  //   url: `${BASE_URL}/events/${event.id}`,
-  //   lastModified: event.date.toDate().toISOString(),
-  //   changeFrequency: 'weekly' as const,
-  //   priority: 0.6,
-  // }));
 
   return [...staticRoutes, ...beritaPostRoutes, ...programRoutes];
 }
