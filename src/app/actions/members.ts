@@ -18,6 +18,7 @@ export interface Member {
   type?: MemberType;
   region?: string;
   avatarUrl?: string;
+  isSpecialMember?: boolean;
 }
 
 export interface MemberWithStatus extends Member {
@@ -86,6 +87,7 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
       positionId: data.positionId,
       type: data.type || undefined,
       region: data.region || undefined,
+      isSpecialMember: data.isSpecialMember || false,
       joinDate: joinDate,
       ktpImageUrl: data.ktpImageUrl,
       selfieImageUrl: data.selfieImageUrl,
@@ -99,14 +101,14 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
   members.sort((a, b) => {
     const dateA = a.createdAt?.toDate() || new Date(0);
     const dateB = b.createdAt?.toDate() || new Date(0);
-    return dateB.getTime() - dateA.getTime();
+    return dateB.getTime() - a.getTime();
   });
   
   return members;
 }
 
 // Update member details (position, type, region, verification status)
-export async function updateMemberDetails(id: string, details: { positionId?: string, type?: MemberType, region?: string, verificationStatus?: VerificationStatus }) {
+export async function updateMemberDetails(id: string, details: { positionId?: string, type?: MemberType, region?: string, verificationStatus?: VerificationStatus, isSpecialMember?: boolean }) {
     try {
         const memberDoc = doc(db, 'users', id);
         const dataToUpdate: { [key: string]: any } = {};
@@ -132,6 +134,8 @@ export async function updateMemberDetails(id: string, details: { positionId?: st
         if (details.verificationStatus) {
             dataToUpdate.verificationStatus = details.verificationStatus;
         }
+
+        dataToUpdate.isSpecialMember = details.isSpecialMember || false;
         
         await setDoc(memberDoc, dataToUpdate, { merge: true });
         

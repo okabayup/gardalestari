@@ -18,7 +18,6 @@ import {
   runTransaction,
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
-import type { MemberType } from './members';
 
 export interface VotingOption {
   id: string;
@@ -38,7 +37,13 @@ export interface VotingTopic {
   voterIds: string[];
 }
 
+interface VoterInfo {
+    id: string;
+    isSpecialMember: boolean;
+}
+
 const votingCollection = collection(db, 'votingTopics');
+const usersCollection = collection(db, 'users');
 
 // --- Admin Actions ---
 
@@ -97,16 +102,26 @@ export async function getVotingTopic(id: string): Promise<VotingTopic | null> {
 
 // --- User Actions ---
 
-export async function castVote(topicId: string, optionId: string, userId: string, userType?: MemberType) {
+export async function castVote(topicId: string, optionId: string, userId: string) {
   
   await runTransaction(db, async (transaction) => {
     const topicRef = doc(db, 'votingTopics', topicId);
-    const topicDoc = await transaction.get(topicRef);
+    const userRef = doc(db, 'users', userId);
+    
+    const [topicDoc, userDoc] = await Promise.all([
+        transaction.get(topicRef),
+        transaction.get(userRef)
+    ]);
+
     if (!topicDoc.exists()) {
       throw new Error('Topik voting tidak ditemukan.');
     }
+    if (!userDoc.exists()) {
+      throw new Error('Pengguna tidak ditemukan.');
+    }
 
     const topicData = topicDoc.data() as VotingTopic;
+    const userData = userDoc.data();
 
     // Check if user has already voted
     if (topicData.voterIds.includes(userId)) {
@@ -120,20 +135,22 @@ export async function castVote(topicId: string, optionId: string, userId: string
     }
     
     // --- Weighted Vote Logic ---
-    let voteWeight = 1; // Default for regular members
-    // 'pembina' type is used for "Anggota Istimewa" (special members)
-    if (userType === 'pembina') {
-        const regularVoters = topicData.voterIds.length; // Before this vote
-        // Calculate the base for 25% - total regular votes so far
-        const specialVoteTotalWeight = Math.ceil(regularVoters * 0.25);
+    let voteWeight = 1;
+    const isSpecialMember = userData.isSpecialMember === true;
+
+    if (isSpecialMember) {
+        const voterInfoPromises = topicData.voterIds.map(vId => transaction.get(doc(usersCollection, vId)));
+        const voterDocs = await Promise.all(voterInfoPromises);
         
-        // Find how many special members have voted so far
-        const usersCollectionRef = collection(db, 'users');
-        const q = query(usersCollectionRef, where('type', '==', 'pembina'), where('__name__', 'in', topicData.voterIds.length > 0 ? topicData.voterIds : ['dummy-id-for-empty-array']));
-        const specialVotersSnapshot = await getDocs(q);
-        const specialVoterCount = specialVotersSnapshot.size + 1; // Including the current voter
+        const regularVotersCount = voterDocs.filter(vDoc => vDoc.exists() && vDoc.data()?.isSpecialMember !== true).length;
+        const specialVotersCount = voterDocs.filter(vDoc => vDoc.exists() && vDoc.data()?.isSpecialMember === true).length;
         
-        voteWeight = specialVoteTotalWeight > 0 ? Math.max(1, Math.floor(specialVoteTotalWeight / specialVoterCount)) : 5; // Use 5 as a base if no regular votes yet
+        const totalRegularVotesWeight = Math.ceil(regularVotersCount * 0.25);
+        const newSpecialVoterCount = specialVotersCount + 1; // including the current voter
+
+        voteWeight = totalRegularVotesWeight > 0 
+            ? Math.max(1, Math.floor(totalRegularVotesWeight / newSpecialVoterCount))
+            : 5; // Fallback weight if no regular members have voted yet
     }
 
     // Update vote counts

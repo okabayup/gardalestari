@@ -78,7 +78,7 @@ export default function EVotingDetailPage() {
     if (!user || !selectedOption || !topic || !topic.id) return;
     setSubmitting(true);
     try {
-      await castVote(topic.id, selectedOption, user.uid, user.type as any);
+      await castVote(topic.id, selectedOption, user.uid);
       toast({ title: 'Suara berhasil dikirim!', description: 'Terima kasih atas partisipasi Anda.' });
       setHasVoted(true);
       // Re-fetch data to show updated results
