@@ -6,7 +6,7 @@ import { Loader2, HandCoins, Sprout, Siren, ClipboardList, HelpingHand } from 'l
 import type { MapDataCategory } from '@/app/actions/map-data';
 
 // Dynamically import the Map component to avoid SSR issues with Leaflet
-const Map = dynamic(() => import('@/components/map/Map'), { 
+const MapComponent = dynamic(() => import('@/components/map/Map'), { 
     ssr: false,
     loading: () => <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
 });
@@ -23,7 +23,7 @@ export const categoryConfig: Record<MapDataCategory, { label: string; icon: Reac
 export default function MapPage() {
     return (
         <div className="relative h-full w-full">
-            <Map />
+            <MapComponent />
         </div>
     );
 }

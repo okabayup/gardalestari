@@ -42,7 +42,7 @@ const createClusterCustomIcon = (cluster: any) => {
 };
 
 
-export default function Map() {
+export default function MapComponent() {
     const { toast } = useToast();
     const [allData, setAllData] = useState<MapData[]>([]);
     const [loading, setLoading] = useState(true);
@@ -170,12 +170,11 @@ export default function Map() {
             center={[-2.548926, 118.014863]}
             zoom={5}
             scrollWheelZoom={true}
-            className="h-full w-full"
-            style={{ height: 'calc(100vh - 3.5rem)', position: 'absolute', top: 0, left: 0 }}
+            style={{ height: 'calc(100vh)', position: 'absolute', top: 0, left: 0 }}
         >
             <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{y}.png"
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             
             <MarkerClusterGroup iconCreateFunction={createClusterCustomIcon}>
