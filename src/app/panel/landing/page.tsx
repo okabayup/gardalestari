@@ -11,10 +11,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import { Separator } from '@/components/ui/separator';
 
-type FormData = Omit<AppSettings, 'heroImageUrl' | 'aboutImageUrl'> & {
+type FormData = Omit<AppSettings, 'heroImageUrl' | 'aboutImageUrl' | 'orgChartImageUrl'> & {
   heroImageFile?: FileList;
   aboutImageFile?: FileList;
+  orgChartImageFile?: FileList;
 };
 
 
@@ -28,8 +30,11 @@ export default function LandingPageSettings() {
 
   const heroImageFile = watch("heroImageFile");
   const aboutImageFile = watch("aboutImageFile");
+  const orgChartImageFile = watch("orgChartImageFile");
+
   const [heroPreview, setHeroPreview] = useState<string | null>(null);
   const [aboutPreview, setAboutPreview] = useState<string | null>(null);
+  const [orgChartPreview, setOrgChartPreview] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -40,6 +45,7 @@ export default function LandingPageSettings() {
         reset(settings);
         setHeroPreview(settings.heroImageUrl);
         setAboutPreview(settings.aboutImageUrl);
+        setOrgChartPreview(settings.orgChartImageUrl);
       } catch (error) {
         toast({ variant: 'destructive', title: 'Gagal memuat pengaturan' });
       } finally {
@@ -70,6 +76,18 @@ export default function LandingPageSettings() {
       reader.readAsDataURL(file);
     }
   }, [aboutImageFile]);
+  
+  useEffect(() => {
+    if (orgChartImageFile && orgChartImageFile.length > 0) {
+      const file = orgChartImageFile[0];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setOrgChartPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  }, [orgChartImageFile]);
+
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
@@ -78,6 +96,7 @@ export default function LandingPageSettings() {
             ...data,
             heroImageFile: data.heroImageFile?.[0],
             aboutImageFile: data.aboutImageFile?.[0],
+            orgChartImageFile: data.orgChartImageFile?.[0],
         };
       await updateAppSettings(updatePayload);
       toast({ title: 'Halaman Utama diperbarui!' });
@@ -108,17 +127,25 @@ export default function LandingPageSettings() {
             <CardTitle>Gambar</CardTitle>
             <CardDescription>Ubah gambar utama yang tampil di halaman depan.</CardDescription>
           </CardHeader>
-          <CardContent className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-                <Label htmlFor="heroImageFile">Gambar Hero</Label>
-                {heroPreview && <Image src={heroPreview} alt="Hero preview" width={400} height={200} className="rounded-md aspect-video object-cover" />}
-                <Input id="heroImageFile" type="file" {...register("heroImageFile")} accept="image/*" />
+          <CardContent className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                  <Label htmlFor="heroImageFile">Gambar Hero</Label>
+                  {heroPreview && <Image src={heroPreview} alt="Hero preview" width={400} height={200} className="rounded-md aspect-video object-cover" />}
+                  <Input id="heroImageFile" type="file" {...register("heroImageFile")} accept="image/*" />
+              </div>
+               <div className="space-y-2">
+                  <Label htmlFor="aboutImageFile">Gambar Tentang Kami</Label>
+                  {aboutPreview && <Image src={aboutPreview} alt="About preview" width={400} height={300} className="rounded-md aspect-[4/3] object-cover" />}
+                  <Input id="aboutImageFile" type="file" {...register("aboutImageFile")} accept="image/*" />
+              </div>
             </div>
+             <Separator />
              <div className="space-y-2">
-                <Label htmlFor="aboutImageFile">Gambar Tentang Kami</Label>
-                {aboutPreview && <Image src={aboutPreview} alt="About preview" width={400} height={300} className="rounded-md aspect-[4/3] object-cover" />}
-                <Input id="aboutImageFile" type="file" {...register("aboutImageFile")} accept="image/*" />
-            </div>
+                  <Label htmlFor="orgChartImageFile">Gambar Struktur Organisasi</Label>
+                  {orgChartPreview && <Image src={orgChartPreview} alt="Org chart preview" width={400} height={500} className="rounded-md aspect-[4/5] object-cover border" />}
+                  <Input id="orgChartImageFile" type="file" {...register("orgChartImageFile")} accept="image/*" />
+              </div>
           </CardContent>
         </Card>
         
