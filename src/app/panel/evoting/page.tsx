@@ -31,6 +31,20 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Timestamp } from 'firebase/firestore';
 
+// Helper to safely convert Firestore Timestamps
+const toJsDate = (timestamp: any): Date => {
+  if (timestamp instanceof Timestamp) {
+    return timestamp.toDate();
+  }
+  // Handle case where it might already be a plain object from server component
+  if (timestamp && typeof timestamp.seconds === 'number' && typeof timestamp.nanoseconds === 'number') {
+    return new Timestamp(timestamp.seconds, timestamp.nanoseconds).toDate();
+  }
+  // Fallback for unexpected types, although this shouldn't be hit
+  return new Date();
+};
+
+
 export default function AdminEVotingPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -136,7 +150,7 @@ export default function AdminEVotingPage() {
                           <Badge className={status.color}>{status.text}</Badge>
                         </TableCell>
                         <TableCell>
-                          {format(item.startDate.toDate(), 'dd/MM/yy')} - {format(item.endDate.toDate(), 'dd/MM/yy')}
+                          {format(toJsDate(item.startDate), 'dd/MM/yy')} - {format(toJsDate(item.endDate), 'dd/MM/yy')}
                         </TableCell>
                          <TableCell className="text-right">{item.totalVotes.toLocaleString()}</TableCell>
                         <TableCell className="text-right">
