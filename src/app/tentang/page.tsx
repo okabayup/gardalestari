@@ -115,6 +115,18 @@ export default async function AboutPage() {
                         <Separator />
 
                         <InfoSection title="Struktur Organisasi" icon={Scale}>
+                             <div className="flex justify-center mb-8">
+                                <div className="relative w-full max-w-4xl p-2 border-4 border-muted rounded-lg shadow-lg bg-background">
+                                    <Image 
+                                        src={settings.orgChartImageUrl} 
+                                        alt="Struktur Organisasi Garda Lestari" 
+                                        width={1200}
+                                        height={1600}
+                                        className="rounded-md w-full h-auto"
+                                        data-ai-hint="organization chart"
+                                    />
+                                </div>
+                            </div>
                            <div>
                                 <h3 className="text-xl font-bold font-headline">Dewan Kehormatan</h3>
                                 <p className="text-muted-foreground">Terdiri dari para tokoh dan pakar yang memberikan arahan strategis dan pengawasan untuk kemajuan organisasi.</p>
@@ -126,18 +138,6 @@ export default async function AboutPage() {
                                 <ExecutiveBoardSection title="Dewan Pengurus Pusat (DPP)" members={dpp} />
                                 <ExecutiveBoardSection title="Dewan Pengurus Daerah (DPD)" members={dpd} />
                                 <ExecutiveBoardSection title="Dewan Pengurus Cabang (DPC)" members={dpc} />
-                            </div>
-                             <div className="flex justify-center mt-6">
-                                <div className="relative w-full max-w-4xl p-2 border-4 border-muted rounded-lg shadow-lg bg-background">
-                                    <Image 
-                                        src={settings.orgChartImageUrl} 
-                                        alt="Struktur Organisasi Garda Lestari" 
-                                        width={1200}
-                                        height={1600}
-                                        className="rounded-md w-full h-auto"
-                                        data-ai-hint="organization chart"
-                                    />
-                                </div>
                             </div>
                         </InfoSection>
                     </div>
