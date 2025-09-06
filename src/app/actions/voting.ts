@@ -102,11 +102,11 @@ export async function deleteVotingTopic(id: string) {
 export async function getVotingTopics(): Promise<VotingTopicDTO[]> {
   const q = query(votingCollection, orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => {
-    const data = doc.data() as VotingTopic;
+  return snapshot.docs.map(docSnap => {
+    const data = docSnap.data() as Omit<VotingTopic, 'id'>;
     return {
-        id: doc.id,
         ...data,
+        id: docSnap.id,
         startDate: data.startDate.toDate().toISOString(),
         endDate: data.endDate.toDate().toISOString(),
         createdAt: data.createdAt.toDate().toISOString(),
@@ -121,10 +121,10 @@ export async function getVotingTopic(id: string): Promise<VotingTopicDTO | null>
   if (!docSnap.exists()) {
     return null;
   }
-  const data = docSnap.data() as VotingTopic;
+  const data = docSnap.data() as Omit<VotingTopic, 'id'>;
   return {
-    id: docSnap.id,
     ...data,
+    id: docSnap.id,
     startDate: data.startDate.toDate().toISOString(),
     endDate: data.endDate.toDate().toISOString(),
     createdAt: data.createdAt.toDate().toISOString(),
