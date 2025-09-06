@@ -57,9 +57,7 @@ export default async function AboutPage() {
     const settings = await getAppSettings();
     const members = await getMembers();
 
-    const dewanPembina = members.filter(m => m.type === 'pembina');
-    const dewanPengawas = members.filter(m => m.type === 'pengawas');
-    const dewanPenasehat = members.filter(m => m.type === 'penasehat');
+    const dewanKehormatan = members.filter(m => m.type === 'pembina' || m.type === 'pengawas' || m.type === 'penasehat');
     const dpp = members.filter(m => m.type === 'pusat');
     const dpd = members.filter(m => m.type === 'daerah');
     const dpc = members.filter(m => m.type === 'cabang');
@@ -128,11 +126,7 @@ export default async function AboutPage() {
                                 </div>
                             </div>
                            <div>
-                                <h3 className="text-xl font-bold font-headline">Dewan Kehormatan</h3>
-                                <p className="text-muted-foreground">Terdiri dari para tokoh dan pakar yang memberikan arahan strategis dan pengawasan untuk kemajuan organisasi.</p>
-                                <BoardSection title="Dewan Pembina" members={dewanPembina} />
-                                <BoardSection title="Dewan Pengawas" members={dewanPengawas} />
-                                <BoardSection title="Dewan Penasehat" members={dewanPenasehat} />
+                                <BoardSection title="Dewan Kehormatan" members={dewanKehormatan} />
                             </div>
                             <div className="mt-8">
                                 <ExecutiveBoardSection title="Dewan Pengurus Pusat (DPP)" members={dpp} />
