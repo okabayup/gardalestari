@@ -123,8 +123,6 @@ export default async function AboutPage() {
                                 <BoardSection title="Dewan Penasehat" members={dewanPenasehat} />
                             </div>
                             <div className="mt-8">
-                                <h3 className="text-xl font-bold font-headline">Badan Pengurus</h3>
-                                <p className="text-muted-foreground">Tim inti yang bertanggung jawab atas operasional dan pelaksanaan program.</p>
                                 <ExecutiveBoardSection title="Dewan Pengurus Pusat (DPP)" members={dpp} />
                                 <ExecutiveBoardSection title="Dewan Pengurus Daerah (DPD)" members={dpd} />
                                 <ExecutiveBoardSection title="Dewan Pengurus Cabang (DPC)" members={dpc} />
