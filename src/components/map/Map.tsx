@@ -1,7 +1,8 @@
+
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import L, { Map as LeafletMap } from 'leaflet';
+import { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-markercluster';
 import 'leaflet/dist/leaflet.css';
 import 'react-leaflet-markercluster/dist/styles.min.css';
@@ -9,11 +10,12 @@ import { MapData, MapDataCategory, getMapData } from '@/app/actions/map-data';
 import { categoryConfig } from '@/app/map/page';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Layers, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import L from 'leaflet';
+
 
 // Helper to create a custom marker icon
 const getMarkerIcon = (category: MapDataCategory) => {
@@ -38,18 +40,12 @@ const createClusterCustomIcon = (cluster: any) => {
     });
 };
 
-
 export default function Map() {
-    const mapRef = useRef<HTMLDivElement>(null);
-    const mapInstance = useRef<LeafletMap | null>(null);
-    const markerClusterGroup = useRef<L.MarkerClusterGroup | null>(null);
-    
     const { toast } = useToast();
     const [allData, setAllData] = useState<MapData[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedCategories, setSelectedCategories] = useState<MapDataCategory[]>(['potensi', 'permasalahan', 'program', 'kegiatan', 'dana']);
 
-    // Fetch data on initial render
     useEffect(() => {
         setLoading(true);
         getMapData()
@@ -58,77 +54,23 @@ export default function Map() {
             .finally(() => setLoading(false));
     }, [toast]);
     
-    // Initialize the map
-    useEffect(() => {
-        if (mapRef.current && !mapInstance.current) {
-            mapInstance.current = L.map(mapRef.current, {
-                center: [-2.548926, 118.014863],
-                zoom: 5,
-                scrollWheelZoom: true,
-            });
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(mapInstance.current);
-
-            markerClusterGroup.current = L.markerClusterGroup({
-                iconCreateFunction: createClusterCustomIcon,
-            });
-            mapInstance.current.addLayer(markerClusterGroup.current);
-        }
-
-        // Cleanup on unmount
-        return () => {
-            if (mapInstance.current) {
-                mapInstance.current.remove();
-                mapInstance.current = null;
-            }
-        };
-    }, []);
-
-    // Update markers when data or filters change
-    useEffect(() => {
-        if (!markerClusterGroup.current) return;
-
-        markerClusterGroup.current.clearLayers();
-
-        const filteredData = allData.filter(item => selectedCategories.includes(item.category));
-        
-        filteredData.forEach(item => {
-            const popupContent = `
-                <div class="space-y-1">
-                    <h3 class="font-bold">${item.title}</h3>
-                    <p class="text-sm">${item.description}</p>
-                    ${(item.category === 'program' || item.category === 'dana') ? `
-                        <p class="text-xs">Anggaran: ${item.budget?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p>
-                        <p class="text-xs">Tersalurkan: ${item.disbursed?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p>
-                    ` : ''}
-                </div>
-            `;
-            const marker = L.marker([item.latitude, item.longitude], {
-                icon: getMarkerIcon(item.category)
-            }).bindPopup(popupContent);
-            markerClusterGroup.current?.addLayer(marker);
-        });
-
-    }, [allData, selectedCategories]);
-    
     const handleCategoryChange = (category: MapDataCategory, checked: boolean) => {
         setSelectedCategories(prev => 
             checked ? [...prev, category] : prev.filter(c => c !== category)
         );
     };
 
+    const filteredData = allData.filter(item => selectedCategories.includes(item.category));
+
     return (
         <div className="h-full w-full relative">
-            <style jsx global>{`
-                .leaflet-container { height: 100%; width: 100%; }
+             <style jsx global>{`
+                .leaflet-container { height: 100%; width: 100%; z-index: 10; }
                 .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background-color: hsla(var(--primary) / 0.6) !important; }
                 .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div { background-color: hsla(var(--primary) / 0.8) !important; }
                 .marker-cluster div { color: hsl(var(--primary-foreground)); }
             `}</style>
-
-            <div className="absolute top-4 right-4 z-[1000] space-y-2 md:top-20">
+             <div className="absolute top-4 right-4 z-[1000] space-y-2 md:top-20">
                 <Sheet>
                     <SheetTrigger asChild>
                         <Button variant="secondary" size="icon">
@@ -162,7 +104,30 @@ export default function Map() {
                 </div>
             )}
             
-            <div ref={mapRef} className="z-10" />
+            <MapContainer center={[-2.548926, 118.014863]} zoom={5} scrollWheelZoom={true} className="h-full w-full">
+                <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <MarkerClusterGroup iconCreateFunction={createClusterCustomIcon}>
+                    {filteredData.map(item => (
+                        <Marker key={item.id} position={[item.latitude, item.longitude]} icon={getMarkerIcon(item.category)}>
+                            <Popup>
+                                <div className="space-y-1">
+                                    <h3 className="font-bold">{item.title}</h3>
+                                    <p className="text-sm">{item.description}</p>
+                                    {(item.category === 'program' || item.category === 'dana') && (
+                                        <>
+                                            <p className="text-xs">Anggaran: {item.budget?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p>
+                                            <p className="text-xs">Tersalurkan: {item.disbursed?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p>
+                                        </>
+                                    )}
+                                </div>
+                            </Popup>
+                        </Marker>
+                    ))}
+                </MarkerClusterGroup>
+            </MapContainer>
         </div>
     );
 }
