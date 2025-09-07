@@ -37,6 +37,16 @@ export interface VotingTopic {
   voterIds: string[];
 }
 
+// Payload for creating/updating from the client. Dates are JS Dates.
+export interface UpdateVotingTopicPayload {
+  title: string;
+  description: string;
+  options: VotingOption[];
+  startDate: Date;
+  endDate: Date;
+}
+
+
 // Data Transfer Object (DTO) for client-side consumption
 // This converts Timestamps to strings to avoid serialization errors
 export interface VotingTopicDTO {
@@ -73,10 +83,18 @@ export async function createVotingTopic(data: Omit<VotingTopic, 'id' | 'createdA
   }
 }
 
-export async function updateVotingTopic(id: string, data: Partial<Omit<VotingTopic, 'id'>>) {
+export async function updateVotingTopic(id: string, data: UpdateVotingTopicPayload) {
     try {
         const topicRef = doc(db, 'votingTopics', id);
-        await updateDoc(topicRef, data);
+        
+        // Convert JS Dates back to Firestore Timestamps on the server
+        const dataToUpdate = {
+            ...data,
+            startDate: Timestamp.fromDate(data.startDate),
+            endDate: Timestamp.fromDate(data.endDate),
+        };
+
+        await updateDoc(topicRef, dataToUpdate);
         revalidatePath('/panel/evoting');
         revalidatePath(`/evoting/${id}`);
     } catch (error) {
@@ -119,7 +137,7 @@ export async function getVotingTopics(): Promise<VotingTopicDTO[]> {
   const q = query(votingCollection, orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(docSnap => {
-    const data = docSnap.data() as Omit<VotingTopic, 'id'>;
+    const data = docSnap.data();
     return {
         id: docSnap.id,
         title: data.title,
@@ -141,7 +159,7 @@ export async function getVotingTopic(id: string): Promise<VotingTopicDTO | null>
   if (!docSnap.exists()) {
     return null;
   }
-  const data = docSnap.data() as Omit<VotingTopic, 'id'>;
+  const data = docSnap.data();
   return {
     id: docSnap.id,
     title: data.title,

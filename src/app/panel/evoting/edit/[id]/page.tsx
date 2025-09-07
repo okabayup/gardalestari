@@ -16,8 +16,7 @@ import { Loader2, Calendar as CalendarIcon, PlusCircle, X } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format, addDays } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
-import { getVotingTopic, updateVotingTopic, VotingOption } from '@/app/actions/voting';
+import { getVotingTopic, updateVotingTopic, VotingTopicDTO, UpdateVotingTopicPayload } from '@/app/actions/voting';
 import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
 
@@ -86,11 +85,11 @@ export default function EditEVotingPage() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      const payload = {
+      const payload: UpdateVotingTopicPayload = {
         title: data.title,
         description: data.description,
-        startDate: Timestamp.fromDate(data.dateRange.from),
-        endDate: Timestamp.fromDate(data.dateRange.to),
+        startDate: data.dateRange.from,
+        endDate: data.dateRange.to,
         options: data.options,
       };
 
