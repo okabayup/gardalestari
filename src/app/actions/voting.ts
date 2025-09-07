@@ -103,7 +103,15 @@ const toISOStringSafe = (date: any): string => {
   if (!date) return new Date().toISOString();
   if (date.toDate) return date.toDate().toISOString(); // Firestore Timestamp
   if (date instanceof Date) return date.toISOString(); // JavaScript Date
-  return new Date(date).toISOString(); // String or other parsable format
+  
+  // Check if the date string is valid before creating a new Date
+  const parsedDate = new Date(date);
+  if (!isNaN(parsedDate.getTime())) {
+    return parsedDate.toISOString();
+  }
+
+  // Fallback for invalid dates
+  return new Date().toISOString();
 }
 
 // This function returns a DTO to be safely used by client components
