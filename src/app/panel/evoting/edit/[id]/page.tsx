@@ -12,13 +12,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Calendar as CalendarIcon, PlusCircle, X } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, PlusCircle, X, Upload } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format, addDays } from 'date-fns';
-import { getVotingTopic, updateVotingTopic, VotingTopicDTO, UpdateVotingTopicPayload } from '@/app/actions/voting';
+import { format } from 'date-fns';
+import { getVotingTopic, updateVotingTopic, UpdateVotingTopicPayload, VotingOption } from '@/app/actions/voting';
 import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
+import Image from 'next/image';
 
 const formSchema = z.object({
   title: z.string().min(1, 'Judul wajib diisi'),
@@ -27,10 +28,13 @@ const formSchema = z.object({
     from: z.date({ required_error: 'Tanggal mulai wajib diisi' }),
     to: z.date({ required_error: 'Tanggal selesai wajib diisi' }),
   }),
+  coverImageFile: z.any().optional(),
   options: z.array(z.object({ 
-      id: z.string(), 
+      id: z.string(),
       name: z.string().min(1, 'Nama opsi tidak boleh kosong'),
       voteCount: z.number(),
+      imageUrl: z.string().optional(),
+      newImageFile: z.any().optional(),
     })).min(2, 'Minimal harus ada dua opsi'),
 });
 
@@ -43,13 +47,14 @@ export default function EditEVotingPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
 
   const {
     control,
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    watch,
   } = useForm<FormData>({ resolver: zodResolver(formSchema) });
 
   const { fields, append, remove } = useFieldArray({
@@ -57,6 +62,14 @@ export default function EditEVotingPage() {
     name: 'options',
   });
   
+  const watchCoverFile = watch('coverImageFile');
+
+  useEffect(() => {
+    if (watchCoverFile && watchCoverFile[0]) {
+        setCoverPreview(URL.createObjectURL(watchCoverFile[0]));
+    }
+  }, [watchCoverFile]);
+
    useEffect(() => {
     if (topicId) {
       const fetchTopic = async () => {
@@ -68,6 +81,9 @@ export default function EditEVotingPage() {
               ...topic,
               dateRange: { from: new Date(topic.startDate), to: new Date(topic.endDate) },
             });
+            if (topic.coverImageUrl) {
+                setCoverPreview(topic.coverImageUrl);
+            }
           } else {
             toast({ variant: 'destructive', title: 'Topik tidak ditemukan' });
             router.push('/panel/evoting');
@@ -90,10 +106,19 @@ export default function EditEVotingPage() {
         description: data.description,
         startDate: data.dateRange.from,
         endDate: data.dateRange.to,
-        options: data.options,
+        options: data.options, // Pass existing options to preserve image URLs
+        coverImageUrl: coverPreview || undefined,
       };
 
-      await updateVotingTopic(topicId, payload);
+      const newOptionsPayload = data.options.map(opt => ({
+          name: opt.name,
+          imageFile: opt.newImageFile?.[0],
+          existingImageUrl: opt.imageUrl,
+          id: opt.id,
+          voteCount: opt.voteCount,
+      }));
+
+      await updateVotingTopic(topicId, payload, newOptionsPayload, data.coverImageFile?.[0]);
       toast({ title: 'Topik E-Voting berhasil diperbarui!' });
       router.push('/panel/evoting');
     } catch (error) {
@@ -129,12 +154,10 @@ export default function EditEVotingPage() {
           <div className="space-y-2">
             <Label htmlFor="title">Judul Voting</Label>
             <Input id="title" {...register('title')} />
-            {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="description">Deskripsi</Label>
             <Textarea id="description" {...register('description')} />
-            {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
           </div>
           <div className="space-y-2">
             <Label>Periode Voting</Label>
@@ -151,27 +174,38 @@ export default function EditEVotingPage() {
                     </PopoverContent>
                 </Popover>
             )} />
-            {errors.dateRange && <p className="text-sm text-destructive">{errors.dateRange.from?.message || errors.dateRange.to?.message}</p>}
           </div>
+           <div className="space-y-2">
+                <Label htmlFor="coverImageFile">Gambar Sampul (Opsional)</Label>
+                {coverPreview && <Image src={coverPreview} alt="Cover preview" width={200} height={100} className="rounded-md object-cover border" />}
+                <Input id="coverImageFile" type="file" {...register('coverImageFile')} accept="image/*" />
+            </div>
         </CardContent>
       </Card>
       <Card>
         <CardHeader>
             <CardTitle>Opsi Voting</CardTitle>
-            <CardDescription>Tambahkan kandidat atau pilihan yang bisa divoting.</CardDescription>
+            <CardDescription>Ubah kandidat atau pilihan yang bisa divoting.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
             {fields.map((field, index) => (
-                <div key={field.id} className="flex items-center gap-2">
-                    <Input {...register(`options.${index}.name`)} placeholder={`Opsi ${index + 1}`} />
-                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 2}>
+                <div key={field.id} className="flex flex-col sm:flex-row items-start gap-4 p-4 border rounded-lg">
+                    <div className="flex-1 space-y-2">
+                        <Label>Nama Opsi</Label>
+                        <Input {...register(`options.${index}.name`)} placeholder={`Opsi ${index + 1}`} />
+                    </div>
+                     <div className="w-full sm:w-64 space-y-2">
+                        <Label>Gambar Opsi (Opsional)</Label>
+                         {watch(`options.${index}.imageUrl`) && <Image src={watch(`options.${index}.imageUrl`)!} alt="Option image" width={80} height={80} className="rounded-md object-cover" />}
+                        <Input type="file" {...register(`options.${index}.newImageFile`)} accept="image/*" />
+                    </div>
+                     <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 2} className="mt-6">
                         <X className="h-4 w-4" />
                     </Button>
                 </div>
             ))}
-             {errors.options && <p className="text-sm text-destructive">{errors.options.root?.message || errors.options?.[0]?.name?.message}</p>}
-
-            <Button type="button" variant="outline" onClick={() => append({ id: `option-${Date.now()}`, name: '', voteCount: 0 })}>
+             {/* Display errors if any */}
+            <Button type="button" variant="outline" onClick={() => append({ id: `new-${Date.now()}`, name: '', voteCount: 0 })}>
                 <PlusCircle className="mr-2 h-4 w-4" /> Tambah Opsi
             </Button>
         </CardContent>

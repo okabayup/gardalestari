@@ -1,7 +1,7 @@
 
 'use server';
 
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import {
   collection,
   doc,
@@ -17,12 +17,14 @@ import {
   orderBy,
   runTransaction,
 } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 
 export interface VotingOption {
   id: string;
   name: string;
   voteCount: number;
+  imageUrl?: string;
 }
 
 export interface VotingTopic {
@@ -35,15 +37,17 @@ export interface VotingTopic {
   createdAt: Timestamp;
   totalVotes: number;
   voterIds: string[];
+  coverImageUrl?: string;
 }
 
 // Payload for creating/updating from the client. Dates are JS Dates.
 export interface UpdateVotingTopicPayload {
   title: string;
   description: string;
-  options: VotingOption[];
+  options: VotingOption[]; // ImageUrl might be present from existing data
   startDate: Date;
   endDate: Date;
+  coverImageUrl?: string; // For URL updates
 }
 
 
@@ -59,6 +63,7 @@ export interface VotingTopicDTO {
   createdAt: string; // ISO string
   totalVotes: number;
   voterIds: string[];
+  coverImageUrl?: string;
 }
 
 
@@ -67,14 +72,46 @@ const usersCollection = collection(db, 'users');
 
 // --- Admin Actions ---
 
-export async function createVotingTopic(data: Omit<VotingTopic, 'id' | 'createdAt' | 'voterIds' | 'totalVotes'>) {
+export async function createVotingTopic(
+  data: Omit<UpdateVotingTopicPayload, 'options'>, 
+  options: { name: string; imageFile?: File }[],
+  coverImageFile?: File
+) {
   try {
-    await addDoc(votingCollection, {
-      ...data,
-      totalVotes: 0,
-      voterIds: [],
-      createdAt: Timestamp.now(),
-    });
+    let coverImageUrl: string | undefined = undefined;
+    if (coverImageFile) {
+        const coverImageRef = ref(storage, `evoting/covers/${Date.now()}_${coverImageFile.name}`);
+        await uploadBytes(coverImageRef, coverImageFile);
+        coverImageUrl = await getDownloadURL(coverImageRef);
+    }
+    
+    const optionsWithDetails: VotingOption[] = await Promise.all(options.map(async (opt, index) => {
+        let imageUrl: string | undefined = undefined;
+        if (opt.imageFile) {
+            const optionImageRef = ref(storage, `evoting/options/${Date.now()}_${index}_${opt.imageFile.name}`);
+            await uploadBytes(optionImageRef, opt.imageFile);
+            imageUrl = await getDownloadURL(optionImageRef);
+        }
+        return {
+            id: `option-${index + 1}-${Date.now()}`,
+            name: opt.name,
+            voteCount: 0,
+            imageUrl: imageUrl
+        };
+    }));
+    
+    const newTopic = {
+        ...data,
+        startDate: Timestamp.fromDate(data.startDate),
+        endDate: Timestamp.fromDate(data.endDate),
+        options: optionsWithDetails,
+        coverImageUrl,
+        totalVotes: 0,
+        voterIds: [],
+        createdAt: Timestamp.now(),
+    };
+
+    await addDoc(votingCollection, newTopic);
     revalidatePath('/panel/evoting');
     revalidatePath('/evoting');
   } catch (error) {
@@ -83,18 +120,48 @@ export async function createVotingTopic(data: Omit<VotingTopic, 'id' | 'createdA
   }
 }
 
-export async function updateVotingTopic(id: string, data: UpdateVotingTopicPayload) {
+export async function updateVotingTopic(
+    id: string, 
+    data: UpdateVotingTopicPayload,
+    newOptions: { name: string; imageFile?: File; existingImageUrl?: string; id: string; voteCount: number }[],
+    coverImageFile?: File
+) {
     try {
         const topicRef = doc(db, 'votingTopics', id);
-        
-        // Convert JS Dates back to Firestore Timestamps on the server
-        const dataToUpdate = {
+
+        const dataToUpdate: { [key: string]: any } = {
             ...data,
             startDate: Timestamp.fromDate(data.startDate),
             endDate: Timestamp.fromDate(data.endDate),
         };
+        
+        if (coverImageFile) {
+            const coverImageRef = ref(storage, `evoting/covers/${Date.now()}_${coverImageFile.name}`);
+            await uploadBytes(coverImageRef, coverImageFile);
+            dataToUpdate.coverImageUrl = await getDownloadURL(coverImageRef);
+        } else if (data.coverImageUrl === undefined) {
+             dataToUpdate.coverImageUrl = null;
+        }
+
+        const updatedOptions = await Promise.all(newOptions.map(async (opt, index) => {
+            let imageUrl = opt.existingImageUrl;
+            if (opt.imageFile) {
+                const optionImageRef = ref(storage, `evoting/options/${id}_${index}_${opt.imageFile.name}`);
+                await uploadBytes(optionImageRef, opt.imageFile);
+                imageUrl = await getDownloadURL(optionImageRef);
+            }
+             return {
+                id: opt.id,
+                name: opt.name,
+                voteCount: opt.voteCount,
+                imageUrl: imageUrl
+            };
+        }));
+        
+        dataToUpdate.options = updatedOptions;
 
         await updateDoc(topicRef, dataToUpdate);
+
         revalidatePath('/panel/evoting');
         revalidatePath(`/evoting/${id}`);
     } catch (error) {
@@ -107,7 +174,7 @@ export async function updateVotingTopic(id: string, data: UpdateVotingTopicPaylo
 export async function deleteVotingTopic(id: string) {
   try {
     await deleteDoc(doc(db, 'votingTopics', id));
-    // TODO: Delete subcollection of votes if any
+    // TODO: Delete images from storage
     revalidatePath('/panel/evoting');
     revalidatePath('/evoting');
   } catch (error) {
@@ -148,6 +215,7 @@ export async function getVotingTopics(): Promise<VotingTopicDTO[]> {
         startDate: toISOStringSafe(data.startDate),
         endDate: toISOStringSafe(data.endDate),
         createdAt: toISOStringSafe(data.createdAt),
+        coverImageUrl: data.coverImageUrl,
     }
   });
 }
@@ -170,6 +238,7 @@ export async function getVotingTopic(id: string): Promise<VotingTopicDTO | null>
     startDate: toISOStringSafe(data.startDate),
     endDate: toISOStringSafe(data.endDate),
     createdAt: toISOStringSafe(data.createdAt),
+    coverImageUrl: data.coverImageUrl
   };
 }
 

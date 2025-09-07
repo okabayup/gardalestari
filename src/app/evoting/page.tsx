@@ -11,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
+import Image from 'next/image';
+import { Users } from 'lucide-react';
 
 export default function EVotingListPage() {
   const router = useRouter();
@@ -62,19 +63,26 @@ export default function EVotingListPage() {
             {topics.map(topic => {
               const status = getStatus(topic);
               return (
-                <Card key={topic.id} className="overflow-hidden">
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <CardTitle>{topic.title}</CardTitle>
-                      <Badge className={status.color}>{status.text}</Badge>
-                    </div>
-                    <CardDescription className="text-xs">
-                      {format(new Date(topic.startDate), 'dd MMM')} - {format(new Date(topic.endDate), 'dd MMM yyyy')}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{topic.description}</p>
-                  </CardContent>
+                <Card key={topic.id} className="overflow-hidden flex flex-col">
+                  {topic.coverImageUrl && (
+                      <div className="relative h-32 w-full">
+                          <Image src={topic.coverImageUrl} alt={topic.title} fill className="object-cover" />
+                      </div>
+                  )}
+                  <div className="p-6 flex flex-col flex-grow">
+                      <div className="flex justify-between items-start">
+                        <CardTitle>{topic.title}</CardTitle>
+                        <Badge className={status.color}>{status.text}</Badge>
+                      </div>
+                      <CardDescription className="text-xs">
+                        {format(new Date(topic.startDate), 'dd MMM')} - {format(new Date(topic.endDate), 'dd MMM yyyy')}
+                      </CardDescription>
+                      <p className="text-sm text-muted-foreground line-clamp-2 mt-4 flex-grow">{topic.description}</p>
+                      <div className="flex items-center text-xs text-muted-foreground mt-4">
+                        <Users className="h-3 w-3 mr-1.5" />
+                        {topic.totalVotes.toLocaleString()} suara telah masuk
+                      </div>
+                  </div>
                   <CardFooter>
                     <Button className="w-full" onClick={() => router.push(`/evoting/${topic.id}`)} disabled={!status.isActionable}>
                       {status.text === 'Selesai' ? 'Lihat Hasil' : 'Beri Suara'}

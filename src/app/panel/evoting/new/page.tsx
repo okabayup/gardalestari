@@ -12,14 +12,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Calendar as CalendarIcon, PlusCircle, X } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, PlusCircle, X, Upload } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format, addDays } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
-import { createVotingTopic, VotingOption } from '@/app/actions/voting';
+import { createVotingTopic } from '@/app/actions/voting';
 import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
+import Image from 'next/image';
 
 const formSchema = z.object({
   title: z.string().min(1, 'Judul wajib diisi'),
@@ -28,7 +28,11 @@ const formSchema = z.object({
     from: z.date({ required_error: 'Tanggal mulai wajib diisi' }),
     to: z.date({ required_error: 'Tanggal selesai wajib diisi' }),
   }),
-  options: z.array(z.object({ name: z.string().min(1, 'Nama opsi tidak boleh kosong') })).min(2, 'Minimal harus ada dua opsi'),
+  coverImageFile: z.any().optional(),
+  options: z.array(z.object({ 
+      name: z.string().min(1, 'Nama opsi tidak boleh kosong'),
+      imageFile: z.any().optional(),
+    })).min(2, 'Minimal harus ada dua opsi'),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -37,11 +41,13 @@ export default function NewEVotingPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
 
   const {
     control,
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -58,24 +64,31 @@ export default function NewEVotingPage() {
     name: 'options',
   });
 
+  const watchCoverFile = watch('coverImageFile');
+  useEffect(() => {
+    if (watchCoverFile && watchCoverFile[0]) {
+        setCoverPreview(URL.createObjectURL(watchCoverFile[0]));
+    }
+  }, [watchCoverFile]);
+
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      const optionsWithDetails: VotingOption[] = data.options.map((opt, index) => ({
-        id: `option-${index + 1}`,
-        name: opt.name,
-        voteCount: 0,
+      const optionsPayload = data.options.map(opt => ({
+          name: opt.name,
+          imageFile: opt.imageFile?.[0]
       }));
 
-      const payload = {
-        title: data.title,
-        description: data.description,
-        startDate: Timestamp.fromDate(data.dateRange.from),
-        endDate: Timestamp.fromDate(data.dateRange.to),
-        options: optionsWithDetails,
-      };
-
-      await createVotingTopic(payload);
+      await createVotingTopic(
+        { 
+            title: data.title, 
+            description: data.description, 
+            startDate: data.dateRange.from, 
+            endDate: data.dateRange.to
+        }, 
+        optionsPayload, 
+        data.coverImageFile?.[0]
+      );
       toast({ title: 'Topik E-Voting berhasil dibuat!' });
       router.push('/panel/evoting');
     } catch (error) {
@@ -130,6 +143,11 @@ export default function NewEVotingPage() {
             )} />
             {errors.dateRange && <p className="text-sm text-destructive">{errors.dateRange.from?.message || errors.dateRange.to?.message}</p>}
           </div>
+           <div className="space-y-2">
+                <Label htmlFor="coverImageFile">Gambar Sampul (Opsional)</Label>
+                {coverPreview && <Image src={coverPreview} alt="Cover preview" width={200} height={100} className="rounded-md object-cover border" />}
+                <Input id="coverImageFile" type="file" {...register('coverImageFile')} accept="image/*" />
+            </div>
         </CardContent>
       </Card>
       <Card>
@@ -139,14 +157,21 @@ export default function NewEVotingPage() {
         </CardHeader>
         <CardContent className="space-y-4">
             {fields.map((field, index) => (
-                <div key={field.id} className="flex items-center gap-2">
-                    <Input {...register(`options.${index}.name`)} placeholder={`Opsi ${index + 1}`} />
-                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 2}>
+                <div key={field.id} className="flex flex-col sm:flex-row items-start gap-4 p-4 border rounded-lg">
+                    <div className="flex-1 space-y-2">
+                        <Label>Nama Opsi</Label>
+                        <Input {...register(`options.${index}.name`)} placeholder={`Opsi ${index + 1}`} />
+                    </div>
+                     <div className="w-full sm:w-64 space-y-2">
+                        <Label>Gambar Opsi (Opsional)</Label>
+                        <Input type="file" {...register(`options.${index}.imageFile`)} accept="image/*" />
+                    </div>
+                     <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 2} className="mt-6">
                         <X className="h-4 w-4" />
                     </Button>
                 </div>
             ))}
-             {errors.options && <p className="text-sm text-destructive">{errors.options.root?.message || errors.options?.[0]?.message}</p>}
+            {errors.options && <p className="text-sm text-destructive">{errors.options.root?.message || (errors.options as any)?.[0]?.name?.message}</p>}
 
             <Button type="button" variant="outline" onClick={() => append({ name: '' })}>
                 <PlusCircle className="mr-2 h-4 w-4" /> Tambah Opsi
