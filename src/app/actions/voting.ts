@@ -98,6 +98,14 @@ export async function deleteVotingTopic(id: string) {
   }
 }
 
+// Helper function to safely convert a Firestore Timestamp or a JS Date to an ISO string.
+const toISOStringSafe = (date: any): string => {
+  if (!date) return new Date().toISOString();
+  if (date.toDate) return date.toDate().toISOString(); // Firestore Timestamp
+  if (date instanceof Date) return date.toISOString(); // JavaScript Date
+  return new Date(date).toISOString(); // String or other parsable format
+}
+
 // This function returns a DTO to be safely used by client components
 export async function getVotingTopics(): Promise<VotingTopicDTO[]> {
   const q = query(votingCollection, orderBy('createdAt', 'desc'));
@@ -105,11 +113,15 @@ export async function getVotingTopics(): Promise<VotingTopicDTO[]> {
   return snapshot.docs.map(docSnap => {
     const data = docSnap.data() as Omit<VotingTopic, 'id'>;
     return {
-        ...data,
         id: docSnap.id,
-        startDate: data.startDate.toDate().toISOString(),
-        endDate: data.endDate.toDate().toISOString(),
-        createdAt: data.createdAt.toDate().toISOString(),
+        title: data.title,
+        description: data.description,
+        options: data.options,
+        voterIds: data.voterIds,
+        totalVotes: data.totalVotes,
+        startDate: toISOStringSafe(data.startDate),
+        endDate: toISOStringSafe(data.endDate),
+        createdAt: toISOStringSafe(data.createdAt),
     }
   });
 }
@@ -123,11 +135,15 @@ export async function getVotingTopic(id: string): Promise<VotingTopicDTO | null>
   }
   const data = docSnap.data() as Omit<VotingTopic, 'id'>;
   return {
-    ...data,
     id: docSnap.id,
-    startDate: data.startDate.toDate().toISOString(),
-    endDate: data.endDate.toDate().toISOString(),
-    createdAt: data.createdAt.toDate().toISOString(),
+    title: data.title,
+    description: data.description,
+    options: data.options,
+    voterIds: data.voterIds,
+    totalVotes: data.totalVotes,
+    startDate: toISOStringSafe(data.startDate),
+    endDate: toISOStringSafe(data.endDate),
+    createdAt: toISOStringSafe(data.createdAt),
   };
 }
 
