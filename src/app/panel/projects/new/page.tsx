@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,12 +19,14 @@ import { useAuth } from '@/hooks/use-auth';
 const formSchema = z.object({
   title: z.string().min(1, 'Judul wajib diisi'),
   description: z.string().optional(),
+  originIdeaId: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
 export default function NewProjectPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -32,8 +34,22 @@ export default function NewProjectPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(formSchema) });
+  
+  useEffect(() => {
+    // Pre-fill form if creating from an idea
+    const ideaId = searchParams.get('ideaId');
+    const title = searchParams.get('title');
+    const description = searchParams.get('description');
+    if (ideaId && title) {
+        setValue('title', title);
+        if (description) setValue('description', description);
+        setValue('originIdeaId', ideaId);
+    }
+  }, [searchParams, setValue]);
+
 
   const onSubmit = async (data: FormData) => {
     if (!user) {
@@ -79,7 +95,7 @@ export default function NewProjectPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="description">Deskripsi (Opsional)</Label>
-            <Textarea id="description" {...register('description')} />
+            <Textarea id="description" {...register('description')} rows={5} />
           </div>
         </CardContent>
       </Card>

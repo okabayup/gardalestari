@@ -28,6 +28,7 @@ export interface Project {
     teamIds: string[];
     createdAt: Timestamp;
     taskCount: number;
+    originIdeaId?: string; // Tautan ke ide asal
 }
 
 export interface ProjectColumn {

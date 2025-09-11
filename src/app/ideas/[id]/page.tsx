@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, ArrowLeft, ThumbsUp, ThumbsDown, MessageSquare, Send, MoreHorizontal, Check, CircleDotDashed } from 'lucide-react';
+import { Loader2, ArrowLeft, ThumbsUp, ThumbsDown, MessageSquare, Send, MoreHorizontal, Check, CircleDotDashed, FolderKanban } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { getIdeaById, getIdeaComments, addIdeaComment, toggleVote, updateIdeaStatus, IdeaWithAuthor, IdeaStatus, ideaStatusMap } from '@/app/actions/ideas';
@@ -64,6 +64,7 @@ export default function IdeaDetailPage() {
   const [isCommenting, setIsCommenting] = useState(false);
   
   const canManageIdeas = hasPermission('manage_ideas');
+  const canManageProjects = hasPermission('manage_projects');
 
   useEffect(() => {
     if (ideaId) {
@@ -117,6 +118,16 @@ export default function IdeaDetailPage() {
     }
   };
 
+  const handleCreateProject = () => {
+      if (!idea) return;
+      const params = new URLSearchParams({
+          ideaId: idea.id,
+          title: idea.title,
+          description: idea.description,
+      });
+      router.push(`/panel/projects/new?${params.toString()}`);
+  }
+
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !commentText.trim() || !idea) return;
@@ -151,6 +162,7 @@ export default function IdeaDetailPage() {
   }
 
   const currentStatus = ideaStatusMap[idea.status];
+  const canCreateProjectFromIdea = canManageProjects && (idea.status === 'disetujui' || idea.status === 'diterapkan');
 
   return (
     <MainLayout>
@@ -158,6 +170,21 @@ export default function IdeaDetailPage() {
              <Button variant="outline" onClick={() => router.back()}>
                 <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
             </Button>
+
+            {canCreateProjectFromIdea && (
+                <Card className="bg-primary/10 border-primary/20">
+                    <CardHeader className="flex-row items-center gap-4">
+                        <div className="flex-shrink-0 bg-primary text-primary-foreground p-2 rounded-full">
+                            <FolderKanban className="h-6 w-6" />
+                        </div>
+                        <div className="flex-1">
+                            <CardTitle className="text-base">Ide Disetujui!</CardTitle>
+                            <CardDescription className="text-xs">Ubah ide ini menjadi proyek yang dapat ditindaklanjuti.</CardDescription>
+                        </div>
+                        <Button onClick={handleCreateProject}>Buat Proyek</Button>
+                    </CardHeader>
+                </Card>
+            )}
             
             <Card>
                 <CardHeader>
