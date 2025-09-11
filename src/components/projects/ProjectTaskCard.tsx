@@ -4,7 +4,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent } from '@/components/ui/card';
-import { ProjectTask, updateTask } from '@/app/actions/projects';
+import { ProjectTask } from '@/app/actions/projects';
 import { useState } from 'react';
 import TaskDetailDialog from './TaskDetailDialog';
 import type { MemberWithStatus } from '@/app/actions/members';
@@ -65,7 +65,7 @@ export default function ProjectTaskCard({ task, teamMembers, projectId, onTaskUp
                     {task.dueDate && (
                         <div className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {format(task.dueDate.toDate(), 'dd MMM')}
+                            {format(new Date(task.dueDate), 'dd MMM')}
                         </div>
                     )}
                      {task.commentCount > 0 && (

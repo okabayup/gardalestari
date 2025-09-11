@@ -45,7 +45,7 @@ export interface ProjectTask {
     title: string;
     description?: string;
     assigneeIds?: string[];
-    dueDate?: Timestamp;
+    dueDate?: string; // Changed to string
     labels?: string[];
     commentCount: number;
 }
@@ -54,13 +54,13 @@ export interface ProjectComment {
     id: string;
     authorId: string;
     text: string;
-    createdAt: Timestamp;
+    createdAt: string; // Changed to string
 }
 
 export interface CommentWithAuthor {
     id: string;
     text: string;
-    createdAt: Timestamp;
+    createdAt: string; // Changed to string
     author: IdeaAuthor;
 }
 
@@ -169,7 +169,14 @@ export async function getColumnsForProject(projectId: string): Promise<ProjectCo
 export async function getTasksForProject(projectId: string): Promise<ProjectTask[]> {
   const tasksRef = collection(db, 'projects', projectId, 'tasks');
   const snapshot = await getDocs(tasksRef);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProjectTask));
+  return snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+          id: doc.id,
+          ...data,
+          dueDate: data.dueDate ? (data.dueDate as Timestamp).toDate().toISOString() : undefined,
+      } as ProjectTask;
+  });
 }
 
 // Create a new task in a project and add it to a column
@@ -178,7 +185,7 @@ export async function createTask(projectId: string, columnId: string, title: str
     const tasksCollectionRef = collection(projectRef, 'tasks');
     const columnRef = doc(projectRef, 'columns', columnId);
 
-    const newTaskData: Omit<ProjectTask, 'id'> = {
+    const newTaskData: Omit<ProjectTask, 'id' | 'dueDate'> = {
         title: title,
         description: '',
         assigneeIds: [],
@@ -216,7 +223,13 @@ export async function updateTask(projectId: string, taskId: string, updates: Par
     
     const currentTask = currentTaskSnap.data();
     
-    await updateDoc(taskRef, updates);
+    // Convert date string back to Timestamp for Firestore
+    const updatesForFirestore: { [key: string]: any } = { ...updates };
+    if (updates.dueDate) {
+        updatesForFirestore.dueDate = Timestamp.fromDate(new Date(updates.dueDate));
+    }
+
+    await updateDoc(taskRef, updatesForFirestore);
 
     // Send notification if assignee changes
     if (updates.assigneeIds && currentTask.assigneeIds) {
@@ -320,13 +333,15 @@ export async function getTaskComments(projectId: string, taskId: string): Promis
     const comments: CommentWithAuthor[] = [];
 
     for (const commentDoc of commentsSnapshot.docs) {
-        const commentData = { id: commentDoc.id, ...commentDoc.data() } as ProjectComment;
+        const commentData = commentDoc.data();
         const authorDoc = await getDoc(doc(usersCollection, commentData.authorId));
 
         if (authorDoc.exists()) {
             const authorData = authorDoc.data();
             comments.push({
-                ...commentData,
+                id: commentDoc.id,
+                text: commentData.text,
+                createdAt: (commentData.createdAt as Timestamp).toDate().toISOString(),
                 author: {
                     id: commentData.authorId,
                     name: authorData.fullName || 'User',

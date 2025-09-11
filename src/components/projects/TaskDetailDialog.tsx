@@ -14,7 +14,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
 import { CalendarIcon, Loader2, User, X, Tag, PlusCircle, Send } from 'lucide-react';
 import { format } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
 import { ProjectTask, updateTask, getTaskComments, addTaskComment, CommentWithAuthor } from '@/app/actions/projects';
 import type { MemberWithStatus } from '@/app/actions/members';
 import { useToast } from '@/hooks/use-toast';
@@ -28,7 +27,7 @@ import { ScrollArea } from '../ui/scroll-area';
 const formSchema = z.object({
     title: z.string().min(1, "Judul tidak boleh kosong"),
     description: z.string().optional(),
-    dueDate: z.date().optional(),
+    dueDate: z.string().optional(),
     assigneeIds: z.array(z.string()).optional(),
     labels: z.array(z.string()).optional(),
 });
@@ -66,7 +65,7 @@ export default function TaskDetailDialog({ isOpen, onClose, task, teamMembers, p
         defaultValues: {
             title: task.title,
             description: task.description || '',
-            dueDate: task.dueDate?.toDate(),
+            dueDate: task.dueDate,
             assigneeIds: task.assigneeIds || [],
             labels: task.labels || [],
         },
@@ -89,7 +88,7 @@ export default function TaskDetailDialog({ isOpen, onClose, task, teamMembers, p
             reset({
                 title: task.title,
                 description: task.description || '',
-                dueDate: task.dueDate?.toDate(),
+                dueDate: task.dueDate,
                 assigneeIds: task.assigneeIds || [],
                 labels: task.labels || [],
             });
@@ -119,7 +118,6 @@ export default function TaskDetailDialog({ isOpen, onClose, task, teamMembers, p
         try {
             const updateData: Partial<ProjectTask> = {
                 ...data,
-                dueDate: data.dueDate ? Timestamp.fromDate(data.dueDate) : undefined,
             };
             await updateTask(projectId, task.id, updateData);
             toast({ title: "Tugas diperbarui" });
@@ -136,9 +134,10 @@ export default function TaskDetailDialog({ isOpen, onClose, task, teamMembers, p
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-3xl h-[90vh] flex flex-col">
                 <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col">
-                    <DialogHeader>
-                        <Input {...register('title')} className="text-lg font-bold border-none shadow-none -ml-3" />
+                     <DialogHeader>
+                        <DialogTitle>Detail Tugas</DialogTitle>
                     </DialogHeader>
+                    <Input {...register('title')} className="text-lg font-bold border-none shadow-none -ml-3" />
                     <div className="py-4 grid grid-cols-1 md:grid-cols-3 gap-6 flex-1 min-h-0">
                         <div className="md:col-span-2 space-y-4 flex flex-col">
                              <div>
@@ -261,11 +260,11 @@ export default function TaskDetailDialog({ isOpen, onClose, task, teamMembers, p
                                             <PopoverTrigger asChild>
                                                 <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
                                                     <CalendarIcon className="mr-2 h-4 w-4" />
-                                                    {field.value ? format(field.value, 'dd MMM yyyy') : 'Pilih tanggal'}
+                                                    {field.value ? format(new Date(field.value), 'dd MMM yyyy') : 'Pilih tanggal'}
                                                 </Button>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-auto p-0">
-                                                <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                                                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date?.toISOString())} initialFocus />
                                             </PopoverContent>
                                         </Popover>
                                     )}
