@@ -10,7 +10,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Loader2, PlusCircle, KanbanSquare } from 'lucide-react';
 import Link from 'next/link';
 
-const ProjectCard = ({ project }: { project: Project }) => {
+// Create a client-side compatible type
+type ClientProject = Omit<Project, 'createdAt'> & {
+  createdAt: string; // Convert Timestamp to string
+};
+
+
+const ProjectCard = ({ project }: { project: ClientProject }) => {
   return (
     <Card className="flex flex-col">
       <CardHeader>
@@ -34,7 +40,7 @@ const ProjectCard = ({ project }: { project: Project }) => {
 export default function ProjectsPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<ClientProject[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,7 +48,12 @@ export default function ProjectsPage() {
       setLoading(true);
       try {
         const data = await getProjects();
-        setProjects(data);
+        // Convert Timestamp to ISO string before setting state
+        const clientSafeData: ClientProject[] = data.map(p => ({
+          ...p,
+          createdAt: p.createdAt.toDate().toISOString(),
+        }));
+        setProjects(clientSafeData);
       } catch (error) {
         toast({ variant: 'destructive', title: 'Gagal memuat proyek' });
       } finally {
