@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, MoreHorizontal, Loader2, Trash2, Tags, QrCode, Send } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Loader2, Trash2, Tags, QrCode, Send, Check } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -290,6 +290,11 @@ export default function AdminDocumentsPage() {
                             {item.status === 'Menunggu Persetujuan' && item.approverId === user?.uid && (
                                 <DropdownMenuItem onClick={() => handleApproveClick(item)}>
                                     <Check className="mr-2 h-4 w-4" /> Setujui Dokumen
+                                </DropdownMenuItem>
+                            )}
+                            {item.status === 'Disetujui' && (
+                               <DropdownMenuItem onClick={() => setQrDialogItem(item)}>
+                                    <QrCode className="mr-2 h-4 w-4" /> Lihat QR Code
                                 </DropdownMenuItem>
                             )}
                              <DropdownMenuSeparator />

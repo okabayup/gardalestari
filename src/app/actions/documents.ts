@@ -5,6 +5,7 @@ import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timesta
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import { sendNotification } from './notifications';
+import { stampPdfWithQrCode } from '@/ai/flows/stamp-pdf-flow';
 
 export type DocumentStatus = 'Draft' | 'Menunggu Persetujuan' | 'Disetujui' | 'Ditolak';
 
@@ -164,13 +165,21 @@ export async function approveDocument(documentId: string, approverId: string) {
         approvedById: approverId,
         approvedAt: Timestamp.now(),
     });
+    
+    // Trigger PDF stamping flow
+    try {
+      await stampPdfWithQrCode(documentId);
+    } catch (e) {
+      console.error("Failed to stamp PDF:", e);
+      // Optionally revert status or notify admin
+      throw new Error('Dokumen disetujui, namun gagal menempelkan QR Code. Hubungi admin.');
+    }
 
-    // TODO: Trigger QR code stamping flow in Phase 2
-    // For now, just notify the author
+
      await sendNotification(
         {
-            title: 'Dokumen Disetujui',
-            body: `Dokumen Anda yang berjudul "${document.title}" telah disetujui.`,
+            title: 'Dokumen Disetujui & Disahkan',
+            body: `Dokumen Anda yang berjudul "${document.title}" telah disetujui dan ditandatangani secara digital.`,
             link: `/panel/documents`,
         },
         {
