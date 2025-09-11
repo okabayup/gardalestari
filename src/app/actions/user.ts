@@ -39,6 +39,61 @@ export async function checkUsernameExists(username: string): Promise<boolean> {
   }
 }
 
+export async function getUserByUid(uid: string): Promise<MemberWithStatus | null> {
+    if (!uid) return null;
+    try {
+        const userDocRef = doc(db, 'users', uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (!userDoc.exists()) {
+            return null;
+        }
+
+        const data = userDoc.data();
+
+         let positionName = 'Anggota';
+         let permissions: PermissionId[] = [];
+         if (data.positionId) {
+            const positionDoc = await getDoc(doc(db, 'positions', data.positionId));
+            if (positionDoc.exists()) {
+                const posData = positionDoc.data() as Position
+                positionName = posData.name;
+                permissions = posData.permissions || [];
+            }
+         }
+
+        let joinDate: string | undefined;
+        if (data.createdAt && typeof data.createdAt.toDate === 'function') {
+            joinDate = data.createdAt.toDate().toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric'
+            });
+        }
+
+        return {
+            id: userDoc.id,
+            name: data.fullName || data.displayName || 'Nama Tidak Diketahui',
+            username: data.username,
+            avatarUrl: data.avatarUrl,
+            phoneNumber: data.phoneNumber || 'N/A',
+            verificationStatus: data.verificationStatus || 'unverified',
+            position: positionName,
+            positionId: data.positionId,
+            type: data.type,
+            region: data.region,
+            isSpecialMember: data.isSpecialMember,
+            joinDate: joinDate,
+            permissions: permissions,
+        };
+
+    } catch (error) {
+        console.error("Error fetching user by UID:", error);
+        return null;
+    }
+}
+
+
 /**
  * Gets public user data by username for KTA verification.
  * @param username The username to fetch.

@@ -19,6 +19,8 @@ import {
   increment,
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
+import { sendWhatsAppMessage } from '@/services/whatsapp';
+import { getUserByUid } from './user';
 
 export interface Project {
     id: string;
@@ -53,6 +55,14 @@ export async function getProjects(): Promise<Project[]> {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
 }
+
+// Get projects for a specific user (where they are a member)
+export async function getProjectsForUser(userId: string): Promise<Project[]> {
+    const q = query(projectsCollection, where('teamIds', 'array-contains', userId), orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
+}
+
 
 // Get a single project by ID
 export async function getProjectById(id: string): Promise<Project | null> {
@@ -158,6 +168,37 @@ export async function createTask(projectId: string, columnId: string, title: str
     }
 }
 
+// Update task details
+export async function updateTask(projectId: string, taskId: string, updates: Partial<ProjectTask>) {
+    const taskRef = doc(db, 'projects', projectId, 'tasks', taskId);
+    const currentTaskSnap = await getDoc(taskRef);
+    if (!currentTaskSnap.exists()) throw new Error("Tugas tidak ditemukan");
+    
+    const currentTask = currentTaskSnap.data();
+    
+    await updateDoc(taskRef, updates);
+
+    // Send notification if assignee changes
+    if (updates.assigneeIds) {
+        const newAssignees = updates.assigneeIds.filter(id => !currentTask.assigneeIds?.includes(id));
+        if (newAssignees.length > 0) {
+            const project = await getProjectById(projectId);
+            for (const assigneeId of newAssignees) {
+                const user = await getUserByUid(assigneeId);
+                if (user?.phoneNumber) {
+                    await sendWhatsAppMessage(
+                        user.phoneNumber,
+                        `Halo ${user.name}, Anda telah ditugaskan untuk mengerjakan tugas "${updates.title || currentTask.title}" di proyek "${project?.title}".`
+                    );
+                }
+            }
+        }
+    }
+
+    revalidatePath(`/panel/projects/${projectId}`);
+}
+
+
 // Update task's column
 export async function updateTaskColumn(
   projectId: string,
@@ -200,4 +241,11 @@ export async function updateTaskColumn(
         console.error("Transaction failed: ", e);
         throw new Error("Gagal memindahkan tugas.");
     }
+}
+
+// Add/remove team members
+export async function updateTeamMembers(projectId: string, teamIds: string[]) {
+    const projectRef = doc(db, 'projects', projectId);
+    await updateDoc(projectRef, { teamIds });
+    revalidatePath(`/panel/projects/${projectId}`);
 }

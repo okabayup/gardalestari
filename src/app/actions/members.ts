@@ -5,6 +5,7 @@ import { db } from '@/lib/firebase';
 import { collection, getDocs, doc, updateDoc, deleteField, query, setDoc, Timestamp, getDoc } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { PermissionId, Position } from '@/lib/definitions';
+import { sendWhatsAppMessage } from '@/services/whatsapp';
 
 export type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected';
 export type MemberType = 'pusat' | 'daerah' | 'cabang' | 'pembina' | 'pengawas' | 'penasehat';
@@ -110,24 +111,32 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
 // Update member details (position, type, region, verification status)
 export async function updateMemberDetails(id: string, details: { positionId?: string, type?: MemberType, region?: string, verificationStatus?: VerificationStatus, isSpecialMember?: boolean }) {
     try {
-        const memberDoc = doc(db, 'users', id);
+        const memberDocRef = doc(db, 'users', id);
+        const currentMemberDoc = await getDoc(memberDocRef);
+        if (!currentMemberDoc.exists()) throw new Error("Anggota tidak ditemukan.");
+        
+        const currentMemberData = currentMemberDoc.data();
         const dataToUpdate: { [key: string]: any } = {};
 
         if (details.positionId) {
             dataToUpdate.positionId = details.positionId;
+        } else if (details.positionId === undefined) {
+             // No change
         } else {
             dataToUpdate.positionId = deleteField();
         }
 
         if (details.type) {
             dataToUpdate.type = details.type;
+        } else if (details.type === undefined) {
+            // No change
         } else {
             dataToUpdate.type = deleteField();
         }
 
         if (details.type === 'daerah' && details.region) {
             dataToUpdate.region = details.region;
-        } else {
+        } else if (details.type !== 'daerah') {
             dataToUpdate.region = deleteField();
         }
 
@@ -135,9 +144,28 @@ export async function updateMemberDetails(id: string, details: { positionId?: st
             dataToUpdate.verificationStatus = details.verificationStatus;
         }
 
-        dataToUpdate.isSpecialMember = details.isSpecialMember || false;
+        if (details.isSpecialMember !== undefined) {
+            dataToUpdate.isSpecialMember = details.isSpecialMember;
+        }
         
-        await setDoc(memberDoc, dataToUpdate, { merge: true });
+        await setDoc(memberDocRef, dataToUpdate, { merge: true });
+
+        // Send WhatsApp notification if verification status changes
+        if (details.verificationStatus && details.verificationStatus !== currentMemberData.verificationStatus) {
+            const memberPhoneNumber = currentMemberData.phoneNumber;
+            if (memberPhoneNumber) {
+                let message = '';
+                if (details.verificationStatus === 'permanent') {
+                    message = `Selamat ${currentMemberData.fullName}! Akun Garda Lestari Anda telah diverifikasi secara permanen. Anda sekarang dapat mengakses Kartu Tanda Anggota (KTA) digital Anda.`;
+                } else if (details.verificationStatus === 'rejected') {
+                    message = `Halo ${currentMemberData.fullName}. Mohon maaf, pengajuan verifikasi akun Garda Lestari Anda ditolak. Silakan periksa kembali data Anda dan coba lagi.`;
+                }
+                
+                if (message) {
+                    await sendWhatsAppMessage(memberPhoneNumber, message);
+                }
+            }
+        }
         
         revalidatePath('/panel/members');
         revalidatePath('/members');
