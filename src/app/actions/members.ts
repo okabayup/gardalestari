@@ -29,7 +29,7 @@ export interface MemberWithStatus extends Member {
     ktpImageUrl?: string;
     selfieImageUrl?: string;
     nik?: string;
-    createdAt?: Timestamp;
+    createdAt?: string; // Changed to string to be serializable
     position?: string; 
     permissions: PermissionId[];
 }
@@ -93,16 +93,16 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
       ktpImageUrl: data.ktpImageUrl,
       selfieImageUrl: data.selfieImageUrl,
       nik: data.nik,
-      createdAt: data.createdAt, 
+      createdAt: data.createdAt?.toDate().toISOString() || new Date().toISOString(), // Convert Timestamp to ISO String
       permissions: permissions,
     });
   }
 
   // Sort members by creation date in descending order (newest first)
   members.sort((a, b) => {
-    const dateA = a.createdAt?.toDate() || new Date(0);
-    const dateB = b.createdAt?.toDate() || new Date(0);
-    return dateB.getTime() - a.getTime();
+    const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+    const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+    return dateB.getTime() - dateA.getTime();
   });
   
   return members;
