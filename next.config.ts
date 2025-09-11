@@ -79,7 +79,7 @@ const nextConfig: NextConfig = {
             fs: false,
         };
     }
-    config.externals.push('pino-pretty', 'lokijs', 'encoding');
+    config.externals.push('pino-pretty', 'lokijs', 'encoding', 'jimp', 'sharp');
     return config;
   },
 };
