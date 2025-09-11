@@ -92,6 +92,7 @@ export default function ProjectDetailPage() {
             projectId={projectId}
             onCreateTask={handleCreateTask}
             onDataRefresh={fetchProjectData}
+            projectTeamIds={project.teamIds}
         />
       </div>
     </div>

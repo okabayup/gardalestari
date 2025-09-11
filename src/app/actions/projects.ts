@@ -45,6 +45,7 @@ export interface ProjectTask {
     description?: string;
     assigneeIds?: string[];
     dueDate?: Timestamp;
+    labels?: string[];
 }
 
 const projectsCollection = collection(db, 'projects');
@@ -164,6 +165,7 @@ export async function createTask(projectId: string, columnId: string, title: str
         title: title,
         description: '',
         assigneeIds: [],
+        labels: [],
     };
 
     try {
@@ -189,7 +191,7 @@ export async function createTask(projectId: string, columnId: string, title: str
 }
 
 // Update task details
-export async function updateTask(projectId: string, taskId: string, updates: Partial<ProjectTask>) {
+export async function updateTask(projectId: string, taskId: string, updates: Partial<Omit<ProjectTask, 'id'>>) {
     const taskRef = doc(db, 'projects', projectId, 'tasks', taskId);
     const currentTaskSnap = await getDoc(taskRef);
     if (!currentTaskSnap.exists()) throw new Error("Tugas tidak ditemukan");

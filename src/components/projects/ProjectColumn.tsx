@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useSortable, SortableContext } from '@dnd-kit/sortable';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ProjectColumn, ProjectTask } from '@/app/actions/projects';
+import type { MemberWithStatus } from '@/app/actions/members';
 import ProjectTaskCard from './ProjectTaskCard';
 import { Button } from '../ui/button';
 import { Plus, X } from 'lucide-react';
@@ -15,9 +16,12 @@ interface ProjectColumnProps {
   column: ProjectColumn;
   tasks: ProjectTask[];
   onCreateTask: (columnId: string, title: string) => Promise<void>;
+  projectId: string;
+  teamMembers: MemberWithStatus[];
+  onTaskUpdate: () => void;
 }
 
-export default function ProjectColumnComponent({ column, tasks, onCreateTask }: ProjectColumnProps) {
+export default function ProjectColumnComponent({ column, tasks, onCreateTask, projectId, teamMembers, onTaskUpdate }: ProjectColumnProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -46,7 +50,13 @@ export default function ProjectColumnComponent({ column, tasks, onCreateTask }: 
       <CardContent className="p-2 space-y-2 flex-1 overflow-y-auto">
         <SortableContext items={tasks.map(t => t.id)}>
           {tasks.map(task => (
-            <ProjectTaskCard key={task.id} task={task} />
+            <ProjectTaskCard 
+                key={task.id} 
+                task={task} 
+                teamMembers={teamMembers}
+                projectId={projectId}
+                onTaskUpdate={onTaskUpdate}
+            />
           ))}
         </SortableContext>
          {isAdding && (

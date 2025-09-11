@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -13,12 +13,16 @@ import {
   PointerSensor,
   closestCorners,
 } from '@dnd-kit/core';
-import { SortableContext, arrayMove } from '@dnd-kit/sortable';
+import { arrayMove } from '@dnd-kit/sortable';
 import { produce } from 'immer';
-import { ProjectColumn, ProjectTask, updateTaskColumn } from '@/app/actions/projects';
+import { ProjectColumn, ProjectTask, updateTaskColumn, getMembers, updateTeamMembers } from '@/app/actions/projects';
+import type { MemberWithStatus } from '@/app/actions/members';
 import { useToast } from '@/hooks/use-toast';
 import ProjectColumnComponent from './ProjectColumn';
 import ProjectTaskCard from './ProjectTaskCard';
+import { Button } from '../ui/button';
+import { UserPlus } from 'lucide-react';
+import { ManageTeamDialog } from './ManageTeamDialog';
 
 interface ProjectBoardProps {
   initialColumns: ProjectColumn[];
@@ -26,13 +30,28 @@ interface ProjectBoardProps {
   projectId: string;
   onCreateTask: (columnId: string, title: string) => Promise<void>;
   onDataRefresh: () => void;
+  projectTeamIds: string[];
 }
 
-export default function ProjectBoard({ initialColumns, initialTasks, projectId, onCreateTask, onDataRefresh }: ProjectBoardProps) {
+export default function ProjectBoard({ initialColumns, initialTasks, projectId, onCreateTask, onDataRefresh, projectTeamIds }: ProjectBoardProps) {
   const { toast } = useToast();
   const [columns, setColumns] = useState<ProjectColumn[]>(initialColumns);
   const [tasks, setTasks] = useState<ProjectTask[]>(initialTasks);
   const [activeTask, setActiveTask] = useState<ProjectTask | null>(null);
+  const [isTeamDialogOpen, setIsTeamDialogOpen] = useState(false);
+  const [allMembers, setAllMembers] = useState<MemberWithStatus[]>([]);
+  const [teamIds, setTeamIds] = useState(projectTeamIds);
+
+  useEffect(() => {
+    getMembers().then(setAllMembers);
+  }, []);
+
+  useEffect(() => {
+    setColumns(initialColumns);
+    setTasks(initialTasks);
+    setTeamIds(projectTeamIds);
+  }, [initialColumns, initialTasks, projectTeamIds]);
+
 
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: { distance: 10 },
@@ -112,18 +131,28 @@ export default function ProjectBoard({ initialColumns, initialTasks, projectId, 
     if (oldIndex !== newIndex || sourceColumn.id !== destColumn.id) {
       try {
         await updateTaskColumn(projectId, active.id as string, sourceColumn.id, destColumn.id, newIndex);
-        // We're relying on the optimistic update. To be fully robust, one might re-fetch data here.
         onDataRefresh();
       } catch (error) {
         toast({ variant: 'destructive', title: "Gagal memindahkan tugas", description: (error as Error).message });
-        // Revert UI changes on error
         setColumns(initialColumns);
       }
     }
   };
 
+  const handleUpdateTeam = async (newTeamIds: string[]) => {
+    try {
+        await updateTeamMembers(projectId, newTeamIds);
+        setTeamIds(newTeamIds);
+        setIsTeamDialogOpen(false);
+        toast({ title: 'Tim berhasil diperbarui.' });
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Gagal memperbarui tim', description: (error as Error).message });
+    }
+  }
+
 
   return (
+    <>
     <DndContext
       sensors={sensors}
       onDragStart={handleDragStart}
@@ -132,12 +161,21 @@ export default function ProjectBoard({ initialColumns, initialTasks, projectId, 
       collisionDetection={closestCorners}
     >
       <div className="flex gap-4 items-start p-1 h-full">
+         <div className="absolute top-4 right-4 z-10">
+            <Button onClick={() => setIsTeamDialogOpen(true)}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Kelola Tim
+            </Button>
+        </div>
         {columns.map(col => (
           <ProjectColumnComponent
             key={col.id}
             column={col}
             tasks={col.taskIds.map(id => tasksById[id]).filter(Boolean)}
             onCreateTask={onCreateTask}
+            projectId={projectId}
+            teamMembers={allMembers.filter(m => teamIds.includes(m.id))}
+            onTaskUpdate={onDataRefresh}
           />
         ))}
       </div>
@@ -145,5 +183,13 @@ export default function ProjectBoard({ initialColumns, initialTasks, projectId, 
         {activeTask ? <ProjectTaskCard task={activeTask} /> : null}
       </DragOverlay>
     </DndContext>
+    <ManageTeamDialog
+        isOpen={isTeamDialogOpen}
+        onClose={() => setIsTeamDialogOpen(false)}
+        allMembers={allMembers}
+        currentTeamIds={teamIds}
+        onSave={handleUpdateTeam}
+     />
+    </>
   );
 }
