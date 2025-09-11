@@ -3,6 +3,9 @@ import type { Metadata } from 'next';
 import { AuthProvider } from '@/hooks/use-auth';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
+import FirebaseAnalytics from '@/components/FirebaseAnalytics';
+import { Suspense } from 'react';
+
 
 export const metadata: Metadata = {
   title: 'Garda Lestari',
@@ -39,6 +42,9 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           <Toaster />
+          <Suspense fallback={null}>
+            <FirebaseAnalytics />
+          </Suspense>
         </AuthProvider>
       </body>
     </html>
