@@ -8,6 +8,7 @@ import { getBeritaPosts, getBeritaPost } from '@/app/actions/berita';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
+import type { Metadata } from 'next';
 
 // This function tells Next.js which slugs to pre-render at build time
 export async function generateStaticParams() {
@@ -16,6 +17,38 @@ export async function generateStaticParams() {
     slug: post.slug,
   }));
 }
+
+// This function generates dynamic metadata for each news post
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const post = await getBeritaPost(params.slug);
+
+  if (!post) {
+    return {
+      title: 'Berita Tidak Ditemukan',
+      description: 'Artikel berita yang Anda cari tidak ada atau telah dipindahkan.',
+    };
+  }
+
+  return {
+    title: `${post.title} | Garda Lestari`,
+    description: post.excerpt,
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      images: [
+        {
+          url: post.imageUrl,
+          width: 1200,
+          height: 630,
+          alt: post.title,
+        },
+      ],
+      locale: 'id_ID',
+      type: 'article',
+    },
+  };
+}
+
 
 export default async function BeritaPostPage({ params }: { params: { slug: string } }) {
   const post = await getBeritaPost(params.slug);

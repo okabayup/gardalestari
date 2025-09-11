@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, MoreHorizontal, Loader2, Trash2, Sparkles } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Loader2, Trash2, Sparkles, RefreshCw } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { getBeritaPosts, deleteBeritaPost, BeritaPost } from '@/app/actions/berita';
+import { getBeritaPosts, deleteBeritaPost, BeritaPost, requestReindexing } from '@/app/actions/berita';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +36,7 @@ export default function AdminBeritaPage() {
   const [posts, setPosts] = useState<BeritaPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isReindexing, setIsReindexing] = useState<string | null>(null);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [postToDelete, setPostToDelete] = useState<BeritaPost | null>(null);
 
@@ -66,6 +67,18 @@ export default function AdminBeritaPage() {
     setPostToDelete(post);
     setShowDeleteAlert(true);
   };
+
+  const handleReindexClick = async (slug: string) => {
+    setIsReindexing(slug);
+    try {
+        const result = await requestReindexing(slug);
+        toast({ title: "Sukses", description: result.message });
+    } catch (error) {
+         toast({ variant: "destructive", title: "Gagal", description: (error as Error).message });
+    } finally {
+        setIsReindexing(null);
+    }
+  }
 
   const handleDeleteConfirm = async () => {
     if (postToDelete && postToDelete.id) {
@@ -162,9 +175,15 @@ export default function AdminBeritaPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             {canManage && (
+                                <>
                                 <DropdownMenuItem onClick={() => router.push(`/panel/berita/edit/${post.slug}`)}>
                                 Edit
                                 </DropdownMenuItem>
+                                 <DropdownMenuItem onClick={() => handleReindexClick(post.slug)} disabled={isReindexing === post.slug}>
+                                    {isReindexing === post.slug ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                                    Minta Indeks Ulang
+                                </DropdownMenuItem>
+                                </>
                             )}
                             {canDelete && (
                                 <>
