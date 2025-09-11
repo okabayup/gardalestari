@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import Link from 'next/link';
@@ -32,6 +30,7 @@ import {
   Map,
   Vote,
   Mail,
+  BookCopy,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
@@ -45,7 +44,8 @@ const navItems: { href: string; icon: React.ElementType; label: string, permissi
     { href: '/panel/dashboard', icon: Home, label: 'Dasbor' },
     { href: '/panel/notifications', icon: Bell, label: 'Notifikasi', permission: 'send_notifications' },
     { href: '/panel/announcements', icon: MegaphoneIcon, label: 'Pengumuman', permission: 'manage_announcements'},
-    { href: '/panel/documents', icon: FolderArchive, label: 'Dokumen', permission: 'manage_documents'},
+    { href: '/panel/letters', icon: BookCopy, label: 'Manajemen Surat', permission: 'manage_letters'},
+    { href: '/panel/documents', icon: FolderArchive, label: 'Dokumen Penting', permission: 'manage_documents'},
     { href: '/panel/evoting', icon: Vote, label: 'E-Voting', permission: 'manage_evoting' },
     { href: '/panel/recruitments', icon: Briefcase, label: 'Rekrutmen', permission: 'manage_recruitments' },
     { href: '/panel/achievements', icon: Award, label: 'Prestasi', permission: 'manage_achievements' },
@@ -90,13 +90,15 @@ export function Sidebar() {
               if (item.permission && !hasPermission(item.permission)) {
                 return null;
               }
+              const isActive = pathname.startsWith(item.href) && item.href !== '/panel/dashboard' || pathname === item.href;
+
               return (
                <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
                     'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                    (pathname === item.href || (item.href !== '/panel/dashboard' && pathname.startsWith(item.href))) && 'bg-muted text-primary'
+                    isActive && 'bg-muted text-primary'
                 )}
                 >
                 <item.icon className="h-4 w-4" />

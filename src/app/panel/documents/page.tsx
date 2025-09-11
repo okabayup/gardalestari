@@ -99,8 +99,8 @@ const ApprovalDialog = ({ document, members, isOpen, onClose, onConfirm }: { doc
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Ajukan Persetujuan Dokumen</DialogTitle>
-                    <DialogDescription>Pilih siapa yang harus meninjau dan menyetujui dokumen "{document.title}". Pengguna yang dipilih akan menerima notifikasi.</DialogDescription>
+                    <DialogTitle>Ajukan Persetujuan Surat</DialogTitle>
+                    <DialogDescription>Pilih siapa yang harus meninjau dan menyetujui surat "{document.title}". Pengguna yang dipilih akan menerima notifikasi.</DialogDescription>
                 </DialogHeader>
                  <div className="py-4">
                      <Select onValueChange={setApproverId} value={approverId}>
@@ -125,7 +125,7 @@ const ApprovalDialog = ({ document, members, isOpen, onClose, onConfirm }: { doc
 }
 
 
-export default function AdminDocumentsPage() {
+export default function EOfficePage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -159,7 +159,7 @@ export default function AdminDocumentsPage() {
         const data = await getDocuments();
         setDocuments(data);
     } catch(e) {
-        toast({ variant: 'destructive', title: 'Gagal memperbarui daftar dokumen.'});
+        toast({ variant: 'destructive', title: 'Gagal memperbarui daftar surat.'});
     }
   }
 
@@ -172,7 +172,7 @@ export default function AdminDocumentsPage() {
     if (!doc.id || !user?.uid) return;
     try {
       await approveDocument(doc.id, user.uid);
-      toast({ title: 'Dokumen disetujui!' });
+      toast({ title: 'Dokumen disetujui dan disahkan!' });
       fetchDocuments();
     } catch (error) {
       toast({ variant: 'destructive', title: 'Gagal menyetujui', description: (error as Error).message });
@@ -184,7 +184,7 @@ export default function AdminDocumentsPage() {
     setIsDeleting(itemToDelete.id);
     try {
       await deleteDocument(itemToDelete.id);
-      toast({ title: "Dokumen berhasil dihapus." });
+      toast({ title: "Surat berhasil dihapus." });
       fetchDocuments();
     } catch (error) {
       toast({ variant: "destructive", title: "Gagal menghapus", description: (error as Error).message });
@@ -214,7 +214,7 @@ export default function AdminDocumentsPage() {
       case 'Menunggu Persetujuan':
         return <Badge className="bg-yellow-500 hover:bg-yellow-500/80">Menunggu Persetujuan</Badge>;
       case 'Disetujui':
-        return <Badge className="bg-green-500 hover:bg-green-500/80">Disetujui</Badge>;
+        return <Badge className="bg-green-500 hover:bg-green-500/80">Disetujui & Disahkan</Badge>;
       case 'Ditolak':
         return <Badge variant="destructive">Ditolak</Badge>;
       default:
@@ -227,21 +227,21 @@ export default function AdminDocumentsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-headline text-2xl font-bold">E-Office: Manajemen Dokumen</h1>
-            <p className="text-muted-foreground">Unggah dan kelola dokumen penting dengan alur persetujuan.</p>
+            <h1 className="font-headline text-2xl font-bold">E-Office: Manajemen Surat</h1>
+            <p className="text-muted-foreground">Buat, sahkan, dan arsipkan surat resmi organisasi secara digital.</p>
           </div>
-          <Button onClick={() => router.push('/panel/documents/new')}>
+          <Button onClick={() => router.push('/panel/e-office/new')}>
             <PlusCircle className="mr-2 h-4 w-4" />
-            Unggah Dokumen
+            Buat Surat Baru
           </Button>
         </div>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Daftar Dokumen</CardTitle>
-              <CardDescription>Total {documents.length} dokumen ditemukan.</CardDescription>
+              <CardTitle>Arsip Surat</CardTitle>
+              <CardDescription>Total {documents.length} surat ditemukan.</CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={() => router.push('/panel/documents/categories')}>
+            <Button variant="outline" size="sm" onClick={() => router.push('/panel/e-office/categories')}>
                 <Tags className="mr-2 h-4 w-4" />
                 Kelola Kategori
             </Button>
@@ -250,7 +250,7 @@ export default function AdminDocumentsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Judul</TableHead>
+                  <TableHead>Detail Surat</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Dibuat Oleh</TableHead>
                   <TableHead><span className="sr-only">Aksi</span></TableHead>
@@ -270,7 +270,7 @@ export default function AdminDocumentsPage() {
                         <Link href={item.fileUrl} target="_blank" className="hover:underline text-primary">
                           {item.title}
                         </Link>
-                         <p className="text-xs text-muted-foreground">{item.documentNumber}</p>
+                         <p className="text-xs text-muted-foreground font-mono">{item.documentNumber}</p>
                       </TableCell>
                       <TableCell>{getStatusBadge(item.status)}</TableCell>
                       <TableCell>{item.authorName}</TableCell>
@@ -289,16 +289,16 @@ export default function AdminDocumentsPage() {
                             )}
                             {item.status === 'Menunggu Persetujuan' && item.approverId === user?.uid && (
                                 <DropdownMenuItem onClick={() => handleApproveClick(item)}>
-                                    <Check className="mr-2 h-4 w-4" /> Setujui Dokumen
+                                    <Check className="mr-2 h-4 w-4" /> Setujui Surat
                                 </DropdownMenuItem>
                             )}
                             {item.status === 'Disetujui' && (
                                <DropdownMenuItem onClick={() => setQrDialogItem(item)}>
-                                    <QrCode className="mr-2 h-4 w-4" /> Lihat QR Code
+                                    <QrCode className="mr-2 h-4 w-4" /> Lihat QR Pengesahan
                                 </DropdownMenuItem>
                             )}
                              <DropdownMenuSeparator />
-                             <DropdownMenuItem onClick={() => router.push(`/panel/documents/edit/${item.id}`)}>Edit</DropdownMenuItem>
+                             <DropdownMenuItem onClick={() => router.push(`/panel/e-office/edit/${item.id}`)}>Edit</DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(item)}>
                               <Trash2 className="mr-2 h-4 w-4" /> Hapus
                             </DropdownMenuItem>
@@ -310,7 +310,7 @@ export default function AdminDocumentsPage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
-                      Belum ada dokumen yang diunggah.
+                      Belum ada surat yang dibuat.
                     </TableCell>
                   </TableRow>
                 )}
@@ -324,7 +324,7 @@ export default function AdminDocumentsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Anda yakin ingin menghapus?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini akan menghapus dokumen <span className="font-semibold">"{itemToDelete?.title}"</span> secara permanen.
+              Tindakan ini akan menghapus surat <span className="font-semibold">"{itemToDelete?.title}"</span> secara permanen.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import Link from 'next/link';
@@ -29,6 +27,7 @@ import {
   Map,
   Vote,
   Mail,
+  BookCopy,
 } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import type { PermissionId } from '@/lib/definitions';
@@ -38,6 +37,7 @@ const navItems: { href: string; icon: React.ElementType; label: string, permissi
     { href: '/panel/dashboard', icon: Home, label: 'Dasbor' },
     { href: '/panel/notifications', icon: Bell, label: 'Notifikasi', permission: 'send_notifications' },
     { href: '/panel/announcements', icon: MegaphoneIcon, label: 'Pengumuman', permission: 'manage_announcements'},
+    { href: '/panel/letters', icon: BookCopy, label: 'Surat', permission: 'manage_letters'},
     { href: '/panel/documents', icon: FolderArchive, label: 'Dokumen', permission: 'manage_documents'},
     { href: '/panel/evoting', icon: Vote, label: 'E-Voting', permission: 'manage_evoting' },
     { href: '/panel/recruitments', icon: Briefcase, label: 'Rekrutmen', permission: 'manage_recruitments' },

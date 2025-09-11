@@ -4,29 +4,17 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
-import { sendNotification } from './notifications';
-import { stampPdfWithQrCode } from '@/ai/flows/stamp-pdf-flow';
-
-export type DocumentStatus = 'Draft' | 'Menunggu Persetujuan' | 'Disetujui' | 'Ditolak';
 
 export interface ImportantDocument {
   id?: string;
   title: string;
-  documentNumber?: string;
   description: string;
   category: string;
   createdAt: Timestamp;
   fileUrl: string;
   fileName: string;
-  
-  // Workflow fields
-  status: DocumentStatus;
   authorId: string;
   authorName: string;
-  approverId?: string;
-  approvedById?: string;
-  approvedAt?: Timestamp;
-  rejectionReason?: string;
 }
 
 const documentsCollection = collection(db, 'importantDocuments');
@@ -55,7 +43,7 @@ export async function getDocument(id: string): Promise<ImportantDocument | null>
 }
 
 export async function createDocument(
-    data: Omit<ImportantDocument, 'id' | 'createdAt' | 'fileUrl' | 'fileName' | 'status' | 'rejectionReason'>, 
+    data: Omit<ImportantDocument, 'id' | 'createdAt' | 'fileUrl' | 'fileName'>, 
     file: File
 ) {
   try {
@@ -68,7 +56,6 @@ export async function createDocument(
         fileUrl,
         fileName: file.name,
         createdAt: Timestamp.now(),
-        status: 'Draft' as DocumentStatus,
     };
     await addDoc(documentsCollection, docData);
     revalidatePath('/panel/documents');
@@ -78,7 +65,7 @@ export async function createDocument(
   }
 }
 
-export async function updateDocument(id: string, data: Partial<Omit<ImportantDocument, 'id' | 'createdAt' | 'fileUrl' | 'fileName'>>, newFile?: File) {
+export async function updateDocument(id: string, data: Partial<Omit<ImportantDocument, 'id'>>, newFile?: File) {
   try {
     const docRef = doc(db, 'importantDocuments', id);
     const dataToUpdate: { [key: string]: any } = { ...data };
@@ -121,76 +108,6 @@ export async function deleteDocument(id: string) {
     throw new Error("Gagal menghapus dokumen.");
   }
 }
-
-// --- Workflow Actions ---
-
-export async function submitForApproval(documentId: string, submitterId: string, approverId: string) {
-    const docRef = doc(db, 'importantDocuments', documentId);
-    const document = await getDocument(documentId);
-
-    if (!document) throw new Error('Dokumen tidak ditemukan.');
-    if (document.authorId !== submitterId) throw new Error('Anda bukan pembuat dokumen ini.');
-
-    await updateDoc(docRef, {
-        status: 'Menunggu Persetujuan',
-        approverId: approverId,
-    });
-    
-    // Send notification to approver
-    await sendNotification(
-        {
-            title: 'Permintaan Persetujuan Dokumen',
-            body: `Dokumen "${document.title}" membutuhkan persetujuan Anda.`,
-            link: `/panel/documents`,
-        },
-        {
-            type: 'users',
-            userIds: [approverId],
-        }
-    );
-
-    revalidatePath('/panel/documents');
-}
-
-export async function approveDocument(documentId: string, approverId: string) {
-    const docRef = doc(db, 'importantDocuments', documentId);
-    const document = await getDocument(documentId);
-
-    if (!document) throw new Error('Dokumen tidak ditemukan.');
-    if (document.approverId !== approverId) throw new Error('Anda tidak memiliki wewenang untuk menyetujui dokumen ini.');
-    if (document.status !== 'Menunggu Persetujuan') throw new Error('Dokumen ini tidak dalam status menunggu persetujuan.');
-
-    await updateDoc(docRef, {
-        status: 'Disetujui',
-        approvedById: approverId,
-        approvedAt: Timestamp.now(),
-    });
-    
-    // Trigger PDF stamping flow
-    try {
-      await stampPdfWithQrCode(documentId);
-    } catch (e) {
-      console.error("Failed to stamp PDF:", e);
-      // Optionally revert status or notify admin
-      throw new Error('Dokumen disetujui, namun gagal menempelkan QR Code. Hubungi admin.');
-    }
-
-
-     await sendNotification(
-        {
-            title: 'Dokumen Disetujui & Disahkan',
-            body: `Dokumen Anda yang berjudul "${document.title}" telah disetujui dan ditandatangani secara digital.`,
-            link: `/panel/documents`,
-        },
-        {
-            type: 'users',
-            userIds: [document.authorId],
-        }
-    );
-
-    revalidatePath('/panel/documents');
-}
-
 
 // --- Category Management ---
 
