@@ -9,12 +9,14 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, ArrowLeft, ThumbsUp, ThumbsDown, MessageSquare, Send } from 'lucide-react';
+import { Loader2, ArrowLeft, ThumbsUp, ThumbsDown, MessageSquare, Send, MoreHorizontal, Check, CircleDotDashed } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { getIdeaById, getIdeaComments, addIdeaComment, toggleVote, IdeaWithAuthor } from '@/app/actions/ideas';
+import { getIdeaById, getIdeaComments, addIdeaComment, toggleVote, updateIdeaStatus, IdeaWithAuthor, IdeaStatus, ideaStatusMap } from '@/app/actions/ideas';
 import { VerifiedBadge } from '@/components/members/VerifiedBadge';
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const CommentList = ({ comments }: { comments: any[] }) => {
     if (comments.length === 0) {
@@ -51,7 +53,7 @@ export default function IdeaDetailPage() {
   const params = useParams();
   const ideaId = params.id as string;
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   
   const [idea, setIdea] = useState<IdeaWithAuthor | null>(null);
   const [comments, setComments] = useState<any[]>([]);
@@ -60,6 +62,8 @@ export default function IdeaDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isVoting, setIsVoting] = useState(false);
   const [isCommenting, setIsCommenting] = useState(false);
+  
+  const canManageIdeas = hasPermission('manage_ideas');
 
   useEffect(() => {
     if (ideaId) {
@@ -102,6 +106,17 @@ export default function IdeaDetailPage() {
     }
   };
 
+  const handleStatusChange = async (status: IdeaStatus) => {
+    if (!idea) return;
+    try {
+      await updateIdeaStatus(idea.id, status);
+      setIdea(prev => prev ? { ...prev, status } : null);
+      toast({ title: 'Status ide diperbarui!' });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Gagal memperbarui status', description: (error as Error).message });
+    }
+  };
+
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !commentText.trim() || !idea) return;
@@ -135,6 +150,8 @@ export default function IdeaDetailPage() {
     return null; // Should have been redirected
   }
 
+  const currentStatus = ideaStatusMap[idea.status];
+
   return (
     <MainLayout>
         <div className="p-6 space-y-6">
@@ -144,7 +161,23 @@ export default function IdeaDetailPage() {
             
             <Card>
                 <CardHeader>
-                    <CardTitle className="font-headline text-3xl">{idea.title}</CardTitle>
+                    <div className="flex justify-between items-start">
+                        <Badge className={currentStatus.color}>{currentStatus.label}</Badge>
+                        {canManageIdeas && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handleStatusChange('ditinjau')}>Tandai sebagai Ditinjau</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleStatusChange('disetujui')}>Tandai sebagai Disetujui</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleStatusChange('diterapkan')}>Tandai sebagai Diterapkan</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleStatusChange('ditolak')} className="text-destructive">Tandai sebagai Ditolak</DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
+                    </div>
+                    <CardTitle className="font-headline text-3xl pt-2">{idea.title}</CardTitle>
                     <div className="flex items-center gap-2 pt-2">
                         <Avatar className="h-8 w-8">
                             <AvatarImage src={idea.author.avatarUrl} alt={idea.author.name} />

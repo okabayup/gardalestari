@@ -10,23 +10,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, PlusCircle, Search, ThumbsUp, ThumbsDown, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { getIdeas, getIdeaCategories, IdeaWithAuthor, toggleVote } from '@/app/actions/ideas';
+import { getIdeas, getIdeaCategories, IdeaWithAuthor, toggleVote, ideaStatusMap } from '@/app/actions/ideas';
 import { useDebounce } from 'use-debounce';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { VerifiedBadge } from '@/components/members/VerifiedBadge';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
 
 const IdeaCard = ({ idea, onVote }: { idea: IdeaWithAuthor, onVote: (ideaId: string, vote: 'up' | 'down') => void }) => {
+  const currentStatus = ideaStatusMap[idea.status];
   return (
     <Card className="flex flex-col">
       <CardHeader>
-        <CardTitle className="leading-tight hover:text-primary">
-            <Link href={`/ideas/${idea.id}`}>
-                {idea.title}
+        <div className="flex justify-between items-start">
+            <Link href={`/ideas/${idea.id}`} className="pr-4">
+                <CardTitle className="leading-tight hover:text-primary">
+                    {idea.title}
+                </CardTitle>
             </Link>
-        </CardTitle>
+            <Badge className={cn("whitespace-nowrap", currentStatus.color)}>{currentStatus.label}</Badge>
+        </div>
         <CardDescription className="flex items-center gap-2 pt-1 text-xs">
             <Avatar className="h-5 w-5">
               <AvatarImage src={idea.author.avatarUrl} alt={idea.author.name} />
@@ -200,4 +205,3 @@ export default function IdeasPage() {
     </MainLayout>
   );
 }
-

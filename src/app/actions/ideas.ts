@@ -177,6 +177,20 @@ export async function getIdeaById(ideaId: string, currentUserId?: string): Promi
     return buildIdeaWithAuthor(ideaDoc, currentUserId);
 }
 
+// Update idea status
+export async function updateIdeaStatus(ideaId: string, status: IdeaStatus) {
+    try {
+        const ideaRef = doc(db, 'ideas', ideaId);
+        await updateDoc(ideaRef, { status });
+        revalidatePath('/ideas');
+        revalidatePath(`/ideas/${ideaId}`);
+    } catch (error) {
+        console.error("Error updating idea status:", error);
+        throw new Error("Gagal memperbarui status ide.");
+    }
+}
+
+
 // Toggle vote on an idea
 export async function toggleVote(ideaId: string, userId: string, voteType: VoteType) {
   const ideaRef = doc(db, 'ideas', ideaId);
@@ -277,3 +291,11 @@ export async function getIdeaComments(ideaId: string): Promise<any[]> {
 export async function getIdeaCategories(): Promise<string[]> {
     return ['Semua', 'Agrikultur', 'Maritim', 'Kehutanan', 'Teknologi', 'Pemasaran', 'Komunitas', 'Lainnya'];
 }
+
+export const ideaStatusMap: Record<IdeaStatus, { label: string, color: string }> = {
+    diajukan: { label: 'Diajukan', color: 'bg-gray-500' },
+    ditinjau: { label: 'Ditinjau', color: 'bg-blue-500' },
+    disetujui: { label: 'Disetujui', color: 'bg-green-500' },
+    diterapkan: { label: 'Diterapkan', color: 'bg-purple-500' },
+    ditolak: { label: 'Ditolak', color: 'bg-red-500' },
+};
