@@ -28,7 +28,7 @@ export interface Project {
     description: string;
     managerId: string;
     teamIds: string[];
-    createdAt: Timestamp;
+    createdAt: string; // Changed from Timestamp to string for serialization
     taskCount: number;
     originIdeaId?: string; // Tautan ke ide asal
 }
@@ -53,14 +53,29 @@ const projectsCollection = collection(db, 'projects');
 export async function getProjects(): Promise<Project[]> {
     const q = query(projectsCollection, orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
+    return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return { 
+            id: doc.id,
+            ...data,
+            // Convert Timestamp to ISO string for client-side compatibility
+            createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
+        } as Project;
+    });
 }
 
 // Get projects for a specific user (where they are a member)
 export async function getProjectsForUser(userId: string): Promise<Project[]> {
     const q = query(projectsCollection, where('teamIds', 'array-contains', userId), orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
+    return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+             id: doc.id, 
+             ...data,
+             createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
+        } as Project
+    });
 }
 
 
@@ -69,7 +84,12 @@ export async function getProjectById(id: string): Promise<Project | null> {
     const docRef = doc(db, 'projects', id);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() } as Project;
+        const data = docSnap.data();
+        return { 
+            id: docSnap.id, 
+            ...data,
+            createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
+        } as Project;
     }
     return null;
 }
