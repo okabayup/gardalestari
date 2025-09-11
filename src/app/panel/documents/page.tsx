@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, MoreHorizontal, Loader2, Trash2, Tags } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Loader2, Trash2, Tags, QrCode } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,14 +21,64 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { getDocuments, deleteDocument, ImportantDocument } from '@/app/actions/documents';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import QRCode from 'qrcode.react';
+import { toPng } from 'html-to-image';
+
+const QRDialog = ({ document, isOpen, onClose }: { document: ImportantDocument | null, isOpen: boolean, onClose: () => void }) => {
+    const qrRef = useRef<HTMLDivElement>(null);
+
+    if (!document) return null;
+
+    const verificationUrl = `${window.location.origin}/dokumen/verifikasi/${document.id}`;
+
+    const handleDownloadQR = async () => {
+        if (!qrRef.current) return;
+        const dataUrl = await toPng(qrRef.current);
+        const link = document.createElement('a');
+        link.download = `QR-Verifikasi-${document.title.replace(/\s+/g, '-')}.png`;
+        link.href = dataUrl;
+        link.click();
+    }
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>QR Code Verifikasi Dokumen</DialogTitle>
+                    <DialogDescription>Pindai QR code ini untuk melihat halaman verifikasi keaslian dokumen.</DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col items-center justify-center py-4" ref={qrRef}>
+                    <QRCode
+                        value={verificationUrl}
+                        size={256}
+                        imageSettings={{
+                            src: '/logo.png',
+                            height: 40,
+                            width: 40,
+                            excavate: true,
+                        }}
+                        level="H"
+                    />
+                     <p className="mt-4 text-sm font-mono break-all text-muted-foreground">{verificationUrl}</p>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={onClose}>Tutup</Button>
+                    <Button onClick={handleDownloadQR}>Unduh QR Code</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 
 export default function AdminDocumentsPage() {
   const router = useRouter();
@@ -38,6 +88,7 @@ export default function AdminDocumentsPage() {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<ImportantDocument | null>(null);
+  const [qrDialogItem, setQrDialogItem] = useState<ImportantDocument | null>(null);
 
   useEffect(() => {
     fetchDocuments();
@@ -135,6 +186,9 @@ export default function AdminDocumentsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setQrDialogItem(item)}>
+                                <QrCode className="mr-2 h-4 w-4" /> Lihat QR
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => router.push(`/panel/documents/edit/${item.id}`)}>Edit</DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(item)}>
                               <Trash2 className="mr-2 h-4 w-4" /> Hapus
@@ -172,6 +226,7 @@ export default function AdminDocumentsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <QRDialog document={qrDialogItem} isOpen={!!qrDialogItem} onClose={() => setQrDialogItem(null)} />
     </>
   );
 }

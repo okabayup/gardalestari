@@ -9,6 +9,7 @@ import { revalidatePath } from 'next/cache';
 export interface ImportantDocument {
   id?: string;
   title: string;
+  documentNumber?: string; // Nomor Surat
   description: string;
   category: string;
   createdAt: Timestamp;
@@ -47,7 +48,7 @@ export async function createDocument(data: Omit<ImportantDocument, 'id' | 'creat
     await uploadBytes(fileRef, file);
     const fileUrl = await getDownloadURL(fileRef);
 
-    const docData = { 
+    const docData = {
         ...data,
         fileUrl,
         fileName: file.name,
@@ -82,7 +83,7 @@ export async function updateDocument(id: string, data: Partial<Omit<ImportantDoc
         dataToUpdate.fileUrl = await getDownloadURL(fileRef);
         dataToUpdate.fileName = newFile.name;
     }
-    
+
     await updateDoc(docRef, dataToUpdate);
     revalidatePath('/panel/documents');
   } catch (error) {

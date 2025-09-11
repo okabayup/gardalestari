@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const formSchema = z.object({
   title: z.string().min(1, 'Judul wajib diisi'),
+  documentNumber: z.string().optional(),
   description: z.string().min(1, 'Deskripsi wajib diisi'),
   category: z.string({ required_error: 'Kategori wajib dipilih' }),
   file: z.any().refine((files) => files?.length > 0, 'File wajib diunggah.'),
@@ -82,6 +83,11 @@ export default function NewDocumentPage() {
             <Label htmlFor="title">Judul Dokumen</Label>
             <Input id="title" {...register('title')} />
             {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="documentNumber">Nomor Surat (Opsional)</Label>
+            <Input id="documentNumber" {...register('documentNumber')} placeholder="Contoh: 001/SK/DPP/GL/VII/2024" />
+            {errors.documentNumber && <p className="text-sm text-destructive">{errors.documentNumber.message}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="category">Kategori</Label>

@@ -19,6 +19,7 @@ import Link from 'next/link';
 
 const formSchema = z.object({
   title: z.string().min(1, 'Judul wajib diisi'),
+  documentNumber: z.string().optional(),
   description: z.string().min(1, 'Deskripsi wajib diisi'),
   category: z.string({ required_error: 'Kategori wajib dipilih' }),
   file: z.any().optional(),
@@ -112,6 +113,11 @@ export default function EditDocumentPage() {
             {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
           </div>
           <div className="space-y-2">
+            <Label htmlFor="documentNumber">Nomor Surat (Opsional)</Label>
+            <Input id="documentNumber" {...register('documentNumber')} placeholder="Contoh: 001/SK/DPP/GL/VII/2024" />
+            {errors.documentNumber && <p className="text-sm text-destructive">{errors.documentNumber.message}</p>}
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="category">Kategori</Label>
             <Controller
               name="category"
@@ -139,7 +145,7 @@ export default function EditDocumentPage() {
                <p className="text-sm text-muted-foreground flex items-center gap-2"><Paperclip className="h-4 w-4"/> {newFileName}</p>
              ) : currentFile ? (
                <p className="text-sm text-muted-foreground flex items-center gap-2">
-                 <Paperclip className="h-4 w-4"/> 
+                 <Paperclip className="h-4 w-4"/>
                  <Link href={currentFile.url} target="_blank" className="hover:underline text-primary">{currentFile.name}</Link>
                </p>
              ) : null}
