@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useSortable } from '@dnd-kit/sortable';
@@ -11,8 +12,9 @@ import type { MemberWithStatus } from '@/app/actions/members';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
 import { format } from 'date-fns';
-import { Calendar, MessageSquare } from 'lucide-react';
+import { Calendar, MessageSquare, CheckSquare } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Progress } from '../ui/progress';
 
 
 interface ProjectTaskCardProps {
@@ -42,6 +44,16 @@ export default function ProjectTaskCard({ task, teamMembers, projectId, onTaskUp
   };
   
   const getAssignee = (id: string) => teamMembers.find(m => m.id === id);
+  
+  const checklistProgress = useMemo(() => {
+    if (!task.checklist || task.checklist.length === 0) return null;
+    const completed = task.checklist.filter(item => item.completed).length;
+    const total = task.checklist.length;
+    return {
+      percentage: (completed / total) * 100,
+      text: `${completed}/${total}`,
+    };
+  }, [task.checklist]);
 
   return (
     <>
@@ -60,6 +72,13 @@ export default function ProjectTaskCard({ task, teamMembers, projectId, onTaskUp
                     <Badge key={label} variant="secondary" className="text-xs">{label}</Badge>
                 ))}
             </div>
+            {checklistProgress && (
+              <div className="flex items-center gap-2">
+                <CheckSquare className="h-3 w-3 text-muted-foreground" />
+                <Progress value={checklistProgress.percentage} className="h-1.5" />
+                <span className="text-xs text-muted-foreground">{checklistProgress.text}</span>
+              </div>
+            )}
             <div className="flex justify-between items-center pt-1">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     {task.dueDate && (

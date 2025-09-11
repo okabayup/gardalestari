@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,9 +13,9 @@ import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
-import { CalendarIcon, Loader2, User, X, Tag, PlusCircle, Send } from 'lucide-react';
+import { CalendarIcon, Loader2, User, X, Tag, PlusCircle, Send, CheckSquare } from 'lucide-react';
 import { format } from 'date-fns';
-import { ProjectTask, updateTask, getTaskComments, addTaskComment, CommentWithAuthor } from '@/app/actions/projects';
+import { ProjectTask, updateTask, getTaskComments, addTaskComment, CommentWithAuthor, ChecklistItem } from '@/app/actions/projects';
 import type { MemberWithStatus } from '@/app/actions/members';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -23,13 +24,19 @@ import { Checkbox } from '../ui/checkbox';
 import { Badge } from '../ui/badge';
 import { useAuth } from '@/hooks/use-auth';
 import { ScrollArea } from '../ui/scroll-area';
+import { Progress } from '../ui/progress';
 
 const formSchema = z.object({
     title: z.string().min(1, "Judul tidak boleh kosong"),
     description: z.string().optional(),
-    dueDate: z.string().optional(),
+    dueDate: z.string().optional().nullable(),
     assigneeIds: z.array(z.string()).optional(),
     labels: z.array(z.string()).optional(),
+    checklist: z.array(z.object({
+        id: z.string(),
+        text: z.string(),
+        completed: z.boolean(),
+    })).optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -43,6 +50,52 @@ const availableLabels = [
     { name: 'Pemasaran', color: 'bg-yellow-500 text-black' },
     { name: 'Dokumentasi', color: 'bg-gray-500' },
 ];
+
+const ChecklistComponent = ({ items, onUpdate }: { items: ChecklistItem[], onUpdate: (items: ChecklistItem[]) => void}) => {
+    const [newItemText, setNewItemText] = useState('');
+    const completedCount = items.filter(i => i.completed).length;
+    const progress = items.length > 0 ? (completedCount / items.length) * 100 : 0;
+
+    const handleToggle = (itemId: string) => {
+        const newItems = items.map(item => item.id === itemId ? { ...item, completed: !item.completed } : item);
+        onUpdate(newItems);
+    }
+    const handleAddItem = () => {
+        if (!newItemText.trim()) return;
+        const newItems = [...items, { id: `cl-${Date.now()}`, text: newItemText, completed: false }];
+        onUpdate(newItems);
+        setNewItemText('');
+    }
+    const handleRemoveItem = (itemId: string) => {
+        const newItems = items.filter(item => item.id !== itemId);
+        onUpdate(newItems);
+    }
+    
+    return (
+        <div className="space-y-2">
+            <Label>Checklist</Label>
+             {items.length > 0 && (
+                <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">{Math.round(progress)}%</span>
+                    <Progress value={progress} className="h-1.5" />
+                </div>
+            )}
+            <div className="space-y-1">
+                {items.map(item => (
+                    <div key={item.id} className="flex items-center gap-2 group">
+                        <Checkbox id={item.id} checked={item.completed} onCheckedChange={() => handleToggle(item.id)} />
+                        <Label htmlFor={item.id} className={cn("flex-1", item.completed && "line-through text-muted-foreground")}>{item.text}</Label>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveItem(item.id)}><X className="h-4 w-4"/></Button>
+                    </div>
+                ))}
+            </div>
+             <div className="flex gap-2">
+                <Input value={newItemText} onChange={(e) => setNewItemText(e.target.value)} placeholder="Tambah item checklist..." onKeyDown={e => e.key === 'Enter' && handleAddItem()}/>
+                <Button type="button" onClick={handleAddItem}>Tambah</Button>
+            </div>
+        </div>
+    )
+}
 
 export default function TaskDetailDialog({ isOpen, onClose, task, teamMembers, projectId, onUpdate }: {
     isOpen: boolean;
@@ -60,7 +113,7 @@ export default function TaskDetailDialog({ isOpen, onClose, task, teamMembers, p
     const [newComment, setNewComment] = useState('');
     const [isPostingComment, setIsPostingComment] = useState(false);
 
-    const { control, register, handleSubmit, reset, watch } = useForm<FormData>({
+    const { control, register, handleSubmit, reset, watch, setValue } = useForm<FormData>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             title: task.title,
@@ -68,6 +121,7 @@ export default function TaskDetailDialog({ isOpen, onClose, task, teamMembers, p
             dueDate: task.dueDate,
             assigneeIds: task.assigneeIds || [],
             labels: task.labels || [],
+            checklist: task.checklist || [],
         },
     });
     
@@ -91,11 +145,14 @@ export default function TaskDetailDialog({ isOpen, onClose, task, teamMembers, p
                 dueDate: task.dueDate,
                 assigneeIds: task.assigneeIds || [],
                 labels: task.labels || [],
+                checklist: task.checklist || [],
             });
             fetchComments();
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [task, reset, isOpen]);
+    
+    const watchChecklist = watch('checklist');
 
     const handlePostComment = async () => {
         if (!newComment.trim() || !currentUser) return;
@@ -133,16 +190,24 @@ export default function TaskDetailDialog({ isOpen, onClose, task, teamMembers, p
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-3xl h-[90vh] flex flex-col">
-                <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col">
+                <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
                      <DialogHeader>
-                        <DialogTitle>Detail Tugas</DialogTitle>
+                        <Input {...register('title')} className="text-lg font-bold border-none shadow-none -ml-3" />
                     </DialogHeader>
-                    <Input {...register('title')} className="text-lg font-bold border-none shadow-none -ml-3" />
                     <div className="py-4 grid grid-cols-1 md:grid-cols-3 gap-6 flex-1 min-h-0">
                         <div className="md:col-span-2 space-y-4 flex flex-col">
                              <div>
                                 <Label>Deskripsi</Label>
                                 <Textarea {...register('description')} rows={5} />
+                            </div>
+                             <div>
+                                <Controller
+                                    name="checklist"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <ChecklistComponent items={field.value || []} onUpdate={field.onChange} />
+                                    )}
+                                />
                             </div>
                             <div className="flex-1 flex flex-col min-h-0">
                                 <Label>Diskusi</Label>
@@ -154,7 +219,7 @@ export default function TaskDetailDialog({ isOpen, onClose, task, teamMembers, p
                                                     <Avatar className="h-6 w-6"><AvatarImage src={comment.author.avatarUrl} /><AvatarFallback>{getInitials(comment.author.name)}</AvatarFallback></Avatar>
                                                     <div className="text-sm bg-muted/50 p-2 rounded-lg flex-1">
                                                         <p className="font-semibold">{comment.author.name}</p>
-                                                        <p>{comment.text}</p>
+                                                        <p className="whitespace-pre-wrap">{comment.text}</p>
                                                     </div>
                                                 </div>
                                             ))
@@ -264,7 +329,7 @@ export default function TaskDetailDialog({ isOpen, onClose, task, teamMembers, p
                                                 </Button>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-auto p-0">
-                                                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date?.toISOString())} initialFocus />
+                                                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date?.toISOString() || null)} initialFocus />
                                             </PopoverContent>
                                         </Popover>
                                     )}

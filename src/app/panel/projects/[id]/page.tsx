@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -6,12 +7,13 @@ import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { getProjectById, getColumnsForProject, getTasksForProject, createTask } from '@/app/actions/projects';
 import type { Project, ProjectColumn, ProjectTask } from '@/app/actions/projects';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, Scroll } from 'lucide-react';
 import ProjectBoard from '@/components/projects/ProjectBoard';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProjectAnalytics from '@/components/projects/ProjectAnalytics';
 import { getMembers, MemberWithStatus } from '@/app/actions/members';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 export default function ProjectDetailPage() {
@@ -99,15 +101,17 @@ export default function ProjectDetailPage() {
           <TabsTrigger value="board">Papan</TabsTrigger>
           <TabsTrigger value="analytics">Analitik</TabsTrigger>
         </TabsList>
-        <TabsContent value="board" className="flex-1 overflow-x-auto mt-4">
-            <ProjectBoard
-                initialColumns={columns}
-                initialTasks={tasks}
-                projectId={projectId}
-                onCreateTask={handleCreateTask}
-                onDataRefresh={fetchProjectData}
-                projectTeamIds={project.teamIds}
-            />
+        <TabsContent value="board" className="flex-1 overflow-hidden mt-4">
+            <ScrollArea className="w-full h-full whitespace-nowrap">
+                <ProjectBoard
+                    initialColumns={columns}
+                    initialTasks={tasks}
+                    projectId={projectId}
+                    onCreateTask={handleCreateTask}
+                    onDataRefresh={fetchProjectData}
+                    projectTeamIds={project.teamIds}
+                />
+            </ScrollArea>
         </TabsContent>
         <TabsContent value="analytics" className="flex-1 overflow-y-auto mt-4">
              <ProjectAnalytics columns={columns} tasks={tasks} members={teamMembers} />

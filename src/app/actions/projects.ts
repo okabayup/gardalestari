@@ -41,27 +41,34 @@ export interface ProjectColumn {
     taskIds: string[];
 }
 
+export interface ChecklistItem {
+    id: string;
+    text: string;
+    completed: boolean;
+}
+
 export interface ProjectTask {
     id: string;
     title: string;
     description?: string;
     assigneeIds?: string[];
-    dueDate?: string; // Changed to string
+    dueDate?: string; 
     labels?: string[];
     commentCount: number;
+    checklist?: ChecklistItem[];
 }
 
 export interface ProjectComment {
     id: string;
     authorId: string;
     text: string;
-    createdAt: string; // Changed to string
+    createdAt: string; 
 }
 
 export interface CommentWithAuthor {
     id: string;
     text: string;
-    createdAt: string; // Changed to string
+    createdAt: string; 
     author: IdeaAuthor;
 }
 
@@ -172,6 +179,7 @@ export async function getTasksForProject(projectId: string): Promise<ProjectTask
   return snapshot.docs.map(doc => {
       const data = doc.data();
       let dueDateString: string | undefined = undefined;
+      // Handle both Timestamp and string for dueDate
       if (data.dueDate) {
         if (typeof data.dueDate.toDate === 'function') { // It's a Timestamp
           dueDateString = data.dueDate.toDate().toISOString();
@@ -187,6 +195,7 @@ export async function getTasksForProject(projectId: string): Promise<ProjectTask
   });
 }
 
+
 // Create a new task in a project and add it to a column
 export async function createTask(projectId: string, columnId: string, title: string): Promise<ProjectTask> {
     const projectRef = doc(db, 'projects', projectId);
@@ -199,6 +208,7 @@ export async function createTask(projectId: string, columnId: string, title: str
         assigneeIds: [],
         labels: [],
         commentCount: 0,
+        checklist: [],
     };
 
     try {
@@ -235,6 +245,8 @@ export async function updateTask(projectId: string, taskId: string, updates: Par
     const updatesForFirestore: { [key: string]: any } = { ...updates };
     if (updates.dueDate) {
         updatesForFirestore.dueDate = Timestamp.fromDate(new Date(updates.dueDate));
+    } else if (updates.dueDate === null) {
+        updatesForFirestore.dueDate = null;
     }
 
     await updateDoc(taskRef, updatesForFirestore);

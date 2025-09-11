@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -80,28 +81,37 @@ export default function ProjectBoard({ initialColumns, initialTasks, projectId, 
     if (!over || active.id === over.id) return;
     
     const isActiveTask = active.data.current?.type === 'Task';
-    const isOverTask = over.data.current?.type === 'Task';
+    if (!isActiveTask) return;
+    
     const isOverColumn = over.data.current?.type === 'Column';
 
-    if (!isActiveTask) return;
-
+    // Optimistically update UI
     setColumns(currentColumns => {
         return produce(currentColumns, draft => {
             const activeColumn = draft.find(c => c.taskIds.includes(active.id as string));
+            if (!activeColumn) return;
+
+            let overColumnId: string;
+            let overIndex: number;
             
-            if (isOverTask) {
-                const overColumn = draft.find(c => c.taskIds.includes(over.id as string));
-                if (activeColumn && overColumn && activeColumn.id !== overColumn.id) {
-                    activeColumn.taskIds = activeColumn.taskIds.filter(id => id !== active.id);
-                    const overIndex = overColumn.taskIds.indexOf(over.id as string);
-                    overColumn.taskIds.splice(overIndex, 0, active.id as string);
-                }
-            } else if (isOverColumn) {
-                const overColumn = draft.find(c => c.id === over.id);
-                if (activeColumn && overColumn && activeColumn.id !== overColumn.id) {
-                     activeColumn.taskIds = activeColumn.taskIds.filter(id => id !== active.id);
-                     overColumn.taskIds.push(active.id as string);
-                }
+            if (isOverColumn) {
+                overColumnId = over.id as string;
+                const overColumn = draft.find(c => c.id === overColumnId);
+                overIndex = overColumn?.taskIds.length || 0;
+            } else { // isOverTask
+                const overTaskColumn = draft.find(c => c.taskIds.includes(over.id as string));
+                if (!overTaskColumn) return;
+                overColumnId = overTaskColumn.id;
+                overIndex = overTaskColumn.taskIds.indexOf(over.id as string);
+            }
+            
+            if (activeColumn.id !== overColumnId) {
+                activeColumn.taskIds = activeColumn.taskIds.filter(id => id !== active.id);
+                const overColumn = draft.find(c => c.id === overColumnId);
+                overColumn?.taskIds.splice(overIndex, 0, active.id as string);
+            } else {
+                 const oldIndex = activeColumn.taskIds.indexOf(active.id as string);
+                 activeColumn.taskIds = arrayMove(activeColumn.taskIds, oldIndex, overIndex);
             }
         });
     });
@@ -110,31 +120,33 @@ export default function ProjectBoard({ initialColumns, initialTasks, projectId, 
   const handleDragEnd = async (event: DragEndEvent) => {
     setActiveTask(null);
     const { active, over } = event;
-    if (!over) return;
+    if (!over || active.id === over.id) return;
 
     const sourceColumn = findColumnForTask(active.id as string);
-    let destColumn = columns.find(col => col.taskIds.includes(over.id as string));
-     if (!destColumn) {
-        destColumn = columns.find(col => col.id === over.id);
-    }
-
-    if (!sourceColumn || !destColumn) return;
-
-    const oldIndex = sourceColumn.taskIds.indexOf(active.id as string);
-    let newIndex = destColumn.taskIds.indexOf(over.id as string);
+    if (!sourceColumn) return; // Should not happen
     
-    if (newIndex === -1 && over.data.current?.type === 'Column') {
+    const isOverColumn = over.data.current?.type === 'Column';
+    const destColumnId = isOverColumn ? over.id as string : findColumnForTask(over.id as string)?.id;
+    if (!destColumnId) return;
+
+    const destColumn = columns.find(c => c.id === destColumnId);
+    if(!destColumn) return;
+
+    let newIndex: number;
+    if (isOverColumn) {
       newIndex = destColumn.taskIds.length;
+    } else {
+      newIndex = destColumn.taskIds.indexOf(over.id as string);
     }
     
-    if (oldIndex !== newIndex || sourceColumn.id !== destColumn.id) {
-      try {
-        await updateTaskColumn(projectId, active.id as string, sourceColumn.id, destColumn.id, newIndex);
-        onDataRefresh();
-      } catch (error) {
+    if (newIndex === -1) newIndex = destColumn.taskIds.length;
+    
+    try {
+        await updateTaskColumn(projectId, active.id as string, sourceColumn.id, destColumnId, newIndex);
+    } catch (error) {
         toast({ variant: 'destructive', title: "Gagal memindahkan tugas", description: (error as Error).message });
-        setColumns(initialColumns);
-      }
+    } finally {
+        onDataRefresh(); // Re-fetch to ensure data consistency after drop
     }
   };
 
@@ -152,6 +164,12 @@ export default function ProjectBoard({ initialColumns, initialTasks, projectId, 
 
   return (
     <>
+    <div className="absolute top-4 right-4 z-10">
+        <Button onClick={() => setIsTeamDialogOpen(true)}>
+            <UserPlus className="mr-2 h-4 w-4" />
+            Kelola Tim
+        </Button>
+    </div>
     <DndContext
       sensors={sensors}
       onDragStart={handleDragStart}
@@ -160,12 +178,6 @@ export default function ProjectBoard({ initialColumns, initialTasks, projectId, 
       collisionDetection={closestCorners}
     >
       <div className="flex gap-4 items-start p-1 h-full">
-         <div className="absolute top-4 right-4 z-10">
-            <Button onClick={() => setIsTeamDialogOpen(true)}>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Kelola Tim
-            </Button>
-        </div>
         {columns.map(col => (
           <ProjectColumnComponent
             key={col.id}
