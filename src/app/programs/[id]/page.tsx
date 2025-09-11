@@ -1,19 +1,19 @@
 
+'use client';
+
 import { notFound } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
-import { getPartner } from '@/app/actions/partners';
 import { getProgram, Program } from '@/app/actions/programs';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { ArrowRight, Award, Briefcase, Calendar, Check, FileText, Globe, Handshake, Info, Target, Landmark, Download } from 'lucide-react';
+import { Award, FileText, Globe, Info, Target, Landmark, Download, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { logAnalyticsEvent } from '@/lib/analytics';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
 
 interface ProgramDetailPageProps {
   params: { id: string };
@@ -32,24 +32,6 @@ const InfoCard = ({ icon, title, children }: { icon: React.ReactNode, title: str
         </CardContent>
     </Card>
 )
-
-const ProgramSourceInfo = async ({ source, partnerId }: { source: Program['source'], partnerId?: Program['partnerId'] }) => {
-    if (source === 'mitra' && partnerId) {
-        const partner = await getPartner(partnerId);
-        return (
-            <div className="flex items-center gap-2">
-                <Handshake className="h-4 w-4" />
-                <span>Diselenggarakan bersama <span className="font-semibold">{partner?.name || 'Mitra'}</span></span>
-            </div>
-        )
-    }
-    return (
-        <div className="flex items-center gap-2">
-            <Landmark className="h-4 w-4" />
-            <span>Program Internal Garda Lestari</span>
-        </div>
-    )
-}
 
 const ProgramDetailClient = ({ program }: { program: Program }) => {
     useEffect(() => {
@@ -91,116 +73,136 @@ const ProgramDetailClient = ({ program }: { program: Program }) => {
     }
 
     return (
-        <div className="p-6 -mt-16 relative z-10 space-y-6">
-            <div className="space-y-2">
-                <div className="flex flex-wrap gap-2">
-                    {program.tags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
+        <>
+            <div className="relative h-48 md:h-64 w-full">
+                <Image
+                    src={program.imageUrl || 'https://picsum.photos/1200/800'}
+                    alt={program.title}
+                    data-ai-hint={program.imageHint}
+                    fill
+                    className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
+            </div>
+            <div className="p-6 -mt-16 relative z-10 space-y-6">
+                <div className="space-y-2">
+                    <div className="flex flex-wrap gap-2">
+                        {program.tags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
+                    </div>
+                    <h1 className="font-headline text-3xl md:text-4xl font-bold">{program.title}</h1>
                 </div>
-                <h1 className="font-headline text-3xl md:text-4xl font-bold">{program.title}</h1>
-                <div className="text-muted-foreground text-sm">
-                    {/* We can't use an async component here, so we'll just show text */}
-                    {program.source === 'mitra' ? (
-                        <div className="flex items-center gap-2">
-                            <Handshake className="h-4 w-4" />
-                            <span>Program Kemitraan</span>
+
+                <Card className="bg-primary/5 border-primary/20">
+                    <CardContent className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                        <div>
+                            <p className="text-xs text-muted-foreground">Kategori</p>
+                            <p className="font-semibold">{program.category === 'flagship' ? 'Unggulan' : 'Berkelanjutan'}</p>
                         </div>
+                        <div>
+                            <p className="text-xs text-muted-foreground">Batas Pendaftaran</p>
+                            <p className="font-semibold">{deadline}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-muted-foreground">Jenis Pendaftaran</p>
+                            <p className="font-semibold">{submissionType === 'internal' ? 'Internal' : 'Eksternal'}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-muted-foreground">Surat Rekomendasi</p>
+                            <p className="font-semibold">{program.requiresRecommendation ? 'Tersedia' : 'Tidak Ada'}</p>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                    <InfoCard icon={<Info className="h-6 w-6" />} title="Deskripsi Program">
+                        <div dangerouslySetInnerHTML={{ __html: renderHtml(program.description) }} />
+                    </InfoCard>
+                    <InfoCard icon={<Award className="h-6 w-6" />} title="Benefit Program">
+                        <div dangerouslySetInnerHTML={{ __html: renderHtml(program.benefits) }} />
+                    </InfoCard>
+                    <InfoCard icon={<FileText className="h-6 w-6" />} title="Berkas Pendaftaran">
+                        <div dangerouslySetInnerHTML={{ __html: renderHtml(program.requiredDocuments) }} />
+                        {program.attachmentUrl && (
+                            <Button asChild variant="outline" className="mt-4" onClick={handleDownloadClick}>
+                                <Link href={program.attachmentUrl} target="_blank">
+                                    <Download className="mr-2 h-4 w-4" />
+                                    {program.attachmentName || 'Unduh Lampiran'}
+                                </Link>
+                            </Button>
+                        )}
+                    </InfoCard>
+                    <InfoCard icon={<Target className="h-6 w-6" />} title="Informasi Pendaftaran">
+                        <ul>
+                            <li><strong>Batas Waktu:</strong> {deadline}</li>
+                            <li><strong>Jenis:</strong> {submissionType === 'internal' ? 'Formulir Internal' : 'Situs Eksternal'}</li>
+                            {program.requiresRecommendation && (
+                                <li><strong>Surat Rekomendasi:</strong> Garda Lestari dapat menyediakan surat rekomendasi untuk program ini.</li>
+                            )}
+                        </ul>
+                    </InfoCard>
+                </div>
+
+                <div className="pt-4">
+                    {isPast ? (
+                        <Button size="lg" className="w-full" disabled>Program Telah Berakhir</Button>
+                    ) : submissionType === 'external' ? (
+                        <Button size="lg" asChild className="w-full" onClick={handleApplyClick}>
+                            <Link href={program.applicationUrl || '#'} target="_blank">
+                                Daftar di Situs Eksternal <Globe className="ml-2 h-4 w-4"/>
+                            </Link>
+                        </Button>
                     ) : (
-                        <div className="flex items-center gap-2">
-                            <Landmark className="h-4 w-4" />
-                            <span>Program Internal Garda Lestari</span>
-                        </div>
+                        <Button size="lg" className="w-full" disabled>
+                            Pendaftaran Internal Belum Tersedia
+                        </Button>
                     )}
                 </div>
             </div>
-
-            <Card className="bg-primary/5 border-primary/20">
-            <CardContent className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                 <div>
-                    <p className="text-xs text-muted-foreground">Kategori</p>
-                    <p className="font-semibold">{program.category === 'flagship' ? 'Unggulan' : 'Berkelanjutan'}</p>
-                 </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Batas Pendaftaran</p>
-                    <p className="font-semibold">{deadline}</p>
-                 </div>
-                 <div>
-                    <p className="text-xs text-muted-foreground">Jenis Pendaftaran</p>
-                    <p className="font-semibold">{submissionType === 'internal' ? 'Internal' : 'Eksternal'}</p>
-                 </div>
-                 <div>
-                    <p className="text-xs text-muted-foreground">Surat Rekomendasi</p>
-                    <p className="font-semibold">{program.requiresRecommendation ? 'Tersedia' : 'Tidak Ada'}</p>
-                 </div>
-            </CardContent>
-        </Card>
-
-        <div className="grid md:grid-cols-2 gap-6">
-             <InfoCard icon={<Info className="h-6 w-6" />} title="Deskripsi Program">
-                <div dangerouslySetInnerHTML={{ __html: renderHtml(program.description) }} />
-            </InfoCard>
-             <InfoCard icon={<Award className="h-6 w-6" />} title="Benefit Program">
-                <div dangerouslySetInnerHTML={{ __html: renderHtml(program.benefits) }} />
-            </InfoCard>
-             <InfoCard icon={<FileText className="h-6 w-6" />} title="Berkas Pendaftaran">
-                <div dangerouslySetInnerHTML={{ __html: renderHtml(program.requiredDocuments) }} />
-                 {program.attachmentUrl && (
-                    <Button asChild variant="outline" className="mt-4" onClick={handleDownloadClick}>
-                        <Link href={program.attachmentUrl} target="_blank">
-                            <Download className="mr-2 h-4 w-4" />
-                            {program.attachmentName || 'Unduh Lampiran'}
-                        </Link>
-                    </Button>
-                )}
-            </InfoCard>
-             <InfoCard icon={<Target className="h-6 w-6" />} title="Informasi Pendaftaran">
-                <ul>
-                    <li><strong>Batas Waktu:</strong> {deadline}</li>
-                    <li><strong>Jenis:</strong> {submissionType === 'internal' ? 'Formulir Internal' : 'Situs Eksternal'}</li>
-                    {program.requiresRecommendation && (
-                        <li><strong>Surat Rekomendasi:</strong> Garda Lestari dapat menyediakan surat rekomendasi untuk program ini.</li>
-                    )}
-                </ul>
-            </InfoCard>
-        </div>
-
-         <div className="pt-4">
-            {isPast ? (
-                <Button size="lg" className="w-full" disabled>Program Telah Berakhir</Button>
-            ) : submissionType === 'external' ? (
-                <Button size="lg" asChild className="w-full" onClick={handleApplyClick}>
-                    <Link href={program.applicationUrl || '#'} target="_blank">
-                        Daftar di Situs Eksternal <Globe className="ml-2 h-4 w-4"/>
-                    </Link>
-                </Button>
-            ) : (
-                 <Button size="lg" className="w-full" disabled>
-                    Pendaftaran Internal Belum Tersedia
-                 </Button>
-            )}
-        </div>
-        </div>
+        </>
     )
 }
 
-export default async function ProgramDetailPage({ params }: ProgramDetailPageProps) {
+export default function ProgramDetailPage({ params }: ProgramDetailPageProps) {
   const { id: programId } = params;
-  if (!programId) notFound();
+  const [program, setProgram] = useState<Program | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const program = await getProgram(programId);
-  if (!program) notFound();
+  useEffect(() => {
+    if (!programId) {
+        notFound();
+        return;
+    }
+    
+    const fetchProgram = async () => {
+        setLoading(true);
+        const fetchedProgram = await getProgram(programId);
+        if (!fetchedProgram) {
+            notFound();
+        } else {
+            setProgram(fetchedProgram);
+        }
+        setLoading(false);
+    }
+    
+    fetchProgram();
+  }, [programId]);
+
+  if (loading) {
+    return (
+        <MainLayout>
+             <div className="flex h-full items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        </MainLayout>
+    )
+  }
+  
+  if (!program) {
+    return null; // notFound() would have been called
+  }
   
   return (
     <MainLayout>
-      <div className="relative h-48 md:h-64 w-full">
-        <Image
-            src={program.imageUrl || 'https://picsum.photos/1200/800'}
-            alt={program.title}
-            data-ai-hint={program.imageHint}
-            fill
-            className="object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
-      </div>
       <ProgramDetailClient program={program} />
     </MainLayout>
   );
