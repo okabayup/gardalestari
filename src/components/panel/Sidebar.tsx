@@ -31,6 +31,7 @@ import {
   Vote,
   Mail,
   BookCopy,
+  KanbanSquare,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
@@ -46,6 +47,7 @@ const navItems: { href: string; icon: React.ElementType; label: string, permissi
     { href: '/panel/announcements', icon: MegaphoneIcon, label: 'Pengumuman', permission: 'manage_announcements'},
     { href: '/panel/letters', icon: BookCopy, label: 'Manajemen Surat', permission: 'manage_letters'},
     { href: '/panel/documents', icon: FolderArchive, label: 'Dokumen Penting', permission: 'manage_documents'},
+    { href: '/panel/projects', icon: KanbanSquare, label: 'Manajemen Proyek', permission: 'manage_projects' },
     { href: '/panel/evoting', icon: Vote, label: 'E-Voting', permission: 'manage_evoting' },
     { href: '/panel/recruitments', icon: Briefcase, label: 'Rekrutmen', permission: 'manage_recruitments' },
     { href: '/panel/achievements', icon: Award, label: 'Prestasi', permission: 'manage_achievements' },
