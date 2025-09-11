@@ -33,6 +33,7 @@ import {
   Mail,
   BookCopy,
   KanbanSquare,
+  Building2,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
@@ -40,14 +41,13 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Button } from '../ui/button';
 import type { PermissionId } from '@/lib/definitions';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 
 
 const navItems: { href: string; icon: React.ElementType; label: string, permission?: PermissionId }[] = [
     { href: '/panel/dashboard', icon: Home, label: 'Dasbor' },
     { href: '/panel/notifications', icon: Bell, label: 'Notifikasi', permission: 'send_notifications' },
     { href: '/panel/announcements', icon: MegaphoneIcon, label: 'Pengumuman', permission: 'manage_announcements'},
-    { href: '/panel/documents', icon: BookCopy, label: 'Dokumen Penting', permission: 'manage_documents'},
-    { href: '/panel/projects', icon: KanbanSquare, label: 'Manajemen Proyek', permission: 'manage_projects' },
     { href: '/panel/evoting', icon: Vote, label: 'E-Voting', permission: 'manage_evoting' },
     { href: '/panel/recruitments', icon: Briefcase, label: 'Rekrutmen', permission: 'manage_recruitments' },
     { href: '/panel/achievements', icon: Award, label: 'Prestasi', permission: 'manage_achievements' },
@@ -63,6 +63,11 @@ const navItems: { href: string; icon: React.ElementType; label: string, permissi
     { href: '/panel/settings', icon: Settings, label: 'Pengaturan', permission: 'manage_settings' },
 ];
 
+const eOfficeItems = [
+    { href: '/panel/documents', icon: BookCopy, label: 'Surat & Dokumen', permission: 'manage_documents'},
+    { href: '/panel/projects', icon: KanbanSquare, label: 'Manajemen Proyek', permission: 'manage_projects' },
+]
+
 export function Sidebar() {
   const pathname = usePathname();
   const { user, signOut, hasPermission } = useAuth();
@@ -74,6 +79,8 @@ export function Sidebar() {
   };
   
   if (!user || !user.permissions || user.permissions.length === 0) return null;
+
+  const isEofficeActive = eOfficeItems.some(item => pathname.startsWith(item.href));
 
 
   return (
@@ -107,6 +114,32 @@ export function Sidebar() {
               </Link>
               )
             })}
+             <Collapsible open={isEofficeActive}>
+                <CollapsibleTrigger className={cn('flex w-full items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary', isEofficeActive && 'bg-muted text-primary' )}>
+                    <Building2 className="h-4 w-4" />
+                    E-Office
+                    <ChevronRight className={cn("ml-auto h-4 w-4 transition-transform", isEofficeActive && "rotate-90")} />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pl-7 pt-1 space-y-1">
+                     {eOfficeItems.map((item) => {
+                        if (item.permission && !hasPermission(item.permission)) return null;
+                        const isActive = pathname.startsWith(item.href);
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={cn(
+                                    'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary text-xs',
+                                    isActive && 'bg-muted/50 text-primary'
+                                )}
+                            >
+                                <item.icon className="h-3 w-3" />
+                                {item.label}
+                            </Link>
+                        )
+                    })}
+                </CollapsibleContent>
+             </Collapsible>
           </nav>
         </div>
         <div className="mt-auto p-4">
