@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -15,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Paperclip } from 'lucide-react';
 import { createDocument, getDocumentCategories, DocumentCategory } from '@/app/actions/documents';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAuth } from '@/hooks/use-auth';
 
 const formSchema = z.object({
   title: z.string().min(1, 'Judul wajib diisi'),
@@ -29,6 +29,7 @@ type FormData = z.infer<typeof formSchema>;
 export default function NewDocumentPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<DocumentCategory[]>([]);
 
@@ -48,10 +49,19 @@ export default function NewDocumentPage() {
   }, []);
 
   const onSubmit = async (data: FormData) => {
+    if (!user) {
+        toast({ variant: 'destructive', title: 'Anda harus masuk untuk melakukan tindakan ini.'});
+        return;
+    }
     setLoading(true);
     try {
       const { file, ...docData } = data;
-      await createDocument(docData, file[0]);
+      const payload = {
+        ...docData,
+        authorId: user.uid,
+        authorName: user.displayName || user.email || 'Admin',
+      }
+      await createDocument(payload, file[0]);
       toast({ title: 'Dokumen berhasil diunggah!' });
       router.push('/panel/documents');
     } catch (error) {
