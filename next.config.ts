@@ -72,16 +72,6 @@ const nextConfig: NextConfig = {
       // },
     ],
   },
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-        config.resolve.fallback = {
-            ...config.resolve.fallback,
-            fs: false,
-        };
-    }
-    config.externals.push('pino-pretty', 'lokijs', 'encoding', 'jimp', 'sharp');
-    return config;
-  },
 };
 
 export default withPWA(nextConfig);
