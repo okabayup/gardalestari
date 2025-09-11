@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -99,8 +100,8 @@ const ApprovalDialog = ({ document, members, isOpen, onClose, onConfirm }: { doc
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Ajukan Persetujuan Surat</DialogTitle>
-                    <DialogDescription>Pilih siapa yang harus meninjau dan menyetujui surat "{document.title}". Pengguna yang dipilih akan menerima notifikasi.</DialogDescription>
+                    <DialogTitle>Ajukan Persetujuan Dokumen</DialogTitle>
+                    <DialogDescription>Pilih siapa yang harus meninjau dan menyetujui dokumen "{document.title}". Pengguna yang dipilih akan menerima notifikasi.</DialogDescription>
                 </DialogHeader>
                  <div className="py-4">
                      <Select onValueChange={setApproverId} value={approverId}>
@@ -125,7 +126,7 @@ const ApprovalDialog = ({ document, members, isOpen, onClose, onConfirm }: { doc
 }
 
 
-export default function EOfficePage() {
+export default function DocumentsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -159,7 +160,7 @@ export default function EOfficePage() {
         const data = await getDocuments();
         setDocuments(data);
     } catch(e) {
-        toast({ variant: 'destructive', title: 'Gagal memperbarui daftar surat.'});
+        toast({ variant: 'destructive', title: 'Gagal memperbarui daftar dokumen.'});
     }
   }
 
@@ -184,7 +185,7 @@ export default function EOfficePage() {
     setIsDeleting(itemToDelete.id);
     try {
       await deleteDocument(itemToDelete.id);
-      toast({ title: "Surat berhasil dihapus." });
+      toast({ title: "Dokumen berhasil dihapus." });
       fetchDocuments();
     } catch (error) {
       toast({ variant: "destructive", title: "Gagal menghapus", description: (error as Error).message });
@@ -227,21 +228,21 @@ export default function EOfficePage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-headline text-2xl font-bold">E-Office: Manajemen Surat</h1>
-            <p className="text-muted-foreground">Buat, sahkan, dan arsipkan surat resmi organisasi secara digital.</p>
+            <h1 className="font-headline text-2xl font-bold">Dokumen Penting</h1>
+            <p className="text-muted-foreground">Buat, sahkan, dan arsipkan dokumen resmi organisasi secara digital.</p>
           </div>
-          <Button onClick={() => router.push('/panel/e-office/new')}>
+          <Button onClick={() => router.push('/panel/documents/new')}>
             <PlusCircle className="mr-2 h-4 w-4" />
-            Buat Surat Baru
+            Buat Dokumen Baru
           </Button>
         </div>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Arsip Surat</CardTitle>
-              <CardDescription>Total {documents.length} surat ditemukan.</CardDescription>
+              <CardTitle>Arsip Dokumen</CardTitle>
+              <CardDescription>Total {documents.length} dokumen ditemukan.</CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={() => router.push('/panel/e-office/categories')}>
+            <Button variant="outline" size="sm" onClick={() => router.push('/panel/documents/categories')}>
                 <Tags className="mr-2 h-4 w-4" />
                 Kelola Kategori
             </Button>
@@ -250,7 +251,7 @@ export default function EOfficePage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Detail Surat</TableHead>
+                  <TableHead>Detail Dokumen</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Dibuat Oleh</TableHead>
                   <TableHead><span className="sr-only">Aksi</span></TableHead>
@@ -289,7 +290,7 @@ export default function EOfficePage() {
                             )}
                             {item.status === 'Menunggu Persetujuan' && item.approverId === user?.uid && (
                                 <DropdownMenuItem onClick={() => handleApproveClick(item)}>
-                                    <Check className="mr-2 h-4 w-4" /> Setujui Surat
+                                    <Check className="mr-2 h-4 w-4" /> Setujui Dokumen
                                 </DropdownMenuItem>
                             )}
                             {item.status === 'Disetujui' && (
@@ -298,7 +299,7 @@ export default function EOfficePage() {
                                 </DropdownMenuItem>
                             )}
                              <DropdownMenuSeparator />
-                             <DropdownMenuItem onClick={() => router.push(`/panel/e-office/edit/${item.id}`)}>Edit</DropdownMenuItem>
+                             <DropdownMenuItem onClick={() => router.push(`/panel/documents/edit/${item.id}`)}>Edit</DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(item)}>
                               <Trash2 className="mr-2 h-4 w-4" /> Hapus
                             </DropdownMenuItem>
@@ -310,7 +311,7 @@ export default function EOfficePage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
-                      Belum ada surat yang dibuat.
+                      Belum ada dokumen yang dibuat.
                     </TableCell>
                   </TableRow>
                 )}
@@ -324,7 +325,7 @@ export default function EOfficePage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Anda yakin ingin menghapus?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini akan menghapus surat <span className="font-semibold">"{itemToDelete?.title}"</span> secara permanen.
+              Tindakan ini akan menghapus dokumen <span className="font-semibold">"{itemToDelete?.title}"</span> secara permanen.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
