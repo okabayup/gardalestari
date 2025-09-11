@@ -36,6 +36,7 @@ export default function Footer() {
                             <Link href="/tentang" className="hover:text-primary">Tentang Kami</Link>
                             <Link href="/#focus" className="hover:text-primary">Fokus</Link>
                             <Link href="/berita" className="hover:text-primary">Berita</Link>
+                            <Link href="/ketentuan-layanan" className="hover:text-primary">Ketentuan Layanan</Link>
                             <Link href="/kebijakan-privasi" className="hover:text-primary">Kebijakan Privasi</Link>
                             <Link href="/hapus-data" className="hover:text-primary">Hapus Data</Link>
                         </nav>

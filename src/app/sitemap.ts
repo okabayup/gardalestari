@@ -22,6 +22,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/recruitments',
     '/evoting',
     '/map',
+    '/kebijakan-privasi',
+    '/hapus-data',
+    '/ketentuan-layanan',
   ].map((route) => ({
     url: `${BASE_URL}${route}`,
     lastModified: new Date().toISOString(),
