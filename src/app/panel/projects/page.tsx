@@ -9,10 +9,21 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, PlusCircle, KanbanSquare } from 'lucide-react';
 import Link from 'next/link';
+import { Timestamp } from 'firebase/firestore';
 
 // Create a client-side compatible type
 type ClientProject = Omit<Project, 'createdAt'> & {
   createdAt: string; // Convert Timestamp to string
+};
+
+const toJsDate = (timestamp: any): Date => {
+    if (timestamp instanceof Timestamp) {
+        return timestamp.toDate();
+    }
+    if (timestamp && typeof timestamp.seconds === 'number' && typeof timestamp.nanoseconds === 'number') {
+        return new Timestamp(timestamp.seconds, timestamp.nanoseconds).toDate();
+    }
+    return new Date();
 };
 
 
@@ -51,7 +62,7 @@ export default function ProjectsPage() {
         // Convert Timestamp to ISO string before setting state
         const clientSafeData: ClientProject[] = data.map(p => ({
           ...p,
-          createdAt: p.createdAt.toDate().toISOString(),
+          createdAt: toJsDate(p.createdAt).toISOString(),
         }));
         setProjects(clientSafeData);
       } catch (error) {
