@@ -11,11 +11,6 @@ import { Loader2, PlusCircle, KanbanSquare } from 'lucide-react';
 import Link from 'next/link';
 import { Timestamp } from 'firebase/firestore';
 
-// Create a client-side compatible type
-type ClientProject = Omit<Project, 'createdAt'> & {
-  createdAt: string; // Convert Timestamp to string
-};
-
 const toJsDate = (timestamp: any): Date => {
     if (timestamp instanceof Timestamp) {
         return timestamp.toDate();
@@ -27,31 +22,10 @@ const toJsDate = (timestamp: any): Date => {
 };
 
 
-const ProjectCard = ({ project }: { project: ClientProject }) => {
-  return (
-    <Card className="flex flex-col">
-      <CardHeader>
-        <CardTitle>{project.title}</CardTitle>
-        <CardDescription className="line-clamp-2">{project.description}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex-grow">
-        <div className="text-sm text-muted-foreground">
-          {project.taskCount} tugas | {project.teamIds.length} anggota
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Button asChild className="w-full">
-          <Link href={`/panel/projects/${project.id}`}>Buka Papan Kanban</Link>
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-};
-
 export default function ProjectsPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [projects, setProjects] = useState<ClientProject[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -59,12 +33,7 @@ export default function ProjectsPage() {
       setLoading(true);
       try {
         const data = await getProjects();
-        // Convert Timestamp to ISO string before setting state
-        const clientSafeData: ClientProject[] = data.map(p => ({
-          ...p,
-          createdAt: toJsDate(p.createdAt).toISOString(),
-        }));
-        setProjects(clientSafeData);
+        setProjects(data);
       } catch (error) {
         toast({ variant: 'destructive', title: 'Gagal memuat proyek' });
       } finally {
@@ -94,7 +63,22 @@ export default function ProjectsPage() {
       ) : projects.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {projects.map(project => (
-            <ProjectCard key={project.id} project={project} />
+            <Card key={project.id} className="flex flex-col">
+                <CardHeader>
+                    <CardTitle>{project.title}</CardTitle>
+                    <CardDescription className="line-clamp-2">{project.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                    <div className="text-sm text-muted-foreground">
+                    {project.taskCount} tugas | {project.teamIds.length} anggota
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Button asChild className="w-full">
+                    <Link href={`/panel/projects/${project.id}`}>Buka Papan Kanban</Link>
+                    </Button>
+                </CardFooter>
+            </Card>
           ))}
         </div>
       ) : (
