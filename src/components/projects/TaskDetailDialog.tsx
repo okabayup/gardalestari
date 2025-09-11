@@ -5,24 +5,25 @@ import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Calendar } from '../ui/calendar';
-import { CalendarIcon, Loader2, User, X, Tag, PlusCircle } from 'lucide-react';
+import { CalendarIcon, Loader2, User, X, Tag, PlusCircle, Send } from 'lucide-react';
 import { format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
-import { ProjectTask, updateTask } from '@/app/actions/projects';
+import { ProjectTask, updateTask, getTaskComments, addTaskComment, CommentWithAuthor } from '@/app/actions/projects';
 import type { MemberWithStatus } from '@/app/actions/members';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Checkbox } from '../ui/checkbox';
 import { Badge } from '../ui/badge';
-
+import { useAuth } from '@/hooks/use-auth';
+import { ScrollArea } from '../ui/scroll-area';
 
 const formSchema = z.object({
     title: z.string().min(1, "Judul tidak boleh kosong"),
@@ -53,7 +54,12 @@ export default function TaskDetailDialog({ isOpen, onClose, task, teamMembers, p
     onUpdate: () => void;
 }) {
     const { toast } = useToast();
+    const { user: currentUser } = useAuth();
     const [loading, setLoading] = useState(false);
+    const [comments, setComments] = useState<CommentWithAuthor[]>([]);
+    const [loadingComments, setLoadingComments] = useState(false);
+    const [newComment, setNewComment] = useState('');
+    const [isPostingComment, setIsPostingComment] = useState(false);
 
     const { control, register, handleSubmit, reset, watch } = useForm<FormData>({
         resolver: zodResolver(formSchema),
@@ -65,16 +71,48 @@ export default function TaskDetailDialog({ isOpen, onClose, task, teamMembers, p
             labels: task.labels || [],
         },
     });
+    
+    const fetchComments = async () => {
+        setLoadingComments(true);
+        try {
+            const fetchedComments = await getTaskComments(projectId, task.id);
+            setComments(fetchedComments);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Gagal memuat komentar' });
+        } finally {
+            setLoadingComments(false);
+        }
+    };
 
     useEffect(() => {
-        reset({
-            title: task.title,
-            description: task.description || '',
-            dueDate: task.dueDate?.toDate(),
-            assigneeIds: task.assigneeIds || [],
-            labels: task.labels || [],
-        });
-    }, [task, reset]);
+        if (isOpen) {
+            reset({
+                title: task.title,
+                description: task.description || '',
+                dueDate: task.dueDate?.toDate(),
+                assigneeIds: task.assigneeIds || [],
+                labels: task.labels || [],
+            });
+            fetchComments();
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [task, reset, isOpen]);
+
+    const handlePostComment = async () => {
+        if (!newComment.trim() || !currentUser) return;
+        setIsPostingComment(true);
+        try {
+            await addTaskComment(projectId, task.id, currentUser.uid, newComment);
+            setNewComment('');
+            fetchComments();
+            onUpdate(); // To update the comment count on the card
+        } catch (error) {
+             toast({ variant: 'destructive', title: 'Gagal mengirim komentar' });
+        } finally {
+            setIsPostingComment(false);
+        }
+    }
+
 
     const onSubmit = async (data: FormData) => {
         setLoading(true);
@@ -96,18 +134,41 @@ export default function TaskDetailDialog({ isOpen, onClose, task, teamMembers, p
     
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-2xl">
-                <form onSubmit={handleSubmit(onSubmit)}>
+            <DialogContent className="max-w-3xl h-[90vh] flex flex-col">
+                <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col">
                     <DialogHeader>
                         <Input {...register('title')} className="text-lg font-bold border-none shadow-none -ml-3" />
                     </DialogHeader>
-                    <div className="py-4 grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="md:col-span-2 space-y-4">
+                    <div className="py-4 grid grid-cols-1 md:grid-cols-3 gap-6 flex-1 min-h-0">
+                        <div className="md:col-span-2 space-y-4 flex flex-col">
                              <div>
                                 <Label>Deskripsi</Label>
                                 <Textarea {...register('description')} rows={5} />
                             </div>
-                            {/* Comments section placeholder */}
+                            <div className="flex-1 flex flex-col min-h-0">
+                                <Label>Diskusi</Label>
+                                 <ScrollArea className="flex-1 my-2 pr-4 -mr-4">
+                                     <div className="space-y-4">
+                                        {loadingComments ? <Loader2 className="animate-spin" /> :
+                                            comments.map(comment => (
+                                                <div key={comment.id} className="flex items-start gap-2">
+                                                    <Avatar className="h-6 w-6"><AvatarImage src={comment.author.avatarUrl} /><AvatarFallback>{getInitials(comment.author.name)}</AvatarFallback></Avatar>
+                                                    <div className="text-sm bg-muted/50 p-2 rounded-lg flex-1">
+                                                        <p className="font-semibold">{comment.author.name}</p>
+                                                        <p>{comment.text}</p>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        }
+                                     </div>
+                                 </ScrollArea>
+                                 <div className="flex items-center gap-2 pt-2">
+                                     <Input value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Tulis komentar..."/>
+                                     <Button type="button" size="icon" onClick={handlePostComment} disabled={isPostingComment || !newComment.trim()}>
+                                        {isPostingComment ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4"/>}
+                                     </Button>
+                                 </div>
+                            </div>
                         </div>
                         <div className="md:col-span-1 space-y-4">
                             <div>
@@ -212,12 +273,12 @@ export default function TaskDetailDialog({ isOpen, onClose, task, teamMembers, p
                             </div>
                         </div>
                     </div>
-                    <DialogFooter>
-                        <Button type="submit" disabled={loading}>
-                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                            Simpan Perubahan
-                        </Button>
-                    </DialogFooter>
+                    <div className="mt-auto pt-4">
+                      <Button type="submit" disabled={loading} className="w-full">
+                          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                          Simpan Perubahan
+                      </Button>
+                    </div>
                 </form>
             </DialogContent>
         </Dialog>

@@ -21,6 +21,7 @@ import {
 import { revalidatePath } from 'next/cache';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from './user';
+import type { IdeaAuthor } from './ideas';
 
 export interface Project {
     id: string;
@@ -46,9 +47,25 @@ export interface ProjectTask {
     assigneeIds?: string[];
     dueDate?: Timestamp;
     labels?: string[];
+    commentCount: number;
+}
+
+export interface ProjectComment {
+    id: string;
+    authorId: string;
+    text: string;
+    createdAt: Timestamp;
+}
+
+export interface CommentWithAuthor {
+    id: string;
+    text: string;
+    createdAt: Timestamp;
+    author: IdeaAuthor;
 }
 
 const projectsCollection = collection(db, 'projects');
+const usersCollection = collection(db, 'users');
 
 // Get all projects
 export async function getProjects(): Promise<Project[]> {
@@ -161,15 +178,16 @@ export async function createTask(projectId: string, columnId: string, title: str
     const tasksCollectionRef = collection(projectRef, 'tasks');
     const columnRef = doc(projectRef, 'columns', columnId);
 
-    const newTask: Omit<ProjectTask, 'id'> = {
+    const newTaskData: Omit<ProjectTask, 'id'> = {
         title: title,
         description: '',
         assigneeIds: [],
         labels: [],
+        commentCount: 0,
     };
 
     try {
-        const taskDocRef = await addDoc(tasksCollectionRef, newTask);
+        const taskDocRef = await addDoc(tasksCollectionRef, newTaskData);
         
         await runTransaction(db, async (transaction) => {
             const columnDoc = await transaction.get(columnRef);
@@ -183,7 +201,7 @@ export async function createTask(projectId: string, columnId: string, title: str
         });
 
         revalidatePath(`/panel/projects/${projectId}`);
-        return { id: taskDocRef.id, ...newTask };
+        return { id: taskDocRef.id, ...newTaskData };
     } catch (e) {
         console.error("Error creating task: ", e);
         throw new Error("Gagal membuat tugas baru.");
@@ -201,7 +219,7 @@ export async function updateTask(projectId: string, taskId: string, updates: Par
     await updateDoc(taskRef, updates);
 
     // Send notification if assignee changes
-    if (updates.assigneeIds) {
+    if (updates.assigneeIds && currentTask.assigneeIds) {
         const newAssignees = updates.assigneeIds.filter(id => !currentTask.assigneeIds?.includes(id));
         if (newAssignees.length > 0) {
             const project = await getProjectById(projectId);
@@ -270,4 +288,53 @@ export async function updateTeamMembers(projectId: string, teamIds: string[]) {
     const projectRef = doc(db, 'projects', projectId);
     await updateDoc(projectRef, { teamIds });
     revalidatePath(`/panel/projects/${projectId}`);
+}
+
+// Add a comment to a task
+export async function addTaskComment(projectId: string, taskId: string, authorId: string, text: string) {
+    if (!authorId) throw new Error("Pengguna tidak terautentikasi.");
+    if (!text.trim()) throw new Error("Komentar tidak boleh kosong.");
+
+    const taskRef = doc(db, 'projects', projectId, 'tasks', taskId);
+    const commentsCollection = collection(taskRef, 'comments');
+    
+    await runTransaction(db, async (transaction) => {
+        const taskDoc = await transaction.get(taskRef);
+        if (!taskDoc.exists()) throw new Error("Tugas tidak ditemukan.");
+
+        const newCommentRef = doc(commentsCollection);
+        transaction.set(newCommentRef, { authorId, text, createdAt: Timestamp.now() });
+        transaction.update(taskRef, { commentCount: increment(1) });
+    });
+    
+    revalidatePath(`/panel/projects/${projectId}`);
+}
+
+
+// Get comments for a task
+export async function getTaskComments(projectId: string, taskId: string): Promise<CommentWithAuthor[]> {
+    const commentsCollection = collection(db, 'projects', projectId, 'tasks', taskId, 'comments');
+    const q = query(commentsCollection, orderBy('createdAt', 'asc'));
+
+    const commentsSnapshot = await getDocs(q);
+    const comments: CommentWithAuthor[] = [];
+
+    for (const commentDoc of commentsSnapshot.docs) {
+        const commentData = { id: commentDoc.id, ...commentDoc.data() } as ProjectComment;
+        const authorDoc = await getDoc(doc(usersCollection, commentData.authorId));
+
+        if (authorDoc.exists()) {
+            const authorData = authorDoc.data();
+            comments.push({
+                ...commentData,
+                author: {
+                    id: commentData.authorId,
+                    name: authorData.fullName || 'User',
+                    username: authorData.username || 'user',
+                    avatarUrl: authorData.avatarUrl || '',
+                },
+            });
+        }
+    }
+    return comments;
 }

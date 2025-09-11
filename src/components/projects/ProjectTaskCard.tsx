@@ -11,7 +11,7 @@ import type { MemberWithStatus } from '@/app/actions/members';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
 import { format } from 'date-fns';
-import { Calendar } from 'lucide-react';
+import { Calendar, MessageSquare } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 
@@ -60,27 +60,33 @@ export default function ProjectTaskCard({ task, teamMembers, projectId, onTaskUp
                     <Badge key={label} variant="secondary" className="text-xs">{label}</Badge>
                 ))}
             </div>
-            {(task.dueDate || task.assigneeIds?.length) ? (
-                 <div className="flex justify-between items-center pt-1">
-                    {task.dueDate ? (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <div className="flex justify-between items-center pt-1">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    {task.dueDate && (
+                        <div className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             {format(task.dueDate.toDate(), 'dd MMM')}
                         </div>
-                    ): <div/>}
-                    <div className="flex -space-x-2">
-                        {task.assigneeIds?.map(id => {
-                            const member = getAssignee(id);
-                            return member ? (
-                                <Avatar key={id} className="h-5 w-5 border-2 border-background">
-                                    <AvatarImage src={member.avatarUrl} />
-                                    <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                                </Avatar>
-                            ) : null
-                        })}
-                    </div>
+                    )}
+                     {task.commentCount > 0 && (
+                        <div className="flex items-center gap-1">
+                            <MessageSquare className="h-3 w-3" />
+                            {task.commentCount}
+                        </div>
+                    )}
                 </div>
-            ) : null}
+                <div className="flex -space-x-2">
+                    {task.assigneeIds?.map(id => {
+                        const member = getAssignee(id);
+                        return member ? (
+                            <Avatar key={id} className="h-5 w-5 border-2 border-background">
+                                <AvatarImage src={member.avatarUrl} />
+                                <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                            </Avatar>
+                        ) : null
+                    })}
+                </div>
+            </div>
           </CardContent>
         </Card>
       </div>
