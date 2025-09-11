@@ -11,12 +11,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Paperclip } from 'lucide-react';
-import { createLetter, generateLetterNumber, LetterCategory, Letter } from '@/app/actions/letters';
-import { getLetterCategories } from '@/app/actions/letter-categories';
+import { createDocument as createLetter, generateDocumentNumber as generateLetterNumber, DocumentCategory as LetterCategory, ImportantDocument as Letter } from '@/app/actions/documents';
+import { getDocumentCategories as getLetterCategories } from '@/app/actions/documents';
 import { useAuth } from '@/hooks/use-auth';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-type FormData = Omit<Letter, 'id' | 'createdAt' | 'authorId' | 'authorName' | 'status' | 'fileUrl' | 'fileName' | 'approvedAt' | 'approvedBy' | 'approverId'>;
+type FormData = Omit<Letter, 'id' | 'createdAt' | 'authorId' | 'authorName' | 'status' | 'fileUrl' | 'fileName' | 'approvedAt' | 'approvedById' | 'approvedByName' | 'approverId' | 'rejectionReason'> & { file: FileList };
+
 
 export default function NewLetterPage() {
   const router = useRouter();
@@ -77,10 +78,10 @@ export default function NewLetterPage() {
           ...letterData,
           authorId: user.uid,
           authorName: user.displayName || 'Pengguna',
-      }
+      };
       await createLetter(payload, file[0]);
       toast({ title: 'Surat berhasil dibuat!' });
-      router.push('/panel/letters');
+      router.push('/panel/documents');
     } catch (error) {
       toast({ variant: 'destructive', title: 'Gagal membuat surat', description: (error as Error).message });
       setLoading(false);
@@ -95,7 +96,7 @@ export default function NewLetterPage() {
           <p className="text-muted-foreground">Isi detail di bawah untuk membuat surat baru.</p>
         </div>
         <div className="flex gap-2">
-            <Button variant="outline" type="button" onClick={() => router.push('/panel/letters')}>Batal</Button>
+            <Button variant="outline" type="button" onClick={() => router.push('/panel/documents')}>Batal</Button>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Simpan Draf
@@ -112,7 +113,7 @@ export default function NewLetterPage() {
             <div className="space-y-2">
                 <Label htmlFor="title">Perihal Surat</Label>
                 <Input id="title" {...register('title')} placeholder="Contoh: Surat Permohonan Audiensi" />
-                 {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
+                 {errors.title && <p className="text-sm text-destructive">{errors.title?.message}</p>}
             </div>
              <div className="space-y-2">
                 <Label htmlFor="documentNumber">Nomor Surat</Label>
@@ -120,7 +121,7 @@ export default function NewLetterPage() {
                     <Input id="documentNumber" {...register('documentNumber')} disabled={isGeneratingNumber} placeholder="Nomor surat akan dibuat otomatis..." />
                     {isGeneratingNumber && <Loader2 className="h-4 w-4 animate-spin" />}
                 </div>
-                {errors.documentNumber && <p className="text-sm text-destructive">{errors.documentNumber.message}</p>}
+                {errors.documentNumber && <p className="text-sm text-destructive">{errors.documentNumber?.message}</p>}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -138,12 +139,12 @@ export default function NewLetterPage() {
                         </Select>
                     )}
                     />
-                    {errors.category && <p className="text-sm text-destructive">{errors.category.message}</p>}
+                    {errors.category && <p className="text-sm text-destructive">{errors.category?.message}</p>}
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="destination">Tujuan Surat</Label>
-                    <Input id="destination" {...register('destination')} placeholder="Contoh: Yth. Menteri Pertanian" />
-                    {errors.destination && <p className="text-sm text-destructive">{errors.destination.message}</p>}
+                    <Label htmlFor="description">Tujuan Surat</Label>
+                    <Input id="description" {...register('description')} placeholder="Contoh: Yth. Menteri Pertanian" />
+                    {errors.description && <p className="text-sm text-destructive">{errors.description?.message}</p>}
                 </div>
             </div>
             <div className="space-y-2">

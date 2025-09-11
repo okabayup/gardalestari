@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,13 +11,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Download, Paperclip } from 'lucide-react';
-import { getLetter, updateLetter, LetterCategory, Letter } from '@/app/actions/letters';
-import { getLetterCategories } from '@/app/actions/letter-categories';
+import { getDocument, updateDocument, DocumentCategory as LetterCategory, ImportantDocument as Letter } from '@/app/actions/documents';
+import { getDocumentCategories as getLetterCategories } from '@/app/actions/documents';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 
-type FormData = Omit<Letter, 'id' | 'createdAt' | 'authorId' | 'authorName' | 'status' | 'fileUrl' | 'fileName' | 'approvedAt' | 'approvedBy' | 'approverId'>;
+type FormData = Omit<Letter, 'id' | 'createdAt' | 'authorId' | 'authorName' | 'status' | 'fileUrl' | 'fileName' | 'approvedAt' | 'approvedById' | 'approvedByName' | 'approverId' | 'rejectionReason'> & { file?: FileList };
 
 export default function EditLetterPage() {
   const router = useRouter();
@@ -47,7 +48,7 @@ export default function EditLetterPage() {
         setPageLoading(true);
         try {
             const [letterData, categoriesData] = await Promise.all([
-                getLetter(letterId),
+                getDocument(letterId),
                 getLetterCategories()
             ]);
             setCategories(categoriesData);
@@ -55,7 +56,7 @@ export default function EditLetterPage() {
             if (letterData) {
                 if (letterData.authorId !== user?.uid) {
                     toast({ variant: 'destructive', title: 'Akses Ditolak', description: 'Anda bukan pemilik surat ini.' });
-                    router.push('/panel/letters');
+                    router.push('/panel/documents');
                     return;
                 }
                 reset(letterData);
@@ -64,7 +65,7 @@ export default function EditLetterPage() {
                 }
             } else {
                 toast({ variant: 'destructive', title: 'Surat tidak ditemukan' });
-                router.push('/panel/letters');
+                router.push('/panel/documents');
             }
         } catch (error) {
             toast({ variant: 'destructive', title: 'Gagal memuat data' });
@@ -82,9 +83,9 @@ export default function EditLetterPage() {
     setLoading(true);
     try {
       const { file, ...letterData } = data;
-      await updateLetter(letterId, letterData, file?.[0]);
+      await updateDocument(letterId, letterData, file?.[0]);
       toast({ title: 'Surat berhasil diperbarui!' });
-      router.push('/panel/letters');
+      router.push('/panel/documents');
     } catch (error) {
       toast({ variant: 'destructive', title: 'Gagal memperbarui surat', description: (error as Error).message });
     } finally {
@@ -103,7 +104,7 @@ export default function EditLetterPage() {
           <h1 className="font-headline text-2xl font-bold">Edit Draf Surat</h1>
         </div>
         <div className="flex gap-2">
-            <Button variant="outline" type="button" onClick={() => router.push('/panel/letters')}>Batal</Button>
+            <Button variant="outline" type="button" onClick={() => router.push('/panel/documents')}>Batal</Button>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Simpan Perubahan
@@ -143,8 +144,8 @@ export default function EditLetterPage() {
                     />
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="destination">Tujuan Surat</Label>
-                    <Input id="destination" {...register('destination')} />
+                    <Label htmlFor="description">Tujuan Surat</Label>
+                    <Input id="description" {...register('description')} />
                 </div>
             </div>
             <div className="space-y-2">
