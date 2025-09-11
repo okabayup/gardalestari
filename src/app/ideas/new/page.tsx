@@ -16,6 +16,7 @@ import { Loader2, ArrowLeft, Lightbulb } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { createIdea, getIdeaCategories } from '@/app/actions/ideas';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import MainLayout from '@/components/layout/MainLayout';
 
 const formSchema = z.object({
   title: z.string().min(5, 'Judul minimal 5 karakter').max(100, 'Judul maksimal 100 karakter'),
@@ -112,4 +113,3 @@ export default function NewIdeaPage() {
     </MainLayout>
   );
 }
-
