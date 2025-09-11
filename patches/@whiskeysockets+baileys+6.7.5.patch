@@ -1,0 +1,15 @@
+diff --git a/node_modules/@whiskeysockets/baileys/lib/Utils/messages-media.js b/node_modules/@whiskeysockets/baileys/lib/Utils/messages-media.js
+index 45a0a9d..8b2841b 100644
+--- a/node_modules/@whiskeysockets/baileys/lib/Utils/messages-media.js
++++ b/node_modules/@whiskeysockets/baileys/lib/Utils/messages-media.js
+@@ -16,7 +16,9 @@ const sharp_1 = __importDefault(require("sharp"));
+ const getImageProcessingLibrary = async () => {
+     var _a;
+     //@ts-ignore
+-    const [jimp, sharp] = await Promise.all([Promise.resolve().then(() => __importStar(require('jimp'))).catch(() => { }), Promise.resolve().then(() => __importStar(require('sharp'))).catch(() => { })]);
++    // Studio: Patched to prevent build errors
++    // const [jimp, sharp] = await Promise.all([import('jimp').catch(() => { }), import('sharp').catch(() => { })]);
++    const [jimp, sharp] = [undefined, undefined];
+     if (sharp) {
+         return { sharp };
+     }
