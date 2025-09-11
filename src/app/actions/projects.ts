@@ -16,6 +16,7 @@ import {
   Timestamp,
   orderBy,
   runTransaction,
+  increment,
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 
@@ -85,7 +86,6 @@ export async function createProject(
 
         const projectDocRef = await addDoc(projectsCollection, projectData);
         
-        // Create default columns in a subcollection
         const columnsCollection = collection(db, 'projects', projectDocRef.id, 'columns');
         const batch = writeBatch(db);
         defaultColumns.forEach(column => {
@@ -108,7 +108,12 @@ export async function getColumnsForProject(projectId: string): Promise<ProjectCo
   const columnsRef = collection(db, 'projects', projectId, 'columns');
   // Note: We're not ordering columns for now. Could add an 'order' field later.
   const snapshot = await getDocs(columnsRef);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProjectColumn));
+  // A bit of a hack to ensure default order until an 'order' field is added
+  const sortedDocs = snapshot.docs.sort((a, b) => {
+    const order = ['Rencana', 'Dikerjakan', 'Tinjauan', 'Selesai'];
+    return order.indexOf(a.data().title) - order.indexOf(b.data().title);
+  });
+  return sortedDocs.map(doc => ({ id: doc.id, ...doc.data() } as ProjectColumn));
 }
 
 // Get all tasks for a project
@@ -116,6 +121,40 @@ export async function getTasksForProject(projectId: string): Promise<ProjectTask
   const tasksRef = collection(db, 'projects', projectId, 'tasks');
   const snapshot = await getDocs(tasksRef);
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProjectTask));
+}
+
+// Create a new task in a project and add it to a column
+export async function createTask(projectId: string, columnId: string, title: string): Promise<ProjectTask> {
+    const projectRef = doc(db, 'projects', projectId);
+    const tasksCollectionRef = collection(projectRef, 'tasks');
+    const columnRef = doc(projectRef, 'columns', columnId);
+
+    const newTask: Omit<ProjectTask, 'id'> = {
+        title: title,
+        description: '',
+        assigneeIds: [],
+    };
+
+    try {
+        const taskDocRef = await addDoc(tasksCollectionRef, newTask);
+        
+        await runTransaction(db, async (transaction) => {
+            const columnDoc = await transaction.get(columnRef);
+            if (!columnDoc.exists()) {
+                throw new Error("Kolom tidak ditemukan");
+            }
+            const columnData = columnDoc.data();
+            const newTaskIds = [...columnData.taskIds, taskDocRef.id];
+            transaction.update(columnRef, { taskIds: newTaskIds });
+            transaction.update(projectRef, { taskCount: increment(1) });
+        });
+
+        revalidatePath(`/panel/projects/${projectId}`);
+        return { id: taskDocRef.id, ...newTask };
+    } catch (e) {
+        console.error("Error creating task: ", e);
+        throw new Error("Gagal membuat tugas baru.");
+    }
 }
 
 // Update task's column

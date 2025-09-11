@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { getProjectById, getColumnsForProject, getTasksForProject } from '@/app/actions/projects';
+import { getProjectById, getColumnsForProject, getTasksForProject, createTask } from '@/app/actions/projects';
 import type { Project, ProjectColumn, ProjectTask } from '@/app/actions/projects';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import ProjectBoard from '@/components/projects/ProjectBoard';
@@ -21,9 +21,7 @@ export default function ProjectDetailPage() {
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (projectId) {
-      const fetchProjectData = async () => {
+  const fetchProjectData = useCallback(async () => {
         setLoading(true);
         try {
           const [projectData, columnsData, tasksData] = await Promise.all([
@@ -47,10 +45,23 @@ export default function ProjectDetailPage() {
         } finally {
           setLoading(false);
         }
-      };
+      }, [projectId, router, toast]);
+
+  useEffect(() => {
+    if (projectId) {
       fetchProjectData();
     }
-  }, [projectId, router, toast]);
+  }, [projectId, fetchProjectData]);
+
+  const handleCreateTask = async (columnId: string, title: string) => {
+    try {
+        const newTask = await createTask(projectId, columnId, title);
+        setTasks(prev => [...prev, newTask]);
+        setColumns(prev => prev.map(c => c.id === columnId ? { ...c, taskIds: [...c.taskIds, newTask.id] } : c));
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Gagal membuat tugas', description: (error as Error).message });
+    }
+  }
 
   if (loading) {
     return (
@@ -75,7 +86,13 @@ export default function ProjectDetailPage() {
         </div>
       </div>
       <div className="flex-1 overflow-x-auto">
-        <ProjectBoard initialColumns={columns} initialTasks={tasks} projectId={projectId} />
+        <ProjectBoard
+            initialColumns={columns}
+            initialTasks={tasks}
+            projectId={projectId}
+            onCreateTask={handleCreateTask}
+            onDataRefresh={fetchProjectData}
+        />
       </div>
     </div>
   );

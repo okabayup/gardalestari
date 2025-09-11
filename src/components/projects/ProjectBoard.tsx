@@ -24,9 +24,11 @@ interface ProjectBoardProps {
   initialColumns: ProjectColumn[];
   initialTasks: ProjectTask[];
   projectId: string;
+  onCreateTask: (columnId: string, title: string) => Promise<void>;
+  onDataRefresh: () => void;
 }
 
-export default function ProjectBoard({ initialColumns, initialTasks, projectId }: ProjectBoardProps) {
+export default function ProjectBoard({ initialColumns, initialTasks, projectId, onCreateTask, onDataRefresh }: ProjectBoardProps) {
   const { toast } = useToast();
   const [columns, setColumns] = useState<ProjectColumn[]>(initialColumns);
   const [tasks, setTasks] = useState<ProjectTask[]>(initialTasks);
@@ -110,8 +112,8 @@ export default function ProjectBoard({ initialColumns, initialTasks, projectId }
     if (oldIndex !== newIndex || sourceColumn.id !== destColumn.id) {
       try {
         await updateTaskColumn(projectId, active.id as string, sourceColumn.id, destColumn.id, newIndex);
-        // Optimistic update is already done in handleDragOver, but this revalidates from server.
-        // For now, we trust the optimistic update. A re-fetch could be added here.
+        // We're relying on the optimistic update. To be fully robust, one might re-fetch data here.
+        onDataRefresh();
       } catch (error) {
         toast({ variant: 'destructive', title: "Gagal memindahkan tugas", description: (error as Error).message });
         // Revert UI changes on error
@@ -129,9 +131,14 @@ export default function ProjectBoard({ initialColumns, initialTasks, projectId }
       onDragOver={handleDragOver}
       collisionDetection={closestCorners}
     >
-      <div className="flex gap-4 items-start p-1">
+      <div className="flex gap-4 items-start p-1 h-full">
         {columns.map(col => (
-          <ProjectColumnComponent key={col.id} column={col} tasks={col.taskIds.map(id => tasksById[id]).filter(Boolean)} />
+          <ProjectColumnComponent
+            key={col.id}
+            column={col}
+            tasks={col.taskIds.map(id => tasksById[id]).filter(Boolean)}
+            onCreateTask={onCreateTask}
+          />
         ))}
       </div>
       <DragOverlay>
