@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,7 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, Shield, Pencil, AlertTriangle, Loader2, Grid3x3, Archive, Tag, IdCard, Undo, History } from 'lucide-react';
+import { LogOut, Shield, Pencil, AlertTriangle, Loader2, Grid3x3, Archive, Tag, IdCard, Undo, History, Award, Info } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import EditProfileModal from '@/components/profile/EditProfileModal';
@@ -17,68 +18,49 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MembershipCardDialog from '@/components/members/MembershipCardDialog';
 import { useToast } from '@/hooks/use-toast';
 import PostCard from '@/components/feed/PostCard';
-
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { MemberLevelBadge } from '@/components/members/MemberLevelBadge';
 
 const ADMIN_PHONE_NUMBER = '+6285176752610';
 
 const ProfileHeader = ({ user, postCount }: { user: any, postCount: number }) => (
-  <div className="flex items-center gap-4 w-full px-4">
-    <Avatar className="h-20 w-20">
-      <AvatarImage src={user?.photoURL || ''} alt={user?.displayName || ''} />
-      <AvatarFallback className="text-3xl">{user?.displayName?.charAt(0) || 'A'}</AvatarFallback>
-    </Avatar>
-    <div className="flex-1 grid grid-cols-2 text-center">
-        <div>
-            <p className="font-bold text-lg">{postCount}</p>
-            <p className="text-sm text-muted-foreground">Postingan</p>
+  <Card>
+    <CardContent className="p-6 space-y-4">
+        <div className="flex items-start gap-4">
+            <Avatar className="h-24 w-24 border">
+              <AvatarImage src={user?.photoURL || ''} alt={user?.displayName || ''} />
+              <AvatarFallback className="text-3xl">{user?.displayName?.charAt(0) || 'A'}</AvatarFallback>
+            </Avatar>
+            <div className="space-y-1">
+                <h1 className="text-2xl font-bold font-headline">{user?.displayName}</h1>
+                <p className="text-muted-foreground">{user?.position || 'Anggota Garda Lestari'}</p>
+                 <div className="flex items-center gap-2 pt-1">
+                    <MemberLevelBadge level={user?.level || 'Bronze'} />
+                    <span className="text-sm text-muted-foreground">{user?.points || 0} Poin</span>
+                </div>
+            </div>
         </div>
-         <div>
-            <p className="font-bold text-lg">{user?.level || 'Bronze'}</p>
-            <p className="text-sm text-muted-foreground">Level</p>
+        <div className="flex gap-2">
+            <Button variant="outline" onClick={() => (document.getElementById('edit-profile-trigger') as HTMLButtonElement)?.click()} className="w-full">
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit Profil
+            </Button>
+            <Button variant="outline" onClick={() => (document.getElementById('kta-trigger') as HTMLButtonElement)?.click()} className="w-full" disabled={user?.verificationStatus !== 'permanent'}>
+                <IdCard className="mr-2 h-4 w-4" />
+                Lihat KTA
+            </Button>
         </div>
-    </div>
-  </div>
+    </CardContent>
+  </Card>
 );
 
-const ProfileBio = ({ user }: { user: any }) => (
-    <div className="px-4 space-y-1">
-        <p className="font-bold">{user?.displayName}</p>
-        <p className="text-sm text-muted-foreground">@{user?.username}</p>
-        {/* Placeholder for bio */}
-        <p className="text-sm">Selamat datang di profil saya! Anggota Garda Lestari.</p>
-    </div>
-);
-
-
-const ProfilePostsGrid = ({ posts, isLoading, isArchive = false, onUnarchive }: { posts: PostWithAuthor[], isLoading: boolean, isArchive?: boolean, onUnarchive?: (postId: string) => void }) => {
+const ProfilePostsGrid = ({ posts, isLoading }: { posts: PostWithAuthor[], isLoading: boolean }) => {
     if (isLoading) {
-       return (
-        <div className="flex justify-center py-10">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-       )
+       return <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
     }
     if (!posts || posts.length === 0) {
-        return <div className="text-center py-10 text-muted-foreground">{isArchive ? "Arsip kosong." : "Belum ada postingan."}</div>;
+        return <div className="text-center py-10 text-muted-foreground">Belum ada postingan.</div>;
     }
-
-    if (isArchive) {
-      return (
-        <div className="space-y-4 p-4">
-            {posts.map(post => (
-                <PostCard 
-                    key={post.id}
-                    post={post}
-                    onToggleLike={() => {}}
-                    onArchive={() => {}}
-                    onUnarchive={() => onUnarchive?.(post.id)}
-                    currentUserId={post.author.id}
-                />
-            ))}
-        </div>
-      )
-    }
-
     return (
         <div className="grid grid-cols-3 gap-1">
             {posts.map(post => (
@@ -98,21 +80,45 @@ const ProfilePostsGrid = ({ posts, isLoading, isArchive = false, onUnarchive }: 
     )
 }
 
-const ProgramHistoryTab = () => {
-    // This is a placeholder. In the future, this will fetch user's program history.
+const ArchivedPostsList = ({ posts, isLoading, onUnarchive }: { posts: PostWithAuthor[], isLoading: boolean, onUnarchive?: (postId: string) => void }) => {
+    if (isLoading) {
+       return <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+    }
+    if (!posts || posts.length === 0) {
+        return <div className="text-center py-10 text-muted-foreground">Arsip kosong.</div>;
+    }
+
     return (
-        <div className="text-center py-10 text-muted-foreground">
-            <History className="h-8 w-8 mx-auto mb-2" />
-            Riwayat program yang diikuti akan muncul di sini.
+        <div className="space-y-4">
+            {posts.map(post => (
+                <PostCard 
+                    key={post.id}
+                    post={post}
+                    onToggleLike={() => {}}
+                    onArchive={() => {}}
+                    onUnarchive={() => onUnarchive?.(post.id)}
+                    currentUserId={post.author.id}
+                />
+            ))}
         </div>
     )
 }
+
+
+const PlaceholderTab = ({ icon: Icon, title, description }: { icon: React.ElementType, title: string, description: string }) => (
+    <div className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-lg">
+        <Icon className="h-8 w-8 mx-auto mb-2" />
+        <h3 className="font-semibold">{title}</h3>
+        <p className="text-sm">{description}</p>
+    </div>
+)
+
 
 const VerificationStatusAlert = ({ status }: { status?: 'unverified' | 'temporary' | 'permanent' | 'rejected' }) => {
     const router = useRouter();
     if (!status || status === 'unverified') {
         return (
-            <Alert className="mx-4">
+            <Alert>
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Verifikasi Akun</AlertTitle>
                 <AlertDescription>
@@ -124,7 +130,7 @@ const VerificationStatusAlert = ({ status }: { status?: 'unverified' | 'temporar
     }
      if (status === 'temporary') {
         return (
-            <Alert className="mx-4 border-yellow-500 text-yellow-800">
+            <Alert className="border-yellow-500 text-yellow-800 dark:text-yellow-300 dark:border-yellow-700">
                 <AlertTriangle className="h-4 w-4 text-yellow-500" />
                 <AlertTitle>Verifikasi Sedang Ditinjau</AlertTitle>
                 <AlertDescription>
@@ -135,7 +141,7 @@ const VerificationStatusAlert = ({ status }: { status?: 'unverified' | 'temporar
     }
     if (status === 'rejected') {
          return (
-            <Alert variant="destructive" className="mx-4">
+            <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Verifikasi Ditolak</AlertTitle>
                 <AlertDescription>
@@ -163,7 +169,6 @@ export default function ProfileMePage() {
   const [loadingUserPosts, setLoadingUserPosts] = useState(true);
   const [loadingArchived, setLoadingArchived] = useState(true);
   const [loadingTagged, setLoadingTagged] = useState(true);
-
 
   const fetchAllData = () => {
      if (user && !authLoading) {
@@ -198,27 +203,18 @@ export default function ProfileMePage() {
   };
 
   const handleUnarchive = async (postId: string) => {
-    // Optimistic UI update
     setArchivedPosts(prev => prev.filter(p => p.id !== postId));
-
     try {
         await unarchivePost(postId);
         toast({ title: 'Postingan dipulihkan' });
-        // Re-fetch user posts to see the unarchived one
         getPostsByUserId(user!.uid).then(setUserPosts);
     } catch (error) {
-        toast({
-            variant: 'destructive',
-            title: 'Gagal memulihkan',
-            description: (error as Error).message,
-        });
-        // Revert UI on failure
+        toast({ variant: 'destructive', title: 'Gagal memulihkan', description: (error as Error).message });
         fetchAllData();
     }
   };
   
-  const isAdmin = user?.phoneNumber === ADMIN_PHONE_NUMBER;
-  const canViewKta = user?.verificationStatus === 'permanent';
+  const isAdmin = user?.permissions?.length > 0;
 
   if (authLoading || !user) {
     return (
@@ -232,60 +228,36 @@ export default function ProfileMePage() {
 
   return (
     <MainLayout>
-        <div className="space-y-4 py-4">
+        <div className="p-4 space-y-4">
             <ProfileHeader user={user} postCount={userPosts.length} />
-            <ProfileBio user={user} />
-
-            <div className="grid grid-cols-2 gap-2 px-4">
-                 <Button variant="outline" onClick={() => setIsEditModalOpen(true)} className="w-full">
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit Profil
-                </Button>
-                <Button variant="outline" onClick={() => setIsKtaModalOpen(true)} className="w-full" disabled={!canViewKta}>
-                    <IdCard className="mr-2 h-4 w-4" />
-                    Lihat KTA
-                </Button>
-            </div>
+            <VerificationStatusAlert status={user?.verificationStatus} />
             
-            <div className="px-4">
-                 <VerificationStatusAlert status={user?.verificationStatus} />
-            </div>
-
             <Tabs defaultValue="posts" className="w-full">
-                <TabsList className="w-full grid grid-cols-4">
-                    <TabsTrigger value="posts">
-                        <Grid3x3 className="mr-2 h-4 w-4" /> Postingan
-                    </TabsTrigger>
-                    <TabsTrigger value="tagged">
-                        <Tag className="mr-2 h-4 w-4" /> Ditandai
-                    </TabsTrigger>
-                     <TabsTrigger value="history">
-                        <History className="mr-2 h-4 w-4" /> Riwayat
-                    </TabsTrigger>
-                    <TabsTrigger value="archived">
-                        <Archive className="mr-2 h-4 w-4" /> Arsip
-                    </TabsTrigger>
+                <TabsList className="w-full grid grid-cols-5">
+                    <TabsTrigger value="posts"><Grid3x3 className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Postingan</span></TabsTrigger>
+                    <TabsTrigger value="about"><Info className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Tentang</span></TabsTrigger>
+                    <TabsTrigger value="achievements"><Award className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Prestasi</span></TabsTrigger>
+                    <TabsTrigger value="history"><History className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Riwayat</span></TabsTrigger>
+                    <TabsTrigger value="archive"><Archive className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Arsip</span></TabsTrigger>
                 </TabsList>
-                <TabsContent value="posts">
+                <TabsContent value="posts" className="mt-4">
                     <ProfilePostsGrid posts={userPosts} isLoading={loadingUserPosts} />
                 </TabsContent>
-                 <TabsContent value="tagged">
-                    <ProfilePostsGrid posts={taggedPosts} isLoading={loadingTagged} />
+                <TabsContent value="about" className="mt-4">
+                   <PlaceholderTab icon={Info} title="Tentang Saya" description="Bagian ini akan menampilkan biografi Anda." />
                 </TabsContent>
-                 <TabsContent value="history">
-                    <ProgramHistoryTab />
+                 <TabsContent value="achievements" className="mt-4">
+                    <PlaceholderTab icon={Award} title="Prestasi" description="Daftar pencapaian dan penghargaan Anda akan muncul di sini." />
                 </TabsContent>
-                <TabsContent value="archived">
-                    <ProfilePostsGrid 
-                        posts={archivedPosts} 
-                        isLoading={loadingArchived} 
-                        isArchive={true} 
-                        onUnarchive={handleUnarchive}
-                    />
+                <TabsContent value="history" className="mt-4">
+                    <PlaceholderTab icon={History} title="Riwayat Program" description="Riwayat program yang pernah Anda ikuti akan ditampilkan di sini." />
+                </TabsContent>
+                 <TabsContent value="archive" className="mt-4">
+                    <ArchivedPostsList posts={archivedPosts} isLoading={loadingArchived} onUnarchive={handleUnarchive} />
                 </TabsContent>
             </Tabs>
              
-            <div className="px-4 space-y-2">
+            <div className="pt-4 space-y-2">
                 {isAdmin && (
                     <Button variant="outline" onClick={() => router.push('/panel/dashboard')} className="w-full">
                         <Shield className="mr-2 h-4 w-4" />
@@ -300,6 +272,10 @@ export default function ProfileMePage() {
         </div>
         {user && (
           <>
+             {/* Hidden triggers for modals */}
+            <button id="edit-profile-trigger" onClick={() => setIsEditModalOpen(true)} className="hidden">Edit</button>
+            <button id="kta-trigger" onClick={() => setIsKtaModalOpen(true)} className="hidden">KTA</button>
+
             <EditProfileModal
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
