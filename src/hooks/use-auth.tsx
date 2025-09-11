@@ -19,6 +19,7 @@ import { useToast } from './use-toast';
 import { checkUsernameExists } from '@/app/actions/user';
 import type { PermissionId, Position } from '@/lib/definitions';
 import { ALL_PERMISSIONS } from '@/lib/definitions';
+import { logAnalyticsEvent } from '@/lib/analytics';
 
 
 type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected';
@@ -195,6 +196,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             level: 'Bronze',
             verificationStatus: 'unverified',
         });
+        logAnalyticsEvent('sign_up', { method: 'phone' });
+    } else {
+        logAnalyticsEvent('login', { method: 'phone' });
     }
 
     setConfirmationResult(null);
@@ -244,6 +248,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 const submitForVerification = async (data: { fullName: string; nik: string; ktpFile: File; selfieFile: File; photoFile?: File; }) => {
     if (!auth.currentUser) throw new Error("Pengguna tidak ditemukan.");
+
+    logAnalyticsEvent('begin_verification');
 
     const nikQuery = query(collection(db, 'users'), where("nik", "==", data.nik));
     const nikSnapshot = await getDocs(nikQuery);
@@ -299,6 +305,8 @@ const submitForVerification = async (data: { fullName: string; nik: string; ktpF
             photoURL: newPhotoURL 
         });
     }
+
+    logAnalyticsEvent('submit_verification', { status: 'success' });
 
     setUser(prevUser => {
         if (!prevUser) return null;

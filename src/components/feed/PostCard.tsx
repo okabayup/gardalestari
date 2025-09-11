@@ -19,6 +19,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import CommentList from './CommentList';
 import { VerifiedBadge } from '../members/VerifiedBadge';
+import { logAnalyticsEvent } from '@/lib/analytics';
 
 
 interface PostCardProps {
@@ -89,6 +90,7 @@ export default function PostCard({ post, onToggleLike, onArchive, onUnarchive, c
       await addComment(post.id, user.uid, commentText);
       setCommentText('');
       toast({ title: 'Komentar ditambahkan!' });
+      logAnalyticsEvent('add_comment', { post_id: post.id });
       if (isCommentsOpen) {
           handleFetchComments();
       }
@@ -199,7 +201,7 @@ export default function PostCard({ post, onToggleLike, onArchive, onUnarchive, c
       </CardContent>
        <CardFooter className="flex flex-col items-start gap-2 p-3 pt-0">
         <div className="flex w-full items-center gap-1">
-            <Button variant="ghost" size="icon" onClick={onToggleLike} disabled={isArchived}>
+            <Button variant="ghost" size="icon" onClick={() => { onToggleLike(); logAnalyticsEvent('like_post', { post_id: post.id }); }} disabled={isArchived}>
                 <Heart className={cn("h-5 w-5", post.isLiked && "fill-red-500 text-red-500")} />
             </Button>
              <Sheet open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>

@@ -1,6 +1,8 @@
 
+'use client';
+
 import Image from 'next/image';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import LandingHeader from '@/components/layout/LandingHeader';
 import Footer from '@/components/landing/Footer';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -9,52 +11,77 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import type { Metadata } from 'next';
+import { useEffect, useState } from 'react';
+import type { BeritaPost } from '@/app/actions/berita';
+import { Loader2 } from 'lucide-react';
+import { logAnalyticsEvent } from '@/lib/analytics';
 
-// This function tells Next.js which slugs to pre-render at build time
-export async function generateStaticParams() {
-  const posts = await getBeritaPosts();
-  return posts.map((post) => ({
-    slug: post.slug,
-  }));
-}
 
-// This function generates dynamic metadata for each news post
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const post = await getBeritaPost(params.slug);
+// export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+//   const post = await getBeritaPost(params.slug);
 
-  if (!post) {
-    return {
-      title: 'Berita Tidak Ditemukan',
-      description: 'Artikel berita yang Anda cari tidak ada atau telah dipindahkan.',
-    };
+//   if (!post) {
+//     return {
+//       title: 'Berita Tidak Ditemukan',
+//       description: 'Artikel berita yang Anda cari tidak ada atau telah dipindahkan.',
+//     };
+//   }
+
+//   return {
+//     title: `${post.title} | Garda Lestari`,
+//     description: post.excerpt,
+//     openGraph: {
+//       title: post.title,
+//       description: post.excerpt,
+//       images: [
+//         {
+//           url: post.imageUrl,
+//           width: 1200,
+//           height: 630,
+//           alt: post.title,
+//         },
+//       ],
+//       locale: 'id_ID',
+//       type: 'article',
+//     },
+//   };
+// }
+
+
+export default function BeritaPostPage() {
+  const params = useParams();
+  const slug = params.slug as string;
+  const [post, setPost] = useState<BeritaPost | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (slug) {
+      getBeritaPost(slug).then(fetchedPost => {
+        if (fetchedPost) {
+          setPost(fetchedPost);
+          logAnalyticsEvent('view_item', {
+              item_id: fetchedPost.id,
+              item_name: fetchedPost.title,
+              item_category: 'berita',
+          });
+        } else {
+          notFound();
+        }
+        setLoading(false);
+      });
+    }
+  }, [slug]);
+
+  if (loading) {
+    return (
+        <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        </div>
+    )
   }
 
-  return {
-    title: `${post.title} | Garda Lestari`,
-    description: post.excerpt,
-    openGraph: {
-      title: post.title,
-      description: post.excerpt,
-      images: [
-        {
-          url: post.imageUrl,
-          width: 1200,
-          height: 630,
-          alt: post.title,
-        },
-      ],
-      locale: 'id_ID',
-      type: 'article',
-    },
-  };
-}
-
-
-export default async function BeritaPostPage({ params }: { params: { slug: string } }) {
-  const post = await getBeritaPost(params.slug);
-
   if (!post) {
-    notFound();
+    return notFound();
   }
 
   const formattedDate = format(new Date(post.date), "dd MMMM yyyy", { locale: id });

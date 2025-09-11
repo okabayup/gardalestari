@@ -18,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useDebounce } from 'use-debounce';
+import { logAnalyticsEvent } from '@/lib/analytics';
 
 interface MediaPreview {
     file: File;
@@ -186,6 +187,7 @@ export default function NewPostPage() {
         mentions: mf.mentions
       }));
       await createPost(caption, mediaPayload, user.uid);
+      logAnalyticsEvent('create_post', { media_count: mediaPayload.length });
       toast({
         title: 'Postingan berhasil dibuat!',
       });
@@ -298,4 +300,3 @@ export default function NewPostPage() {
     </MainLayout>
   );
 }
-
