@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -15,8 +14,8 @@ import {
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { produce } from 'immer';
-import { ProjectColumn, ProjectTask, updateTaskColumn, getMembers, updateTeamMembers } from '@/app/actions/projects';
-import type { MemberWithStatus } from '@/app/actions/members';
+import { ProjectColumn, ProjectTask, updateTaskColumn, updateTeamMembers } from '@/app/actions/projects';
+import { getMembers, type MemberWithStatus } from '@/app/actions/members';
 import { useToast } from '@/hooks/use-toast';
 import ProjectColumnComponent from './ProjectColumn';
 import ProjectTaskCard from './ProjectTaskCard';
@@ -180,7 +179,7 @@ export default function ProjectBoard({ initialColumns, initialTasks, projectId, 
         ))}
       </div>
       <DragOverlay>
-        {activeTask ? <ProjectTaskCard task={activeTask} /> : null}
+        {activeTask ? <ProjectTaskCard task={activeTask} teamMembers={[]} projectId={''} onTaskUpdate={() => {}} /> : null}
       </DragOverlay>
     </DndContext>
     <ManageTeamDialog
