@@ -51,7 +51,7 @@ const navItems: { href: string; icon: React.ElementType; label: string, permissi
     { href: '/panel/partners', icon: Handshake, label: 'Mitra', permission: 'manage_partners' },
     { href: '/panel/forms', icon: FileText, label: 'Formulir', permission: 'manage_forms' },
     { href: '/panel/landing', icon: Landmark, label: 'Halaman Utama', permission: 'manage_landing_page' },
-    { href: '/panel/email', icon: Mail, label: 'Email', permission: 'manage_email' },
+    { href: '/panel/whatsapp', icon: Mail, label: 'WhatsApp', permission: 'manage_whatsapp' },
     { href: '/panel/settings', icon: Settings, label: 'Pengaturan', permission: 'manage_settings' },
 ];
 
