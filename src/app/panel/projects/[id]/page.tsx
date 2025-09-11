@@ -9,6 +9,10 @@ import type { Project, ProjectColumn, ProjectTask } from '@/app/actions/projects
 import { Loader2, ArrowLeft } from 'lucide-react';
 import ProjectBoard from '@/components/projects/ProjectBoard';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ProjectAnalytics from '@/components/projects/ProjectAnalytics';
+import { getMembers, MemberWithStatus } from '@/app/actions/members';
+
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -19,15 +23,17 @@ export default function ProjectDetailPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [columns, setColumns] = useState<ProjectColumn[]>([]);
   const [tasks, setTasks] = useState<ProjectTask[]>([]);
+  const [members, setMembers] = useState<MemberWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchProjectData = useCallback(async () => {
         setLoading(true);
         try {
-          const [projectData, columnsData, tasksData] = await Promise.all([
+          const [projectData, columnsData, tasksData, membersData] = await Promise.all([
             getProjectById(projectId),
             getColumnsForProject(projectId),
-            getTasksForProject(projectId)
+            getTasksForProject(projectId),
+            getMembers()
           ]);
 
           if (!projectData) {
@@ -39,6 +45,7 @@ export default function ProjectDetailPage() {
           setProject(projectData);
           setColumns(columnsData);
           setTasks(tasksData);
+          setMembers(membersData);
         } catch (error) {
           console.error(error);
           toast({ variant: 'destructive', title: 'Gagal memuat data proyek' });
@@ -72,6 +79,8 @@ export default function ProjectDetailPage() {
   }
   
   if (!project) return null;
+  
+  const teamMembers = members.filter(m => project.teamIds.includes(m.id));
 
   return (
     <div className="h-full flex flex-col">
@@ -85,16 +94,25 @@ export default function ProjectDetailPage() {
             <p className="text-sm text-muted-foreground">{project.description}</p>
         </div>
       </div>
-      <div className="flex-1 overflow-x-auto">
-        <ProjectBoard
-            initialColumns={columns}
-            initialTasks={tasks}
-            projectId={projectId}
-            onCreateTask={handleCreateTask}
-            onDataRefresh={fetchProjectData}
-            projectTeamIds={project.teamIds}
-        />
-      </div>
+       <Tabs defaultValue="board" className="flex-1 flex flex-col">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="board">Papan</TabsTrigger>
+          <TabsTrigger value="analytics">Analitik</TabsTrigger>
+        </TabsList>
+        <TabsContent value="board" className="flex-1 overflow-x-auto mt-4">
+            <ProjectBoard
+                initialColumns={columns}
+                initialTasks={tasks}
+                projectId={projectId}
+                onCreateTask={handleCreateTask}
+                onDataRefresh={fetchProjectData}
+                projectTeamIds={project.teamIds}
+            />
+        </TabsContent>
+        <TabsContent value="analytics" className="flex-1 overflow-y-auto mt-4">
+             <ProjectAnalytics columns={columns} tasks={tasks} members={teamMembers} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
