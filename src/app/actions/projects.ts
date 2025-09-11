@@ -15,6 +15,7 @@ import {
   where,
   Timestamp,
   orderBy,
+  runTransaction,
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 
@@ -99,5 +100,64 @@ export async function createProject(
     } catch (error) {
         console.error("Error creating project:", error);
         throw new Error("Gagal membuat proyek baru.");
+    }
+}
+
+// Get all columns for a project
+export async function getColumnsForProject(projectId: string): Promise<ProjectColumn[]> {
+  const columnsRef = collection(db, 'projects', projectId, 'columns');
+  // Note: We're not ordering columns for now. Could add an 'order' field later.
+  const snapshot = await getDocs(columnsRef);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProjectColumn));
+}
+
+// Get all tasks for a project
+export async function getTasksForProject(projectId: string): Promise<ProjectTask[]> {
+  const tasksRef = collection(db, 'projects', projectId, 'tasks');
+  const snapshot = await getDocs(tasksRef);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProjectTask));
+}
+
+// Update task's column
+export async function updateTaskColumn(
+  projectId: string,
+  taskId: string,
+  sourceColumnId: string,
+  destColumnId: string,
+  newIndex: number
+) {
+    const sourceColRef = doc(db, 'projects', projectId, 'columns', sourceColumnId);
+    const destColRef = doc(db, 'projects', projectId, 'columns', destColumnId);
+
+    try {
+        await runTransaction(db, async (transaction) => {
+            const sourceDoc = await transaction.get(sourceColRef);
+            const destDoc = await transaction.get(destColRef);
+
+            if (!sourceDoc.exists() || !destDoc.exists()) {
+                throw new Error("Kolom tidak ditemukan");
+            }
+            
+            const sourceData = sourceDoc.data() as ProjectColumn;
+            const destData = destDoc.data() as ProjectColumn;
+
+            const newSourceTaskIds = sourceData.taskIds.filter(id => id !== taskId);
+
+            if (sourceColumnId === destColumnId) {
+                // Moving within the same column
+                newSourceTaskIds.splice(newIndex, 0, taskId);
+                transaction.update(sourceColRef, { taskIds: newSourceTaskIds });
+            } else {
+                // Moving to a different column
+                const newDestTaskIds = [...destData.taskIds];
+                newDestTaskIds.splice(newIndex, 0, taskId);
+                transaction.update(sourceColRef, { taskIds: newSourceTaskIds });
+                transaction.update(destColRef, { taskIds: newDestTaskIds });
+            }
+        });
+        revalidatePath(`/panel/projects/${projectId}`);
+    } catch(e) {
+        console.error("Transaction failed: ", e);
+        throw new Error("Gagal memindahkan tugas.");
     }
 }

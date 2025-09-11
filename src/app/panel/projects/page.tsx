@@ -12,12 +12,12 @@ import Link from 'next/link';
 
 const ProjectCard = ({ project }: { project: Project }) => {
   return (
-    <Card>
+    <Card className="flex flex-col">
       <CardHeader>
         <CardTitle>{project.title}</CardTitle>
         <CardDescription className="line-clamp-2">{project.description}</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-grow">
         <div className="text-sm text-muted-foreground">
           {project.taskCount} tugas | {project.teamIds.length} anggota
         </div>
