@@ -235,7 +235,7 @@ export default function ProfileMePage() {
             <Tabs defaultValue="posts" className="w-full">
                 <TabsList className="w-full grid grid-cols-5">
                     <TabsTrigger value="posts"><Grid3x3 className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Postingan</span></TabsTrigger>
-                    <TabsTrigger value="about"><Info className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Tentang</span></TabsTrigger>
+                    <TabsTrigger value="tagged"><Tag className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Tagged</span></TabsTrigger>
                     <TabsTrigger value="achievements"><Award className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Prestasi</span></TabsTrigger>
                     <TabsTrigger value="history"><History className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Riwayat</span></TabsTrigger>
                     <TabsTrigger value="archive"><Archive className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Arsip</span></TabsTrigger>
@@ -243,8 +243,8 @@ export default function ProfileMePage() {
                 <TabsContent value="posts" className="mt-4">
                     <ProfilePostsGrid posts={userPosts} isLoading={loadingUserPosts} />
                 </TabsContent>
-                <TabsContent value="about" className="mt-4">
-                   <PlaceholderTab icon={Info} title="Tentang Saya" description="Bagian ini akan menampilkan biografi Anda." />
+                 <TabsContent value="tagged" className="mt-4">
+                    <ProfilePostsGrid posts={taggedPosts} isLoading={loadingTagged} />
                 </TabsContent>
                  <TabsContent value="achievements" className="mt-4">
                     <PlaceholderTab icon={Award} title="Prestasi" description="Daftar pencapaian dan penghargaan Anda akan muncul di sini." />

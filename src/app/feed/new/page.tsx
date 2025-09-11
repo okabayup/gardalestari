@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, ChangeEvent, MouseEvent } from 'react';
+import { useState, useRef, ChangeEvent, MouseEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -55,8 +55,9 @@ const UserSearchPopover = ({ onSelectUser, children }: { onSelectUser: (user: Pu
     const [debouncedSearch] = useDebounce(search, 300);
     const [results, setResults] = useState<PublicUser[]>([]);
     const [loading, setLoading] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
 
-    React.useEffect(() => {
+    useEffect(() => {
         const fetchUsers = async () => {
             if (debouncedSearch.length < 2) {
                 setResults([]);
@@ -69,9 +70,15 @@ const UserSearchPopover = ({ onSelectUser, children }: { onSelectUser: (user: Pu
         };
         fetchUsers();
     }, [debouncedSearch]);
+    
+    const handleSelect = (user: PublicUser) => {
+        onSelectUser(user);
+        setIsOpen(false);
+        setSearch('');
+    }
 
     return (
-        <Popover>
+        <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>{children}</PopoverTrigger>
             <PopoverContent className="w-64 p-2">
                 <div className="space-y-2">
@@ -83,7 +90,7 @@ const UserSearchPopover = ({ onSelectUser, children }: { onSelectUser: (user: Pu
                     {loading && <div className="text-center p-2"><Loader2 className="h-4 w-4 animate-spin mx-auto"/></div>}
                     <div className="space-y-1 max-h-48 overflow-y-auto">
                         {results.map(user => (
-                            <div key={user.id} className="flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer" onClick={() => onSelectUser(user)}>
+                            <div key={user.id} className="flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer" onClick={() => handleSelect(user)}>
                                 <Avatar className="h-8 w-8">
                                     <AvatarImage src={user.avatarUrl} />
                                     <AvatarFallback>{user.fullName.charAt(0)}</AvatarFallback>
@@ -110,7 +117,6 @@ export default function NewPostPage() {
   const [caption, setCaption] = useState('');
   const [mediaFiles, setMediaFiles] = useState<MediaPreview[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [taggingState, setTaggingState] = useState<{ index: number, x: number, y: number } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -132,32 +138,21 @@ export default function NewPostPage() {
     setMediaFiles(prev => prev.filter((_, index) => index !== indexToRemove));
   };
   
-  const handleMediaClick = (e: MouseEvent<HTMLDivElement>, index: number) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setTaggingState({ index, x, y });
-  };
-
-  const handleSelectUserToTag = (selectedUser: PublicUser) => {
-    if (!taggingState) return;
-
+  const handleSelectUserToTag = (mediaIndex: number, selectedUser: PublicUser, position: {x: number, y: number}) => {
     setMediaFiles(prev => prev.map((media, i) => {
-      if (i === taggingState.index) {
-        // Prevent tagging the same user twice
+      if (i === mediaIndex) {
+        // Prevent tagging the same user twice in the same media
         if (media.mentions.some(m => m.userId === selectedUser.id)) return media;
         
         const newMention: Mention = {
           userId: selectedUser.id,
           username: selectedUser.username,
-          x: taggingState.x,
-          y: taggingState.y
+          ...position,
         };
         return { ...media, mentions: [...media.mentions, newMention] };
       }
       return media;
     }));
-    setTaggingState(null);
   };
   
   const removeMention = (mediaIndex: number, mentionIndex: number) => {
@@ -225,15 +220,24 @@ export default function NewPostPage() {
                     <CarouselContent className="h-full">
                       {mediaFiles.map((media, index) => (
                         <CarouselItem key={index} className="relative w-full h-full flex items-center justify-center">
-                          <UserSearchPopover onSelectUser={handleSelectUserToTag}>
-                            <div className="w-full h-full" onClick={(e) => handleMediaClick(e, index)}>
-                              {media.type === 'image' ? (
-                                <Image src={media.previewUrl} alt="Pratinjau media" fill className="object-contain" />
-                              ) : (
-                                <video src={media.previewUrl} className="w-full h-full object-contain" controls muted loop />
-                              )}
-                            </div>
-                          </UserSearchPopover>
+                           <UserSearchPopover onSelectUser={(user) => {
+                                const rect = (document.getElementById(`media-container-${index}`) as HTMLDivElement).getBoundingClientRect();
+                                const { x, y } = (document.getElementById(`media-container-${index}`) as any).lastClickPosition || {x: 0, y: 0};
+                                handleSelectUserToTag(index, user, { x: ((x - rect.left) / rect.width) * 100, y: ((y - rect.top) / rect.height) * 100 });
+                           }}>
+                             <div 
+                                id={`media-container-${index}`}
+                                className="w-full h-full"
+                                onClick={(e: MouseEvent<HTMLDivElement>) => {
+                                  (e.currentTarget as any).lastClickPosition = { x: e.clientX, y: e.clientY };
+                                }}>
+                                  {media.type === 'image' ? (
+                                    <Image src={media.previewUrl} alt="Pratinjau media" fill className="object-contain" />
+                                  ) : (
+                                    <video src={media.previewUrl} className="w-full h-full object-contain" controls muted loop />
+                                  )}
+                              </div>
+                           </UserSearchPopover>
 
                           {media.mentions.map((mention, mentionIndex) => (
                             <UserTag key={mention.userId} mention={mention} onRemove={() => removeMention(index, mentionIndex)} />
