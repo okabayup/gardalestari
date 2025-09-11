@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -29,7 +30,7 @@ export interface Project {
     description: string;
     managerId: string;
     teamIds: string[];
-    createdAt: string; // Changed from Timestamp to string for serialization
+    createdAt: string; 
     taskCount: number;
     originIdeaId?: string; // Tautan ke ide asal
 }
@@ -76,7 +77,6 @@ export async function getProjects(): Promise<Project[]> {
         return { 
             id: doc.id,
             ...data,
-            // Convert Timestamp to ISO string for client-side compatibility
             createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
         } as Project;
     });
@@ -171,10 +171,18 @@ export async function getTasksForProject(projectId: string): Promise<ProjectTask
   const snapshot = await getDocs(tasksRef);
   return snapshot.docs.map(doc => {
       const data = doc.data();
+      let dueDateString: string | undefined = undefined;
+      if (data.dueDate) {
+        if (typeof data.dueDate.toDate === 'function') { // It's a Timestamp
+          dueDateString = data.dueDate.toDate().toISOString();
+        } else if (typeof data.dueDate === 'string') { // It's already a string
+          dueDateString = data.dueDate;
+        }
+      }
       return {
           id: doc.id,
           ...data,
-          dueDate: data.dueDate ? (data.dueDate as Timestamp).toDate().toISOString() : undefined,
+          dueDate: dueDateString,
       } as ProjectTask;
   });
 }
