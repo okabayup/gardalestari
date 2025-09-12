@@ -61,7 +61,6 @@ const navGroups: {
       { href: '/panel/notifications', icon: Bell, label: 'Notifikasi', permission: 'send_notifications' },
       { href: '/panel/evoting', icon: Vote, label: 'E-Voting', permission: 'manage_evoting' },
       { href: '/panel/achievements', icon: Award, label: 'Prestasi', permission: 'manage_achievements' },
-      { href: '/panel/whatsapp', icon: MessageCircle, label: 'Manajemen WhatsApp', permission: 'manage_whatsapp' },
     ]
   },
    {
@@ -79,6 +78,7 @@ const navGroups: {
     items: [
         { href: '/panel/documents', icon: BookCopy, label: 'Surat & Dokumen', permission: 'manage_documents'},
         { href: '/panel/projects', icon: KanbanSquare, label: 'Manajemen Proyek', permission: 'manage_projects' },
+        { href: '/panel/whatsapp', icon: MessageCircle, label: 'Manajemen WhatsApp', permission: 'manage_whatsapp' },
     ]
   },
   {
