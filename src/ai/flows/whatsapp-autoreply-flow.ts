@@ -34,11 +34,13 @@ const IntentSchema = z.object({
 });
 
 
-const prompt = ai.definePrompt({
-  name: 'whatsAppIntentParser',
-  input: { schema: z.object({ message: z.string() }) },
-  output: { schema: IntentSchema },
-  prompt: `You are an expert at understanding user intent from WhatsApp messages for an organization called Garda Lestari.
+export async function generateWhatsAppReply(input: z.infer<typeof WhatsAppReplyInputSchema>): Promise<void> {
+  
+  const prompt = ai.definePrompt({
+    name: 'whatsAppIntentParser',
+    input: { schema: z.object({ message: z.string() }) },
+    output: { schema: IntentSchema },
+    prompt: `You are an expert at understanding user intent from WhatsApp messages for an organization called Garda Lestari.
 Analyze the message and determine the user's goal.
 
 The possible intents are:
@@ -53,13 +55,13 @@ If the intent is AJUKAN_IDE, extract the title into 'judulIde' and the descripti
 
 Message: "{{{message}}}"
 `,
-});
+  });
 
-const generalKnowledgePrompt = ai.definePrompt({
-  name: 'whatsAppGeneralKnowledge',
-  input: { schema: z.object({ message: z.string() }) },
-  output: { schema: z.object({ reply: z.string() }) },
-  prompt: `You are a friendly and helpful AI assistant for Garda Lestari, a youth-led environmental and agricultural organization in Indonesia.
+  const generalKnowledgePrompt = ai.definePrompt({
+    name: 'whatsAppGeneralKnowledge',
+    input: { schema: z.object({ message: z.string() }) },
+    output: { schema: z.object({ reply: z.string() }) },
+    prompt: `You are a friendly and helpful AI assistant for Garda Lestari, a youth-led environmental and agricultural organization in Indonesia.
 Your task is to answer incoming WhatsApp messages concisely and accurately.
 
 - If the user asks about Garda Lestari, explain that it is an organization for young people innovating in the agro-maritime and forestry sectors.
@@ -73,9 +75,8 @@ Incoming message:
 
 Your reply:
 `,
-});
+  });
 
-export async function generateWhatsAppReply(input: z.infer<typeof WhatsAppReplyInputSchema>): Promise<void> {
   const { sender, message } = input;
   
   const { output: intentOutput } = await prompt({ message });
