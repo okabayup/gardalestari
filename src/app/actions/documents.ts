@@ -9,6 +9,7 @@ import { stampPdfWithQrCode } from '@/ai/flows/stamp-pdf-flow';
 import { sendNotification } from './notifications';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from './user';
+import { getAppSettings } from './settings';
 
 export type LetterStatus = 'Draft' | 'Menunggu Persetujuan' | 'Disetujui' | 'Ditolak';
 
@@ -136,10 +137,12 @@ export async function submitForApproval(documentId: string, authorId: string, ap
     status: 'Menunggu Persetujuan',
     approverId: approverId,
   });
+  
+  const { isWhatsappNotificationsEnabled } = await getAppSettings();
 
   // Send notifications
   const approver = await getUserByUid(approverId);
-  if (approver?.phoneNumber) {
+  if (isWhatsappNotificationsEnabled && approver?.phoneNumber) {
     await sendWhatsAppMessage(approver.phoneNumber, `Halo ${approver.name}, dokumen "${document.title}" memerlukan persetujuan Anda. Silakan tinjau di panel admin Garda Lestari.`);
   }
 
@@ -183,8 +186,9 @@ export async function approveDocument(documentId: string, approverId: string) {
   });
 
   // 3. Send notification to the author
+  const { isWhatsappNotificationsEnabled } = await getAppSettings();
   const author = await getUserByUid(document.authorId);
-   if (author?.phoneNumber) {
+   if (isWhatsappNotificationsEnabled && author?.phoneNumber) {
     await sendWhatsAppMessage(author.phoneNumber, `Kabar baik! Dokumen Anda "${document.title}" telah disetujui dan disahkan secara digital.`);
   }
   await sendNotification(

@@ -12,6 +12,7 @@ export interface AppSettings {
   twitter: string;
   facebook: string;
   isRegistrationOpen: boolean;
+  isWhatsappNotificationsEnabled: boolean;
   heroImageUrl: string;
   aboutImageUrl: string;
   orgChartImageUrl: string;
@@ -31,6 +32,7 @@ export async function getAppSettings(): Promise<AppSettings> {
       // Provide defaults for all fields, including new dummy fields
       return {
         isRegistrationOpen: true,
+        isWhatsappNotificationsEnabled: false,
         linkedin: '#',
         instagram: '#',
         twitter: '#',
@@ -55,6 +57,7 @@ export async function getAppSettings(): Promise<AppSettings> {
     twitter: '#',
     facebook: '#',
     isRegistrationOpen: true,
+    isWhatsappNotificationsEnabled: false,
     heroImageUrl: 'https://picsum.photos/seed/paddy-field/1920/1080',
     aboutImageUrl: 'https://picsum.photos/seed/youth-farmers/800/600',
     orgChartImageUrl: 'https://picsum.photos/seed/org-chart/1200/1600',
