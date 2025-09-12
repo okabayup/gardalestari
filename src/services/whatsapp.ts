@@ -6,6 +6,7 @@
  * 
  * @param phoneNumber The recipient's phone number in E.164 format without '+' (e.g., '6281234567890').
  * @param message The text message to send.
+ * @throws {Error} If the API responds with an error or the request fails.
  */
 export async function sendWhatsAppMessage(phoneNumber: string, message: string): Promise<void> {
   const SATUCONNECT_API_ENDPOINT = "https://api.satuconnect.my.id/agent/message";
@@ -34,20 +35,28 @@ export async function sendWhatsAppMessage(phoneNumber: string, message: string):
       }),
     });
 
+    const responseBody = await response.json();
+
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Failed to send WhatsApp message via SatuConnect:', errorData);
-      throw new Error(`SatuConnect API responded with status ${response.status}: ${errorData.message || 'Unknown error'}`);
-    } else {
-      const result = await response.json();
-      if (result.status !== true) {
-        console.error('SatuConnect reported a failure:', result);
-        throw new Error(result.message || 'SatuConnect failed to send the message.');
-      }
-      console.log('Successfully sent WhatsApp message to', phoneNumber, 'Result:', result);
+      // Log the full error from the API for debugging
+      console.error('SatuConnect API Error Response:', responseBody);
+      // Throw a more descriptive error for the caller
+      const errorMessage = responseBody.message || `API responded with status ${response.status}`;
+      throw new Error(errorMessage);
     }
+    
+    // Even with a 200 OK, the API might report a failure in its body
+    if (responseBody.status !== true) {
+      console.error('SatuConnect reported a failure:', responseBody);
+      throw new Error(responseBody.message || 'SatuConnect gagal mengirim pesan.');
+    }
+      
+    console.log('Successfully sent WhatsApp message to', phoneNumber);
+
   } catch (error) {
-    console.error('Error calling SatuConnect WhatsApp service:', error);
-    throw error;
+    const errorMessage = (error instanceof Error) ? error.message : 'Unknown error occurred during API call.';
+    console.error('Error calling SatuConnect WhatsApp service:', errorMessage);
+    // Re-throw the error to be handled by the calling function
+    throw new Error(errorMessage);
   }
 }
