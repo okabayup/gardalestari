@@ -5,6 +5,7 @@ import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, DocumentData, limit, getDoc, doc, setDoc } from 'firebase/firestore';
 import type { MemberWithStatus, MemberType } from './members';
 import type { Position } from '@/lib/definitions';
+import { sendWhatsAppMessage } from '@/services/whatsapp';
 
 
 export interface PublicUser {
@@ -252,7 +253,7 @@ export async function saveWaNumber(userId: string, waNumber: string) {
         waVerified: false,
     }, { merge: true });
 
-    await sendTestMessage(waNumber, `Kode verifikasi Garda Lestari Anda adalah: ${otp}`);
+    await sendWhatsAppMessage(waNumber, `Kode verifikasi Garda Lestari Anda adalah: ${otp}`);
 }
 
 export async function verifyWaNumber(userId: string, otp: string): Promise<boolean> {
