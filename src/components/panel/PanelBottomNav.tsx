@@ -32,11 +32,15 @@ import {
   KanbanSquare,
   Building2,
   Menu,
+  MessageCircle,
+  Presentation,
+  Lightbulb,
 } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { Separator } from '../ui/separator';
 import type { PermissionId } from '@/lib/definitions';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 
 
 const mainNavItems = [
@@ -46,26 +50,68 @@ const mainNavItems = [
     { href: '/panel/members', icon: Users, label: 'Anggota', permission: 'manage_users' },
 ];
 
-const allNavItems: { href: string; icon: React.ElementType; label: string, permission?: PermissionId }[] = [
-    { href: '/panel/notifications', icon: Bell, label: 'Notifikasi', permission: 'send_notifications' },
-    { href: '/panel/announcements', icon: MegaphoneIcon, label: 'Pengumuman', permission: 'manage_announcements'},
-    { href: '/panel/documents', icon: BookCopy, label: 'Surat & Dokumen', permission: 'manage_documents'},
-    { href: '/panel/projects', icon: KanbanSquare, label: 'Proyek', permission: 'manage_projects' },
-    { href: '/panel/evoting', icon: Vote, label: 'E-Voting', permission: 'manage_evoting' },
-    { href: '/panel/recruitments', icon: Briefcase, label: 'Rekrutmen', permission: 'manage_recruitments' },
-    { href: '/panel/achievements', icon: Award, label: 'Prestasi', permission: 'manage_achievements' },
-    { href: '/panel/map-data', icon: Map, label: 'Data Peta', permission: 'manage_map_data' },
-    { href: '/panel/events', icon: Calendar, label: 'Acara', permission: 'manage_events' },
-    { href: '/panel/positions', icon: UserCheck, label: 'Jabatan', permission: 'manage_positions' },
-    { href: '/panel/partners', icon: Handshake, label: 'Mitra', permission: 'manage_partners' },
-    { href: '/panel/forms', icon: FileText, label: 'Formulir', permission: 'manage_forms' },
-    { href: '/panel/landing', icon: Landmark, label: 'Halaman Utama', permission: 'manage_landing_page' },
-    { href: '/panel/settings', icon: Settings, label: 'Pengaturan', permission: 'manage_settings' },
+const groupedNavItems: {
+  group: string;
+  items: { href: string; icon: React.ElementType; label: string, permission?: PermissionId }[];
+}[] = [
+  {
+    group: 'Publikasi',
+    items: [
+      { href: '/panel/events', icon: Calendar, label: 'Acara', permission: 'manage_events' },
+      { href: '/panel/landing', icon: Landmark, label: 'Halaman Utama', permission: 'manage_landing_page' },
+    ],
+  },
+  {
+    group: 'Keterlibatan Anggota',
+    items: [
+      { href: '/panel/announcements', icon: MegaphoneIcon, label: 'Pengumuman', permission: 'manage_announcements'},
+      { href: '/panel/notifications', icon: Bell, label: 'Notifikasi', permission: 'send_notifications' },
+      { href: '/panel/evoting', icon: Vote, label: 'E-Voting', permission: 'manage_evoting' },
+      { href: '/panel/achievements', icon: Award, label: 'Prestasi', permission: 'manage_achievements' },
+    ],
+  },
+  {
+    group: 'Program & Peluang',
+    items: [
+       { href: '/panel/recruitments', icon: Briefcase, label: 'Rekrutmen', permission: 'manage_recruitments' },
+       { href: '/panel/partners', icon: Handshake, label: 'Mitra', permission: 'manage_partners' },
+    ]
+  },
+  {
+    group: 'E-Office',
+    items: [
+        { href: '/panel/documents', icon: BookCopy, label: 'Surat & Dokumen', permission: 'manage_documents'},
+        { href: '/panel/projects', icon: KanbanSquare, label: 'Manajemen Proyek', permission: 'manage_projects' },
+        { href: '/panel/whatsapp', icon: MessageCircle, label: 'Manajemen WhatsApp', permission: 'manage_whatsapp' },
+    ]
+  },
+  {
+    group: 'Manajemen Internal',
+    items: [
+      { href: '/panel/positions', icon: UserCheck, label: 'Jabatan', permission: 'manage_positions' },
+      { href: '/panel/forms', icon: FileText, label: 'Formulir', permission: 'manage_forms' },
+      { href: '/panel/map-data', icon: Map, label: 'Data Peta', permission: 'manage_map_data' },
+    ],
+  },
+   {
+    group: 'Pengaturan',
+    items: [
+      { href: '/panel/settings', icon: Settings, label: 'Pengaturan Aplikasi', permission: 'manage_settings' },
+    ],
+  },
 ];
 
 
 const MoreMenuSheet = () => {
     const { hasPermission } = useAuth();
+    const pathname = usePathname();
+
+    const getVisibleItems = (items: any[]) => items.filter(item => !item.permission || hasPermission(item.permission));
+
+    const defaultAccordionValue = groupedNavItems.find(group => 
+        getVisibleItems(group.items).some(item => pathname.startsWith(item.href))
+    )?.group;
+    
     return (
         <Sheet>
             <SheetTrigger asChild>
@@ -87,18 +133,29 @@ const MoreMenuSheet = () => {
                     </SheetDescription>
                 </SheetHeader>
                 <Separator className="my-4" />
-                <ScrollArea className="h-[calc(80vh-8rem)]">
-                    <div className="grid grid-cols-3 gap-4">
-                        {allNavItems.map(item => {
-                            if (item.permission && !hasPermission(item.permission)) return null;
+                 <ScrollArea className="h-[calc(80vh-8rem)]">
+                    <Accordion type="single" collapsible defaultValue={defaultAccordionValue} className="w-full">
+                        {groupedNavItems.map((group) => {
+                            const visibleItems = getVisibleItems(group.items);
+                            if (visibleItems.length === 0) return null;
+
                             return (
-                                <Link key={item.label} href={item.href} className="flex flex-col items-center gap-2 p-4 rounded-lg bg-secondary/50 hover:bg-secondary">
-                                    <item.icon className="h-6 w-6 text-primary" />
-                                    <span className="font-medium text-xs text-center">{item.label}</span>
-                                </Link>
+                                <AccordionItem key={group.group} value={group.group}>
+                                    <AccordionTrigger>{group.group}</AccordionTrigger>
+                                    <AccordionContent>
+                                        <div className="space-y-1">
+                                            {visibleItems.map(item => (
+                                                 <Link key={item.label} href={item.href} className="flex items-center gap-4 p-3 rounded-lg hover:bg-secondary">
+                                                    <item.icon className="h-5 w-5 text-primary" />
+                                                    <span className="font-medium text-sm text-foreground">{item.label}</span>
+                                                 </Link>
+                                            ))}
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
                             )
                         })}
-                    </div>
+                    </Accordion>
                 </ScrollArea>
             </SheetContent>
         </Sheet>
