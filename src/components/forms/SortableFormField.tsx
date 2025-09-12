@@ -65,7 +65,7 @@ export function SortableFormField({ id, field, onUpdate, onRemove, ...optionProp
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="placeholder">Placeholder</Label>
-                        <Input id="placeholder" value={field.placeholder} onChange={(e) => onUpdate(id, { placeholder: e.target.value })} />
+                        <Input id="placeholder" value={field.placeholder || ''} onChange={(e) => onUpdate(id, { placeholder: e.target.value })} />
                     </div>
                     <div className="flex items-center space-x-2">
                         <Switch id="required" checked={field.required} onCheckedChange={(checked) => onUpdate(id, { required: checked })}/>

@@ -136,12 +136,3 @@ export async function generateWhatsAppReply(input: z.infer<typeof WhatsAppReplyI
     console.error(`Failed to send WhatsApp auto-reply to ${sender}:`, error);
   }
 }
-
-ai.defineFlow(
-  {
-    name: 'generateWhatsAppReplyFlow',
-    inputSchema: WhatsAppReplyInputSchema,
-    outputSchema: z.void(),
-  },
-  generateWhatsAppReply
-);
