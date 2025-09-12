@@ -29,15 +29,16 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
   const { refreshUser } = useAuth(); // Assuming useAuth exposes a refresh function
 
   useEffect(() => {
-    // Open the dialog if the user is logged in but their WA number is not verified.
+    // This should only run once when the component mounts and user data is available.
     if (user && !user.waVerified) {
       setIsOpen(true);
-      // Pre-fill with phone number if available
       if (user.phoneNumber) {
         setWaNumber(user.phoneNumber.replace(/^\+/, ''));
       }
     }
-  }, [user]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.uid, user.waVerified]);
+
 
   const handleSendOtp = async () => {
     if (!waNumber.trim()) {
