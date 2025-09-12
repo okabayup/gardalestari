@@ -14,11 +14,11 @@ export async function sendWhatsAppMessage(phoneNumber: string, message: string):
 
   if (!SATUCONNECT_API_KEY || !SATUCONNECT_DEVICE_ID) {
     console.error('SatuConnect API Key or Device ID is not configured in environment variables.');
-    return;
+    throw new Error('Konfigurasi SatuConnect tidak lengkap di server.');
   }
   
   // Ensure phone number is in the correct format (e.g., 628xxxx)
-  const formattedPhoneNumber = phoneNumber.replace('+', '');
+  const formattedPhoneNumber = phoneNumber.replace(/\D/g, '');
 
   try {
     const response = await fetch(SATUCONNECT_API_ENDPOINT, {
@@ -37,13 +37,17 @@ export async function sendWhatsAppMessage(phoneNumber: string, message: string):
     if (!response.ok) {
       const errorData = await response.json();
       console.error('Failed to send WhatsApp message via SatuConnect:', errorData);
-      throw new Error(`SatuConnect API responded with status ${response.status}`);
+      throw new Error(`SatuConnect API responded with status ${response.status}: ${errorData.message || 'Unknown error'}`);
     } else {
       const result = await response.json();
+      if (result.status !== true) {
+        console.error('SatuConnect reported a failure:', result);
+        throw new Error(result.message || 'SatuConnect failed to send the message.');
+      }
       console.log('Successfully sent WhatsApp message to', phoneNumber, 'Result:', result);
     }
   } catch (error) {
     console.error('Error calling SatuConnect WhatsApp service:', error);
-    // Rethrow or handle error as needed
+    throw error;
   }
 }
