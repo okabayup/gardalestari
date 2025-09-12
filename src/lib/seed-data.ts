@@ -8,6 +8,7 @@ const ideaCategoriesCollection = collection(db, 'ideaCategories');
 const beritaCategoriesCollection = collection(db, 'beritaCategories');
 const documentCategoriesCollection = collection(db, 'documentCategories');
 const programTagsCollection = collection(db, 'programTags');
+const positionsCollection = collection(db, 'positions');
 
 const initialIdeaCategories = [
     'Agrikultur', 'Maritim', 'Kehutanan', 'Teknologi', 'Pemasaran', 'Komunitas', 'Lainnya'
@@ -25,6 +26,35 @@ const initialProgramTags = [
     'Pelatihan', 'Kompetisi', 'Pendanaan', 'Relawan', 'Magang', 'Riset', 'Beasiswa'
 ];
 
+const initialPositions = [
+    "Dewan Pembina",
+    "Dewan Pengawas",
+    "Dewan Penasihat",
+    "Ketua Umum",
+    "Ketua Harian",
+    "Sekretaris Jenderal",
+    "Staf Administrasi Internal",
+    "Staf Administrasi Eksternal",
+    "Bendahara Umum",
+    "Staf Keuangan Organisasi",
+    "Staf Keuangan Program",
+    "Wakil Ketua Bidang Teknis & Program",
+    "Agro (Pertanian Berkelanjutan)",
+    "Maritim (Kelautan & Perikanan)",
+    "Kehutanan (Agroforestri & Rehabilitasi)",
+    "Perdagangan Karbon & Energi Hijau",
+    "Wakil Ketua Bidang Pendapatan & Bisnis",
+    "Perusahaan",
+    "Investasi",
+    "Wakil Ketua Bidang Pendukung & Strategis",
+    "Hubungan Eksternal & Kemitraan",
+    "Relawan & Kampanye Digital",
+    "Kewirausahaan & Inkubasi",
+    "Kajian Hukum & Regulasi",
+    "Data & Analisis (Data Analyst Unit)",
+    "Penelitian & Inovasi",
+];
+
 
 /**
  * Seeds a specific collection with initial data if it's empty.
@@ -39,7 +69,7 @@ async function seedCollection(collRef: any, initialNames: string[], collectionNa
 
         if (snapshot.empty) {
             console.log(`No documents found in '${collectionName}'. Seeding initial data...`);
-            const batchPromises = initialNames.map(name => addDoc(collRef, { name }));
+            const batchPromises = initialNames.map(name => addDoc(collRef, { name, permissions: [] }));
             await Promise.all(batchPromises);
             console.log(`Successfully seeded '${collectionName}'.`);
         } else {
@@ -56,4 +86,5 @@ export async function seedInitialData() {
     await seedCollection(beritaCategoriesCollection, initialBeritaCategories, 'beritaCategories');
     await seedCollection(documentCategoriesCollection, initialDocumentCategories, 'documentCategories');
     await seedCollection(programTagsCollection, initialProgramTags, 'programTags');
+    await seedCollection(positionsCollection, initialPositions, 'positions');
 }
