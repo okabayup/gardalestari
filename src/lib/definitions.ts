@@ -31,6 +31,35 @@ export const ALL_PERMISSIONS = [
 
 export type PermissionId = typeof ALL_PERMISSIONS[number]['id'];
 
+export const initialPositions = [
+    "Dewan Pembina",
+    "Dewan Pengawas",
+    "Dewan Penasihat",
+    "Ketua Umum",
+    "Ketua Harian",
+    "Sekretaris Jenderal",
+    "Staf Administrasi Internal",
+    "Staf Administrasi Eksternal",
+    "Bendahara Umum",
+    "Staf Keuangan Organisasi",
+    "Staf Keuangan Program",
+    "Wakil Ketua Bidang Teknis & Program",
+    "Agro (Pertanian Berkelanjutan)",
+    "Maritim (Kelautan & Perikanan)",
+    "Kehutanan (Agroforestri & Rehabilitasi)",
+    "Perdagangan Karbon & Energi Hijau",
+    "Wakil Ketua Bidang Pendapatan & Bisnis",
+    "Perusahaan",
+    "Investasi",
+    "Wakil Ketua Bidang Pendukung & Strategis",
+    "Hubungan Eksternal & Kemitraan",
+    "Relawan & Kampanye Digital",
+    "Kewirausahaan & Inkubasi",
+    "Kajian Hukum & Regulasi",
+    "Data & Analisis (Data Analyst Unit)",
+    "Penelitian & Inovasi",
+];
+
 export interface Position {
   id?: string;
   name: string;

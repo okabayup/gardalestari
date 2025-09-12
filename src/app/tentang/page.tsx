@@ -1,4 +1,5 @@
 
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { getMembers, MemberWithStatus } from '../actions/members';
 import { MemberCard } from '@/components/members/MemberCard';
 import { formatFullName } from '@/lib/utils';
-import { initialPositions } from '@/lib/seed-data';
+import { initialPositions } from '@/lib/definitions';
 
 
 const InfoSection = ({ title, children, icon: Icon }: { title: string, children: React.ReactNode, icon: React.ElementType }) => (

@@ -4,6 +4,7 @@
 
 import { collection, addDoc, getDocs, query, limit } from 'firebase/firestore';
 import { db } from './firebase';
+import { initialPositions } from './definitions';
 
 const ideaCategoriesCollection = collection(db, 'ideaCategories');
 const beritaCategoriesCollection = collection(db, 'beritaCategories');
@@ -26,36 +27,6 @@ const initialDocumentCategories = [
 const initialProgramTags = [
     'Pelatihan', 'Kompetisi', 'Pendanaan', 'Relawan', 'Magang', 'Riset', 'Beasiswa'
 ];
-
-const initialPositions = [
-    "Dewan Pembina",
-    "Dewan Pengawas",
-    "Dewan Penasihat",
-    "Ketua Umum",
-    "Ketua Harian",
-    "Sekretaris Jenderal",
-    "Staf Administrasi Internal",
-    "Staf Administrasi Eksternal",
-    "Bendahara Umum",
-    "Staf Keuangan Organisasi",
-    "Staf Keuangan Program",
-    "Wakil Ketua Bidang Teknis & Program",
-    "Agro (Pertanian Berkelanjutan)",
-    "Maritim (Kelautan & Perikanan)",
-    "Kehutanan (Agroforestri & Rehabilitasi)",
-    "Perdagangan Karbon & Energi Hijau",
-    "Wakil Ketua Bidang Pendapatan & Bisnis",
-    "Perusahaan",
-    "Investasi",
-    "Wakil Ketua Bidang Pendukung & Strategis",
-    "Hubungan Eksternal & Kemitraan",
-    "Relawan & Kampanye Digital",
-    "Kewirausahaan & Inkubasi",
-    "Kajian Hukum & Regulasi",
-    "Data & Analisis (Data Analyst Unit)",
-    "Penelitian & Inovasi",
-];
-
 
 /**
  * Seeds a specific collection with initial data if it's empty.
@@ -89,5 +60,3 @@ export async function seedInitialData() {
     await seedCollection(programTagsCollection, initialProgramTags, 'programTags');
     await seedCollection(positionsCollection, initialPositions, 'positions');
 }
-
-
