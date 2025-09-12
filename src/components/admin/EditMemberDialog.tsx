@@ -36,12 +36,12 @@ const verificationStatuses: { value: VerificationStatus, label: string }[] = [
     { value: 'rejected', label: 'Ditolak'},
 ];
 
-const NO_POSITION_VALUE = ""; 
-const NO_TYPE_VALUE = "";
+const NO_POSITION_VALUE = "no-position"; 
+const NO_TYPE_VALUE = "no-type";
 
 export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSaving }: EditMemberDialogProps) {
   const [positionId, setPositionId] = useState(member.positionId || NO_POSITION_VALUE);
-  const [type, setType] = useState<MemberType | ''>(member.type || NO_TYPE_VALUE);
+  const [type, setType] = useState<MemberType | '' | 'no-type'>(member.type || NO_TYPE_VALUE);
   const [region, setRegion] = useState(member.region || '');
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>(member.verificationStatus || 'unverified');
   const [isSpecialMember, setIsSpecialMember] = useState(member.isSpecialMember || false);
@@ -81,8 +81,8 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
         titlePrefix?: string; 
         titlePostfix?: string 
     } = {
-        positionId: positionId,
-        type: type,
+        positionId: positionId === NO_POSITION_VALUE ? '' : positionId,
+        type: type === NO_TYPE_VALUE ? '' : (type as MemberType),
         region: region,
         verificationStatus: verificationStatus,
         isSpecialMember: isSpecialMember,
@@ -132,7 +132,7 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
           </div>
           <div className="space-y-2">
             <Label htmlFor="type">Jenis Keanggotaan</Label>
-            <Select value={type} onValueChange={(value) => setType(value as MemberType | '')}>
+            <Select value={type} onValueChange={(value) => setType(value as MemberType | 'no-type')}>
                 <SelectTrigger id="type">
                     <SelectValue placeholder="Pilih Jenis Keanggotaan" />
                 </SelectTrigger>

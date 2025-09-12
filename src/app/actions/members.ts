@@ -97,7 +97,7 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
 }
 
 // Update member details (position, type, region, verification status)
-export async function updateMemberDetails(id: string, details: { positionId?: string, type?: MemberType, region?: string, verificationStatus?: VerificationStatus, isSpecialMember?: boolean, titlePrefix?: string, titlePostfix?: string }) {
+export async function updateMemberDetails(id: string, details: { positionId?: string, type?: MemberType | '', region?: string, verificationStatus?: VerificationStatus, isSpecialMember?: boolean, titlePrefix?: string, titlePostfix?: string }) {
     try {
         const memberDocRef = doc(db, 'users', id);
         const currentMemberDoc = await getDoc(memberDocRef);
