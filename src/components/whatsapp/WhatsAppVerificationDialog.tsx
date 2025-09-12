@@ -26,15 +26,19 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { refreshUser } = useAuth(); // Assuming useAuth exposes a refresh function
+  const { refreshUser } = useAuth();
 
   useEffect(() => {
-    // This effect runs once on mount to decide if the dialog should be shown.
+    // This effect should only run once when the component mounts to check if the dialog should be shown.
     if (user && !user.waVerified) {
-      setIsOpen(true);
-      if (user.phoneNumber) {
-        setWaNumber(user.phoneNumber.replace(/^\+/, ''));
-      }
+      const timer = setTimeout(() => {
+        setIsOpen(true);
+        if (user.phoneNumber) {
+          setWaNumber(user.phoneNumber.replace(/^\+/, ''));
+        }
+      }, 3000); // Delay opening the dialog by 3 seconds
+
+      return () => clearTimeout(timer);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array ensures this runs only once.
@@ -49,11 +53,13 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
     try {
       const formattedNumber = waNumber.startsWith('0') ? `62${waNumber.substring(1)}` : waNumber;
       const result = await saveWaNumber(user.uid, formattedNumber);
-      if (result.success) {
+      
+      if (result?.success) {
         toast({ title: 'Kode OTP terkirim!', description: 'Periksa WhatsApp Anda.' });
         setStep('otp');
       } else {
-        throw new Error('Gagal mengirimkan kode OTP dari server.');
+        // Handle cases where the server action returns a failure without throwing
+        throw new Error(result?.error || 'Gagal mengirimkan kode OTP dari server.');
       }
     } catch (error) {
       toast({ variant: 'destructive', title: 'Gagal mengirim OTP', description: (error as Error).message });
@@ -87,7 +93,8 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
-        // Prevent closing the dialog with click outside or escape key
+        // Prevent closing the dialog with click outside or escape key for now
+        // A "remind me later" button could be added in the future
         if (!open) return;
         setIsOpen(open);
     }}>

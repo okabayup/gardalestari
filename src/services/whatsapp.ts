@@ -8,7 +8,7 @@
  * @param message The text message to send.
  * @throws {Error} If the API responds with an error or the request fails.
  */
-export async function sendWhatsAppMessage(phoneNumber: string, message: string): Promise<void> {
+export async function sendWhatsAppMessage(phoneNumber: string, message: string): Promise<{ success: boolean; data?: any }> {
   const SATUCONNECT_API_ENDPOINT = "https://api.satuconnect.my.id/agent/message";
   const SATUCONNECT_API_KEY = process.env.SATUCONNECT_API_KEY;
   const SATUCONNECT_DEVICE_ID = process.env.SATUCONNECT_DEVICE_ID;
@@ -18,7 +18,6 @@ export async function sendWhatsAppMessage(phoneNumber: string, message: string):
     throw new Error('Konfigurasi SatuConnect tidak lengkap di server.');
   }
   
-  // Ensure phone number is in the correct format (e.g., 628xxxx)
   const formattedPhoneNumber = phoneNumber.replace(/\D/g, '');
 
   try {
@@ -36,22 +35,17 @@ export async function sendWhatsAppMessage(phoneNumber: string, message: string):
     });
 
     const responseBody = await response.json();
+    console.log('SatuConnect API Response:', JSON.stringify(responseBody, null, 2));
 
-    if (!response.ok) {
-      // Log the full error from the API for debugging
-      console.error('SatuConnect API Error Response:', responseBody);
-      // Throw a more descriptive error for the caller
+
+    if (!response.ok || responseBody.status !== true) {
       const errorMessage = responseBody.message || `API responded with status ${response.status}`;
+      console.error('SatuConnect API Error:', errorMessage);
       throw new Error(errorMessage);
-    }
-    
-    // Even with a 200 OK, the API might report a failure in its body
-    if (responseBody.status !== true) {
-      console.error('SatuConnect reported a failure:', responseBody);
-      throw new Error(responseBody.message || 'SatuConnect gagal mengirim pesan.');
     }
       
     console.log('Successfully sent WhatsApp message to', phoneNumber);
+    return { success: true, data: responseBody.data };
 
   } catch (error) {
     const errorMessage = (error instanceof Error) ? error.message : 'Unknown error occurred during API call.';
