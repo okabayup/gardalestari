@@ -3,7 +3,7 @@
 
 import { BadgeCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { MemberType } from '@/app/actions/members';
+import type { MemberType } from '@/lib/definitions';
 
 interface VerifiedBadgeProps {
   type?: MemberType;
@@ -18,6 +18,7 @@ const typeConfig: Record<MemberType, string> = {
   pembina: 'fill-purple-500 stroke-background dark:stroke-background',
   pengawas: 'fill-red-500 stroke-background dark:stroke-background',
   penasehat: 'fill-green-500 stroke-background dark:stroke-background',
+  official: 'fill-green-600 stroke-background dark:stroke-background',
 };
 
 
@@ -29,7 +30,7 @@ export const VerifiedBadge = ({ type, className }: VerifiedBadgeProps) => {
   const title = type.charAt(0).toUpperCase() + type.slice(1);
 
   return (
-    <div className="flex-shrink-0" title={`Anggota Terverifikasi: ${title}`}>
+    <div className="flex-shrink-0" title={`Akun Terverifikasi: ${title}`}>
         <BadgeCheck className={cn('h-4 w-4', typeConfig[type], className)} />
     </div>
   );

@@ -17,7 +17,7 @@ import { auth, db } from '@/lib/firebase';
 import { redirect, usePathname } from 'next/navigation';
 import { useToast } from './use-toast';
 import { checkUsernameExists } from '@/app/actions/user';
-import type { PermissionId, Position } from '@/lib/definitions';
+import type { PermissionId, Position, MemberType } from '@/lib/definitions';
 import { ALL_PERMISSIONS } from '@/lib/definitions';
 import { logAnalyticsEvent } from '@/lib/analytics';
 import { seedInitialData } from '@/lib/seed-data';
@@ -37,6 +37,7 @@ type ExtendedUser = User & {
   permissions?: PermissionId[];
   waNumber?: string;
   waVerified?: boolean;
+  type?: MemberType;
 };
 
 interface AuthContextType {
@@ -56,6 +57,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Declare recaptchaVerifier in a broader scope
 let recaptchaVerifier: RecaptchaVerifier | null = null;
 const ADMIN_PHONE_NUMBER = '+6285176752610';
+const OFFICIAL_ACCOUNT_PHONE = '+6285144904161';
+
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<ExtendedUser | null>(null);
@@ -71,6 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userData = userDoc.data();
       let permissions: PermissionId[] = [];
       let positionName = 'Anggota';
+      let userType = userData.type;
 
       if (userData.positionId) {
           const positionDocRef = doc(db, 'positions', userData.positionId);
@@ -88,6 +92,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           positionName = 'Super Admin';
       }
 
+      if (user.phoneNumber === OFFICIAL_ACCOUNT_PHONE) {
+          userType = 'official';
+          positionName = 'Akun Resmi';
+      }
+
       const extendedUser: ExtendedUser = {
           ...user, 
           points: userData.points || 0,
@@ -103,6 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           permissions: permissions,
           waNumber: userData.waNumber,
           waVerified: userData.waVerified,
+          type: userType,
       };
       setUser(extendedUser);
     } else {

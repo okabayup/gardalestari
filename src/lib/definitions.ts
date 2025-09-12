@@ -187,7 +187,7 @@ export interface ProgramForm {
 // --- Ideas ---
 export type VoteType = 'up' | 'down';
 
-export type MemberType = 'pusat' | 'daerah' | 'cabang' | 'pembina' | 'pengawas' | 'penasehat';
+export type MemberType = 'pusat' | 'daerah' | 'cabang' | 'pembina' | 'pengawas' | 'penasehat' | 'official';
 
 export interface Idea {
   id: string;

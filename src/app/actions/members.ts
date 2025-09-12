@@ -14,6 +14,8 @@ import { formatFullName } from '@/lib/utils';
 const usersCollection = collection(db, 'users');
 const positionsCollection = collection(db, 'positions');
 
+const OFFICIAL_ACCOUNT_PHONE = '+6285144904161';
+
 // Helper to get position details from ID
 async function getPositionDetails(positionId?: string): Promise<{ name: string, permissions: PermissionId[] }> {
     if (!positionId) return { name: 'Anggota', permissions: [] };
@@ -41,6 +43,12 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
 
   for (const docSnap of snapshot.docs) {
     const data = docSnap.data();
+
+    // Exclude the official account from the members list
+    if (data.phoneNumber === OFFICIAL_ACCOUNT_PHONE) {
+        continue;
+    }
+
     let joinDate: string | undefined;
     if (data.createdAt && typeof data.createdAt.toDate === 'function') {
         joinDate = data.createdAt.toDate().toLocaleDateString('id-ID', {
