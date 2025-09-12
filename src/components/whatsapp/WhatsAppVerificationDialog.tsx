@@ -28,7 +28,7 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
   const [loadingVerify, setLoadingVerify] = useState(false);
   const { toast } = useToast();
   const { refreshUser } = useAuth();
-
+  
   useEffect(() => {
     if (user && !user.waVerified) {
       const timer = setTimeout(() => {
