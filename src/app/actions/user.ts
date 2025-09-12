@@ -244,17 +244,24 @@ export async function searchUsers(searchQuery: string, limitCount: number = 5): 
 
 
 export async function saveWaNumber(userId: string, waNumber: string): Promise<{ success: boolean }> {
-    const userDocRef = doc(db, 'users', userId);
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    await setDoc(userDocRef, {
-        waNumber: waNumber,
-        waOtp: otp,
-        waVerified: false,
-    }, { merge: true });
+    try {
+        const userDocRef = doc(db, 'users', userId);
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        await setDoc(userDocRef, {
+            waNumber: waNumber,
+            waOtp: otp,
+            waVerified: false,
+        }, { merge: true });
 
-    await sendWhatsAppMessage(waNumber, `Kode verifikasi Garda Lestari Anda adalah: ${otp}`);
-    return { success: true };
+        await sendWhatsAppMessage(waNumber, `Kode verifikasi Garda Lestari Anda adalah: ${otp}`);
+        
+        return { success: true };
+    } catch (error) {
+        console.error(`Failed to send OTP to ${waNumber}:`, error);
+        // Re-throw the error so the client-side catch block can handle it with a specific message.
+        throw new Error((error as Error).message || 'Gagal mengirimkan kode OTP.');
+    }
 }
 
 export async function verifyWaNumber(userId: string, otp: string): Promise<boolean> {
