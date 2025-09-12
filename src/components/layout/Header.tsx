@@ -85,8 +85,6 @@ export default function Header() {
     router.push('/login');
   };
   
-  const canAccessPanel = user?.permissions && user.permissions.length > 0;
-
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center">
@@ -154,7 +152,7 @@ export default function Header() {
                     <Award className="mr-2 h-4 w-4" />
                     <span>Level & Misi</span>
                   </DropdownMenuItem>
-                  {canAccessPanel && (
+                  {hasPermission('manage_users') && (
                       <DropdownMenuItem onClick={() => router.push('/panel/dashboard')} className="cursor-pointer">
                           <Shield className="mr-2 h-4 w-4" />
                           <span>Panel Admin</span>
