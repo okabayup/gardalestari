@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, ArrowLeft, Lightbulb } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { createIdea, getIdeaCategories } from '@/app/actions/ideas';
+import { createIdea, getIdeaCategories, IdeaCategory } from '@/app/actions/ideas';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import MainLayout from '@/components/layout/MainLayout';
 
@@ -31,7 +31,7 @@ export default function NewIdeaPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<IdeaCategory[]>([]);
   
   const {
     control,
@@ -41,7 +41,7 @@ export default function NewIdeaPage() {
   } = useForm<FormData>({ resolver: zodResolver(formSchema) });
   
   useEffect(() => {
-    getIdeaCategories().then(cats => setCategories(cats.filter(c => c !== 'Semua')));
+    getIdeaCategories().then(setCategories);
   }, []);
 
   const onSubmit = async (data: FormData) => {
@@ -87,7 +87,7 @@ export default function NewIdeaPage() {
                     <Select onValueChange={field.onChange} value={field.value}>
                       <SelectTrigger><SelectValue placeholder="Pilih kategori yang paling sesuai" /></SelectTrigger>
                       <SelectContent>
-                        {categories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                        {categories.map(cat => <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   )}

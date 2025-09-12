@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, PlusCircle, Search, ThumbsUp, ThumbsDown, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { getIdeas, getIdeaCategories, IdeaWithAuthor, toggleVote } from '@/app/actions/ideas';
+import { getIdeas, getIdeaCategories, IdeaWithAuthor, toggleVote, IdeaCategory } from '@/app/actions/ideas';
 import { ideaStatusMap } from '@/lib/definitions';
 import { useDebounce } from 'use-debounce';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
@@ -73,7 +73,7 @@ export default function IdeasPage() {
   const { user } = useAuth();
   
   const [ideas, setIdeas] = useState<IdeaWithAuthor[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<IdeaCategory[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filter and search state
@@ -172,7 +172,8 @@ export default function IdeasPage() {
             <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                    {categories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                    <SelectItem value="Semua">Semua Kategori</SelectItem>
+                    {categories.map(cat => <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>)}
                 </SelectContent>
             </Select>
             <Select value={sortBy} onValueChange={(val) => setSortBy(val as any)}>

@@ -54,9 +54,15 @@ export interface IdeaWithAuthor extends Omit<Idea, 'authorId' | 'upvotes' | 'dow
   userVote?: VoteType;
 }
 
+export interface IdeaCategory {
+    id?: string;
+    name: string;
+}
+
 
 const ideasCollection = collection(db, 'ideas');
 const usersCollection = collection(db, 'users');
+const ideaCategoriesCollection = collection(db, 'ideaCategories');
 
 const formatTimestamp = (timestamp: Timestamp): string => {
   const date = timestamp.toDate();
@@ -287,7 +293,38 @@ export async function getIdeaComments(ideaId: string): Promise<any[]> {
     return comments;
 }
 
-// Hardcoded categories for now
-export async function getIdeaCategories(): Promise<string[]> {
-    return ['Semua', 'Agrikultur', 'Maritim', 'Kehutanan', 'Teknologi', 'Pemasaran', 'Komunitas', 'Lainnya'];
+// --- Category Management ---
+
+// Get all idea categories
+export async function getIdeaCategories(): Promise<IdeaCategory[]> {
+    const q = query(ideaCategoriesCollection, orderBy('name', 'asc'));
+    const snapshot = await getDocs(q);
+    const categories: IdeaCategory[] = [];
+    snapshot.forEach(doc => {
+        categories.push({ id: doc.id, ...doc.data() } as IdeaCategory);
+    });
+    return categories;
+}
+
+// Add a new idea category
+export async function addIdeaCategory(name: string) {
+    try {
+        await addDoc(ideaCategoriesCollection, { name });
+        revalidatePath('/panel/ideas/kategori');
+    } catch (error) {
+        console.error("Error adding idea category:", error);
+        throw new Error("Gagal menambahkan kategori ide.");
+    }
+}
+
+// Delete an idea category
+export async function deleteIdeaCategory(id: string) {
+    try {
+        const categoryDoc = doc(db, 'ideaCategories', id);
+        await deleteDoc(categoryDoc);
+        revalidatePath('/panel/ideas/kategori');
+    } catch (error) {
+        console.error("Error deleting idea category:", error);
+        throw new Error("Gagal menghapus kategori ide.");
+    }
 }

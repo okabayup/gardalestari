@@ -20,6 +20,7 @@ import { checkUsernameExists } from '@/app/actions/user';
 import type { PermissionId, Position } from '@/lib/definitions';
 import { ALL_PERMISSIONS } from '@/lib/definitions';
 import { logAnalyticsEvent } from '@/lib/analytics';
+import { seedInitialData } from '@/lib/seed-data';
 
 
 type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected';
@@ -117,6 +118,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [fetchUserDetails]);
 
   useEffect(() => {
+    // This will run once when the app loads.
+    seedInitialData();
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         await fetchUserDetails(user);

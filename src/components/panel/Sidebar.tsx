@@ -57,6 +57,7 @@ const navGroups: {
     group: 'Keterlibatan Anggota',
     icon: Lightbulb,
     items: [
+      { href: '/panel/ideas', icon: Lightbulb, label: 'Bank Ide', permission: 'manage_ideas'},
       { href: '/panel/announcements', icon: Megaphone, label: 'Pengumuman', permission: 'manage_announcements'},
       { href: '/panel/notifications', icon: Bell, label: 'Notifikasi', permission: 'send_notifications' },
       { href: '/panel/evoting', icon: Vote, label: 'E-Voting', permission: 'manage_evoting' },
