@@ -2,61 +2,48 @@
 'use server';
 
 /**
- * Sends a message via the unofficial WhatsApp API.
- * This is a placeholder function. To make it work, you would need to:
- * 1. Set up a server running a library like `whatsapp-web.js` or `baileys`.
- * 2. Expose an endpoint on that server that accepts a phone number and a message.
- * 3. Replace the console.log below with a `fetch` call to your WhatsApp server endpoint.
+ * Sends a message via the SatuConnect WhatsApp API.
  * 
- * WARNING: Using unofficial WhatsApp APIs is against their Terms of Service and can
- * result in the phone number being blocked. Use with caution and at your own risk.
- * It's recommended for non-critical notifications only.
- * 
- * @param phoneNumber The recipient's phone number in E.164 format (e.g., '6281234567890').
+ * @param phoneNumber The recipient's phone number in E.164 format without '+' (e.g., '6281234567890').
  * @param message The text message to send.
  */
 export async function sendWhatsAppMessage(phoneNumber: string, message: string): Promise<void> {
-  console.log(`--- SIMULATING WHATSAPP MESSAGE ---`);
-  console.log(`Recipient: ${phoneNumber}`);
-  console.log(`Message: ${message}`);
-  console.log(`---------------------------------`);
-  
-  // In a real implementation, you would replace the console logs with a fetch call
-  // to your own server that hosts the WhatsApp bot.
-  
-  /*
-  const WHATSAPP_API_ENDPOINT = process.env.WHATSAPP_API_ENDPOINT;
-  const WHATSAPP_API_TOKEN = process.env.WHATSAPP_API_TOKEN;
+  const SATUCONNECT_API_ENDPOINT = "https://api.satuconnect.my.id/send-message";
+  const SATUCONNECT_API_KEY = process.env.SATUCONNECT_API_KEY;
+  const SATUCONNECT_DEVICE_ID = process.env.SATUCONNECT_DEVICE_ID;
 
-  if (!WHATSAPP_API_ENDPOINT || !WHATSAPP_API_TOKEN) {
-    console.error('WhatsApp API endpoint or token is not configured.');
+  if (!SATUCONNECT_API_KEY || !SATUCONNECT_DEVICE_ID) {
+    console.error('SatuConnect API Key or Device ID is not configured in environment variables.');
     return;
   }
   
+  // Ensure phone number is in the correct format (e.g., 628xxxx)
+  const formattedPhoneNumber = phoneNumber.replace('+', '');
+
   try {
-    const response = await fetch(WHATSAPP_API_ENDPOINT, {
+    const response = await fetch(SATUCONNECT_API_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${WHATSAPP_API_TOKEN}`,
+        'Authorization': `Bearer ${SATUCONNECT_API_KEY}`,
       },
       body: JSON.stringify({
-        to: phoneNumber,
+        device_id: SATUCONNECT_DEVICE_ID,
+        receiver: formattedPhoneNumber,
         message: message,
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error('Failed to send WhatsApp message:', errorData);
+      console.error('Failed to send WhatsApp message via SatuConnect:', errorData);
+      throw new Error(`SatuConnect API responded with status ${response.status}`);
     } else {
-      console.log('Successfully sent WhatsApp message to', phoneNumber);
+      const result = await response.json();
+      console.log('Successfully sent WhatsApp message to', phoneNumber, 'Result:', result);
     }
   } catch (error) {
-    console.error('Error calling WhatsApp service:', error);
+    console.error('Error calling SatuConnect WhatsApp service:', error);
+    // Rethrow or handle error as needed
   }
-  */
-
-  // For now, we just resolve the promise successfully.
-  return Promise.resolve();
 }
