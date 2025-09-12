@@ -16,7 +16,7 @@ import { formatFullName } from '@/lib/utils';
 import { initialPositions } from '@/lib/definitions';
 import { useState, useEffect, useRef, WheelEvent, MouseEvent, TouchEvent } from 'react';
 import { cn } from '@/lib/utils';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 
 const InfoSection = ({ title, children, icon: Icon }: { title: string, children: React.ReactNode, icon: React.ElementType }) => (
@@ -72,6 +72,12 @@ const OrgChartImage = ({ src, alt }: { src: string; alt: string }) => {
         </div>
       </DialogTrigger>
       <DialogContent className="h-screen w-screen max-w-none p-4 flex items-center justify-center bg-black/80 backdrop-blur-sm border-none">
+        <DialogHeader className="sr-only">
+          <DialogTitle>Bagan Struktur Organisasi</DialogTitle>
+          <DialogDescription>
+            Tampilan penuh dari bagan struktur organisasi Garda Lestari.
+          </DialogDescription>
+        </DialogHeader>
         <div className="relative w-full h-full flex items-center justify-center">
             <Image
                 src={src}
