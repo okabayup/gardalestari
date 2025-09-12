@@ -16,6 +16,7 @@ import { formatFullName } from '@/lib/utils';
 import { initialPositions } from '@/lib/definitions';
 import { useState, useEffect, useRef, WheelEvent, MouseEvent, TouchEvent } from 'react';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 
 
 const InfoSection = ({ title, children, icon: Icon }: { title: string, children: React.ReactNode, icon: React.ElementType }) => (
@@ -52,139 +53,37 @@ const BoardSection = ({ title, members }: { title: string, members: MemberWithSt
     );
 };
 
-const ZoomableImage = ({ src, alt }: { src: string, alt: string }) => {
-    const [scale, setScale] = useState(1);
-    const [offset, setOffset] = useState({ x: 0, y: 0 });
-    const [isDragging, setIsDragging] = useState(false);
-    const imageRef = useRef<HTMLImageElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const pinchDistRef = useRef(0);
-
-    const handleWheel = (e: WheelEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        const newScale = scale - e.deltaY * 0.001;
-        setScale(Math.min(Math.max(1, newScale), 5));
-    };
-
-    const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
-        if (scale > 1) {
-            setIsDragging(true);
-            if (imageRef.current) imageRef.current.style.cursor = 'grabbing';
-        }
-    };
-
-    const handleMouseUp = () => {
-        setIsDragging(false);
-        if (imageRef.current) imageRef.current.style.cursor = 'grab';
-    };
-
-    const clampOffset = (newOffset: {x: number, y: number}, currentScale: number) => {
-        if (!containerRef.current || !imageRef.current) return newOffset;
-        
-        const rect = containerRef.current.getBoundingClientRect();
-        const imgWidth = imageRef.current.offsetWidth * currentScale;
-        const imgHeight = imageRef.current.offsetHeight * currentScale;
-        
-        const maxOffsetX = Math.max(0, (imgWidth - rect.width) / 2 / currentScale);
-        const maxOffsetY = Math.max(0, (imgHeight - rect.height) / 2 / currentScale);
-        
-        return {
-            x: Math.max(-maxOffsetX, Math.min(maxOffsetX, newOffset.x)),
-            y: Math.max(-maxOffsetY, Math.min(maxOffsetY, newOffset.y)),
-        };
-    };
-    
-    const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
-        if (isDragging && scale > 1) {
-            setOffset(prev => clampOffset({
-                x: prev.x + e.movementX / scale,
-                y: prev.y + e.movementY / scale
-            }, scale));
-        }
-    };
-
-    const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
-        if (e.touches.length === 2) {
-            e.preventDefault();
-            pinchDistRef.current = Math.hypot(
-                e.touches[0].clientX - e.touches[1].clientX,
-                e.touches[0].clientY - e.touches[1].clientY
-            );
-        } else if (e.touches.length === 1 && scale > 1) {
-            setIsDragging(true);
-        }
-    };
-
-    const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
-        if (e.touches.length === 2) {
-            e.preventDefault();
-            const newDist = Math.hypot(
-                e.touches[0].clientX - e.touches[1].clientX,
-                e.touches[0].clientY - e.touches[1].clientY
-            );
-            const scaleFactor = newDist / pinchDistRef.current;
-            setScale(prev => Math.min(Math.max(1, prev * scaleFactor), 5));
-            pinchDistRef.current = newDist;
-        } else if (e.touches.length === 1 && isDragging) {
-            setOffset(prev => clampOffset({
-                x: prev.x + e.touches[0].movementX / scale,
-                y: prev.y + e.touches[0].movementY / scale
-            }, scale));
-        }
-    };
-
-    const handleTouchEnd = () => {
-        setIsDragging(false);
-        pinchDistRef.current = 0;
-    };
-
-    useEffect(() => {
-        if (scale === 1) {
-            setOffset({ x: 0, y: 0 });
-        } else {
-             setOffset(prev => clampOffset(prev, scale));
-        }
-    }, [scale]);
-
-    return (
-        <div
-            ref={containerRef}
-            className="relative w-full max-w-4xl p-2 border-4 border-muted rounded-lg shadow-lg bg-background overflow-hidden cursor-zoom-in touch-none"
-            onWheel={handleWheel}
-            onMouseDown={handleMouseDown}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onMouseMove={handleMouseMove}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-        >
-            <div
-                className="w-full h-auto transition-transform duration-100 ease-out"
-                style={{
-                    transform: `scale(${scale}) translate(${offset.x}px, ${offset.y}px)`,
-                    cursor: scale > 1 ? 'grab' : 'zoom-in',
-                }}
-            >
-                <Image
-                    ref={imageRef}
-                    src={src}
-                    alt={alt}
-                    width={1200}
-                    height={1600}
-                    className="rounded-md w-full h-auto"
-                    data-ai-hint="organization chart"
-                    draggable={false}
-                />
-            </div>
-            <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-black/50 text-white px-2 py-1 rounded-full text-xs pointer-events-none">
-                <ZoomIn className="h-3 w-3" />
-                <span className="hidden sm:inline">Pinch/Scroll untuk Zoom</span>
-                <Move className="h-3 w-3 ml-1" />
-                <span className="hidden sm:inline">Geser</span>
-            </div>
+const OrgChartImage = ({ src, alt }: { src: string; alt: string }) => {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <div className="relative w-full max-w-4xl cursor-zoom-in rounded-lg border-4 border-muted shadow-lg">
+          <Image
+            src={src}
+            alt={alt}
+            width={1200}
+            height={1600}
+            className="rounded-md"
+            data-ai-hint="organization chart"
+          />
+           <div className="absolute inset-0 bg-black/10 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+              <ZoomIn className="h-16 w-16 text-white" />
+           </div>
         </div>
-    );
+      </DialogTrigger>
+      <DialogContent className="h-screen w-screen max-w-none p-4 flex items-center justify-center bg-black/80 backdrop-blur-sm border-none">
+        <div className="relative w-full h-full flex items-center justify-center">
+            <Image
+                src={src}
+                alt={alt}
+                width={1600}
+                height={1200}
+                className="object-contain h-full w-auto md:h-auto md:w-full rotate-90 md:rotate-0"
+            />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 };
 
 
@@ -289,7 +188,7 @@ export default function AboutPage() {
 
                         <InfoSection title="Struktur Organisasi" icon={Scale}>
                              <div className="flex justify-center mb-8">
-                                <ZoomableImage
+                                <OrgChartImage
                                   src={settings.orgChartImageUrl}
                                   alt="Struktur Organisasi Garda Lestari"
                                 />
