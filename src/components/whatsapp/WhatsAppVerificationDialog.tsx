@@ -49,6 +49,13 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
       const result = await saveWaNumber(user.uid, waNumber);
       setDebugInfo(result); // Store the full response for debugging
 
+      // Handle the specific quirky success case from the API
+      if (result.success === false && result.error === 'Message sent successfully') {
+         toast({ title: 'Kode OTP terkirim!', description: 'Periksa WhatsApp Anda.' });
+         setOtpSent(true);
+         return;
+      }
+
       if (result.success) {
         toast({ title: 'Kode OTP terkirim!', description: 'Periksa WhatsApp Anda.' });
         setOtpSent(true);
