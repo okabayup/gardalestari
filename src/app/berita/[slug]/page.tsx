@@ -70,9 +70,41 @@ export default async function BeritaPostPage({ params }: Props) {
   }
 
   const formattedDate = format(new Date(post.date), "dd MMMM yyyy", { locale: id });
+  const isoDate = new Date(post.date).toISOString();
+  
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `${process.env.NEXT_PUBLIC_BASE_URL}/berita/${slug}`,
+    },
+    headline: post.title,
+    description: post.excerpt,
+    image: post.imageUrl,
+    author: {
+      '@type': 'Organization',
+      name: 'Garda Lestari',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Garda Lestari',
+      logo: {
+        '@type': 'ImageObject',
+        url: `${process.env.NEXT_PUBLIC_BASE_URL}/logo.png`,
+      },
+    },
+    datePublished: isoDate,
+    dateModified: isoDate,
+  };
+
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <LandingHeader />
       <main className="flex-1">
         <article className="container max-w-4xl mx-auto py-12 md:py-16">

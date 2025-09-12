@@ -50,7 +50,7 @@ export default function LandingHeader() {
             </Button>
           ) : (
             <>
-              <Button variant="ghost" className="hidden md:inline-flex" asChild>
+              <Button variant="outline" className="hidden md:inline-flex" asChild>
                 <Link href="/login">Masuk</Link>
               </Button>
               {isRegistrationOpen && (

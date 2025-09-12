@@ -71,9 +71,41 @@ const ProgramDetailClient = ({ program }: { program: Program }) => {
             program_title: program.title,
         });
     }
+    
+    const jsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'Event',
+      name: program.title,
+      startDate: program.startDate.toDate().toISOString(),
+      endDate: program.endDate.toDate().toISOString(),
+      description: program.description,
+      image: program.imageUrl,
+      eventStatus: isPast ? 'https://schema.org/EventCancelled' : 'https://schema.org/EventScheduled',
+      location: {
+        '@type': 'Place',
+        name: 'Online',
+      },
+      offers: {
+        '@type': 'Offer',
+        url: `${process.env.NEXT_PUBLIC_BASE_URL}/programs/${program.id}`,
+        price: '0',
+        priceCurrency: 'IDR',
+        availability: isPast ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock',
+        validFrom: program.startDate.toDate().toISOString(),
+      },
+      organizer: {
+        '@type': 'Organization',
+        name: 'Garda Lestari',
+        url: process.env.NEXT_PUBLIC_BASE_URL,
+      },
+    };
 
     return (
         <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
             <div className="relative h-48 md:h-64 w-full">
                 <Image
                     src={program.imageUrl || 'https://picsum.photos/1200/800'}

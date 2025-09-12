@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
-import { Loader2, ShieldOff } from 'lucide-react';
+import { Loader2, ShieldOff, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -13,6 +13,12 @@ import { useToast } from '@/hooks/use-toast';
 import { getAppSettings } from '@/app/actions/settings';
 import MembershipCard from '@/components/members/MembershipCard';
 
+const benefits = [
+  'Akses ke jaringan pemuda inovator',
+  'Kesempatan mengikuti program eksklusif',
+  'Pengembangan diri dan portofolio',
+  'Terlibat langsung dalam proyek berdampak',
+];
 
 export default function RegisterPage() {
     const { user, loading, signInWithPhone, verifyOtp } = useAuth();
@@ -82,8 +88,12 @@ export default function RegisterPage() {
     }
 
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-secondary p-4">
-            <div className="w-full max-w-sm">
+        <div className="flex min-h-screen flex-col items-center justify-center bg-secondary p-4 relative overflow-hidden">
+            <div className="absolute inset-0 -z-0">
+                <Image src="https://picsum.photos/seed/community-gathering/1920/1080" alt="Community gathering" fill className="object-cover opacity-10" />
+                 <div className="absolute inset-0 bg-gradient-to-t from-secondary via-secondary/80 to-secondary"></div>
+            </div>
+            <div className="w-full max-w-md z-10">
                 <div className="text-center mb-6">
                     <Link href="/" className="inline-block">
                        <Image src="/logo.png" alt="Garda Lestari Logo" width={160} height={42} className="h-auto w-40" />
@@ -108,53 +118,67 @@ export default function RegisterPage() {
                         </CardFooter>
                     </Card>
                 ) : step !== 'done' ? (
-                    <Card>
-                        <CardHeader className="text-center">
-                            <CardTitle>Bergabung dengan Komunitas Kami</CardTitle>
-                            <CardDescription>
-                               {step === 'phone' ? 'Buat akun Anda untuk memulai.' : 'Masukkan OTP untuk verifikasi nomor Anda.'}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {step === 'phone' ? (
-                                <form onSubmit={handlePhoneSubmit} className="space-y-4">
-                                     <Input
-                                        type="tel"
-                                        placeholder="cth. 08123456789"
-                                        value={phone}
-                                        onChange={(e) => setPhone(e.target.value)}
-                                        required
-                                    />
-                                    <div id="recaptcha-container-register" className="flex justify-center"></div>
-                                    <Button type="submit" className="w-full" disabled={isSubmitting}>
-                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Daftar dengan Nomor Telepon
-                                    </Button>
-                                </form>
-                            ) : (
-                                <form onSubmit={handleOtpSubmit} className="space-y-4">
-                                    <Input
-                                        type="text"
-                                        placeholder="6-digit OTP"
-                                        value={otp}
-                                        onChange={(e) => setOtp(e.target.value)}
-                                        maxLength={6}
-                                        required
-                                    />
-                                    <Button type="submit" className="w-full" disabled={isSubmitting}>
-                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Verifikasi & Buat Akun
-                                    </Button>
-                                </form>
-                            )}
-                            <p className="mt-4 text-center text-xs text-muted-foreground">
-                                Sudah punya akun?{' '}
-                                <Link href="/login" className="font-semibold text-primary hover:underline">
-                                    Masuk
-                                </Link>
-                            </p>
-                        </CardContent>
-                    </Card>
+                    <div className="grid md:grid-cols-2 gap-8 items-center">
+                         <div className="hidden md:flex flex-col gap-4 text-foreground/90">
+                            <h2 className="font-headline text-3xl font-bold">Satu Langkah Lagi Menuju Perubahan</h2>
+                            <p className="text-sm">Bergabunglah dengan ribuan pemuda lainnya dan dapatkan akses ke berbagai keuntungan eksklusif.</p>
+                            <ul className="space-y-2 mt-2">
+                                {benefits.map((benefit, i) => (
+                                    <li key={i} className="flex items-center gap-2 text-sm">
+                                        <CheckCircle className="h-4 w-4 text-primary" />
+                                        {benefit}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <Card>
+                            <CardHeader className="text-center">
+                                <CardTitle>Daftar Akun</CardTitle>
+                                <CardDescription>
+                                {step === 'phone' ? 'Gunakan nomor telepon aktif Anda.' : 'Masukkan OTP untuk verifikasi.'}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {step === 'phone' ? (
+                                    <form onSubmit={handlePhoneSubmit} className="space-y-4">
+                                        <Input
+                                            type="tel"
+                                            placeholder="cth. 08123456789"
+                                            value={phone}
+                                            onChange={(e) => setPhone(e.target.value)}
+                                            required
+                                        />
+                                        <div id="recaptcha-container-register" className="flex justify-center"></div>
+                                        <Button type="submit" className="w-full" disabled={isSubmitting}>
+                                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                            Daftar
+                                        </Button>
+                                    </form>
+                                ) : (
+                                    <form onSubmit={handleOtpSubmit} className="space-y-4">
+                                        <Input
+                                            type="text"
+                                            placeholder="6-digit OTP"
+                                            value={otp}
+                                            onChange={(e) => setOtp(e.target.value)}
+                                            maxLength={6}
+                                            required
+                                        />
+                                        <Button type="submit" className="w-full" disabled={isSubmitting}>
+                                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                            Verifikasi & Buat Akun
+                                        </Button>
+                                    </form>
+                                )}
+                                <p className="mt-4 text-center text-xs text-muted-foreground">
+                                    Sudah punya akun?{' '}
+                                    <Link href="/login" className="font-semibold text-primary hover:underline">
+                                        Masuk
+                                    </Link>
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </div>
                 ) : (
                     <div className="flex flex-col items-center gap-6 text-center">
                        <div className="space-y-2">
