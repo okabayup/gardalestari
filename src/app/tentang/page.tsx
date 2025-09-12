@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Image from 'next/image';
@@ -71,7 +70,7 @@ const OrgChartImage = ({ src, alt }: { src: string; alt: string }) => {
            </div>
         </div>
       </DialogTrigger>
-      <DialogContent className="h-screen w-screen max-w-none p-0 flex items-center justify-center bg-black/80 backdrop-blur-sm border-none">
+      <DialogContent className="w-screen h-screen max-w-none p-0 flex items-center justify-center bg-black/80 backdrop-blur-sm border-none">
         <DialogHeader className="sr-only">
           <DialogTitle>Bagan Struktur Organisasi</DialogTitle>
           <DialogDescription>
