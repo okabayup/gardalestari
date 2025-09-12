@@ -8,7 +8,7 @@
  * @param message The text message to send.
  */
 export async function sendWhatsAppMessage(phoneNumber: string, message: string): Promise<void> {
-  const SATUCONNECT_API_ENDPOINT = "https://api.satuconnect.my.id/send-message";
+  const SATUCONNECT_API_ENDPOINT = "https://api.satuconnect.my.id/agent/message";
   const SATUCONNECT_API_KEY = process.env.SATUCONNECT_API_KEY;
   const SATUCONNECT_DEVICE_ID = process.env.SATUCONNECT_DEVICE_ID;
 
@@ -28,8 +28,8 @@ export async function sendWhatsAppMessage(phoneNumber: string, message: string):
         'Authorization': `Bearer ${SATUCONNECT_API_KEY}`,
       },
       body: JSON.stringify({
-        device_id: SATUCONNECT_DEVICE_ID,
-        receiver: formattedPhoneNumber,
+        deviceID: SATUCONNECT_DEVICE_ID,
+        phoneNumbers: formattedPhoneNumber,
         message: message,
       }),
     });
