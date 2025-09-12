@@ -9,23 +9,9 @@ const BASE_URL = 'https://gardalestari.org';
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Rute statis
   const staticRoutes = [
-    '/',
-    '/login',
-    '/register',
-    '/feed',
-    '/members',
-    '/programs',
-    '/events',
-    '/benefits',
-    '/berita',
-    '/profile',
-    '/tentang',
-    '/recruitments',
-    '/evoting',
-    '/map',
-    '/kebijakan-privasi',
-    '/hapus-data',
-    '/ketentuan-layanan',
+    '/', '/login', '/register', '/feed', '/members', '/programs', '/events',
+    '/benefits', '/berita', '/video', '/profile', '/tentang', '/recruitments',
+    '/evoting', '/map', '/kebijakan-privasi', '/hapus-data', '/ketentuan-layanan',
   ].map((route) => ({
     url: `${BASE_URL}${route}`,
     lastModified: new Date().toISOString(),
@@ -33,10 +19,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: route === '/' ? 1 : 0.8,
   }));
 
-  // Rute dinamis untuk postingan berita
+  // Rute dinamis untuk berita dan video
   const posts = await getBeritaPosts();
-  const beritaPostRoutes = posts.map((post) => ({
-    url: `${BASE_URL}/berita/${post.slug}`,
+  const contentRoutes = posts.map((post) => ({
+    url: `${BASE_URL}/${post.type === 'video' ? 'video' : 'berita'}/${post.slug}`,
     lastModified: new Date(post.date).toISOString(),
     changeFrequency: 'weekly' as const,
     priority: 0.7,
@@ -51,5 +37,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticRoutes, ...beritaPostRoutes, ...programRoutes];
+  return [...staticRoutes, ...contentRoutes, ...programRoutes];
 }

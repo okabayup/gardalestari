@@ -1,5 +1,4 @@
 
-
 import { Timestamp } from "firebase/firestore";
 
 export const ALL_PERMISSIONS = [
@@ -108,6 +107,7 @@ export interface BeritaCategory {
 
 export interface BeritaPost {
   id?: string;
+  type: 'artikel' | 'video';
   title: string;
   slug: string;
   content: string;
@@ -117,6 +117,8 @@ export interface BeritaPost {
   imageHint: string;
   excerpt: string;
   category: string;
+  youtubeId?: string;
+  isFeatured?: boolean;
 }
 
 // --- Documents ---
