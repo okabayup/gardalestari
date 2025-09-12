@@ -16,6 +16,8 @@ import BeritaPostCard from '@/components/berita/BeritaPostCard';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import PartnerSlider from '@/components/landing/PartnerSlider';
 import VideoSlider from '@/components/landing/VideoSlider';
+import Footer from '@/components/landing/Footer';
+
 
 const StatCard = ({ icon, value, label }: { icon: React.ReactNode, value: string, label: string }) => (
     <div className="flex flex-col items-center text-center">
@@ -24,48 +26,6 @@ const StatCard = ({ icon, value, label }: { icon: React.ReactNode, value: string
         <p className="text-sm text-muted-foreground">{label}</p>
     </div>
 );
-
-const Footer = async () => {
-    const settings = await getAppSettings();
-
-    return (
-        <footer className="border-t bg-card">
-            <div className="container py-8">
-                <div className="grid gap-8 md:grid-cols-3">
-                    <div className="space-y-2">
-                        <Link href="/" className="flex items-center">
-                            <Image src="/logo.png" alt="Garda Lestari Logo" width={120} height={32} className="h-8 w-auto" />
-                        </Link>
-                        <p className="text-sm text-muted-foreground">Wadah bagi pemuda Indonesia untuk inovasi di sektor agro-maritim dan kehutanan.</p>
-                    </div>
-                    <div className="space-y-2">
-                        <h4 className="font-semibold">Navigasi</h4>
-                        <nav className="flex flex-col gap-1 text-sm text-muted-foreground">
-                            <Link href="/tentang" className="hover:text-primary">Tentang Kami</Link>
-                            <Link href="#focus" className="hover:text-primary">Fokus</Link>
-                            <Link href="/berita" className="hover:text-primary">Berita</Link>
-                        </nav>
-                    </div>
-                    <div className="space-y-2">
-                        <h4 className="font-semibold">Hubungi Kami</h4>
-                        <div className="text-sm text-muted-foreground">
-                           <p>Email: <a href="mailto:halo@gardalestari.org" className="text-primary hover:underline">halo@gardalestari.org</a></p>
-                           <p>Telepon: <a href="https://wa.me/6285937010409" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">0859-3701-0409 (WhatsApp)</a></p>
-                        </div>
-                        <div className="flex items-center gap-4 mt-2">
-                           <Link href={settings.instagram || '#'} target="_blank" aria-label="Instagram" className="text-muted-foreground hover:text-primary"><Heart size={20} /></Link>
-                           <Link href={settings.linkedin || '#'} target="_blank" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary"><Handshake size={20} /></Link>
-                           <Link href={settings.facebook || '#'} target="_blank" aria-label="Facebook" className="text-muted-foreground hover:text-primary"><Users size={20} /></Link>
-                        </div>
-                    </div>
-                </div>
-                <div className="mt-8 border-t pt-6 text-center text-sm text-muted-foreground">
-                    <p>&copy; {new Date().getFullYear()} Garda Muda Lestari. Semua hak dilindungi.</p>
-                </div>
-            </div>
-        </footer>
-    );
-};
 
 const flagshipPrograms = [
     { title: "Akses Pendanaan Proyek Sosial & Bisnis", icon: Award },
