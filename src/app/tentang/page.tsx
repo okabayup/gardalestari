@@ -26,9 +26,9 @@ const InfoSection = ({ title, children, icon: Icon }: { title: string, children:
 
 const BoardSection = ({ title, members }: { title: string, members: MemberWithStatus[] }) => (
     <div>
-        <h3 className="font-headline text-xl font-semibold mt-6 mb-4">{title}</h3>
+        <h3 className="font-headline text-xl font-semibold mt-6 mb-4 text-center md:text-left">{title}</h3>
         {members.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-6">
                 {members.map(member => (
                     <MemberCard 
                         key={member.id} 
@@ -41,7 +41,7 @@ const BoardSection = ({ title, members }: { title: string, members: MemberWithSt
                 ))}
             </div>
         ) : (
-            <p className="text-sm text-muted-foreground">Data anggota untuk dewan ini akan segera ditampilkan.</p>
+            <p className="text-sm text-muted-foreground text-center">Data anggota untuk dewan ini akan segera ditampilkan.</p>
         )}
     </div>
 );
@@ -119,10 +119,10 @@ export default async function AboutPage() {
 
                         <Separator />
 
-                        <InfoSection title="Lambang Organisasi" icon={Shield}>
-                           <div className="flex flex-col md:flex-row items-center gap-6">
-                                <Image src="/logo.png" alt="Lambang Garda Lestari" width={150} height={150} className="w-40 h-auto" />
-                                <p>Lambang Garda Lestari merepresentasikan komitmen kami. Warna hijau melambangkan kesuburan dan kelestarian, sementara bentuk perisai melambangkan perlindungan terhadap alam. Tunas di tengah adalah simbol dari pemuda yang tumbuh dan berinovasi untuk masa depan yang lebih baik.</p>
+                         <InfoSection title="Lambang Organisasi" icon={Shield}>
+                           <div className="flex flex-col md:flex-row items-center justify-center gap-8 text-center md:text-left">
+                                <Image src="/logo.png" alt="Lambang Garda Lestari" width={150} height={150} className="w-32 h-auto md:w-40" />
+                                <p className="max-w-prose">Lambang Garda Lestari merepresentasikan komitmen kami. Warna hijau melambangkan kesuburan dan kelestarian, sementara bentuk perisai melambangkan perlindungan terhadap alam. Tunas di tengah adalah simbol dari pemuda yang tumbuh dan berinovasi untuk masa depan yang lebih baik.</p>
                            </div>
                         </InfoSection>
 
@@ -145,9 +145,13 @@ export default async function AboutPage() {
                                 <BoardSection title="Dewan Kehormatan" members={dewanKehormatan} />
                             </div>
                             <div className="mt-8">
-                                <ExecutiveBoardSection title="Dewan Pengurus Pusat (DPP)" members={dpp} />
-                                <ExecutiveBoardSection title="Dewan Pengurus Daerah (DPD)" members={dpd} />
-                                <ExecutiveBoardSection title="Dewan Pengurus Cabang (DPC)" members={dpc} />
+                                <BoardSection title="Dewan Pengurus Pusat (DPP)" members={dpp} />
+                            </div>
+                             <div className="mt-8">
+                                <BoardSection title="Dewan Pengurus Daerah (DPD)" members={dpd} />
+                            </div>
+                            <div className="mt-8">
+                                <BoardSection title="Dewan Pengurus Cabang (DPC)" members={dpc} />
                             </div>
                         </InfoSection>
                     </div>

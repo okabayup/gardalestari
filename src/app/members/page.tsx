@@ -155,7 +155,7 @@ export default function MembersPage() {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
         ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 md:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-6">
             {filteredMembers.length > 0 ? (
                 filteredMembers.map((member) => (
                 <MemberCard
