@@ -6,7 +6,7 @@
  * 
  * @param phoneNumber The recipient's phone number in E.164 format without '+' (e.g., '6281234567890').
  * @param message The text message to send.
- * @throws {Error} If the API responds with an error or the request fails.
+ * @returns A promise that resolves to an object indicating success or failure.
  */
 export async function sendWhatsAppMessage(phoneNumber: string, message: string): Promise<{ success: boolean; data?: any, error?: string }> {
   const SATUCONNECT_API_ENDPOINT = "https://api.satuconnect.my.id/agent/message";
@@ -38,14 +38,15 @@ export async function sendWhatsAppMessage(phoneNumber: string, message: string):
     const responseBody = await response.json();
     console.log('SatuConnect API Response:', JSON.stringify(responseBody, null, 2));
 
-    if (!response.ok || responseBody.status !== true) {
+    if (responseBody.status === true) {
+      console.log('Successfully sent WhatsApp message to', phoneNumber);
+      return { success: true, data: responseBody.data };
+    } else {
+      // Handle API-level errors where status is false
       const errorMessage = responseBody.message || `API responded with status ${response.status}`;
       console.error('SatuConnect API Error:', errorMessage);
       return { success: false, error: errorMessage };
     }
-      
-    console.log('Successfully sent WhatsApp message to', phoneNumber);
-    return { success: true, data: responseBody.data };
 
   } catch (error) {
     const errorMessage = (error instanceof Error) ? error.message : 'Unknown error occurred during API call.';

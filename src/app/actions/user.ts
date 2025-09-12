@@ -255,14 +255,19 @@ export async function saveWaNumber(userId: string, waNumber: string): Promise<{ 
         }, { merge: true });
 
         const result = await sendWhatsAppMessage(waNumber, `Kode verifikasi Garda Lestari Anda adalah: ${otp}`);
-        if (!result.success) {
-            throw new Error(result.error || 'Gagal mengirimkan kode OTP dari server.');
+        
+        // Explicitly check the success field from the result
+        if (result.success) {
+            return { success: true };
+        } else {
+            // If sendWhatsAppMessage returns success: false, propagate the error.
+            return { success: false, error: result.error || 'Gagal mengirimkan kode OTP dari server.' };
         }
 
-        return { success: true };
     } catch (error) {
-        const errorMessage = (error as Error).message || 'Gagal mengirimkan kode OTP.';
-        console.error(`Failed to send OTP to ${waNumber}:`, errorMessage);
+        // This catch block handles errors from Firestore (`setDoc`) or unexpected exceptions.
+        const errorMessage = (error as Error).message || 'Gagal menyimpan nomor atau mengirim OTP.';
+        console.error(`Error in saveWaNumber for ${waNumber}:`, errorMessage);
         return { success: false, error: errorMessage };
     }
 }

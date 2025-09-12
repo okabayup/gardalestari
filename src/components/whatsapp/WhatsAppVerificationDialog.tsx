@@ -49,7 +49,6 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
         toast({ title: 'Kode OTP terkirim!', description: 'Periksa WhatsApp Anda.' });
         setOtpSent(true);
       } else {
-        // Display toast directly instead of throwing an error
         toast({
           variant: 'destructive',
           title: 'Gagal mengirim OTP',
@@ -57,7 +56,7 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
         });
       }
     } catch (error) {
-      console.error('Error sending OTP:', error);
+      console.error('Error in handleSendOtp:', error);
       toast({ variant: 'destructive', title: 'Gagal mengirim OTP', description: (error as Error).message });
     } finally {
       setLoadingSend(false);
@@ -74,7 +73,7 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
       const success = await verifyWaNumber(user.uid, otp);
       if (success) {
         toast({ title: 'Verifikasi Berhasil!', description: 'Nomor WhatsApp Anda telah diverifikasi.' });
-        await refreshUser();
+        await refreshUser(); // This will re-fetch user data and close the dialog
       } else {
         throw new Error('Kode OTP yang Anda masukkan salah.');
       }
