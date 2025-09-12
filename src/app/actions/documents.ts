@@ -2,14 +2,14 @@
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, runTransaction } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, runTransaction, where } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import { stampPdfWithQrCode } from '@/ai/flows/stamp-pdf-flow';
 import { sendNotification } from './notifications';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from './user';
-import { getAppSettings } from './settings';
+import { getWhatsappTemplate } from './whatsapp';
 
 export type LetterStatus = 'Draft' | 'Menunggu Persetujuan' | 'Disetujui' | 'Ditolak';
 
@@ -138,12 +138,15 @@ export async function submitForApproval(documentId: string, authorId: string, ap
     approverId: approverId,
   });
   
-  const { isWhatsappNotificationsEnabled } = await getAppSettings();
-
   // Send notifications
   const approver = await getUserByUid(approverId);
-  if (isWhatsappNotificationsEnabled && approver?.phoneNumber) {
-    await sendWhatsAppMessage(approver.phoneNumber, `Halo ${approver.name}, dokumen "${document.title}" memerlukan persetujuan Anda. Silakan tinjau di panel admin Garda Lestari.`);
+  const template = await getWhatsappTemplate('document_submission');
+  if (template.isActive && approver?.waNumber) {
+    const message = template.message
+      .replace('{namaPenerima}', approver.name)
+      .replace('{judulDokumen}', document.title)
+      .replace('{namaPengirim}', document.authorName);
+    await sendWhatsAppMessage(approver.waNumber, message);
   }
 
   await sendNotification(
@@ -186,10 +189,13 @@ export async function approveDocument(documentId: string, approverId: string) {
   });
 
   // 3. Send notification to the author
-  const { isWhatsappNotificationsEnabled } = await getAppSettings();
   const author = await getUserByUid(document.authorId);
-   if (isWhatsappNotificationsEnabled && author?.phoneNumber) {
-    await sendWhatsAppMessage(author.phoneNumber, `Kabar baik! Dokumen Anda "${document.title}" telah disetujui dan disahkan secara digital.`);
+  const template = await getWhatsappTemplate('document_approved');
+  if (template.isActive && author?.waNumber) {
+    const message = template.message
+        .replace('{namaPengguna}', author.name)
+        .replace('{judulDokumen}', document.title);
+    await sendWhatsAppMessage(author.waNumber, message);
   }
   await sendNotification(
     {
@@ -251,3 +257,4 @@ export async function generateDocumentNumber(category: string): Promise<string> 
   const nextNumber = (maxNumber + 1).toString().padStart(3, '0');
   return `${nextNumber}/${prefix}`;
 }
+

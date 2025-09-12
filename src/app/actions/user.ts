@@ -39,7 +39,7 @@ export async function checkUsernameExists(username: string): Promise<boolean> {
   }
 }
 
-export async function getUserByUid(uid: string): Promise<MemberWithStatus | null> {
+export async function getUserByUid(uid: string): Promise<(MemberWithStatus & { waNumber?: string }) | null> {
     if (!uid) return null;
     try {
         const userDocRef = doc(db, 'users', uid);
@@ -85,6 +85,7 @@ export async function getUserByUid(uid: string): Promise<MemberWithStatus | null
             isSpecialMember: data.isSpecialMember,
             joinDate: joinDate,
             permissions: permissions,
+            waNumber: data.waNumber,
         };
 
     } catch (error) {

@@ -23,6 +23,7 @@ import { revalidatePath } from 'next/cache';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from './user';
 import type { IdeaAuthor } from './ideas';
+import { getWhatsappTemplate } from './whatsapp';
 
 export interface Project {
     id: string;
@@ -256,13 +257,18 @@ export async function updateTask(projectId: string, taskId: string, updates: Par
         const newAssignees = updates.assigneeIds.filter(id => !currentTask.assigneeIds?.includes(id));
         if (newAssignees.length > 0) {
             const project = await getProjectById(projectId);
-            for (const assigneeId of newAssignees) {
-                const user = await getUserByUid(assigneeId);
-                if (user?.phoneNumber) {
-                    await sendWhatsAppMessage(
-                        user.phoneNumber,
-                        `Halo ${user.name}, Anda telah ditugaskan untuk mengerjakan tugas "${updates.title || currentTask.title}" di proyek "${project?.title}".`
-                    );
+            const template = await getWhatsappTemplate('new_task_assigned');
+
+            if (template.isActive) {
+                for (const assigneeId of newAssignees) {
+                    const user = await getUserByUid(assigneeId);
+                    if (user?.waNumber) {
+                        const message = template.message
+                            .replace('{namaPengguna}', user.name)
+                            .replace('{namaTugas}', updates.title || currentTask.title)
+                            .replace('{namaProyek}', project?.title || 'tanpa nama');
+                        await sendWhatsAppMessage(user.waNumber, message);
+                    }
                 }
             }
         }
