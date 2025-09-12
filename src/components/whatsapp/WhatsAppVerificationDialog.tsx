@@ -49,7 +49,12 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
         toast({ title: 'Kode OTP terkirim!', description: 'Periksa WhatsApp Anda.' });
         setOtpSent(true);
       } else {
-        throw new Error(result.error || 'Gagal mengirimkan kode OTP dari server.');
+        // Display toast directly instead of throwing an error
+        toast({
+          variant: 'destructive',
+          title: 'Gagal mengirim OTP',
+          description: result.error || 'Terjadi kesalahan di server.'
+        });
       }
     } catch (error) {
       console.error('Error sending OTP:', error);
