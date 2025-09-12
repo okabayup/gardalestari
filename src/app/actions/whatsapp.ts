@@ -29,56 +29,56 @@ const defaultTemplates: Record<NotificationType, WhatsAppTemplate> = {
     document_submission: {
         id: 'document_submission',
         label: 'Permintaan Persetujuan Dokumen',
-        message: 'Halo {namaPenerima},\n\nDokumen "{judulDokumen}" dari {namaPengirim} memerlukan persetujuan Anda. Silakan tinjau di panel admin Garda Lestari.',
+        message: 'Halo {namaPenerima},\n\nDokumen *"{judulDokumen}"* dari *{namaPengirim}* memerlukan persetujuan Anda. Silakan tinjau di panel admin Garda Lestari.',
         isActive: true,
         placeholders: ['{namaPenerima}', '{judulDokumen}', '{namaPengirim}']
     },
     document_approved: {
         id: 'document_approved',
         label: 'Dokumen Disetujui',
-        message: 'Kabar baik, {namaPengguna}! Dokumen Anda "{judulDokumen}" telah disetujui dan disahkan secara digital. Anda dapat mengunduhnya di aplikasi.',
+        message: 'Kabar baik, {namaPengguna}! Dokumen Anda *"{judulDokumen}"* telah *disetujui dan disahkan* secara digital. Anda dapat mengunduhnya di aplikasi.',
         isActive: true,
         placeholders: ['{namaPengguna}', '{judulDokumen}']
     },
     document_rejected: {
         id: 'document_rejected',
         label: 'Dokumen Ditolak',
-        message: 'Halo {namaPengguna}, dokumen Anda "{judulDokumen}" ditolak oleh {namaPenolak} dengan alasan: "{alasanPenolakan}".',
+        message: 'Halo {namaPengguna}, dokumen Anda *"{judulDokumen}"* telah *ditolak* oleh {namaPenolak} dengan alasan: "{alasanPenolakan}".',
         isActive: true,
         placeholders: ['{namaPengguna}', '{judulDokumen}', '{namaPenolak}', '{alasanPenolakan}']
     },
     new_task_assigned: {
         id: 'new_task_assigned',
         label: 'Tugas Proyek Baru',
-        message: 'Halo {namaPengguna}, Anda telah ditugaskan untuk mengerjakan tugas baru: "{namaTugas}" di proyek "{namaProyek}". Silakan periksa detailnya di papan proyek.',
+        message: 'Halo {namaPengguna}, Anda telah ditugaskan untuk mengerjakan tugas baru: *"{namaTugas}"* di proyek *"{namaProyek}"*. Silakan periksa detailnya di papan proyek.',
         isActive: true,
         placeholders: ['{namaPengguna}', '{namaTugas}', '{namaProyek}']
     },
     member_verified_permanent: {
         id: 'member_verified_permanent',
         label: 'Verifikasi Anggota Berhasil',
-        message: 'Selamat {namaPengguna}! Akun Garda Lestari Anda telah diverifikasi secara permanen. Anda sekarang dapat mengakses Kartu Tanda Anggota (KTA) digital Anda.',
+        message: '*Selamat, {namaPengguna}!* Akun Garda Lestari Anda telah diverifikasi secara permanen. Anda sekarang dapat mengakses Kartu Tanda Anggota (KTA) digital Anda.',
         isActive: true,
         placeholders: ['{namaPengguna}']
     },
     member_verification_rejected: {
         id: 'member_verification_rejected',
         label: 'Verifikasi Anggota Ditolak',
-        message: 'Halo {namaPengguna}. Mohon maaf, pengajuan verifikasi akun Garda Lestari Anda ditolak. Silakan periksa kembali data Anda dan coba lagi.',
+        message: 'Halo {namaPengguna}. Mohon maaf, pengajuan verifikasi akun Garda Lestari Anda *ditolak*. Silakan periksa kembali data Anda dan coba lagi.',
         isActive: true,
         placeholders: ['{namaPengguna}']
     },
     event_reminder: {
         id: 'event_reminder',
         label: 'Pengingat Acara',
-        message: 'Pengingat: Acara "{namaAcara}" akan berlangsung besok pada {tanggalWaktu} di {lokasi}. Jangan sampai ketinggalan!',
+        message: 'Pengingat: Acara *"{namaAcara}"* akan berlangsung besok pada *{tanggalWaktu}* di *{lokasi}*. Jangan sampai ketinggalan!',
         isActive: false, // Default off as it may need manual trigger
         placeholders: ['{namaAcara}', '{tanggalWaktu}', '{lokasi}']
     },
     new_program_announcement: {
         id: 'new_program_announcement',
         label: 'Pengumuman Program Baru',
-        message: 'Program baru telah dibuka! "{namaProgram}". Batas waktu pendaftaran: {batasWaktu}. Cek selengkapnya di aplikasi!',
+        message: 'Program baru telah dibuka!\n\n*{namaProgram}*\n\nBatas waktu pendaftaran: *{batasWaktu}*. Cek selengkapnya di aplikasi!',
         isActive: true,
         placeholders: ['{namaProgram}', '{batasWaktu}']
     }
@@ -127,7 +127,10 @@ export async function updateWhatsappTemplates(templates: Record<string, Partial<
 
 export async function sendTestMessage(phoneNumber: string, message: string) {
     try {
-        await sendWhatsAppMessageSatuConnect(phoneNumber, message);
+        const result = await sendWhatsAppMessageSatuConnect(phoneNumber, message);
+        if (!result.success) {
+            throw new Error(result.error || 'Unknown error from SatuConnect');
+        }
         return { success: true };
     } catch (error) {
         const errorMessage = (error instanceof Error) ? error.message : 'Unknown error occurred';
