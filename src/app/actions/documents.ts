@@ -10,8 +10,7 @@ import { sendNotification } from './notifications';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from './user';
 import { getWhatsappTemplate } from './whatsapp';
-
-export type LetterStatus = 'Draft' | 'Menunggu Persetujuan' | 'Disetujui' | 'Ditolak';
+import type { LetterStatus } from '@/lib/definitions';
 
 export interface ImportantDocument {
   id?: string;

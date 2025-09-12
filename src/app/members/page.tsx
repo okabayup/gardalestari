@@ -19,8 +19,7 @@ import { getMembers, MemberWithStatus } from '@/app/actions/members';
 import { useToast } from '@/hooks/use-toast';
 import { formatFullName } from '@/lib/utils';
 
-
-const TABS = ['Semua', 'DPP', 'DPD', 'DPC', 'Dewan Kehormatan', 'Anggota Istimewa'];
+const ALL_TABS = ['Semua', 'DPP', 'DPD', 'DPC', 'Dewan Kehormatan', 'Anggota Istimewa'];
 
 export default function MembersPage() {
   const { toast } = useToast();
@@ -48,6 +47,17 @@ export default function MembersPage() {
     };
     fetchMembers();
   }, [toast]);
+
+  const availableTabs = useMemo(() => {
+    return ALL_TABS.filter(tab => {
+        if (tab === 'Semua' || tab === 'Anggota Istimewa') return true;
+        if (tab === 'DPP') return allMembers.some(m => m.type === 'pusat');
+        if (tab === 'DPD') return allMembers.some(m => m.type === 'daerah');
+        if (tab === 'DPC') return allMembers.some(m => m.type === 'cabang');
+        if (tab === 'Dewan Kehormatan') return allMembers.some(m => ['pembina', 'pengawas', 'penasehat'].includes(m.type || ''));
+        return false;
+    })
+  }, [allMembers]);
 
   const allRegions = useMemo(() => {
     return [
@@ -113,7 +123,7 @@ export default function MembersPage() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
-             {(activeTab === 'Semua' || activeTab === 'DPD') && (
+             {(activeTab === 'Semua' || activeTab === 'DPD') && allRegions.length > 1 && (
                 <Select value={selectedRegion} onValueChange={setSelectedRegion}>
                     <SelectTrigger>
                         <SelectValue placeholder="Filter berdasarkan wilayah" />
@@ -134,7 +144,7 @@ export default function MembersPage() {
         <div className="relative">
           <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex space-x-2 pb-2">
-              {TABS.map((tab) => (
+              {availableTabs.map((tab) => (
                 <Button
                   key={tab}
                   variant={activeTab === tab ? 'default' : 'outline'}

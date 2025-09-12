@@ -10,23 +10,23 @@ const documentCategoriesCollection = collection(db, 'documentCategories');
 const programTagsCollection = collection(db, 'programTags');
 const positionsCollection = collection(db, 'positions');
 
-const initialIdeaCategories = [
+export const initialIdeaCategories = [
     'Agrikultur', 'Maritim', 'Kehutanan', 'Teknologi', 'Pemasaran', 'Komunitas', 'Lainnya'
 ];
 
-const initialBeritaCategories = [
+export const initialBeritaCategories = [
     'Pertanian', 'Perikanan', 'Kehutanan', 'Konservasi', 'Teknologi', 'Komunitas', 'Acara'
 ];
 
-const initialDocumentCategories = [
+export const initialDocumentCategories = [
     'Surat Keterangan', 'Surat Permohonan', 'Surat Undangan', 'Laporan', 'Nota Kesepahaman'
 ];
 
-const initialProgramTags = [
+export const initialProgramTags = [
     'Pelatihan', 'Kompetisi', 'Pendanaan', 'Relawan', 'Magang', 'Riset', 'Beasiswa'
 ];
 
-const initialPositions = [
+export const initialPositions = [
     "Dewan Pembina",
     "Dewan Pengawas",
     "Dewan Penasihat",
@@ -73,7 +73,7 @@ async function seedCollection(collRef: any, initialNames: string[], collectionNa
             await Promise.all(batchPromises);
             console.log(`Successfully seeded '${collectionName}'.`);
         } else {
-             console.log(`Collection '${collectionName}' already contains data. Skipping seed.`);
+             // console.log(`Collection '${collectionName}' already contains data. Skipping seed.`);
         }
     } catch (error) {
         console.error(`Error seeding '${collectionName}':`, error);

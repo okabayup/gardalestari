@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { getMembers, MemberWithStatus } from '../actions/members';
 import { MemberCard } from '@/components/members/MemberCard';
 import { formatFullName } from '@/lib/utils';
+import { initialPositions } from '@/lib/seed-data';
 
 
 const InfoSection = ({ title, children, icon: Icon }: { title: string, children: React.ReactNode, icon: React.ElementType }) => (
@@ -24,35 +25,13 @@ const InfoSection = ({ title, children, icon: Icon }: { title: string, children:
     </div>
 )
 
-const BoardSection = ({ title, members }: { title: string, members: MemberWithStatus[] }) => (
-    <div>
-        <h3 className="font-headline text-xl font-semibold mt-6 mb-4 text-center md:text-left">{title}</h3>
-        {members.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-6">
-                {members.map(member => (
-                    <MemberCard 
-                        key={member.id} 
-                        name={member.name} 
-                        position={member.position || 'Anggota'} 
-                        avatarUrl={member.avatarUrl}
-                        titlePrefix={member.titlePrefix}
-                        titlePostfix={member.titlePostfix}
-                    />
-                ))}
-            </div>
-        ) : (
-            <p className="text-sm text-muted-foreground text-center">Data anggota untuk dewan ini akan segera ditampilkan.</p>
-        )}
-    </div>
-);
-
-const ExecutiveBoardSection = ({ title, members }: { title: string, members: MemberWithStatus[] }) => {
+const BoardSection = ({ title, members }: { title: string, members: MemberWithStatus[] }) => {
     if (members.length === 0) return null;
-
+    
     return (
         <div>
-            <h3 className="font-headline text-xl font-semibold mt-6 mb-4">{title}</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <h3 className="font-headline text-xl font-semibold mt-6 mb-4 text-center md:text-left">{title}</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-6">
                 {members.map(member => (
                     <MemberCard 
                         key={member.id} 
@@ -71,12 +50,27 @@ const ExecutiveBoardSection = ({ title, members }: { title: string, members: Mem
 
 export default async function AboutPage() {
     const settings = await getAppSettings();
-    const members = await getMembers();
+    const allMembers = await getMembers();
 
-    const dewanKehormatan = members.filter(m => ['pembina', 'pengawas', 'penasehat'].includes(m.type || ''));
-    const dpp = members.filter(m => m.type === 'pusat');
-    const dpd = members.filter(m => m.type === 'daerah');
-    const dpc = members.filter(m => m.type === 'cabang');
+    // Define the custom sort order
+    const positionOrder = initialPositions;
+
+    const sortMembers = (members: MemberWithStatus[]) => {
+        return members.sort((a, b) => {
+            const indexA = positionOrder.indexOf(a.position || '');
+            const indexB = positionOrder.indexOf(b.position || '');
+            
+            // If one or both positions are not in the list, don't move them relative to each other
+            if (indexA === -1 || indexB === -1) return 0;
+
+            return indexA - indexB;
+        });
+    }
+
+    const dewanKehormatan = sortMembers(allMembers.filter(m => ['pembina', 'pengawas', 'penasehat'].includes(m.type || '')));
+    const dpp = sortMembers(allMembers.filter(m => m.type === 'pusat'));
+    const dpd = sortMembers(allMembers.filter(m => m.type === 'daerah'));
+    const dpc = sortMembers(allMembers.filter(m => m.type === 'cabang'));
 
 
     return (

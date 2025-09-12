@@ -44,3 +44,5 @@ export const ideaStatusMap: Record<IdeaStatus, { label: string, color: string }>
     diterapkan: { label: 'Diterapkan', color: 'bg-purple-500' },
     ditolak: { label: 'Ditolak', color: 'bg-red-500' },
 };
+
+export type LetterStatus = 'Draft' | 'Menunggu Persetujuan' | 'Disetujui' | 'Ditolak';
