@@ -19,53 +19,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
-
-export interface VotingOption {
-  id: string;
-  name: string;
-  voteCount: number;
-  imageUrl?: string;
-}
-
-export interface VotingTopic {
-  id?: string;
-  title: string;
-  description: string;
-  options: VotingOption[];
-  startDate: Timestamp;
-  endDate: Timestamp;
-  createdAt: Timestamp;
-  totalVotes: number;
-  voterIds: string[];
-  coverImageUrl?: string;
-}
-
-// Payload for creating/updating from the client. Dates are JS Dates.
-export interface UpdateVotingTopicPayload {
-  title: string;
-  description: string;
-  options: VotingOption[]; // ImageUrl might be present from existing data
-  startDate: Date;
-  endDate: Date;
-  coverImageUrl?: string; // For URL updates
-}
-
-
-// Data Transfer Object (DTO) for client-side consumption
-// This converts Timestamps to strings to avoid serialization errors
-export interface VotingTopicDTO {
-  id: string;
-  title: string;
-  description: string;
-  options: VotingOption[];
-  startDate: string; // ISO string
-  endDate: string; // ISO string
-  createdAt: string; // ISO string
-  totalVotes: number;
-  voterIds: string[];
-  coverImageUrl?: string;
-}
-
+import type { VotingTopic, VotingOption, UpdateVotingTopicPayload, VotingTopicDTO } from '@/lib/definitions';
 
 const votingCollection = collection(db, 'votingTopics');
 const usersCollection = collection(db, 'users');

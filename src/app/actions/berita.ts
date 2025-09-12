@@ -5,19 +5,7 @@ import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, where, orderBy } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import { notifyGoogleOfUpdate } from '@/services/indexing';
-
-export interface BeritaPost {
-  id?: string;
-  title: string;
-  slug: string;
-  content: string;
-  author: string;
-  date: string; 
-  imageUrl: string;
-  imageHint: string;
-  excerpt: string;
-  category: string; // New field
-}
+import type { BeritaPost } from '@/lib/definitions';
 
 const beritaPostsCollection = collection(db, 'beritaPosts');
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://gardalestari.org';

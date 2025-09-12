@@ -4,22 +4,7 @@
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
-
-export type RecruitmentType = 'internal' | 'external';
-
-export interface Recruitment {
-  id?: string;
-  title: string;
-  type: RecruitmentType;
-  partnerId?: string; // Optional, only if type is 'external'
-  partnerName?: string; // Denormalized for display
-  partnerLogoUrl?: string; // Denormalized for display
-  description: string;
-  requirements: string; // Storing as a single string, lines separated by newline
-  applicationUrl: string;
-  deadline: Timestamp;
-  createdAt: Timestamp;
-}
+import type { Recruitment } from '@/lib/definitions';
 
 const recruitmentsCollection = collection(db, 'recruitments');
 const partnersCollection = collection(db, 'partners');

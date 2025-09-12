@@ -4,30 +4,7 @@
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
-
-export type FormFieldType = 'text' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'file';
-
-export interface FormFieldOption {
-  id: string;
-  value: string;
-  label: string;
-}
-
-export interface FormField {
-  id: string;
-  type: FormFieldType;
-  label: string;
-  placeholder?: string;
-  required: boolean;
-  options?: FormFieldOption[];
-}
-
-export interface ProgramForm {
-  id?: string;
-  title: string;
-  description: string;
-  fields: FormField[];
-}
+import type { ProgramForm } from '@/lib/definitions';
 
 const formsCollection = collection(db, 'programForms');
 

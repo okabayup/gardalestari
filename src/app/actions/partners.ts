@@ -5,14 +5,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { ref, deleteObject, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
-
-export interface Partner {
-  id?: string;
-  name: string;
-  websiteUrl: string;
-  logoUrl: string;
-  isFeatured: boolean;
-}
+import type { Partner } from '@/lib/definitions';
 
 const partnersCollection = collection(db, 'partners');
 

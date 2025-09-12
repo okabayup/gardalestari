@@ -1,22 +1,10 @@
+
 'use server';
 
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, query, orderBy } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
-
-export type MapDataCategory = 'potensi' | 'permasalahan' | 'program' | 'kegiatan' | 'dana';
-
-export interface MapData {
-  id?: string;
-  title: string;
-  description: string;
-  category: MapDataCategory;
-  latitude: number;
-  longitude: number;
-  createdAt: Timestamp;
-  budget?: number;
-  disbursed?: number;
-}
+import type { MapData } from '@/lib/definitions';
 
 const mapDataCollection = collection(db, 'mapData');
 

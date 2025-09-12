@@ -21,44 +21,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
-import type { MemberType } from './members';
-import type { IdeaStatus } from '@/lib/definitions';
-
-export type VoteType = 'up' | 'down';
-
-
-export interface Idea {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  authorId: string;
-  createdAt: Timestamp;
-  status: IdeaStatus;
-  upvotes: string[];
-  downvotes: string[];
-  voteScore: number;
-  commentCount: number;
-}
-
-export interface IdeaAuthor {
-  id: string;
-  name: string;
-  username: string;
-  avatarUrl: string;
-  type?: MemberType;
-}
-
-export interface IdeaWithAuthor extends Omit<Idea, 'authorId' | 'upvotes' | 'downvotes'> {
-  author: IdeaAuthor;
-  userVote?: VoteType;
-}
-
-export interface IdeaCategory {
-    id?: string;
-    name: string;
-}
-
+import type { Idea, IdeaWithAuthor, IdeaAuthor, IdeaCategory, VoteType, IdeaStatus } from '@/lib/definitions';
 
 const ideasCollection = collection(db, 'ideas');
 const usersCollection = collection(db, 'users');

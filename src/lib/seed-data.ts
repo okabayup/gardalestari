@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { collection, addDoc, getDocs, query, limit } from 'firebase/firestore';
@@ -10,19 +11,19 @@ const documentCategoriesCollection = collection(db, 'documentCategories');
 const programTagsCollection = collection(db, 'programTags');
 const positionsCollection = collection(db, 'positions');
 
-export const initialIdeaCategories = [
+const initialIdeaCategories = [
     'Agrikultur', 'Maritim', 'Kehutanan', 'Teknologi', 'Pemasaran', 'Komunitas', 'Lainnya'
 ];
 
-export const initialBeritaCategories = [
+const initialBeritaCategories = [
     'Pertanian', 'Perikanan', 'Kehutanan', 'Konservasi', 'Teknologi', 'Komunitas', 'Acara'
 ];
 
-export const initialDocumentCategories = [
+const initialDocumentCategories = [
     'Surat Keterangan', 'Surat Permohonan', 'Surat Undangan', 'Laporan', 'Nota Kesepahaman'
 ];
 
-export const initialProgramTags = [
+const initialProgramTags = [
     'Pelatihan', 'Kompetisi', 'Pendanaan', 'Relawan', 'Magang', 'Riset', 'Beasiswa'
 ];
 
@@ -88,3 +89,4 @@ export async function seedInitialData() {
     await seedCollection(programTagsCollection, initialProgramTags, 'programTags');
     await seedCollection(positionsCollection, initialPositions, 'positions');
 }
+

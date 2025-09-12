@@ -5,17 +5,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
-
-export interface Achievement {
-  id?: string;
-  userId: string;
-  userName: string; // Denormalized for easy display
-  userAvatar: string; // Denormalized for easy display
-  title: string;
-  description: string;
-  date: Timestamp;
-  imageUrl?: string;
-}
+import type { Achievement } from '@/lib/definitions';
 
 const achievementsCollection = collection(db, 'achievements');
 

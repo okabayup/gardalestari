@@ -21,75 +21,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
-import type { MemberType } from './members';
-
-type MediaType = 'image' | 'video';
-
-export interface Mention {
-    userId: string;
-    username: string; // denormalized for easy display
-    x: number; // position percentage
-    y: number; // position percentage
-}
-
-export interface MediaItem {
-    url: string;
-    type: MediaType;
-    hint: string;
-    mentions?: Mention[];
-}
-
-interface Post {
-  id: string;
-  authorId: string;
-  media: MediaItem[];
-  caption: string;
-  likes: string[]; // Array of user UIDs who liked the post
-  commentsCount: number;
-  createdAt: Timestamp;
-  status: 'published' | 'archived';
-  mentionedUserIds: string[]; // For querying posts where a user is mentioned
-}
-
-interface Author {
-  id: string;
-  name: string;
-  username: string;
-  avatarUrl: string;
-  level: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
-  type?: MemberType;
-}
-
-export interface PostWithAuthor {
-  id: string;
-  author: Author;
-  media: MediaItem[];
-  caption: string;
-  likesCount: number;
-  commentsCount: number;
-  timestamp: string;
-  isLiked: boolean;
-  status: 'published' | 'archived';
-}
-
-export interface Comment {
-    id: string;
-    authorId: string;
-    text: string;
-    createdAt: Timestamp;
-}
-
-export interface CommentWithAuthor {
-    id: string;
-    author: {
-        name: string;
-        username: string;
-        avatarUrl: string;
-    };
-    text: string;
-    timestamp: string;
-}
-
+import type { Mention, MediaItem, Post, Author, PostWithAuthor, Comment, CommentWithAuthor } from '@/lib/definitions';
 
 const postsCollection = collection(db, 'posts');
 const usersCollection = collection(db, 'users'); 

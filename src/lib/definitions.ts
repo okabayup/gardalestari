@@ -1,5 +1,7 @@
 
 
+import { Timestamp } from "firebase/firestore";
+
 export const ALL_PERMISSIONS = [
     { id: 'manage_users', label: 'Kelola Anggota & Verifikasi' },
     { id: 'manage_news', label: 'Kelola Berita (Buat/Edit)' },
@@ -46,3 +48,459 @@ export const ideaStatusMap: Record<IdeaStatus, { label: string, color: string }>
 };
 
 export type LetterStatus = 'Draft' | 'Menunggu Persetujuan' | 'Disetujui' | 'Ditolak';
+
+// --- Achievements ---
+export interface Achievement {
+  id?: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  title: string;
+  description: string;
+  date: Timestamp;
+  imageUrl?: string;
+}
+
+// --- Announcements ---
+export interface Announcement {
+  id?: string;
+  title: string;
+  content: string;
+  createdAt: Timestamp;
+  attachmentUrl?: string;
+  attachmentName?: string;
+}
+
+// --- Berita ---
+export interface BeritaCategory {
+    id?: string;
+    name: string;
+}
+
+export interface BeritaPost {
+  id?: string;
+  title: string;
+  slug: string;
+  content: string;
+  author: string;
+  date: string; 
+  imageUrl: string;
+  imageHint: string;
+  excerpt: string;
+  category: string;
+}
+
+// --- Documents ---
+export interface ImportantDocument {
+  id?: string;
+  title: string;
+  description?: string;
+  documentNumber: string;
+  category: string;
+  createdAt: Timestamp;
+  fileUrl: string;
+  fileName: string;
+  authorId: string;
+  authorName: string;
+  status: LetterStatus;
+  approverId?: string;
+  approvedById?: string;
+  approvedByName?: string;
+  approvedAt?: Timestamp;
+  rejectionReason?: string;
+  rejectedById?: string;
+  rejectedByName?: string;
+}
+
+export interface DocumentCategory {
+    id?: string;
+    name: string;
+}
+
+// --- Events ---
+export interface Event {
+  id?: string;
+  title: string;
+  description: string;
+  date: Timestamp;
+  location: string;
+  imageUrl: string;
+  imageHint: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
+}
+
+// --- Forms ---
+export type FormFieldType = 'text' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'file';
+
+export interface FormFieldOption {
+  id: string;
+  value: string;
+  label: string;
+}
+
+export interface FormField {
+  id: string;
+  type: FormFieldType;
+  label: string;
+  placeholder?: string;
+  required: boolean;
+  options?: FormFieldOption[];
+}
+
+export interface ProgramForm {
+  id?: string;
+  title: string;
+  description: string;
+  fields: FormField[];
+}
+
+// --- Ideas ---
+export type VoteType = 'up' | 'down';
+
+export type MemberType = 'pusat' | 'daerah' | 'cabang' | 'pembina' | 'pengawas' | 'penasehat';
+
+export interface Idea {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  authorId: string;
+  createdAt: Timestamp;
+  status: IdeaStatus;
+  upvotes: string[];
+  downvotes: string[];
+  voteScore: number;
+  commentCount: number;
+}
+
+export interface IdeaAuthor {
+  id: string;
+  name: string;
+  username: string;
+  avatarUrl: string;
+  type?: MemberType;
+}
+
+export interface IdeaWithAuthor extends Omit<Idea, 'authorId' | 'upvotes' | 'downvotes'> {
+  author: IdeaAuthor;
+  userVote?: VoteType;
+}
+
+export interface IdeaCategory {
+    id?: string;
+    name: string;
+}
+
+// --- Map Data ---
+export type MapDataCategory = 'potensi' | 'permasalahan' | 'program' | 'kegiatan' | 'dana';
+
+export interface MapData {
+  id?: string;
+  title: string;
+  description: string;
+  category: MapDataCategory;
+  latitude: number;
+  longitude: number;
+  createdAt: Timestamp;
+  budget?: number;
+  disbursed?: number;
+}
+
+// --- Members ---
+export type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected' | 'manual';
+
+export interface Member {
+  id: string;
+  name: string;
+  username: string;
+  titlePrefix?: string;
+  titlePostfix?: string;
+  positionId?: string; 
+  type?: MemberType;
+  region?: string;
+  avatarUrl?: string;
+  isSpecialMember?: boolean;
+}
+
+export interface MemberWithStatus extends Member {
+    phoneNumber: string;
+    waNumber?: string;
+    waVerified?: boolean;
+    verificationStatus: VerificationStatus;
+    joinDate?: string;
+    ktpImageUrl?: string;
+    selfieImageUrl?: string;
+    nik?: string;
+    createdAt?: string;
+    position?: string; 
+    permissions: PermissionId[];
+}
+
+// --- Partners ---
+export interface Partner {
+  id?: string;
+  name: string;
+  websiteUrl: string;
+  logoUrl: string;
+  isFeatured: boolean;
+}
+
+// --- Posts (Feed) ---
+export type MediaType = 'image' | 'video';
+
+export interface Mention {
+    userId: string;
+    username: string;
+    x: number;
+    y: number;
+}
+
+export interface MediaItem {
+    url: string;
+    type: MediaType;
+    hint: string;
+    mentions?: Mention[];
+}
+
+export interface Post {
+  id: string;
+  authorId: string;
+  media: MediaItem[];
+  caption: string;
+  likes: string[];
+  commentsCount: number;
+  createdAt: Timestamp;
+  status: 'published' | 'archived';
+  mentionedUserIds: string[];
+}
+
+export interface Author {
+  id: string;
+  name: string;
+  username: string;
+  avatarUrl: string;
+  level: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
+  type?: MemberType;
+}
+
+export interface PostWithAuthor {
+  id: string;
+  author: Author;
+  media: MediaItem[];
+  caption: string;
+  likesCount: number;
+  commentsCount: number;
+  timestamp: string;
+  isLiked: boolean;
+  status: 'published' | 'archived';
+}
+
+export interface Comment {
+    id: string;
+    authorId: string;
+    text: string;
+    createdAt: Timestamp;
+}
+
+export interface CommentWithAuthor {
+    id: string;
+    author: {
+        name: string;
+        username: string;
+        avatarUrl: string;
+    };
+    text: string;
+    timestamp: string;
+}
+
+// --- Programs ---
+export type ProgramSource = 'garda_lestari' | 'mitra';
+export type SubmissionType = 'internal' | 'external';
+
+export interface Program {
+  id?: string;
+  title: string;
+  description: string;
+  category: 'flagship' | 'ongoing';
+  imageUrl: string;
+  imageHint: string;
+  tags: string[];
+  startDate: Timestamp;
+  endDate: Timestamp;
+  source: ProgramSource;
+  partnerId?: string; 
+  benefits: string;
+  requiredDocuments: string;
+  submissionType: SubmissionType;
+  applicationUrl?: string; 
+  formId?: string;
+  requiresRecommendation: boolean;
+  attachmentUrl?: string;
+  attachmentName?: string;
+}
+
+export interface ProgramFormData extends Omit<Program, 'id' | 'startDate' | 'endDate' > {
+    startDate: Date;
+    endDate: Date;
+}
+
+export interface ProgramTag {
+    id?: string;
+    name: string;
+}
+
+// --- Projects ---
+export interface Project {
+    id: string;
+    title: string;
+    description: string;
+    managerId: string;
+    teamIds: string[];
+    createdAt: string; 
+    taskCount: number;
+    originIdeaId?: string;
+}
+
+export interface ProjectColumn {
+    id: string;
+    title: string;
+    taskIds: string[];
+}
+
+export interface ChecklistItem {
+    id: string;
+    text: string;
+    completed: boolean;
+}
+
+export interface ProjectTask {
+    id: string;
+    title: string;
+    description?: string;
+    assigneeIds?: string[];
+    dueDate?: string; 
+    labels?: string[];
+    commentCount: number;
+    checklist?: ChecklistItem[];
+}
+
+export interface ProjectComment {
+    id: string;
+    authorId: string;
+    text: string;
+    createdAt: string; 
+}
+
+export interface CommentWithAuthor extends Comment {
+    author: IdeaAuthor;
+}
+
+// --- Recruitments ---
+export type RecruitmentType = 'internal' | 'external';
+
+export interface Recruitment {
+  id?: string;
+  title: string;
+  type: RecruitmentType;
+  partnerId?: string;
+  partnerName?: string;
+  partnerLogoUrl?: string;
+  description: string;
+  requirements: string;
+  applicationUrl: string;
+  deadline: Timestamp;
+  createdAt: Timestamp;
+}
+
+// --- Settings ---
+export interface AppSettings {
+  linkedin: string;
+  instagram: string;
+  twitter: string;
+  facebook: string;
+  isRegistrationOpen: boolean;
+  isWhatsappNotificationsEnabled: boolean;
+  heroImageUrl: string;
+  aboutImageUrl: string;
+  orgChartImageUrl: string;
+  dummyMembers: number;
+  dummyPrograms: number;
+  dummyEvents: number;
+  dummyNews: number;
+}
+
+// --- User ---
+export interface PublicUser {
+  id: string;
+  username: string;
+  fullName: string;
+  avatarUrl: string;
+  level: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
+}
+
+export interface PublicProfile extends MemberWithStatus {
+    // This interface just combines the existing types for clarity.
+}
+
+// --- Voting ---
+export interface VotingOption {
+  id: string;
+  name: string;
+  voteCount: number;
+  imageUrl?: string;
+}
+
+export interface VotingTopic {
+  id?: string;
+  title: string;
+  description: string;
+  options: VotingOption[];
+  startDate: Timestamp;
+  endDate: Timestamp;
+  createdAt: Timestamp;
+  totalVotes: number;
+  voterIds: string[];
+  coverImageUrl?: string;
+}
+
+export interface UpdateVotingTopicPayload {
+  title: string;
+  description: string;
+  options: VotingOption[];
+  startDate: Date;
+  endDate: Date;
+  coverImageUrl?: string;
+}
+
+export interface VotingTopicDTO {
+  id: string;
+  title: string;
+  description: string;
+  options: VotingOption[];
+  startDate: string;
+  endDate: string;
+  createdAt: string;
+  totalVotes: number;
+  voterIds: string[];
+  coverImageUrl?: string;
+}
+
+// --- WhatsApp ---
+export type NotificationType = 
+    | 'document_submission' 
+    | 'document_approved'
+    | 'document_rejected'
+    | 'new_task_assigned'
+    | 'member_verified_permanent'
+    | 'member_verification_rejected'
+    | 'event_reminder'
+    | 'new_program_announcement';
+
+export interface WhatsAppTemplate {
+    id: NotificationType;
+    label: string;
+    message: string;
+    isActive: boolean;
+    placeholders: string[];
+}

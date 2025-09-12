@@ -22,56 +22,8 @@ import {
 import { revalidatePath } from 'next/cache';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from './user';
-import type { IdeaAuthor } from './ideas';
 import { getWhatsappTemplate } from './whatsapp';
-
-export interface Project {
-    id: string;
-    title: string;
-    description: string;
-    managerId: string;
-    teamIds: string[];
-    createdAt: string; 
-    taskCount: number;
-    originIdeaId?: string; // Tautan ke ide asal
-}
-
-export interface ProjectColumn {
-    id: string;
-    title: string;
-    taskIds: string[];
-}
-
-export interface ChecklistItem {
-    id: string;
-    text: string;
-    completed: boolean;
-}
-
-export interface ProjectTask {
-    id: string;
-    title: string;
-    description?: string;
-    assigneeIds?: string[];
-    dueDate?: string; 
-    labels?: string[];
-    commentCount: number;
-    checklist?: ChecklistItem[];
-}
-
-export interface ProjectComment {
-    id: string;
-    authorId: string;
-    text: string;
-    createdAt: string; 
-}
-
-export interface CommentWithAuthor {
-    id: string;
-    text: string;
-    createdAt: string; 
-    author: IdeaAuthor;
-}
+import type { Project, ProjectColumn, ProjectTask, CommentWithAuthor, IdeaAuthor } from '@/lib/definitions';
 
 const projectsCollection = collection(db, 'projects');
 const usersCollection = collection(db, 'users');

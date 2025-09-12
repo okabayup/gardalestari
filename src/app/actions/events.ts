@@ -5,18 +5,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
-
-export interface Event {
-  id?: string;
-  title: string;
-  description: string;
-  date: Timestamp;
-  location: string;
-  imageUrl: string;
-  imageHint: string;
-  attachmentUrl?: string;
-  attachmentName?: string;
-}
+import type { Event } from '@/lib/definitions';
 
 const eventsCollection = collection(db, 'events');
 

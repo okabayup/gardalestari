@@ -5,22 +5,7 @@ import { db, storage } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
-
-export interface AppSettings {
-  linkedin: string;
-  instagram: string;
-  twitter: string;
-  facebook: string;
-  isRegistrationOpen: boolean;
-  isWhatsappNotificationsEnabled: boolean;
-  heroImageUrl: string;
-  aboutImageUrl: string;
-  orgChartImageUrl: string;
-  dummyMembers: number;
-  dummyPrograms: number;
-  dummyEvents: number;
-  dummyNews: number;
-}
+import type { AppSettings } from '@/lib/definitions';
 
 const settingsDocRef = doc(db, 'settings', 'global');
 

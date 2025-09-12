@@ -5,15 +5,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
-
-export interface Announcement {
-  id?: string;
-  title: string;
-  content: string;
-  createdAt: Timestamp;
-  attachmentUrl?: string;
-  attachmentName?: string;
-}
+import type { Announcement } from '@/lib/definitions';
 
 const announcementsCollection = collection(db, 'announcements');
 

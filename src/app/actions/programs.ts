@@ -7,39 +7,7 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { revalidatePath } from 'next/cache';
 import { getWhatsappTemplate } from './whatsapp';
 import { sendBulkWhatsAppMessage } from '@/services/whatsapp';
-
-
-export type ProgramSource = 'garda_lestari' | 'mitra';
-export type SubmissionType = 'internal' | 'external';
-
-export interface Program {
-  id?: string;
-  title: string;
-  description: string;
-  category: 'flagship' | 'ongoing';
-  imageUrl: string;
-  imageHint: string;
-  tags: string[];
-  startDate: Timestamp;
-  endDate: Timestamp;
-  source: ProgramSource;
-  partnerId?: string; 
-  benefits: string;
-  requiredDocuments: string;
-  submissionType: SubmissionType;
-  applicationUrl?: string; 
-  formId?: string;
-  requiresRecommendation: boolean;
-  attachmentUrl?: string;
-  attachmentName?: string;
-}
-
-// The data type received from the client-side form
-export interface ProgramFormData extends Omit<Program, 'id' | 'startDate' | 'endDate' > {
-    startDate: Date;
-    endDate: Date;
-}
-
+import type { Program, ProgramFormData, ProgramTag } from '@/lib/definitions';
 
 const programsCollection = collection(db, 'programs');
 const tagsCollection = collection(db, 'programTags');
@@ -215,11 +183,6 @@ export async function deleteProgram(id: string) {
 
 
 // --- Tag Management ---
-
-export interface ProgramTag {
-    id?: string;
-    name: string;
-}
 
 // Get all tags
 export async function getProgramTags(): Promise<ProgramTag[]> {

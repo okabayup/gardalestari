@@ -4,11 +4,7 @@
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, deleteDoc, query, orderBy } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
-
-export interface BeritaCategory {
-    id?: string;
-    name: string;
-}
+import type { BeritaCategory } from '@/lib/definitions';
 
 const categoriesCollection = collection(db, 'beritaCategories');
 

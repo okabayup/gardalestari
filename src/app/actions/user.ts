@@ -3,22 +3,9 @@
 
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, DocumentData, limit, getDoc, doc, setDoc } from 'firebase/firestore';
-import type { MemberWithStatus, MemberType } from './members';
-import type { Position, PermissionId } from '@/lib/definitions';
+import type { MemberWithStatus } from '@/lib/definitions';
+import type { Position, PermissionId, PublicUser, PublicProfile } from '@/lib/definitions';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
-
-
-export interface PublicUser {
-  id: string;
-  username: string;
-  fullName: string;
-  avatarUrl: string;
-  level: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
-}
-
-export interface PublicProfile extends MemberWithStatus {
-    // This interface just combines the existing types for clarity.
-}
 
 
 /**

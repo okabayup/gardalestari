@@ -6,24 +6,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { sendWhatsAppMessage as sendWhatsAppMessageSatuConnect, sendBulkWhatsAppMessage as sendBulkWhatsAppMessageSatuConnect } from '@/services/whatsapp';
 import { revalidatePath } from 'next/cache';
 import { getPrograms } from './programs';
-
-export type NotificationType = 
-    | 'document_submission' 
-    | 'document_approved'
-    | 'document_rejected'
-    | 'new_task_assigned'
-    | 'member_verified_permanent'
-    | 'member_verification_rejected'
-    | 'event_reminder'
-    | 'new_program_announcement';
-
-export interface WhatsAppTemplate {
-    id: NotificationType;
-    label: string;
-    message: string;
-    isActive: boolean;
-    placeholders: string[];
-}
+import type { NotificationType, WhatsAppTemplate } from '@/lib/definitions';
 
 const defaultTemplates: Record<NotificationType, WhatsAppTemplate> = {
     document_submission: {

@@ -4,44 +4,12 @@
 import { db, storage } from '@/lib/firebase';
 import { collection, getDocs, doc, updateDoc, deleteField, query, setDoc, Timestamp, getDoc, addDoc } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
-import type { PermissionId, Position } from '@/lib/definitions';
+import type { PermissionId, Position, MemberWithStatus, MemberType, VerificationStatus } from '@/lib/definitions';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getWhatsappTemplate } from './whatsapp';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { generateUniqueUsername } from './user';
 import { formatFullName } from '@/lib/utils';
-
-export type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected' | 'manual';
-export type MemberType = 'pusat' | 'daerah' | 'cabang' | 'pembina' | 'pengawas' | 'penasehat';
-
-
-export interface Member {
-  id: string;
-  name: string;
-  username: string;
-  titlePrefix?: string;
-  titlePostfix?: string;
-  positionId?: string; 
-  type?: MemberType;
-  region?: string;
-  avatarUrl?: string;
-  isSpecialMember?: boolean;
-}
-
-export interface MemberWithStatus extends Member {
-    phoneNumber: string;
-    waNumber?: string;
-    waVerified?: boolean;
-    verificationStatus: VerificationStatus;
-    joinDate?: string;
-    ktpImageUrl?: string;
-    selfieImageUrl?: string;
-    nik?: string;
-    createdAt?: string; // Changed to string to be serializable
-    position?: string; 
-    permissions: PermissionId[];
-}
-
 
 const usersCollection = collection(db, 'users');
 const positionsCollection = collection(db, 'positions');

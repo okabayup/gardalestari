@@ -5,23 +5,7 @@ import { db } from '@/lib/firebase';
 import { getMessaging } from 'firebase-admin/messaging';
 import { collection, addDoc, query, where, getDocs, serverTimestamp, updateDoc, documentId, FieldPath, orderBy, limit, writeBatch } from 'firebase/firestore';
 import { initializeAdminApp } from '@/lib/firebase-admin';
-import type { MemberType } from './members';
-
-export interface PushSubscription {
-  userId: string;
-  token: string;
-  createdAt: any;
-}
-
-export interface Notification {
-  id: string;
-  userId: string;
-  title: string;
-  body: string;
-  link?: string;
-  read: boolean;
-  createdAt: any;
-}
+import type { MemberType, Notification } from '@/lib/definitions';
 
 const subscriptionsCollection = collection(db, 'pushSubscriptions');
 const usersCollection = collection(db, 'users');
