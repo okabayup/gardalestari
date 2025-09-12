@@ -254,8 +254,11 @@ export async function saveWaNumber(userId: string, waNumber: string): Promise<{ 
             waVerified: false,
         }, { merge: true });
 
-        await sendWhatsAppMessage(waNumber, `Kode verifikasi Garda Lestari Anda adalah: ${otp}`);
-        
+        const result = await sendWhatsAppMessage(waNumber, `Kode verifikasi Garda Lestari Anda adalah: ${otp}`);
+        if (!result.success) {
+            throw new Error(result.error || 'Gagal mengirimkan kode OTP dari server.');
+        }
+
         return { success: true };
     } catch (error) {
         const errorMessage = (error as Error).message || 'Gagal mengirimkan kode OTP.';

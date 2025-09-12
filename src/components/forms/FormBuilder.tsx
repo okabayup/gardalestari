@@ -31,7 +31,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { FormFieldPalette } from './FormFieldPalette';
 import { SortableFormField } from './SortableFormField';
-import { FormField as FormFieldItem } from './FormFieldItem';
+import { FormFieldItem } from './FormFieldItem';
 
 interface FormBuilderProps {
   existingForm?: ProgramForm;
@@ -147,7 +147,7 @@ export default function FormBuilder({ existingForm }: FormBuilderProps) {
             await createForm(formPayload);
             toast({ title: 'Formulir dibuat!', description: 'Formulir baru telah berhasil disimpan.' });
         }
-        router.push('/admin/forms');
+        router.push('/panel/forms');
     } catch(error) {
         toast({ variant: 'destructive', title: 'Gagal menyimpan', description: (error as Error).message });
         setLoading(false);

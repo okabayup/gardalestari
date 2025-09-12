@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow to stamp a PDF document with a QR code.
@@ -54,7 +55,16 @@ const stampPdfFlow = ai.defineFlow(
     // 4. Load PDF and Embed QR Code
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const qrImage = await pdfDoc.embedPng(qrCodeImageBytes);
-    const logoImage = await pdfDoc.embedPng(await getLogoImage());
+    
+    // Check if logo file exists before embedding
+    let logoImage;
+    try {
+        const logoBytes = await getLogoImage();
+        logoImage = await pdfDoc.embedPng(logoBytes);
+    } catch (error) {
+        console.warn("Logo file not found, skipping logo embedding in QR code.");
+    }
+
 
     const firstPage = pdfDoc.getPages()[0];
     const { width, height } = firstPage.getSize();
@@ -70,14 +80,16 @@ const stampPdfFlow = ai.defineFlow(
       height: qrSize,
     });
     
-    // Embed Logo in the center of QR code
-    const logoSize = qrSize / 3.5;
-     firstPage.drawImage(logoImage, {
-        x: width - qrSize - padding + (qrSize - logoSize) / 2,
-        y: padding + (qrSize - logoSize) / 2,
-        width: logoSize,
-        height: logoSize,
-    });
+    // Embed Logo in the center of QR code if it exists
+    if (logoImage) {
+        const logoSize = qrSize / 3.5;
+        firstPage.drawImage(logoImage, {
+            x: width - qrSize - padding + (qrSize - logoSize) / 2,
+            y: padding + (qrSize - logoSize) / 2,
+            width: logoSize,
+            height: logoSize,
+        });
+    }
 
     // 5. Save the modified PDF
     const modifiedPdfBytes = await pdfDoc.save();
@@ -93,6 +105,5 @@ const stampPdfFlow = ai.defineFlow(
     // The getDownloadURL is not strictly needed here if we overwrite, but good practice
     // in case the URL format changes. We are not updating firestore URL as it should be stable.
     await getDownloadURL(stampedPdfRef);
-
   }
 );

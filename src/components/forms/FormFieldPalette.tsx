@@ -5,7 +5,7 @@ import {
   Type,
   List,
   CheckSquare,
-  MousePointerSquare,
+  MousePointerClick,
   File,
   Heading1,
 } from 'lucide-react';
@@ -16,7 +16,7 @@ import { FormFieldType } from '@/app/actions/forms';
 const fieldTypes = [
   { type: 'text' as FormFieldType, label: 'Input Teks', icon: Type },
   { type: 'textarea' as FormFieldType, label: 'Text Area', icon: List },
-  { type: 'select' as FormFieldType, label: 'Pilihan (Dropdown)', icon: MousePointerSquare },
+  { type: 'select' as FormFieldType, label: 'Pilihan (Dropdown)', icon: MousePointerClick },
   { type: 'checkbox' as FormFieldType, label: 'Kotak Centang', icon: CheckSquare },
   { type: 'radio' as FormFieldType, label: 'Pilihan Ganda', icon: List },
   { type: 'file' as FormFieldType, label: 'Unggah File', icon: File },

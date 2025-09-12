@@ -8,14 +8,15 @@
  * @param message The text message to send.
  * @throws {Error} If the API responds with an error or the request fails.
  */
-export async function sendWhatsAppMessage(phoneNumber: string, message: string): Promise<{ success: boolean; data?: any }> {
+export async function sendWhatsAppMessage(phoneNumber: string, message: string): Promise<{ success: boolean; data?: any, error?: string }> {
   const SATUCONNECT_API_ENDPOINT = "https://api.satuconnect.my.id/agent/message";
   const SATUCONNECT_API_KEY = process.env.SATUCONNECT_API_KEY;
   const SATUCONNECT_DEVICE_ID = process.env.SATUCONNECT_DEVICE_ID;
 
   if (!SATUCONNECT_API_KEY || !SATUCONNECT_DEVICE_ID) {
-    console.error('SatuConnect API Key or Device ID is not configured in environment variables.');
-    throw new Error('Konfigurasi SatuConnect tidak lengkap di server.');
+    const errorMsg = 'Konfigurasi SatuConnect tidak lengkap di server.';
+    console.error('SatuConnect Error:', errorMsg);
+    return { success: false, error: errorMsg };
   }
   
   const formattedPhoneNumber = phoneNumber.replace(/\D/g, '');
@@ -37,11 +38,10 @@ export async function sendWhatsAppMessage(phoneNumber: string, message: string):
     const responseBody = await response.json();
     console.log('SatuConnect API Response:', JSON.stringify(responseBody, null, 2));
 
-
     if (!response.ok || responseBody.status !== true) {
       const errorMessage = responseBody.message || `API responded with status ${response.status}`;
       console.error('SatuConnect API Error:', errorMessage);
-      throw new Error(errorMessage);
+      return { success: false, error: errorMessage };
     }
       
     console.log('Successfully sent WhatsApp message to', phoneNumber);
@@ -50,7 +50,6 @@ export async function sendWhatsAppMessage(phoneNumber: string, message: string):
   } catch (error) {
     const errorMessage = (error instanceof Error) ? error.message : 'Unknown error occurred during API call.';
     console.error('Error calling SatuConnect WhatsApp service:', errorMessage);
-    // Re-throw the error to be handled by the calling function
-    throw new Error(errorMessage);
+    return { success: false, error: errorMessage };
   }
 }

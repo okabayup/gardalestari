@@ -13,8 +13,7 @@ import { z } from 'zod';
 import { getDocument } from '@/app/actions/documents';
 import { getLatestProgramsText } from '@/app/actions/whatsapp';
 import { createIdea } from '@/app/actions/ideas';
-import { getUserByUid, getUserByWaNumber } from '@/app/actions/user';
-
+import { getUserByWaNumber } from '@/app/actions/user';
 
 const WhatsAppReplyInputSchema = z.object({
   sender: z.string().describe('The phone number of the person who sent the message (e.g., 628123...).'),
@@ -76,73 +75,73 @@ Your reply:
 `,
 });
 
+export async function generateWhatsAppReply(input: z.infer<typeof WhatsAppReplyInputSchema>): Promise<void> {
+  const { sender, message } = input;
+  
+  const { output: intentOutput } = await prompt({ message });
+  if (!intentOutput) {
+      console.error('AI failed to parse intent.');
+      return;
+  }
+  
+  let replyMessage = '';
 
-export const generateWhatsAppReply = ai.defineFlow(
+  switch (intentOutput.intent) {
+    case 'INFO_PROGRAM':
+      replyMessage = await getLatestProgramsText();
+      break;
+
+    case 'CEK_STATUS_DOKUMEN':
+      if (!intentOutput.nomorDokumen) {
+        replyMessage = 'Mohon maaf, untuk mengecek status dokumen, silakan sebutkan nomor dokumennya. Contoh: "status dokumen 001/GL/S-KAT/I/2024"';
+      } else {
+        const doc = await getDocument(intentOutput.nomorDokumen);
+        if (!doc) {
+          replyMessage = `Dokumen dengan nomor ${intentOutput.nomorDokumen} tidak ditemukan.`;
+        } else {
+          replyMessage = `Status untuk dokumen "${doc.title}" adalah: *${doc.status}*.`;
+        }
+      }
+      break;
+
+    case 'AJUKAN_IDE':
+      if (!intentOutput.judulIde || !intentOutput.deskripsiIde) {
+         replyMessage = 'Format pengajuan ide tidak lengkap. Gunakan format: "ide: [Judul Ide]. [Deskripsi ide Anda]".';
+      } else {
+         const user = await getUserByWaNumber(sender);
+         if (!user) {
+             replyMessage = 'Anda harus menjadi anggota terverifikasi untuk mengajukan ide. Silakan daftar dan verifikasi akun Anda terlebih dahulu.';
+         } else {
+             await createIdea(user.id, intentOutput.judulIde, intentOutput.deskripsiIde, 'WhatsApp');
+             replyMessage = `Terima kasih! Ide Anda "${intentOutput.judulIde}" telah berhasil diajukan dan akan segera ditinjau.`;
+         }
+      }
+      break;
+      
+    case 'TANYA_UMUM':
+       const { output: generalReply } = await generalKnowledgePrompt({ message });
+       replyMessage = generalReply?.reply || 'Terima kasih atas pesan Anda. Tim kami akan segera merespons.';
+      break;
+
+    case 'TIDAK_DIKENALI':
+    default:
+      replyMessage = 'Terima kasih atas pesan Anda. Mohon maaf, saya tidak mengerti permintaan Anda. Anda bisa menanyakan info program, status dokumen, atau pertanyaan umum tentang Garda Lestari.';
+      break;
+  }
+  
+  try {
+    await sendWhatsAppMessage(sender, replyMessage);
+    console.log(`Successfully sent auto-reply to ${sender}`);
+  } catch (error) {
+    console.error(`Failed to send WhatsApp auto-reply to ${sender}:`, error);
+  }
+}
+
+ai.defineFlow(
   {
     name: 'generateWhatsAppReplyFlow',
     inputSchema: WhatsAppReplyInputSchema,
     outputSchema: z.void(),
   },
-  async ({ sender, message }) => {
-    
-    const { output: intentOutput } = await prompt({ message });
-    if (!intentOutput) {
-        console.error('AI failed to parse intent.');
-        return;
-    }
-    
-    let replyMessage = '';
-
-    switch (intentOutput.intent) {
-      case 'INFO_PROGRAM':
-        replyMessage = await getLatestProgramsText();
-        break;
-
-      case 'CEK_STATUS_DOKUMEN':
-        if (!intentOutput.nomorDokumen) {
-          replyMessage = 'Mohon maaf, untuk mengecek status dokumen, silakan sebutkan nomor dokumennya. Contoh: "status dokumen 001/GL/S-KAT/I/2024"';
-        } else {
-          // This is a simplified search. A real implementation might need a more robust query.
-          // For now, we assume document ID is the same as the number.
-          const doc = await getDocument(intentOutput.nomorDokumen);
-          if (!doc) {
-            replyMessage = `Dokumen dengan nomor ${intentOutput.nomorDokumen} tidak ditemukan.`;
-          } else {
-            replyMessage = `Status untuk dokumen "${doc.title}" adalah: *${doc.status}*.`;
-          }
-        }
-        break;
-
-      case 'AJUKAN_IDE':
-        if (!intentOutput.judulIde || !intentOutput.deskripsiIde) {
-           replyMessage = 'Format pengajuan ide tidak lengkap. Gunakan format: "ide: [Judul Ide]. [Deskripsi ide Anda]".';
-        } else {
-           const user = await getUserByWaNumber(sender);
-           if (!user) {
-               replyMessage = 'Anda harus menjadi anggota terverifikasi untuk mengajukan ide. Silakan daftar dan verifikasi akun Anda terlebih dahulu.';
-           } else {
-               await createIdea(user.id, intentOutput.judulIde, intentOutput.deskripsiIde, 'WhatsApp');
-               replyMessage = `Terima kasih! Ide Anda "${intentOutput.judulIde}" telah berhasil diajukan dan akan segera ditinjau.`;
-           }
-        }
-        break;
-        
-      case 'TANYA_UMUM':
-         const { output: generalReply } = await generalKnowledgePrompt({ message });
-         replyMessage = generalReply?.reply || 'Terima kasih atas pesan Anda. Tim kami akan segera merespons.';
-        break;
-
-      case 'TIDAK_DIKENALI':
-      default:
-        replyMessage = 'Terima kasih atas pesan Anda. Mohon maaf, saya tidak mengerti permintaan Anda. Anda bisa menanyakan info program, status dokumen, atau pertanyaan umum tentang Garda Lestari.';
-        break;
-    }
-    
-    try {
-      await sendWhatsAppMessage(sender, replyMessage);
-      console.log(`Successfully sent auto-reply to ${sender}`);
-    } catch (error) {
-      console.error(`Failed to send WhatsApp auto-reply to ${sender}:`, error);
-    }
-  }
+  generateWhatsAppReply
 );
