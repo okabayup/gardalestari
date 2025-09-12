@@ -34,7 +34,7 @@ export async function sendWhatsAppMessage(phoneNumber: string, message: string):
         message: message,
       }),
     });
-
+    
     if (response.ok) {
         const responseBody = await response.json();
         console.log('SatuConnect API Response (single):', JSON.stringify(responseBody, null, 2));
@@ -43,17 +43,20 @@ export async function sendWhatsAppMessage(phoneNumber: string, message: string):
             console.log('Successfully sent WhatsApp message to', phoneNumber);
             return { success: true, data: responseBody.data };
         } else {
+            // Handle inconsistent API behavior where success is reported as an error
+            if (responseBody.message === 'Message sent successfully') {
+                console.log('Handled inconsistent success response for', phoneNumber);
+                return { success: true, data: responseBody.data };
+            }
             const errorMessage = responseBody.message || `API responded with status ${response.status}`;
             console.error('SatuConnect API Error:', errorMessage);
             return { success: false, error: errorMessage, data: responseBody };
         }
     } else {
-        // Handle non-JSON error responses (like plain text or HTML for 400/500 errors)
         const errorText = await response.text();
         console.error(`SatuConnect API Error: Status ${response.status}`, errorText);
         throw new Error(errorText || `API responded with status ${response.status}`);
     }
-
 
   } catch (error) {
     const errorMessage = (error instanceof Error) ? error.message : 'Unknown error occurred during API call.';
