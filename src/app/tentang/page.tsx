@@ -1,10 +1,12 @@
 
 
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Sprout, Ship, TreePine, Eye, Shield, Scale } from 'lucide-react';
+import { Sprout, Ship, TreePine, Eye, Shield, Scale, Search, ZoomIn, ZoomOut, Move } from 'lucide-react';
 import LandingHeader from '@/components/layout/LandingHeader';
 import { getAppSettings } from '../actions/settings';
 import { Separator } from '@/components/ui/separator';
@@ -12,6 +14,7 @@ import { getMembers, MemberWithStatus } from '../actions/members';
 import { MemberCard } from '@/components/members/MemberCard';
 import { formatFullName } from '@/lib/utils';
 import { initialPositions } from '@/lib/definitions';
+import { useState, useEffect, useRef, WheelEvent, MouseEvent } from 'react';
 
 
 const InfoSection = ({ title, children, icon: Icon }: { title: string, children: React.ReactNode, icon: React.ElementType }) => (
@@ -48,10 +51,119 @@ const BoardSection = ({ title, members }: { title: string, members: MemberWithSt
     );
 };
 
+const ZoomableImage = ({ src, alt }: { src: string, alt: string }) => {
+  const [scale, setScale] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-export default async function AboutPage() {
-    const settings = await getAppSettings();
-    const allMembers = await getMembers();
+  const handleWheel = (e: WheelEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const newScale = scale - e.deltaY * 0.001;
+    setScale(Math.min(Math.max(1, newScale), 5)); // Clamp scale between 1 and 5
+  };
+
+  const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
+    if (scale > 1) {
+      setIsDragging(true);
+      if (imageRef.current) {
+        imageRef.current.style.cursor = 'grabbing';
+      }
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    if (imageRef.current) {
+      imageRef.current.style.cursor = 'grab';
+    }
+  };
+
+  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+    if (isDragging && imageRef.current && containerRef.current) {
+      const newOffsetX = offset.x + e.movementX;
+      const newOffsetY = offset.y + e.movementY;
+      
+      const rect = containerRef.current.getBoundingClientRect();
+      const imgRect = imageRef.current.getBoundingClientRect();
+
+      const maxOffsetX = (imgRect.width - rect.width) / 2;
+      const maxOffsetY = (imgRect.height - rect.height) / 2;
+      
+      setOffset({
+        x: Math.max(-maxOffsetX, Math.min(maxOffsetX, newOffsetX)),
+        y: Math.max(-maxOffsetY, Math.min(maxOffsetY, newOffsetY)),
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (scale === 1) {
+      setOffset({ x: 0, y: 0 }); // Reset offset when zoomed out
+    }
+  }, [scale]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative w-full max-w-4xl p-2 border-4 border-muted rounded-lg shadow-lg bg-background overflow-hidden cursor-zoom-in"
+      onWheel={handleWheel}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      onMouseMove={handleMouseMove}
+    >
+      <div
+        ref={imageRef}
+        className="w-full h-auto transition-transform duration-200"
+        style={{
+          transform: `scale(${scale}) translate(${offset.x}px, ${offset.y}px)`,
+          cursor: scale > 1 ? 'grab' : 'zoom-in',
+        }}
+      >
+        <Image
+          src={src}
+          alt={alt}
+          width={1200}
+          height={1600}
+          className="rounded-md w-full h-auto"
+          data-ai-hint="organization chart"
+        />
+      </div>
+       <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-black/50 text-white px-2 py-1 rounded-full text-xs">
+          <ZoomIn className="h-3 w-3" />
+          <span>Scroll untuk Zoom</span>
+          <Move className="h-3 w-3 ml-1" />
+          <span>Geser</span>
+      </div>
+    </div>
+  );
+};
+
+
+export default function AboutPage() {
+    const [settings, setSettings] = useState<any>({});
+    const [allMembers, setAllMembers] = useState<MemberWithStatus[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+      async function fetchData() {
+        try {
+          const [settingsData, membersData] = await Promise.all([
+            getAppSettings(),
+            getMembers(),
+          ]);
+          setSettings(settingsData);
+          setAllMembers(membersData);
+        } catch (error) {
+          console.error("Failed to fetch page data", error);
+        } finally {
+          setLoading(false);
+        }
+      }
+      fetchData();
+    }, []);
 
     // Define the custom sort order
     const positionOrder = initialPositions;
@@ -62,7 +174,8 @@ export default async function AboutPage() {
             const indexB = positionOrder.indexOf(b.position || '');
             
             // If one or both positions are not in the list, don't move them relative to each other
-            if (indexA === -1 || indexB === -1) return 0;
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
 
             return indexA - indexB;
         });
@@ -72,6 +185,11 @@ export default async function AboutPage() {
     const dpp = sortMembers(allMembers.filter(m => m.type === 'pusat'));
     const dpd = sortMembers(allMembers.filter(m => m.type === 'daerah'));
     const dpc = sortMembers(allMembers.filter(m => m.type === 'cabang'));
+
+
+    if (loading) {
+        return <div>Loading...</div>; // Or a proper skeleton loader
+    }
 
 
     return (
@@ -125,29 +243,15 @@ export default async function AboutPage() {
 
                         <InfoSection title="Struktur Organisasi" icon={Scale}>
                              <div className="flex justify-center mb-8">
-                                <div className="relative w-full max-w-4xl p-2 border-4 border-muted rounded-lg shadow-lg bg-background">
-                                    <Image 
-                                        src={settings.orgChartImageUrl} 
-                                        alt="Struktur Organisasi Garda Lestari" 
-                                        width={1200}
-                                        height={1600}
-                                        className="rounded-md w-full h-auto"
-                                        data-ai-hint="organization chart"
-                                    />
-                                </div>
+                                <ZoomableImage
+                                  src={settings.orgChartImageUrl}
+                                  alt="Struktur Organisasi Garda Lestari"
+                                />
                             </div>
-                           <div>
-                                <BoardSection title="Dewan Kehormatan" members={dewanKehormatan} />
-                            </div>
-                            <div className="mt-8">
-                                <BoardSection title="Dewan Pengurus Pusat (DPP)" members={dpp} />
-                            </div>
-                             <div className="mt-8">
-                                <BoardSection title="Dewan Pengurus Daerah (DPD)" members={dpd} />
-                            </div>
-                            <div className="mt-8">
-                                <BoardSection title="Dewan Pengurus Cabang (DPC)" members={dpc} />
-                            </div>
+                           {dewanKehormatan.length > 0 && <div><BoardSection title="Dewan Kehormatan" members={dewanKehormatan} /></div>}
+                           {dpp.length > 0 && <div className="mt-8"><BoardSection title="Dewan Pengurus Pusat (DPP)" members={dpp} /></div>}
+                           {dpd.length > 0 && <div className="mt-8"><BoardSection title="Dewan Pengurus Daerah (DPD)" members={dpd} /></div>}
+                           {dpc.length > 0 && <div className="mt-8"><BoardSection title="Dewan Pengurus Cabang (DPC)" members={dpc} /></div>}
                         </InfoSection>
                     </div>
                 </section>
