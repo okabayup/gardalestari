@@ -33,7 +33,7 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Button } from '../ui/button';
 import type { PermissionId } from '@/lib/definitions';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
 const navGroups: {
@@ -111,6 +111,10 @@ export function Sidebar() {
   
   if (!user || !user.permissions || user.permissions.length === 0) return null;
 
+  const defaultAccordionValue = navGroups.find(group => 
+      group.group && group.items.some(item => pathname.startsWith(item.href))
+  )?.group;
+
 
   return (
     <div className="hidden border-r bg-muted/40 md:block">
@@ -123,58 +127,59 @@ export function Sidebar() {
         </div>
         <div className="flex-1 overflow-y-auto">
           <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-            {navGroups.map((group, index) => {
-              const visibleItems = group.items.filter(item => !item.permission || hasPermission(item.permission));
-              if (visibleItems.length === 0) return null;
+            <Accordion type="single" collapsible defaultValue={defaultAccordionValue} className="w-full">
+                {navGroups.map((group, index) => {
+                const visibleItems = group.items.filter(item => !item.permission || hasPermission(item.permission));
+                if (visibleItems.length === 0) return null;
 
-              if (!group.group) {
-                const item = visibleItems[0];
-                const isActive = pathname.startsWith(item.href);
-                 return (
-                    <Link
-                        key={item.href}
-                        href={item.href}
-                        className={cn(
-                            'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
-                            isActive && 'bg-muted text-primary'
-                        )}
-                        >
-                        <item.icon className="h-4 w-4" />
-                        {item.label}
-                    </Link>
-                );
-              }
-              
-              const isGroupActive = visibleItems.some(item => pathname.startsWith(item.href));
-
-              return (
-                 <Collapsible key={index} defaultOpen={isGroupActive}>
-                    <CollapsibleTrigger className={cn('flex w-full items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary', isGroupActive && 'bg-muted text-primary' )}>
-                        {group.icon && <group.icon className="h-4 w-4" />}
-                        <span className="flex-1 text-left">{group.group}</span>
-                        <ChevronRight className={cn("h-4 w-4 transition-transform", isGroupActive && "rotate-90")} />
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="pl-7 pt-1 space-y-1">
-                        {visibleItems.map((item) => {
-                            const isActive = pathname.startsWith(item.href);
-                            return (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className={cn(
-                                        'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary text-xs',
-                                        isActive && 'bg-muted/50 text-primary'
-                                    )}
-                                >
-                                    <item.icon className="h-3 w-3" />
-                                    {item.label}
-                                </Link>
-                            )
-                        })}
-                    </CollapsibleContent>
-                 </Collapsible>
-              )
-            })}
+                if (!group.group) {
+                    const item = visibleItems[0];
+                    const isActive = pathname.startsWith(item.href);
+                    return (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className={cn(
+                                'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary',
+                                isActive && 'bg-muted text-primary'
+                            )}
+                            >
+                            <item.icon className="h-4 w-4" />
+                            {item.label}
+                        </Link>
+                    );
+                }
+                
+                return (
+                    <AccordionItem key={group.group} value={group.group} className="border-b-0">
+                        <AccordionTrigger className="py-2 hover:no-underline">
+                            <div className="flex items-center gap-3">
+                                {group.icon && <group.icon className="h-4 w-4" />}
+                                {group.group}
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="pl-7 pt-1 space-y-1">
+                             {visibleItems.map((item) => {
+                                const isActive = pathname.startsWith(item.href);
+                                return (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        className={cn(
+                                            'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary text-xs',
+                                            isActive && 'bg-muted/50 text-primary font-semibold'
+                                        )}
+                                    >
+                                        <item.icon className="h-3 w-3" />
+                                        {item.label}
+                                    </Link>
+                                )
+                            })}
+                        </AccordionContent>
+                    </AccordionItem>
+                )
+                })}
+            </Accordion>
           </nav>
         </div>
         <div className="mt-auto p-4">
