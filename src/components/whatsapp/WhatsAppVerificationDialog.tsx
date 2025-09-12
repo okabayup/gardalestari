@@ -21,27 +21,30 @@ interface WhatsAppVerificationDialogProps {
 
 export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificationDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [step, setStep] = useState<'input' | 'otp'>('input');
+  const [otpSent, setOtpSent] = useState(false);
   const [waNumber, setWaNumber] = useState('');
   const [otp, setOtp] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loadingSend, setLoadingSend] = useState(false);
+  const [loadingVerify, setLoadingVerify] = useState(false);
   const { toast } = useToast();
   const { refreshUser } = useAuth();
 
   useEffect(() => {
-    // This effect should only run once when the component mounts to check if the dialog should be shown.
     if (user && !user.waVerified) {
       const timer = setTimeout(() => {
-        setIsOpen(true);
-        if (user.phoneNumber) {
-          setWaNumber(user.phoneNumber.replace(/^\+/, ''));
+        const hasBeenShown = sessionStorage.getItem('waVerifyDialogShown');
+        if (!hasBeenShown) {
+           setIsOpen(true);
+           if (user.phoneNumber) {
+             setWaNumber(user.phoneNumber.replace(/^\+/, ''));
+           }
+           sessionStorage.setItem('waVerifyDialogShown', 'true');
         }
-      }, 3000); // Delay opening the dialog by 3 seconds
+      }, 5000); 
 
       return () => clearTimeout(timer);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array ensures this runs only once.
+  }, [user]);
 
 
   const handleSendOtp = async () => {
@@ -49,31 +52,31 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
       toast({ variant: 'destructive', title: 'Nomor tidak boleh kosong' });
       return;
     }
-    setLoading(true);
+    setLoadingSend(true);
     try {
       const formattedNumber = waNumber.startsWith('0') ? `62${waNumber.substring(1)}` : waNumber;
       const result = await saveWaNumber(user.uid, formattedNumber);
       
-      if (result?.success) {
+      if (result.success) {
         toast({ title: 'Kode OTP terkirim!', description: 'Periksa WhatsApp Anda.' });
-        setStep('otp');
+        setOtpSent(true);
       } else {
-        // Handle cases where the server action returns a failure without throwing
-        throw new Error(result?.error || 'Gagal mengirimkan kode OTP dari server.');
+        throw new Error(result.error || 'Gagal mengirimkan kode OTP dari server.');
       }
     } catch (error) {
+      console.error('Error sending OTP:', error);
       toast({ variant: 'destructive', title: 'Gagal mengirim OTP', description: (error as Error).message });
     } finally {
-      setLoading(false);
+      setLoadingSend(false);
     }
   };
 
   const handleVerifyOtp = async () => {
-    if (!otp.trim()) {
-      toast({ variant: 'destructive', title: 'OTP tidak boleh kosong' });
+    if (!otp.trim() || otp.length < 6) {
+      toast({ variant: 'destructive', title: 'Kode OTP harus 6 digit' });
       return;
     }
-    setLoading(true);
+    setLoadingVerify(true);
     try {
       const success = await verifyWaNumber(user.uid, otp);
       if (success) {
@@ -86,63 +89,55 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
     } catch (error) {
       toast({ variant: 'destructive', title: 'Verifikasi Gagal', description: (error as Error).message });
     } finally {
-      setLoading(false);
+      setLoadingVerify(false);
     }
   };
 
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-        // Prevent closing the dialog with click outside or escape key for now
-        // A "remind me later" button could be added in the future
-        if (!open) return;
-        setIsOpen(open);
-    }}>
-      <DialogContent hideClose>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Verifikasi Nomor WhatsApp</DialogTitle>
           <DialogDescription>
-            {step === 'input'
-              ? 'Untuk menerima notifikasi, mohon verifikasi nomor WhatsApp Anda. Pastikan nomor ini dapat menerima pesan.'
-              : 'Masukkan 6 digit kode OTP yang kami kirimkan ke nomor WhatsApp Anda.'}
+            Untuk menerima notifikasi penting seperti status dokumen dan pengumuman program, mohon verifikasi nomor WhatsApp Anda.
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4">
-          {step === 'input' ? (
+        <div className="py-4 space-y-4">
             <div className="space-y-2">
               <Label htmlFor="waNumber">Nomor WhatsApp</Label>
-              <Input
-                id="waNumber"
-                value={waNumber}
-                onChange={(e) => setWaNumber(e.target.value)}
-                placeholder="cth: 6281234567890"
-              />
+              <div className="flex gap-2">
+                <Input
+                    id="waNumber"
+                    value={waNumber}
+                    onChange={(e) => setWaNumber(e.target.value)}
+                    placeholder="cth: 6281234567890"
+                    disabled={otpSent || loadingSend}
+                />
+                 <Button onClick={handleSendOtp} disabled={otpSent || loadingSend}>
+                    {loadingSend ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Kirim OTP'}
+                </Button>
+              </div>
             </div>
-          ) : (
             <div className="space-y-2">
               <Label htmlFor="otp">Kode OTP</Label>
-              <Input
-                id="otp"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                maxLength={6}
-                placeholder="xxxxxx"
-              />
+               <div className="flex gap-2">
+                <Input
+                    id="otp"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    maxLength={6}
+                    placeholder="xxxxxx"
+                    disabled={!otpSent || loadingVerify}
+                />
+                 <Button onClick={handleVerifyOtp} disabled={!otpSent || loadingVerify}>
+                    {loadingVerify ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Verifikasi'}
+                </Button>
+               </div>
             </div>
-          )}
         </div>
         <DialogFooter>
-          {step === 'input' ? (
-             <Button onClick={handleSendOtp} disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Kirim Kode OTP
-            </Button>
-          ) : (
-            <Button onClick={handleVerifyOtp} disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Verifikasi
-            </Button>
-          )}
+            <Button variant="outline" onClick={() => setIsOpen(false)}>Nanti Saja</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
