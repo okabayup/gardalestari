@@ -6,8 +6,7 @@ import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timesta
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import { getWhatsappTemplate } from './whatsapp';
-import { sendWhatsAppMessage } from '@/services/whatsapp';
-import { getUserByUid } from './user';
+import { sendBulkWhatsAppMessage } from '@/services/whatsapp';
 
 
 export type ProgramSource = 'garda_lestari' | 'mitra';
@@ -90,21 +89,25 @@ export async function createProgram(programData: ProgramFormData, attachmentFile
     }
     const docRef = await addDoc(programsCollection, dataToCreate);
     
-    // --- WhatsApp Notification ---
+    // --- WhatsApp Bulk Notification ---
     const template = await getWhatsappTemplate('new_program_announcement');
     if (template.isActive) {
-        const usersSnapshot = await getFirestoreDocs(query(collection(db, 'users'), where('waNumber', '!=', null)));
-        
-        for (const userDoc of usersSnapshot.docs) {
-            const userData = userDoc.data();
+        const usersSnapshot = await getFirestoreDocs(query(collection(db, 'users'), where('waVerified', '==', true)));
+        const phoneNumbers = usersSnapshot.docs
+            .map(doc => doc.data().waNumber)
+            .filter(Boolean); // Filter out any undefined/null numbers
+
+        if (phoneNumbers.length > 0) {
             const message = template.message
                 .replace('{namaProgram}', dataToCreate.title)
                 .replace('{batasWaktu}', new Date(programData.endDate).toLocaleDateString('id-ID'));
             
             try {
-                await sendWhatsAppMessage(userData.waNumber, message);
+                // Send all at once
+                await sendBulkWhatsAppMessage(phoneNumbers, message);
+                console.log(`Bulk notification sent for program: ${dataToCreate.title}`);
             } catch (error) {
-                console.warn(`Failed to send 'new_program' notification to ${userData.waNumber}:`, error);
+                console.warn(`Failed to send bulk 'new_program' notification:`, error);
             }
         }
     }
