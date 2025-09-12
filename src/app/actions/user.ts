@@ -243,7 +243,7 @@ export async function searchUsers(searchQuery: string, limitCount: number = 5): 
 }
 
 
-export async function saveWaNumber(userId: string, waNumber: string) {
+export async function saveWaNumber(userId: string, waNumber: string): Promise<{ success: boolean }> {
     const userDocRef = doc(db, 'users', userId);
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     
@@ -254,6 +254,7 @@ export async function saveWaNumber(userId: string, waNumber: string) {
     }, { merge: true });
 
     await sendWhatsAppMessage(waNumber, `Kode verifikasi Garda Lestari Anda adalah: ${otp}`);
+    return { success: true };
 }
 
 export async function verifyWaNumber(userId: string, otp: string): Promise<boolean> {

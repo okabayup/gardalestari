@@ -29,7 +29,7 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
   const { refreshUser } = useAuth(); // Assuming useAuth exposes a refresh function
 
   useEffect(() => {
-    // This should only run once when the component mounts and user data is available.
+    // This effect runs once on mount to decide if the dialog should be shown.
     if (user && !user.waVerified) {
       setIsOpen(true);
       if (user.phoneNumber) {
@@ -37,7 +37,7 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user.uid, user.waVerified]);
+  }, []); // Empty dependency array ensures this runs only once.
 
 
   const handleSendOtp = async () => {
@@ -48,9 +48,13 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
     setLoading(true);
     try {
       const formattedNumber = waNumber.startsWith('0') ? `62${waNumber.substring(1)}` : waNumber;
-      await saveWaNumber(user.uid, formattedNumber);
-      toast({ title: 'Kode OTP terkirim!', description: 'Periksa WhatsApp Anda.' });
-      setStep('otp');
+      const result = await saveWaNumber(user.uid, formattedNumber);
+      if (result.success) {
+        toast({ title: 'Kode OTP terkirim!', description: 'Periksa WhatsApp Anda.' });
+        setStep('otp');
+      } else {
+        throw new Error('Gagal mengirimkan kode OTP dari server.');
+      }
     } catch (error) {
       toast({ variant: 'destructive', title: 'Gagal mengirim OTP', description: (error as Error).message });
     } finally {
