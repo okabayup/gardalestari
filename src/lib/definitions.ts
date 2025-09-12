@@ -421,9 +421,6 @@ export interface ProjectComment {
     createdAt: string; 
 }
 
-export interface CommentWithAuthor extends Comment {
-    author: IdeaAuthor;
-}
 
 // --- Recruitments ---
 export type RecruitmentType = 'internal' | 'external';

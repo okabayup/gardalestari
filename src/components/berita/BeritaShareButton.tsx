@@ -5,7 +5,7 @@ import { logAnalyticsEvent } from '@/lib/analytics';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Share2 } from 'lucide-react';
-import { BeritaPost } from '@/app/actions/berita';
+import { BeritaPost } from '@/lib/definitions';
 
 export default function BeritaShareButton({ post }: { post: BeritaPost }) {
     const { toast } = useToast();

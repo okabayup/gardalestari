@@ -1,3 +1,4 @@
+
 import { MetadataRoute } from 'next';
 import { getBeritaPosts } from '@/app/actions/berita';
 import { getPrograms } from '@/app/actions/programs';

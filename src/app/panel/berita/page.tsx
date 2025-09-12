@@ -24,10 +24,11 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { getBeritaPosts, deleteBeritaPost, BeritaPost, requestReindexing } from '@/app/actions/berita';
+import { getBeritaPosts, deleteBeritaPost, requestReindexing } from '@/app/actions/berita';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from '@/components/ui/badge';
+import type { BeritaPost } from '@/lib/definitions';
 
 export default function AdminBeritaPage() {
   const router = useRouter();
