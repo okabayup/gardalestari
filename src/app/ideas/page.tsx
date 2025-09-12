@@ -10,7 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, PlusCircle, Search, ThumbsUp, ThumbsDown, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { getIdeas, getIdeaCategories, IdeaWithAuthor, toggleVote, ideaStatusMap } from '@/app/actions/ideas';
+import { getIdeas, getIdeaCategories, IdeaWithAuthor, toggleVote } from '@/app/actions/ideas';
+import { ideaStatusMap } from '@/lib/definitions';
 import { useDebounce } from 'use-debounce';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';

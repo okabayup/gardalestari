@@ -22,8 +22,8 @@ import {
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { MemberType } from './members';
+import type { IdeaStatus } from '@/lib/definitions';
 
-export type IdeaStatus = 'diajukan' | 'ditinjau' | 'disetujui' | 'diterapkan' | 'ditolak';
 export type VoteType = 'up' | 'down';
 
 
@@ -291,11 +291,3 @@ export async function getIdeaComments(ideaId: string): Promise<any[]> {
 export async function getIdeaCategories(): Promise<string[]> {
     return ['Semua', 'Agrikultur', 'Maritim', 'Kehutanan', 'Teknologi', 'Pemasaran', 'Komunitas', 'Lainnya'];
 }
-
-export const ideaStatusMap: Record<IdeaStatus, { label: string, color: string }> = {
-    diajukan: { label: 'Diajukan', color: 'bg-gray-500' },
-    ditinjau: { label: 'Ditinjau', color: 'bg-blue-500' },
-    disetujui: { label: 'Disetujui', color: 'bg-green-500' },
-    diterapkan: { label: 'Diterapkan', color: 'bg-purple-500' },
-    ditolak: { label: 'Ditolak', color: 'bg-red-500' },
-};
