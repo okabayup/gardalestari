@@ -14,7 +14,8 @@ import { getMembers, MemberWithStatus } from '../actions/members';
 import { MemberCard } from '@/components/members/MemberCard';
 import { formatFullName } from '@/lib/utils';
 import { initialPositions } from '@/lib/definitions';
-import { useState, useEffect, useRef, WheelEvent, MouseEvent } from 'react';
+import { useState, useEffect, useRef, WheelEvent, MouseEvent, TouchEvent } from 'react';
+import { cn } from '@/lib/utils';
 
 
 const InfoSection = ({ title, children, icon: Icon }: { title: string, children: React.ReactNode, icon: React.ElementType }) => (
@@ -52,93 +53,138 @@ const BoardSection = ({ title, members }: { title: string, members: MemberWithSt
 };
 
 const ZoomableImage = ({ src, alt }: { src: string, alt: string }) => {
-  const [scale, setScale] = useState(1);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const imageRef = useRef<HTMLImageElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+    const [scale, setScale] = useState(1);
+    const [offset, setOffset] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    const imageRef = useRef<HTMLImageElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const pinchDistRef = useRef(0);
 
-  const handleWheel = (e: WheelEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const newScale = scale - e.deltaY * 0.001;
-    setScale(Math.min(Math.max(1, newScale), 5)); // Clamp scale between 1 and 5
-  };
+    const handleWheel = (e: WheelEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        const newScale = scale - e.deltaY * 0.001;
+        setScale(Math.min(Math.max(1, newScale), 5));
+    };
 
-  const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
-    if (scale > 1) {
-      setIsDragging(true);
-      if (imageRef.current) {
-        imageRef.current.style.cursor = 'grabbing';
-      }
-    }
-  };
+    const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
+        if (scale > 1) {
+            setIsDragging(true);
+            if (imageRef.current) imageRef.current.style.cursor = 'grabbing';
+        }
+    };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
-    if (imageRef.current) {
-      imageRef.current.style.cursor = 'grab';
-    }
-  };
+    const handleMouseUp = () => {
+        setIsDragging(false);
+        if (imageRef.current) imageRef.current.style.cursor = 'grab';
+    };
 
-  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
-    if (isDragging && imageRef.current && containerRef.current) {
-      const newOffsetX = offset.x + e.movementX;
-      const newOffsetY = offset.y + e.movementY;
-      
-      const rect = containerRef.current.getBoundingClientRect();
-      const imgRect = imageRef.current.getBoundingClientRect();
+    const clampOffset = (newOffset: {x: number, y: number}, currentScale: number) => {
+        if (!containerRef.current || !imageRef.current) return newOffset;
+        
+        const rect = containerRef.current.getBoundingClientRect();
+        const imgWidth = imageRef.current.offsetWidth * currentScale;
+        const imgHeight = imageRef.current.offsetHeight * currentScale;
+        
+        const maxOffsetX = Math.max(0, (imgWidth - rect.width) / 2 / currentScale);
+        const maxOffsetY = Math.max(0, (imgHeight - rect.height) / 2 / currentScale);
+        
+        return {
+            x: Math.max(-maxOffsetX, Math.min(maxOffsetX, newOffset.x)),
+            y: Math.max(-maxOffsetY, Math.min(maxOffsetY, newOffset.y)),
+        };
+    };
+    
+    const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+        if (isDragging && scale > 1) {
+            setOffset(prev => clampOffset({
+                x: prev.x + e.movementX / scale,
+                y: prev.y + e.movementY / scale
+            }, scale));
+        }
+    };
 
-      const maxOffsetX = (imgRect.width - rect.width) / 2;
-      const maxOffsetY = (imgRect.height - rect.height) / 2;
-      
-      setOffset({
-        x: Math.max(-maxOffsetX, Math.min(maxOffsetX, newOffsetX)),
-        y: Math.max(-maxOffsetY, Math.min(maxOffsetY, newOffsetY)),
-      });
-    }
-  };
+    const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            pinchDistRef.current = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+        } else if (e.touches.length === 1 && scale > 1) {
+            setIsDragging(true);
+        }
+    };
 
-  useEffect(() => {
-    if (scale === 1) {
-      setOffset({ x: 0, y: 0 }); // Reset offset when zoomed out
-    }
-  }, [scale]);
+    const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            const newDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            const scaleFactor = newDist / pinchDistRef.current;
+            setScale(prev => Math.min(Math.max(1, prev * scaleFactor), 5));
+            pinchDistRef.current = newDist;
+        } else if (e.touches.length === 1 && isDragging) {
+            setOffset(prev => clampOffset({
+                x: prev.x + e.touches[0].movementX / scale,
+                y: prev.y + e.touches[0].movementY / scale
+            }, scale));
+        }
+    };
 
-  return (
-    <div
-      ref={containerRef}
-      className="relative w-full max-w-4xl p-2 border-4 border-muted rounded-lg shadow-lg bg-background overflow-hidden cursor-zoom-in"
-      onWheel={handleWheel}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      onMouseMove={handleMouseMove}
-    >
-      <div
-        ref={imageRef}
-        className="w-full h-auto transition-transform duration-200"
-        style={{
-          transform: `scale(${scale}) translate(${offset.x}px, ${offset.y}px)`,
-          cursor: scale > 1 ? 'grab' : 'zoom-in',
-        }}
-      >
-        <Image
-          src={src}
-          alt={alt}
-          width={1200}
-          height={1600}
-          className="rounded-md w-full h-auto"
-          data-ai-hint="organization chart"
-        />
-      </div>
-       <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-black/50 text-white px-2 py-1 rounded-full text-xs">
-          <ZoomIn className="h-3 w-3" />
-          <span>Scroll untuk Zoom</span>
-          <Move className="h-3 w-3 ml-1" />
-          <span>Geser</span>
-      </div>
-    </div>
-  );
+    const handleTouchEnd = () => {
+        setIsDragging(false);
+        pinchDistRef.current = 0;
+    };
+
+    useEffect(() => {
+        if (scale === 1) {
+            setOffset({ x: 0, y: 0 });
+        } else {
+             setOffset(prev => clampOffset(prev, scale));
+        }
+    }, [scale]);
+
+    return (
+        <div
+            ref={containerRef}
+            className="relative w-full max-w-4xl p-2 border-4 border-muted rounded-lg shadow-lg bg-background overflow-hidden cursor-zoom-in touch-none"
+            onWheel={handleWheel}
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onMouseMove={handleMouseMove}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+        >
+            <div
+                className="w-full h-auto transition-transform duration-100 ease-out"
+                style={{
+                    transform: `scale(${scale}) translate(${offset.x}px, ${offset.y}px)`,
+                    cursor: scale > 1 ? 'grab' : 'zoom-in',
+                }}
+            >
+                <Image
+                    ref={imageRef}
+                    src={src}
+                    alt={alt}
+                    width={1200}
+                    height={1600}
+                    className="rounded-md w-full h-auto"
+                    data-ai-hint="organization chart"
+                    draggable={false}
+                />
+            </div>
+            <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-black/50 text-white px-2 py-1 rounded-full text-xs pointer-events-none">
+                <ZoomIn className="h-3 w-3" />
+                <span className="hidden sm:inline">Pinch/Scroll untuk Zoom</span>
+                <Move className="h-3 w-3 ml-1" />
+                <span className="hidden sm:inline">Geser</span>
+            </div>
+        </div>
+    );
 };
 
 
