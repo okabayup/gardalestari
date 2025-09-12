@@ -132,17 +132,13 @@ export async function updateMemberDetails(id: string, details: { positionId?: st
 
         if (details.positionId) {
             dataToUpdate.positionId = details.positionId;
-        } else if (details.positionId === undefined) {
-             // No change
-        } else {
+        } else if (details.positionId === '') { // Explicitly remove position
             dataToUpdate.positionId = deleteField();
         }
 
         if (details.type) {
             dataToUpdate.type = details.type;
-        } else if (details.type === undefined) {
-            // No change
-        } else {
+        } else if (details.type === '') { // Explicitly remove type
             dataToUpdate.type = deleteField();
         }
 

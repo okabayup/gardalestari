@@ -16,7 +16,7 @@ interface EditMemberDialogProps {
   member: MemberWithStatus;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (id: string, details: { positionId?: string, type?: MemberType, region?: string, verificationStatus?: VerificationStatus, isSpecialMember?: boolean, titlePrefix?: string, titlePostfix?: string }) => void;
+  onSave: (id: string, details: { positionId?: string; type?: MemberType | ''; region?: string; verificationStatus?: VerificationStatus; isSpecialMember?: boolean; titlePrefix?: string; titlePostfix?: string }) => void;
   isSaving: boolean;
 }
 
@@ -36,12 +36,12 @@ const verificationStatuses: { value: VerificationStatus, label: string }[] = [
     { value: 'rejected', label: 'Ditolak'},
 ];
 
-// Use a non-empty string for the "no position" value.
-const NO_POSITION_VALUE = "NONE";
+const NO_POSITION_VALUE = ""; 
+const NO_TYPE_VALUE = "";
 
 export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSaving }: EditMemberDialogProps) {
   const [positionId, setPositionId] = useState(member.positionId || NO_POSITION_VALUE);
-  const [type, setType] = useState<MemberType | 'anggota' | undefined>(member.type || 'anggota');
+  const [type, setType] = useState<MemberType | ''>(member.type || NO_TYPE_VALUE);
   const [region, setRegion] = useState(member.region || '');
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>(member.verificationStatus || 'unverified');
   const [isSpecialMember, setIsSpecialMember] = useState(member.isSpecialMember || false);
@@ -56,7 +56,7 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
   useEffect(() => {
     if (isOpen) {
         setPositionId(member.positionId || NO_POSITION_VALUE);
-        setType(member.type || 'anggota');
+        setType(member.type || NO_TYPE_VALUE);
         setRegion(member.region || '');
         setVerificationStatus(member.verificationStatus || 'unverified');
         setIsSpecialMember(member.isSpecialMember || false);
@@ -72,9 +72,17 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
   }, [type]);
 
   const handleSave = () => {
-    const detailsToSave: { positionId?: string, type?: MemberType, region?: string, verificationStatus?: VerificationStatus, isSpecialMember?: boolean, titlePrefix?: string, titlePostfix?: string } = {
-        positionId: positionId === NO_POSITION_VALUE ? undefined : positionId,
-        type: type === 'anggota' ? undefined : type,
+    const detailsToSave: { 
+        positionId?: string; 
+        type?: MemberType | ''; 
+        region?: string; 
+        verificationStatus?: VerificationStatus; 
+        isSpecialMember?: boolean; 
+        titlePrefix?: string; 
+        titlePostfix?: string 
+    } = {
+        positionId: positionId,
+        type: type,
         region: region,
         verificationStatus: verificationStatus,
         isSpecialMember: isSpecialMember,
@@ -124,12 +132,12 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
           </div>
           <div className="space-y-2">
             <Label htmlFor="type">Jenis Keanggotaan</Label>
-            <Select value={type} onValueChange={(value) => setType(value as MemberType | 'anggota')}>
+            <Select value={type} onValueChange={(value) => setType(value as MemberType | '')}>
                 <SelectTrigger id="type">
                     <SelectValue placeholder="Pilih Jenis Keanggotaan" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="anggota">Anggota Biasa</SelectItem>
+                    <SelectItem value={NO_TYPE_VALUE}>Anggota Biasa</SelectItem>
                     {memberTypes.map(mt => (
                         <SelectItem key={mt.value} value={mt.value}>{mt.label}</SelectItem>
                     ))}
