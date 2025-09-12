@@ -1,8 +1,6 @@
 
-'use client';
-
 import Image from 'next/image';
-import { notFound, useParams } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import LandingHeader from '@/components/layout/LandingHeader';
 import Footer from '@/components/landing/Footer';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -10,76 +8,68 @@ import { getBeritaPost } from '@/app/actions/berita';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
-import type { Metadata } from 'next';
-import { useEffect, useState } from 'react';
-import type { BeritaPost } from '@/app/actions/berita';
-import { Loader2, Share2 } from 'lucide-react';
+import type { Metadata, ResolvingMetadata } from 'next';
 import { logAnalyticsEvent } from '@/lib/analytics';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import BeritaShareButton from '@/components/berita/BeritaShareButton';
 
-export default function BeritaPostPage() {
-  const params = useParams();
-  const slug = params.slug as string;
-  const [post, setPost] = useState<BeritaPost | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+type Props = {
+  params: { slug: string }
+}
 
-  useEffect(() => {
-    if (slug) {
-      getBeritaPost(slug).then(fetchedPost => {
-        if (fetchedPost) {
-          setPost(fetchedPost);
-          logAnalyticsEvent('view_item', {
-              item_id: fetchedPost.id,
-              item_name: fetchedPost.title,
-              item_category: 'berita',
-          });
-        } else {
-          notFound();
-        }
-        setLoading(false);
-      });
+export async function generateMetadata(
+  { params }: Props,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  const slug = params.slug;
+  const post = await getBeritaPost(slug);
+
+  if (!post) {
+    return {
+      title: 'Berita Tidak Ditemukan',
     }
-  }, [slug]);
-
-  const handleShare = async () => {
-    if (!post) return;
-    const shareData = {
-      title: post.title,
-      text: post.excerpt,
-      url: window.location.href,
-    };
-    if (navigator.share && navigator.canShare(shareData)) {
-      try {
-        await navigator.share(shareData);
-        logAnalyticsEvent('share', { content_type: 'berita', item_id: post.id });
-      } catch (err) {
-        console.error('Error sharing:', err);
-      }
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast({
-        title: 'Tautan disalin!',
-        description: 'Tautan berita telah disalin ke clipboard Anda.',
-      });
-    }
-  };
-
-  if (loading) {
-    return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        </div>
-    )
   }
+  
+  const previousImages = (await parent).openGraph?.images || []
+
+  return {
+    title: post.title,
+    description: post.excerpt,
+    alternates: {
+      canonical: `/berita/${slug}`,
+    },
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      url: `/berita/${slug}`,
+      images: [
+        {
+          url: post.imageUrl,
+          width: 1200,
+          height: 630,
+          alt: post.title,
+        },
+        ...previousImages,
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.excerpt,
+      images: [post.imageUrl],
+    },
+  }
+}
+
+
+export default async function BeritaPostPage({ params }: Props) {
+  const slug = params.slug;
+  const post = await getBeritaPost(slug);
 
   if (!post) {
     return notFound();
   }
 
   const formattedDate = format(new Date(post.date), "dd MMMM yyyy", { locale: id });
-
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
@@ -93,6 +83,7 @@ export default function BeritaPostPage() {
               data-ai-hint={post.imageHint}
               fill
               className="object-cover"
+              priority
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
           </div>
@@ -110,10 +101,7 @@ export default function BeritaPostPage() {
                   <p className="text-sm text-muted-foreground">{formattedDate}</p>
                 </div>
               </div>
-              <Button variant="outline" size="icon" onClick={handleShare}>
-                <Share2 className="h-4 w-4" />
-                <span className="sr-only">Bagikan</span>
-              </Button>
+              <BeritaShareButton post={post} />
             </div>
             <div
               className="prose dark:prose-invert mt-8 max-w-none prose-h1:font-headline prose-h2:font-headline prose-p:text-base prose-p:leading-relaxed prose-a:text-primary hover:prose-a:underline"

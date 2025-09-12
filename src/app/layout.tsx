@@ -6,19 +6,41 @@ import './globals.css';
 import FirebaseAnalytics from '@/components/FirebaseAnalytics';
 import { Suspense } from 'react';
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://gardalestari.org';
 
 export const metadata: Metadata = {
-  title: 'Garda Lestari',
-  description: 'Garda Lestari Membership App',
+  metadataBase: new URL(BASE_URL),
+  title: {
+    default: 'Garda Lestari',
+    template: '%s | Garda Lestari',
+  },
+  description: 'Garda Lestari adalah organisasi kepemudaan yang berfokus pada inovasi di sektor agro-maritim dan kehutanan untuk pembangunan berkelanjutan di Indonesia.',
   manifest: '/manifest.json',
   icons: {
     icon: '/favicon.ico',
-    apple: '/icon.png',
+    shortcut: '/favicon-16x16.png',
+    apple: '/apple-touch-icon.png',
   },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
+  openGraph: {
     title: 'Garda Lestari',
+    description: 'Inovasi pemuda untuk kelestarian agro-maritim dan kehutanan Indonesia.',
+    url: BASE_URL,
+    siteName: 'Garda Lestari',
+    images: [
+      {
+        url: '/og-image.png', // Fallback OG image
+        width: 1200,
+        height: 630,
+      },
+    ],
+    locale: 'id_ID',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Garda Lestari',
+    description: 'Inovasi pemuda untuk kelestarian agro-maritim dan kehutanan Indonesia.',
+    images: ['/og-image.png'], // Fallback Twitter image
   },
 };
 
@@ -28,7 +50,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="id" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
