@@ -35,17 +35,25 @@ export async function sendWhatsAppMessage(phoneNumber: string, message: string):
       }),
     });
 
-    const responseBody = await response.json();
-    console.log('SatuConnect API Response (single):', JSON.stringify(responseBody, null, 2));
+    if (response.ok) {
+        const responseBody = await response.json();
+        console.log('SatuConnect API Response (single):', JSON.stringify(responseBody, null, 2));
 
-    if (responseBody.status === true) {
-      console.log('Successfully sent WhatsApp message to', phoneNumber);
-      return { success: true, data: responseBody.data };
+        if (responseBody.status === true) {
+            console.log('Successfully sent WhatsApp message to', phoneNumber);
+            return { success: true, data: responseBody.data };
+        } else {
+            const errorMessage = responseBody.message || `API responded with status ${response.status}`;
+            console.error('SatuConnect API Error:', errorMessage);
+            return { success: false, error: errorMessage, data: responseBody };
+        }
     } else {
-      const errorMessage = responseBody.message || `API responded with status ${response.status}`;
-      console.error('SatuConnect API Error:', errorMessage);
-      return { success: false, error: errorMessage, data: responseBody };
+        // Handle non-JSON error responses (like plain text or HTML for 400/500 errors)
+        const errorText = await response.text();
+        console.error(`SatuConnect API Error: Status ${response.status}`, errorText);
+        throw new Error(errorText || `API responded with status ${response.status}`);
     }
+
 
   } catch (error) {
     const errorMessage = (error instanceof Error) ? error.message : 'Unknown error occurred during API call.';

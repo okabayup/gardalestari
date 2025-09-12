@@ -252,24 +252,24 @@ export async function searchUsers(searchQuery: string, limitCount: number = 5): 
 
 
 export async function saveWaNumber(userId: string, waNumber: string) {
+    const userDocRef = doc(db, 'users', userId);
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    await setDoc(userDocRef, {
+        waNumber: waNumber,
+        waOtp: otp,
+        waVerified: false,
+    }, { merge: true });
+
     try {
-        const userDocRef = doc(db, 'users', userId);
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        await setDoc(userDocRef, {
-            waNumber: waNumber,
-            waOtp: otp,
-            waVerified: false,
-        }, { merge: true });
-
         const result = await sendWhatsAppMessage(waNumber, `Kode verifikasi Garda Lestari Anda adalah: ${otp}`);
-        
+        if (!result.success) {
+            throw new Error(result.error || 'Unknown error from WhatsApp service.');
+        }
         return result;
-
     } catch (error) {
-        const errorMessage = (error as Error).message || 'Gagal menyimpan nomor atau mengirim OTP.';
-        console.error(`Error in saveWaNumber for ${waNumber}:`, errorMessage);
-        return { success: false, error: errorMessage };
+        console.error(`Error in saveWaNumber action for ${waNumber}:`, error);
+        throw error;
     }
 }
 
