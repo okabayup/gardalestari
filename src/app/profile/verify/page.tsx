@@ -10,18 +10,19 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Camera, ArrowLeft, User, Fingerprint, CheckCircle } from 'lucide-react';
+import { Loader2, Camera, ArrowLeft, User, Fingerprint, CheckCircle, MessageSquare } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { readKtp } from '@/ai/flows/ocr-ktp-flow';
+import { saveWaNumber, verifyWaNumber } from '@/app/actions/user';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ImageCropper from '@/components/profile/ImageCropper';
 import Image from 'next/image';
 
-type Step = 'data' | 'ktp' | 'selfie' | 'confirm' | 'submitting';
+type Step = 'data' | 'whatsapp' | 'ktp' | 'selfie' | 'confirm' | 'submitting';
 
 export default function VerifyProfilePage() {
-  const { user, submitForVerification } = useAuth();
+  const { user, submitForVerification, refreshUser } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   
@@ -30,6 +31,13 @@ export default function VerifyProfilePage() {
   const [nik, setNik] = useState('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  const [waNumber, setWaNumber] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [loadingSendOtp, setLoadingSendOtp] = useState(false);
+  const [loadingVerifyOtp, setLoadingVerifyOtp] = useState(false);
+
 
   const [ktpDataUrl, setKtpDataUrl] = useState<string | null>(null);
   const [selfieDataUrl, setSelfieDataUrl] = useState<string | null>(null);
@@ -47,10 +55,13 @@ export default function VerifyProfilePage() {
     if (user?.verificationStatus === 'permanent' || user?.verificationStatus === 'temporary') {
       router.replace('/profile/me');
     }
+     if (user?.phoneNumber) {
+        const rawNumber = user.phoneNumber.replace(/\D/g, '');
+        setWaNumber(rawNumber.startsWith('62') ? rawNumber : `62${rawNumber}`);
+     }
   }, [user, router]);
   
   useEffect(() => {
-    // Clean up camera stream when component unmounts or step changes
     return () => {
       stopCamera();
     };
@@ -67,14 +78,13 @@ export default function VerifyProfilePage() {
       }
     }
     switchCameraForStep();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
 
   const startCamera = async (facingMode: 'environment' | 'user') => {
-    stopCamera(); // Ensure previous stream is stopped
+    stopCamera(); 
     setCurrentFacingMode(facingMode);
-    setIsCameraActive(false); // Set loading state for camera
+    setIsCameraActive(false); 
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       toast({ variant: 'destructive', title: 'Kamera tidak didukung' });
@@ -85,7 +95,6 @@ export default function VerifyProfilePage() {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        // videoRef.current.play() is required for some browsers.
         await videoRef.current.play();
       }
       setHasCameraPermission(true);
@@ -134,8 +143,57 @@ export default function VerifyProfilePage() {
       toast({ variant: 'destructive', title: 'Data tidak valid', description: 'Mohon isi NIK (16 digit) dan nama lengkap.' });
       return;
     }
-    setStep('ktp');
+    setStep('whatsapp');
   };
+
+  const handleSendOtp = async () => {
+    if (!waNumber.trim() || !user) {
+      toast({ variant: 'destructive', title: 'Nomor tidak boleh kosong' });
+      return;
+    }
+    setLoadingSendOtp(true);
+    try {
+      const result = await saveWaNumber(user.uid, waNumber);
+      if (result.success || result.error === 'Message sent successfully') {
+         toast({ title: 'Kode OTP terkirim!', description: 'Periksa WhatsApp Anda.' });
+         setOtpSent(true);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Gagal mengirim OTP',
+          description: result.error || 'Terjadi kesalahan di server.'
+        });
+      }
+    } catch (error) {
+      const errorMessage = (error as Error).message || 'Terjadi kesalahan pada sisi klien.';
+      toast({ variant: 'destructive', title: 'Gagal mengirim OTP', description: errorMessage });
+    } finally {
+      setLoadingSendOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otp.trim() || otp.length < 6 || !user) {
+      toast({ variant: 'destructive', title: 'Kode OTP harus 6 digit' });
+      return;
+    }
+    setLoadingVerifyOtp(true);
+    try {
+      const success = await verifyWaNumber(user.uid, otp);
+      if (success) {
+        toast({ title: 'Verifikasi Berhasil!', description: 'Nomor WhatsApp Anda telah diverifikasi.' });
+        await refreshUser();
+        setStep('ktp');
+      } else {
+        throw new Error('Kode OTP yang Anda masukkan salah.');
+      }
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Verifikasi Gagal', description: (error as Error).message });
+    } finally {
+      setLoadingVerifyOtp(false);
+    }
+  };
+
 
   const capturePhoto = (): string | null => {
     if (videoRef.current && canvasRef.current && isCameraActive) {
@@ -183,7 +241,7 @@ export default function VerifyProfilePage() {
   const handleSubmit = async () => {
     if (!ktpDataUrl || !selfieDataUrl || !fullName || !nik) {
       toast({ variant: 'destructive', title: 'Data Tidak Lengkap' });
-      setStep('data'); // Go back to the first step
+      setStep('data'); 
       return;
     }
     setStep('submitting');
@@ -221,6 +279,7 @@ export default function VerifyProfilePage() {
         ktpFile: dataURLtoFile(ktpDataUrl, 'ktp.jpg'),
         selfieFile: dataURLtoFile(selfieDataUrl, 'selfie.jpg'),
         ...(photoFile && { photoFile: photoFile }),
+        waNumber: waNumber,
       };
 
       await submitForVerification(verificationData);
@@ -241,7 +300,7 @@ export default function VerifyProfilePage() {
         description: errorMessage,
         duration: 8000,
       });
-      setStep('data'); // Reset to data step
+      setStep('data'); 
       setKtpDataUrl(null);
       setSelfieDataUrl(null);
     }
@@ -285,9 +344,47 @@ export default function VerifyProfilePage() {
                </div>
             </div>
             <Button size="lg" className="w-full" type="submit">
-              Lanjutkan ke Ambil Foto
+              Lanjutkan ke Verifikasi WhatsApp
             </Button>
           </form>
+        );
+      case 'whatsapp':
+        return (
+             <div className="space-y-4">
+                <div className="space-y-2">
+                <Label htmlFor="waNumber">Nomor WhatsApp</Label>
+                <div className="flex gap-2">
+                    <Input
+                        id="waNumber"
+                        value={waNumber}
+                        onChange={(e) => setWaNumber(e.target.value)}
+                        placeholder="cth: 6281234567890"
+                        disabled={otpSent || loadingSendOtp}
+                    />
+                    <Button onClick={handleSendOtp} disabled={loadingSendOtp}>
+                        {loadingSendOtp ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Kirim OTP'}
+                    </Button>
+                </div>
+                </div>
+                {otpSent && (
+                    <div className="space-y-2">
+                    <Label htmlFor="otp">Kode OTP</Label>
+                    <div className="flex gap-2">
+                        <Input
+                            id="otp"
+                            value={otp}
+                            onChange={(e) => setOtp(e.target.value)}
+                            maxLength={6}
+                            placeholder="xxxxxx"
+                            disabled={loadingVerifyOtp}
+                        />
+                        <Button onClick={handleVerifyOtp} disabled={loadingVerifyOtp}>
+                            {loadingVerifyOtp ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Verifikasi'}
+                        </Button>
+                    </div>
+                    </div>
+                )}
+            </div>
         );
       case 'ktp':
         return (
@@ -320,6 +417,10 @@ export default function VerifyProfilePage() {
                             <p className="text-sm font-medium">{fullName}</p>
                             <p className="text-sm font-mono text-muted-foreground">{nik}</p>
                         </div>
+                         <div className="space-y-2">
+                            <Label>No. WhatsApp</Label>
+                            <p className="text-sm font-mono">{waNumber}</p>
+                        </div>
                         <div className="space-y-2">
                             <Label>Foto Profil</Label>
                             <Avatar className="h-16 w-16">
@@ -331,7 +432,7 @@ export default function VerifyProfilePage() {
                             <Label>Foto KTP</Label>
                              {ktpDataUrl && <Image src={ktpDataUrl} alt="Preview KTP" width={120} height={75} className="rounded-md border object-cover"/>}
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-2 col-span-2">
                             <Label>Foto Selfie</Label>
                             {selfieDataUrl && <Image src={selfieDataUrl} alt="Preview Selfie" width={120} height={75} className="rounded-md border object-cover"/>}
                         </div>
@@ -362,7 +463,7 @@ export default function VerifyProfilePage() {
                 </AlertDescription>
             </Alert>
         )}
-        <div className="w-full max-w-xs mx-auto aspect-square border-2 border-dashed rounded-lg flex items-center justify-center overflow-hidden bg-muted/50">
+        <div className="w-full max-w-xs mx-auto aspect-video border-2 border-dashed rounded-lg flex items-center justify-center overflow-hidden bg-muted/50">
             <video ref={videoRef} className={cn("w-full h-full object-cover", !isCameraActive && "hidden", currentFacingMode === 'user' && 'transform -scale-x-100')} autoPlay muted playsInline />
             {!isCameraActive && hasCameraPermission !== false && <Loader2 className="h-16 w-16 animate-spin text-muted-foreground" />}
             {hasCameraPermission === false && <Camera className="h-16 w-16 text-muted-foreground" />}
@@ -373,8 +474,11 @@ export default function VerifyProfilePage() {
 
   const handleBack = () => {
     switch (step) {
-      case 'ktp':
+      case 'whatsapp':
         setStep('data');
+        break;
+      case 'ktp':
+        setStep('whatsapp');
         break;
       case 'selfie':
         setStep('ktp');
@@ -390,9 +494,10 @@ export default function VerifyProfilePage() {
   const getStepDescription = () => {
     switch (step) {
       case 'data': return "Langkah 1: Isi data diri dan unggah foto profil.";
-      case 'ktp': return "Langkah 2: Ambil Foto KTP Anda.";
-      case 'selfie': return "Langkah 3: Ambil Foto Selfie Anda.";
-      case 'confirm': return "Langkah 4: Konfirmasi data Anda sebelum mengirim.";
+      case 'whatsapp': return "Langkah 2: Verifikasi nomor WhatsApp Anda.";
+      case 'ktp': return "Langkah 3: Ambil Foto KTP Anda.";
+      case 'selfie': return "Langkah 4: Ambil Foto Selfie Anda.";
+      case 'confirm': return "Langkah 5: Konfirmasi data Anda sebelum mengirim.";
       case 'submitting': return "Sedang memproses pengajuan Anda.";
       default: return "Verifikasi Identitas";
     }

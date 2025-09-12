@@ -47,7 +47,7 @@ interface AuthContextType {
   verifyOtp: (otp: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateUserProfile: (updates: { photoFile?: File, username?: string }) => Promise<void>;
-  submitForVerification: (data: { fullName: string; nik: string; ktpFile: File; selfieFile: File; photoFile?: File }) => Promise<void>;
+  submitForVerification: (data: { fullName: string; nik: string; ktpFile: File; selfieFile: File; photoFile?: File; waNumber: string }) => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -264,7 +264,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(prevUser => prevUser ? { ...prevUser, ...updateData } : null);
 };
 
-const submitForVerification = async (data: { fullName: string; nik: string; ktpFile: File; selfieFile: File; photoFile?: File; }) => {
+const submitForVerification = async (data: { fullName: string; nik: string; ktpFile: File; selfieFile: File; photoFile?: File; waNumber: string; }) => {
     if (!auth.currentUser) throw new Error("Pengguna tidak ditemukan.");
 
     logAnalyticsEvent('begin_verification');
@@ -306,6 +306,8 @@ const submitForVerification = async (data: { fullName: string; nik: string; ktpF
         displayName: data.fullName,
         username: username,
         nik: data.nik,
+        waNumber: data.waNumber,
+        waVerified: true, // Mark as verified since it's part of the flow
         verificationStatus: 'permanent' as VerificationStatus,
         ktpImageUrl,
         selfieImageUrl,

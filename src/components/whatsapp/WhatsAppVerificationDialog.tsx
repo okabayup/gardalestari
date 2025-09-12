@@ -25,13 +25,11 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
   const [otp, setOtp] = useState('');
   const [loadingSend, setLoadingSend] = useState(false);
   const [loadingVerify, setLoadingVerify] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<any>(null); // State for debugging
   const { toast } = useToast();
   const { refreshUser } = useAuth();
   
   useEffect(() => {
      if (user.phoneNumber) {
-        // Remove '+', and if it starts with '62', keep it, otherwise assume local and prepend '62'
         const rawNumber = user.phoneNumber.replace(/\D/g, '');
         setWaNumber(rawNumber.startsWith('62') ? rawNumber : `62${rawNumber}`);
      }
@@ -39,26 +37,16 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
 
 
   const handleSendOtp = async () => {
-    if (!waNumber.trim()) {
+    if (!waNumber.trim() || !user) {
       toast({ variant: 'destructive', title: 'Nomor tidak boleh kosong' });
       return;
     }
     setLoadingSend(true);
-    setDebugInfo(null);
     try {
       const result = await saveWaNumber(user.uid, waNumber);
-      setDebugInfo(result); // Store the full response for debugging
-
-      // Handle the specific quirky success case from the API
-      if (result.success === false && result.error === 'Message sent successfully') {
+      if (result.success || result.error === 'Message sent successfully') {
          toast({ title: 'Kode OTP terkirim!', description: 'Periksa WhatsApp Anda.' });
          setOtpSent(true);
-         return;
-      }
-
-      if (result.success) {
-        toast({ title: 'Kode OTP terkirim!', description: 'Periksa WhatsApp Anda.' });
-        setOtpSent(true);
       } else {
         toast({
           variant: 'destructive',
@@ -69,14 +57,13 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
     } catch (error) {
       const errorMessage = (error as Error).message || 'Terjadi kesalahan pada sisi klien.';
       toast({ variant: 'destructive', title: 'Gagal mengirim OTP', description: errorMessage });
-      setDebugInfo({ success: false, error: errorMessage });
     } finally {
       setLoadingSend(false);
     }
   };
 
   const handleVerifyOtp = async () => {
-    if (!otp.trim() || otp.length < 6) {
+    if (!otp.trim() || otp.length < 6 || !user) {
       toast({ variant: 'destructive', title: 'Kode OTP harus 6 digit' });
       return;
     }
@@ -122,30 +109,22 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
                 </Button>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="otp">Kode OTP</Label>
-               <div className="flex gap-2">
-                <Input
-                    id="otp"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    maxLength={6}
-                    placeholder="xxxxxx"
-                    disabled={!otpSent || loadingVerify}
-                />
-                 <Button onClick={handleVerifyOtp} disabled={!otpSent || loadingVerify}>
-                    {loadingVerify ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Verifikasi'}
-                </Button>
-               </div>
-            </div>
-
-            {/* Debugging Panel */}
-            {debugInfo && (
-              <div className="space-y-2 pt-4">
-                <Label className="text-xs font-mono">Debugging Response:</Label>
-                <pre className="p-2 bg-muted rounded-md text-xs overflow-auto font-mono">
-                  {JSON.stringify(debugInfo, null, 2)}
-                </pre>
+            {otpSent && (
+              <div className="space-y-2">
+                <Label htmlFor="otp">Kode OTP</Label>
+                <div className="flex gap-2">
+                  <Input
+                      id="otp"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      maxLength={6}
+                      placeholder="xxxxxx"
+                      disabled={loadingVerify}
+                  />
+                  <Button onClick={handleVerifyOtp} disabled={loadingVerify}>
+                      {loadingVerify ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Verifikasi'}
+                  </Button>
+                </div>
               </div>
             )}
         </div>
