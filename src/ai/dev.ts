@@ -1,3 +1,5 @@
+'use server';
+
 import { config } from 'dotenv';
 config();
 
@@ -6,3 +8,4 @@ import './flows/enhance-text-flow';
 import './flows/image-generate-flow';
 import './flows/news-generator-flow';
 import './flows/stamp-pdf-flow';
+import './flows/whatsapp-autoreply-flow';

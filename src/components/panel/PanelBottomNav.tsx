@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -82,7 +81,6 @@ const groupedNavItems: {
     items: [
         { href: '/panel/documents', icon: BookCopy, label: 'Surat & Dokumen', permission: 'manage_documents'},
         { href: '/panel/projects', icon: KanbanSquare, label: 'Manajemen Proyek', permission: 'manage_projects' },
-        { href: '/panel/whatsapp', icon: MessageCircle, label: 'Manajemen WhatsApp', permission: 'manage_whatsapp' },
     ]
   },
   {
