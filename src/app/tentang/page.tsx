@@ -71,22 +71,19 @@ const OrgChartImage = ({ src, alt }: { src: string; alt: string }) => {
            </div>
         </div>
       </DialogTrigger>
-      <DialogContent className="h-screen w-screen max-w-none p-4 flex items-center justify-center bg-black/80 backdrop-blur-sm border-none">
+      <DialogContent className="h-screen w-screen max-w-none p-0 flex items-center justify-center bg-black/80 backdrop-blur-sm border-none">
         <DialogHeader className="sr-only">
           <DialogTitle>Bagan Struktur Organisasi</DialogTitle>
           <DialogDescription>
             Tampilan penuh dari bagan struktur organisasi Garda Lestari.
           </DialogDescription>
         </DialogHeader>
-        <div className="relative w-full h-full flex items-center justify-center">
-            <Image
-                src={src}
-                alt={alt}
-                width={1600}
-                height={1200}
-                className="object-contain h-full w-auto md:h-auto md:w-full rotate-90 md:rotate-0"
-            />
-        </div>
+        <Image
+            src={src}
+            alt={alt}
+            fill
+            className="object-contain rotate-90 md:rotate-0"
+        />
       </DialogContent>
     </Dialog>
   );
