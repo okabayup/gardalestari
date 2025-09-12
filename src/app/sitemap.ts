@@ -36,7 +36,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const posts = await getBeritaPosts();
   const beritaPostRoutes = posts.map((post) => ({
     url: `${BASE_URL}/berita/${post.slug}`,
-    lastModified: new Date().toISOString(),
+    lastModified: new Date(post.date).toISOString(),
     changeFrequency: 'weekly' as const,
     priority: 0.7,
   }));
