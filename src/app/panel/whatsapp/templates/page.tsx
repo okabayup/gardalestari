@@ -13,15 +13,35 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 type FormData = Record<NotificationType, { message: string; isActive: boolean }>;
+
+const templateGroups: { group: string; templates: NotificationType[] }[] = [
+  {
+    group: 'Dokumen & Surat',
+    templates: ['document_submission', 'document_approved', 'document_rejected'],
+  },
+  {
+    group: 'Keanggotaan & Verifikasi',
+    templates: ['member_verified_permanent', 'member_verification_rejected'],
+  },
+  {
+    group: 'Proyek & Tugas',
+    templates: ['new_task_assigned'],
+  },
+  {
+    group: 'Pengumuman Umum',
+    templates: ['new_program_announcement', 'event_reminder'],
+  },
+];
 
 export default function WhatsappTemplatesPage() {
   const { toast } = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [placeholders, setPlaceholders] = useState<Record<NotificationType, string[]>>({} as any);
+  const [allTemplates, setAllTemplates] = useState<Record<NotificationType, WhatsAppTemplate>>({} as any);
 
   const { control, handleSubmit, reset } = useForm<FormData>();
 
@@ -30,18 +50,17 @@ export default function WhatsappTemplatesPage() {
       setLoading(true);
       try {
         const templates = await getWhatsappTemplates();
+        setAllTemplates(templates);
+
         const formData: Partial<FormData> = {};
-        const placeholderData: Partial<Record<NotificationType, string[]>> = {};
         for (const key in templates) {
             const templateKey = key as NotificationType;
             formData[templateKey] = {
                 message: templates[templateKey].message,
                 isActive: templates[templateKey].isActive,
             };
-            placeholderData[templateKey] = templates[templateKey].placeholders;
         }
         reset(formData as FormData);
-        setPlaceholders(placeholderData as Record<NotificationType, string[]>);
       } catch (error) {
         toast({ variant: 'destructive', title: 'Gagal memuat template' });
       } finally {
@@ -70,58 +89,68 @@ export default function WhatsappTemplatesPage() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-headline text-2xl font-bold">Template Notifikasi WhatsApp</h1>
           <p className="text-muted-foreground">Aktifkan, nonaktifkan, dan ubah isi pesan untuk notifikasi otomatis.</p>
         </div>
-        <div className="flex gap-2">
-            <Button variant="outline" onClick={() => router.push('/panel/whatsapp')}>Kembali</Button>
-            <Button type="submit" disabled={isSaving}>
+        <div className="flex gap-2 w-full sm:w-auto">
+            <Button variant="outline" onClick={() => router.push('/panel/whatsapp')} className="w-1/2 sm:w-auto">Kembali</Button>
+            <Button type="submit" disabled={isSaving} className="w-1/2 sm:w-auto">
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Simpan Semua Perubahan
+                Simpan Semua
             </Button>
         </div>
       </div>
       
-      <div className="space-y-6">
-        {Object.keys(placeholders).map((key) => {
-          const templateKey = key as NotificationType;
-          return (
-            <Card key={templateKey}>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                    <div className="space-y-1">
-                        <CardTitle>{placeholders[templateKey]?.[0]?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || templateKey}</CardTitle>
-                        <CardDescription>
-                            Placeholder tersedia: {placeholders[templateKey]?.map(p => <Badge key={p} variant="outline" className="mr-1">{p}</Badge>) || 'Tidak ada'}
-                        </CardDescription>
-                    </div>
-                     <Controller
-                        name={`${templateKey}.isActive`}
-                        control={control}
-                        render={({ field }) => (
-                            <div className="flex items-center space-x-2">
-                                <Switch id={`active-${templateKey}`} checked={field.value} onCheckedChange={field.onChange} />
-                                <Label htmlFor={`active-${templateKey}`}>Aktif</Label>
-                            </div>
-                        )}
-                    />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Controller
-                    name={`${templateKey}.message`}
-                    control={control}
-                    render={({ field }) => (
-                       <Textarea {...field} rows={4} placeholder="Masukkan template pesan Anda di sini..."/>
-                    )}
-                />
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
+      <Accordion type="multiple" defaultValue={templateGroups.map(g => g.group)} className="w-full space-y-4">
+        {templateGroups.map(group => (
+             <AccordionItem key={group.group} value={group.group} className="border rounded-lg bg-card">
+                 <AccordionTrigger className="p-4">
+                    <span className="font-semibold">{group.group}</span>
+                </AccordionTrigger>
+                 <AccordionContent className="p-4 pt-0 space-y-4">
+                    {group.templates.map(templateKey => {
+                        const template = allTemplates[templateKey];
+                        if (!template) return null;
+                        return (
+                            <Card key={templateKey} className="bg-background">
+                                <CardHeader>
+                                    <div className="flex justify-between items-start">
+                                        <div className="space-y-1">
+                                            <CardTitle className="text-base">{template.label}</CardTitle>
+                                            <CardDescription className="text-xs">
+                                                Placeholder: {template.placeholders?.map(p => <Badge key={p} variant="secondary" className="mr-1">{p}</Badge>) || 'Tidak ada'}
+                                            </CardDescription>
+                                        </div>
+                                        <Controller
+                                            name={`${templateKey}.isActive`}
+                                            control={control}
+                                            render={({ field }) => (
+                                                <div className="flex items-center space-x-2">
+                                                    <Switch id={`active-${templateKey}`} checked={field.value} onCheckedChange={field.onChange} />
+                                                    <Label htmlFor={`active-${templateKey}`}>Aktif</Label>
+                                                </div>
+                                            )}
+                                        />
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <Controller
+                                        name={`${templateKey}.message`}
+                                        control={control}
+                                        render={({ field }) => (
+                                        <Textarea {...field} rows={4} placeholder="Masukkan template pesan Anda di sini..."/>
+                                        )}
+                                    />
+                                </CardContent>
+                            </Card>
+                        )
+                    })}
+                 </AccordionContent>
+             </AccordionItem>
+        ))}
+      </Accordion>
     </form>
   );
 }
