@@ -8,6 +8,7 @@ import { Loader2 } from 'lucide-react';
 import InstallPWA from './InstallPWA';
 import { useFcm } from '@/hooks/use-fcm';
 import { usePathname } from 'next/navigation';
+import WhatsAppVerificationDialog from '../whatsapp/WhatsAppVerificationDialog';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useRequireAuth();
@@ -34,6 +35,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           <InstallPWA />
         </>
       )}
+      <WhatsAppVerificationDialog user={user} />
     </div>
   );
 }

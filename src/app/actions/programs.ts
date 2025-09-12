@@ -2,9 +2,13 @@
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, getDocs as getFirestoreDocs, query, where } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
+import { getWhatsappTemplate } from './whatsapp';
+import { sendWhatsAppMessage } from '@/services/whatsapp';
+import { getUserByUid } from './user';
+
 
 export type ProgramSource = 'garda_lestari' | 'mitra';
 export type SubmissionType = 'internal' | 'external';
@@ -84,9 +88,32 @@ export async function createProgram(programData: ProgramFormData, attachmentFile
         dataToCreate.attachmentUrl = await getDownloadURL(attachmentRef);
         dataToCreate.attachmentName = attachmentFile.name;
     }
-    await addDoc(programsCollection, dataToCreate);
+    const docRef = await addDoc(programsCollection, dataToCreate);
+    
+    // --- WhatsApp Notification ---
+    const template = await getWhatsappTemplate('new_program_announcement');
+    if (template.isActive) {
+        const usersSnapshot = await getFirestoreDocs(query(collection(db, 'users'), where('waNumber', '!=', null)));
+        
+        for (const userDoc of usersSnapshot.docs) {
+            const userData = userDoc.data();
+            const message = template.message
+                .replace('{namaProgram}', dataToCreate.title)
+                .replace('{batasWaktu}', new Date(programData.endDate).toLocaleDateString('id-ID'));
+            
+            try {
+                await sendWhatsAppMessage(userData.waNumber, message);
+            } catch (error) {
+                console.warn(`Failed to send 'new_program' notification to ${userData.waNumber}:`, error);
+            }
+        }
+    }
+    // --- End WhatsApp Notification ---
+    
     revalidatePath('/panel/programs');
     revalidatePath('/programs');
+    return docRef.id;
+
   } catch (error) {
     console.error("Error creating program:", error);
     throw new Error("Gagal membuat program.");

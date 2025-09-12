@@ -30,6 +30,8 @@ export interface ImportantDocument {
   approvedByName?: string; // denormalized
   approvedAt?: Timestamp;
   rejectionReason?: string;
+  rejectedById?: string;
+  rejectedByName?: string;
 }
 
 const documentsCollection = collection(db, 'importantDocuments');
@@ -209,6 +211,48 @@ export async function approveDocument(documentId: string, approverId: string) {
   revalidatePath('/panel/documents');
 }
 
+export async function rejectDocument(documentId: string, rejectorId: string, reason: string) {
+  const docRef = doc(db, 'importantDocuments', documentId);
+  const docSnap = await getDoc(docRef);
+
+  if (!docSnap.exists()) throw new Error("Dokumen tidak ditemukan.");
+
+  const document = docSnap.data() as ImportantDocument;
+  if (document.approverId !== rejectorId) throw new Error("Anda tidak memiliki izin untuk menolak dokumen ini.");
+  if (document.status !== 'Menunggu Persetujuan') throw new Error("Dokumen ini tidak bisa ditolak.");
+
+  const rejector = await getUserByUid(rejectorId);
+
+  await updateDoc(docRef, {
+    status: 'Ditolak',
+    rejectionReason: reason,
+    rejectedById: rejectorId,
+    rejectedByName: rejector?.name || 'Admin',
+  });
+
+  const author = await getUserByUid(document.authorId);
+  const template = await getWhatsappTemplate('document_rejected');
+  if (template.isActive && author?.waNumber) {
+    const message = template.message
+      .replace('{namaPengguna}', author.name)
+      .replace('{judulDokumen}', document.title)
+      .replace('{namaPenolak}', rejector?.name || 'Admin')
+      .replace('{alasanPenolakan}', reason);
+    await sendWhatsAppMessage(author.waNumber, message);
+  }
+
+  await sendNotification(
+    {
+      title: 'Dokumen Ditolak',
+      body: `Dokumen Anda "${document.title}" telah ditolak.`,
+      link: `/panel/documents`
+    },
+    { type: 'users', userIds: [document.authorId] }
+  );
+
+  revalidatePath('/panel/documents');
+}
+
 
 // --- Category Management ---
 
@@ -257,4 +301,3 @@ export async function generateDocumentNumber(category: string): Promise<string> 
   const nextNumber = (maxNumber + 1).toString().padStart(3, '0');
   return `${nextNumber}/${prefix}`;
 }
-

@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -51,10 +52,12 @@ const mainNavItems = [
 
 const groupedNavItems: {
   group: string;
+  icon: React.ElementType;
   items: { href: string; icon: React.ElementType; label: string, permission?: PermissionId }[];
 }[] = [
   {
     group: 'Publikasi',
+    icon: Presentation,
     items: [
       { href: '/panel/events', icon: Calendar, label: 'Acara', permission: 'manage_events' },
       { href: '/panel/landing', icon: Landmark, label: 'Halaman Utama', permission: 'manage_landing_page' },
@@ -62,6 +65,7 @@ const groupedNavItems: {
   },
   {
     group: 'Keterlibatan Anggota',
+    icon: Lightbulb,
     items: [
       { href: '/panel/announcements', icon: MegaphoneIcon, label: 'Pengumuman', permission: 'manage_announcements'},
       { href: '/panel/notifications', icon: Bell, label: 'Notifikasi', permission: 'send_notifications' },
@@ -71,6 +75,7 @@ const groupedNavItems: {
   },
   {
     group: 'Program & Peluang',
+    icon: Briefcase,
     items: [
        { href: '/panel/recruitments', icon: Briefcase, label: 'Rekrutmen', permission: 'manage_recruitments' },
        { href: '/panel/partners', icon: Handshake, label: 'Mitra', permission: 'manage_partners' },
@@ -78,6 +83,7 @@ const groupedNavItems: {
   },
   {
     group: 'E-Office',
+    icon: Building2,
     items: [
         { href: '/panel/documents', icon: BookCopy, label: 'Surat & Dokumen', permission: 'manage_documents'},
         { href: '/panel/projects', icon: KanbanSquare, label: 'Manajemen Proyek', permission: 'manage_projects' },
@@ -86,6 +92,7 @@ const groupedNavItems: {
   },
   {
     group: 'Manajemen Internal',
+    icon: Users,
     items: [
       { href: '/panel/positions', icon: UserCheck, label: 'Jabatan', permission: 'manage_positions' },
       { href: '/panel/forms', icon: FileText, label: 'Formulir', permission: 'manage_forms' },
@@ -94,6 +101,7 @@ const groupedNavItems: {
   },
    {
     group: 'Pengaturan',
+    icon: Settings,
     items: [
       { href: '/panel/settings', icon: Settings, label: 'Pengaturan Aplikasi', permission: 'manage_settings' },
     ],

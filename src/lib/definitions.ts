@@ -23,6 +23,7 @@ export const ALL_PERMISSIONS = [
     { id: 'manage_evoting', label: 'Kelola E-Voting' },
     { id: 'manage_projects', label: 'Kelola Proyek' },
     { id: 'manage_whatsapp', label: 'Kelola WhatsApp Bot' },
+    { id: 'manage_ideas', label: 'Kelola Bank Ide'},
 ] as const;
 
 export type PermissionId = typeof ALL_PERMISSIONS[number]['id'];

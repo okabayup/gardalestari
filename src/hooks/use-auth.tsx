@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { 
   onAuthStateChanged, 
   User, 
@@ -34,6 +34,8 @@ type ExtendedUser = User & {
   positionId?: string;
   position?: string;
   permissions?: PermissionId[];
+  waNumber?: string;
+  waVerified?: boolean;
 };
 
 interface AuthContextType {
@@ -45,13 +47,14 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   updateUserProfile: (updates: { photoFile?: File, username?: string }) => Promise<void>;
   submitForVerification: (data: { fullName: string; nik: string; ktpFile: File; selfieFile: File; photoFile?: File }) => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Declare recaptchaVerifier in a broader scope
 let recaptchaVerifier: RecaptchaVerifier | null = null;
-const ADMIN_PHONE_NUMBER = '+6285176752610';
+const ADMIN_PHONE_NUMBER = process.env.NEXT_PUBLIC_ADMIN_PHONE_NUMBER;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<ExtendedUser | null>(null);
@@ -60,57 +63,70 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const pathname = usePathname();
   const { toast } = useToast();
 
+  const fetchUserDetails = useCallback(async (user: User) => {
+    const userDocRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userDocRef);
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      let permissions: PermissionId[] = [];
+      let positionName = 'Anggota';
+
+      if (userData.positionId) {
+          const positionDocRef = doc(db, 'positions', userData.positionId);
+          const positionDoc = await getDoc(positionDocRef);
+          if (positionDoc.exists()) {
+              const positionData = positionDoc.data() as Position;
+              permissions = positionData.permissions || [];
+              positionName = positionData.name;
+          }
+      }
+      
+      // Grant all permissions if phone number matches admin
+      if (user.phoneNumber === ADMIN_PHONE_NUMBER) {
+          permissions = ALL_PERMISSIONS.map(p => p.id);
+          positionName = 'Super Admin';
+      }
+
+      const extendedUser: ExtendedUser = {
+          ...user, 
+          points: userData.points || 0,
+          level: userData.level || 'Bronze',
+          verificationStatus: userData.verificationStatus,
+          displayName: userData.fullName || user.displayName,
+          photoURL: userData.avatarUrl || user.photoURL,
+          fullName: userData.fullName,
+          username: userData.username,
+          nik: userData.nik,
+          positionId: userData.positionId,
+          position: positionName,
+          permissions: permissions,
+          waNumber: userData.waNumber,
+          waVerified: userData.waVerified,
+      };
+      setUser(extendedUser);
+    } else {
+      setUser({ ...user, points: 0, level: 'Bronze', verificationStatus: 'unverified' });
+    }
+  }, []);
+
+  const refreshUser = useCallback(async () => {
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+        await fetchUserDetails(currentUser);
+    }
+  }, [fetchUserDetails]);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          let permissions: PermissionId[] = [];
-          let positionName = 'Anggota';
-
-          if (userData.positionId) {
-              const positionDocRef = doc(db, 'positions', userData.positionId);
-              const positionDoc = await getDoc(positionDocRef);
-              if (positionDoc.exists()) {
-                  const positionData = positionDoc.data() as Position;
-                  permissions = positionData.permissions || [];
-                  positionName = positionData.name;
-              }
-          }
-          
-          // Grant all permissions if phone number matches admin
-          if (user.phoneNumber === ADMIN_PHONE_NUMBER) {
-              permissions = ALL_PERMISSIONS.map(p => p.id);
-              positionName = 'Super Admin';
-          }
-
-          const extendedUser: ExtendedUser = {
-              ...user, 
-              points: userData.points || 0,
-              level: userData.level || 'Bronze',
-              verificationStatus: userData.verificationStatus,
-              displayName: userData.fullName || user.displayName,
-              photoURL: userData.avatarUrl || user.photoURL,
-              fullName: userData.fullName,
-              username: userData.username,
-              nik: userData.nik,
-              positionId: userData.positionId,
-              position: positionName,
-              permissions: permissions,
-          };
-          setUser(extendedUser);
-        } else {
-          setUser({ ...user, points: 0, level: 'Bronze', verificationStatus: 'unverified' });
-        }
+        await fetchUserDetails(user);
       } else {
         setUser(null);
       }
       setLoading(false);
     });
     return () => unsubscribe();
-  }, []);
+  }, [fetchUserDetails]);
 
   const hasPermission = (permission: PermissionId): boolean => {
       if (!user || !user.permissions) return false;
@@ -139,7 +155,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const generateUniqueUsername = async (fullName: string): Promise<string> => {
     const baseUsername = fullName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15) || 'user';
     let username = baseUsername;
-    let attempts = 0;
     
     while (true) {
         const q = query(collection(db, 'users'), where("username", "==", username));
@@ -147,7 +162,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (querySnapshot.empty) {
             return username;
         }
-        attempts++;
         username = `${baseUsername}${Math.floor(Math.random() * 1000)}`;
     }
   }
@@ -319,7 +333,7 @@ const submitForVerification = async (data: { fullName: string; nik: string; ktpF
 
 
   return (
-    <AuthContext.Provider value={{ user, loading, hasPermission, signInWithPhone, verifyOtp, signOut, updateUserProfile, submitForVerification }}>
+    <AuthContext.Provider value={{ user, loading, hasPermission, signInWithPhone, verifyOtp, signOut, updateUserProfile, submitForVerification, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

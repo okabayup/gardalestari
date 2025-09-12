@@ -6,6 +6,7 @@ import { collection, getDocs, doc, updateDoc, deleteField, query, setDoc, Timest
 import { revalidatePath } from 'next/cache';
 import type { PermissionId, Position } from '@/lib/definitions';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
+import { getWhatsappTemplate } from './whatsapp';
 
 export type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected';
 export type MemberType = 'pusat' | 'daerah' | 'cabang' | 'pembina' | 'pengawas' | 'penasehat';
@@ -24,6 +25,8 @@ export interface Member {
 
 export interface MemberWithStatus extends Member {
     phoneNumber: string;
+    waNumber?: string;
+    waVerified?: boolean;
     verificationStatus: VerificationStatus;
     joinDate?: string;
     ktpImageUrl?: string;
@@ -82,6 +85,8 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
       name: data.fullName || data.displayName || 'Nama Tidak Diketahui',
       username: data.username || `user_${docSnap.id.substring(0, 5)}`,
       phoneNumber: data.phoneNumber || 'N/A',
+      waNumber: data.waNumber,
+      waVerified: data.waVerified || false,
       verificationStatus: data.verificationStatus,
       avatarUrl: data.avatarUrl,
       position: positionName,
@@ -152,17 +157,21 @@ export async function updateMemberDetails(id: string, details: { positionId?: st
 
         // Send WhatsApp notification if verification status changes
         if (details.verificationStatus && details.verificationStatus !== currentMemberData.verificationStatus) {
-            const memberPhoneNumber = currentMemberData.phoneNumber;
+            const memberPhoneNumber = currentMemberData.waNumber;
             if (memberPhoneNumber) {
-                let message = '';
+                let templateId: 'member_verified_permanent' | 'member_verification_rejected' | null = null;
                 if (details.verificationStatus === 'permanent') {
-                    message = `Selamat ${currentMemberData.fullName}! Akun Garda Lestari Anda telah diverifikasi secara permanen. Anda sekarang dapat mengakses Kartu Tanda Anggota (KTA) digital Anda.`;
+                    templateId = 'member_verified_permanent';
                 } else if (details.verificationStatus === 'rejected') {
-                    message = `Halo ${currentMemberData.fullName}. Mohon maaf, pengajuan verifikasi akun Garda Lestari Anda ditolak. Silakan periksa kembali data Anda dan coba lagi.`;
+                    templateId = 'member_verification_rejected';
                 }
                 
-                if (message) {
-                    await sendWhatsAppMessage(memberPhoneNumber, message);
+                if (templateId) {
+                    const template = await getWhatsappTemplate(templateId);
+                    if (template.isActive) {
+                         const message = template.message.replace('{namaPengguna}', currentMemberData.fullName);
+                         await sendWhatsAppMessage(memberPhoneNumber, message);
+                    }
                 }
             }
         }

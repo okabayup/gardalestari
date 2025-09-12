@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, DocumentData, limit, getDoc, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, DocumentData, limit, getDoc, doc, setDoc } from 'firebase/firestore';
 import type { MemberWithStatus, MemberType } from './members';
 import type { Position } from '@/lib/definitions';
 
@@ -86,6 +86,7 @@ export async function getUserByUid(uid: string): Promise<(MemberWithStatus & { w
             joinDate: joinDate,
             permissions: permissions,
             waNumber: data.waNumber,
+            waVerified: data.waVerified || false,
         };
 
     } catch (error) {
@@ -153,6 +154,34 @@ export async function getUserByUsername(username: string): Promise<PublicProfile
 }
 
 
+export async function getUserByWaNumber(waNumber: string): Promise<PublicUser | null> {
+    if (!waNumber) return null;
+    try {
+        const q = query(collection(db, 'users'), where('waNumber', '==', waNumber), limit(1));
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+            return null;
+        }
+        
+        const userDoc = querySnapshot.docs[0];
+        const data = userDoc.data();
+        
+        return {
+            id: userDoc.id,
+            username: data.username,
+            fullName: data.fullName,
+            avatarUrl: data.avatarUrl,
+            level: data.level,
+        };
+
+    } catch (error) {
+        console.error("Error fetching user by WhatsApp number:", error);
+        return null;
+    }
+}
+
+
 /**
  * Searches for users by username or full name.
  * @param searchQuery The search term.
@@ -210,4 +239,32 @@ export async function searchUsers(searchQuery: string, limitCount: number = 5): 
     console.error("Error searching users:", error);
     return [];
   }
+}
+
+
+export async function saveWaNumber(userId: string, waNumber: string) {
+    const userDocRef = doc(db, 'users', userId);
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    await setDoc(userDocRef, {
+        waNumber: waNumber,
+        waOtp: otp,
+        waVerified: false,
+    }, { merge: true });
+
+    await sendTestMessage(waNumber, `Kode verifikasi Garda Lestari Anda adalah: ${otp}`);
+}
+
+export async function verifyWaNumber(userId: string, otp: string): Promise<boolean> {
+    const userDocRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userDocRef);
+
+    if (userDoc.exists() && userDoc.data().waOtp === otp) {
+        await setDoc(userDocRef, {
+            waVerified: true,
+            waOtp: null, // Clear OTP after verification
+        }, { merge: true });
+        return true;
+    }
+    return false;
 }
