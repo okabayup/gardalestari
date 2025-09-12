@@ -243,7 +243,7 @@ export async function searchUsers(searchQuery: string, limitCount: number = 5): 
 }
 
 
-export async function saveWaNumber(userId: string, waNumber: string): Promise<{ success: boolean; error?: string }> {
+export async function saveWaNumber(userId: string, waNumber: string) {
     try {
         const userDocRef = doc(db, 'users', userId);
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -256,16 +256,9 @@ export async function saveWaNumber(userId: string, waNumber: string): Promise<{ 
 
         const result = await sendWhatsAppMessage(waNumber, `Kode verifikasi Garda Lestari Anda adalah: ${otp}`);
         
-        // Explicitly check the success field from the result
-        if (result.success) {
-            return { success: true };
-        } else {
-            // If sendWhatsAppMessage returns success: false, propagate the error.
-            return { success: false, error: result.error || 'Gagal mengirimkan kode OTP dari server.' };
-        }
+        return result;
 
     } catch (error) {
-        // This catch block handles errors from Firestore (`setDoc`) or unexpected exceptions.
         const errorMessage = (error as Error).message || 'Gagal menyimpan nomor atau mengirim OTP.';
         console.error(`Error in saveWaNumber for ${waNumber}:`, errorMessage);
         return { success: false, error: errorMessage };

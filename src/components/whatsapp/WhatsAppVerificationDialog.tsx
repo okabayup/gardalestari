@@ -25,12 +25,15 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
   const [otp, setOtp] = useState('');
   const [loadingSend, setLoadingSend] = useState(false);
   const [loadingVerify, setLoadingVerify] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<any>(null); // State for debugging
   const { toast } = useToast();
   const { refreshUser } = useAuth();
   
   useEffect(() => {
      if (user.phoneNumber) {
-        setWaNumber(user.phoneNumber.replace(/^\+/, ''));
+        // Remove '+', and if it starts with '62', keep it, otherwise assume local and prepend '62'
+        const rawNumber = user.phoneNumber.replace(/\D/g, '');
+        setWaNumber(rawNumber.startsWith('62') ? rawNumber : `62${rawNumber}`);
      }
   }, [user.phoneNumber]);
 
@@ -41,10 +44,11 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
       return;
     }
     setLoadingSend(true);
+    setDebugInfo(null);
     try {
-      const formattedNumber = waNumber.startsWith('0') ? `62${waNumber.substring(1)}` : waNumber;
-      const result = await saveWaNumber(user.uid, formattedNumber);
-      
+      const result = await saveWaNumber(user.uid, waNumber);
+      setDebugInfo(result); // Store the full response for debugging
+
       if (result.success) {
         toast({ title: 'Kode OTP terkirim!', description: 'Periksa WhatsApp Anda.' });
         setOtpSent(true);
@@ -56,8 +60,9 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
         });
       }
     } catch (error) {
-      console.error('Error in handleSendOtp:', error);
-      toast({ variant: 'destructive', title: 'Gagal mengirim OTP', description: (error as Error).message });
+      const errorMessage = (error as Error).message || 'Terjadi kesalahan pada sisi klien.';
+      toast({ variant: 'destructive', title: 'Gagal mengirim OTP', description: errorMessage });
+      setDebugInfo({ success: false, error: errorMessage });
     } finally {
       setLoadingSend(false);
     }
@@ -73,7 +78,7 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
       const success = await verifyWaNumber(user.uid, otp);
       if (success) {
         toast({ title: 'Verifikasi Berhasil!', description: 'Nomor WhatsApp Anda telah diverifikasi.' });
-        await refreshUser(); // This will re-fetch user data and close the dialog
+        await refreshUser();
       } else {
         throw new Error('Kode OTP yang Anda masukkan salah.');
       }
@@ -91,7 +96,7 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
         <DialogHeader>
           <DialogTitle>Verifikasi Nomor WhatsApp</DialogTitle>
           <DialogDescription>
-            Untuk melanjutkan, mohon verifikasi nomor WhatsApp Anda untuk menerima notifikasi penting seperti status dokumen dan pengumuman program.
+            Untuk melanjutkan, mohon verifikasi nomor WhatsApp Anda untuk menerima notifikasi penting.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
@@ -105,7 +110,7 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
                     placeholder="cth: 6281234567890"
                     disabled={otpSent || loadingSend}
                 />
-                 <Button onClick={handleSendOtp} disabled={otpSent || loadingSend}>
+                 <Button onClick={handleSendOtp} disabled={loadingSend}>
                     {loadingSend ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Kirim OTP'}
                 </Button>
               </div>
@@ -126,6 +131,16 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
                 </Button>
                </div>
             </div>
+
+            {/* Debugging Panel */}
+            {debugInfo && (
+              <div className="space-y-2 pt-4">
+                <Label className="text-xs font-mono">Debugging Response:</Label>
+                <pre className="p-2 bg-muted rounded-md text-xs overflow-auto font-mono">
+                  {JSON.stringify(debugInfo, null, 2)}
+                </pre>
+              </div>
+            )}
         </div>
       </DialogContent>
     </Dialog>
