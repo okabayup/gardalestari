@@ -30,7 +30,7 @@ export async function sendWhatsAppMessage(phoneNumber: string, message: string):
       },
       body: JSON.stringify({
         deviceID: SATUCONNECT_DEVICE_ID,
-        phoneNumber: formattedPhoneNumber,
+        phoneNumbers: formattedPhoneNumber,
         message: message,
       }),
     });
