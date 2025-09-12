@@ -54,7 +54,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Declare recaptchaVerifier in a broader scope
 let recaptchaVerifier: RecaptchaVerifier | null = null;
-const ADMIN_PHONE_NUMBER = process.env.NEXT_PUBLIC_ADMIN_PHONE_NUMBER;
+const ADMIN_PHONE_NUMBER = '+6285176752610';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<ExtendedUser | null>(null);
