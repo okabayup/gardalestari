@@ -1,15 +1,19 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
+import { formatFullName } from '@/lib/utils';
 
 interface MemberCardProps {
   name: string;
   position: string;
   avatarUrl?: string;
+  titlePrefix?: string;
+  titlePostfix?: string;
 }
 
-export const MemberCard = ({ name, position, avatarUrl }: MemberCardProps) => {
+export const MemberCard = ({ name, position, avatarUrl, titlePrefix, titlePostfix }: MemberCardProps) => {
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('');
+  const fullName = formatFullName(name, titlePrefix, titlePostfix);
 
   return (
     <Card className="text-center h-full">
@@ -19,7 +23,7 @@ export const MemberCard = ({ name, position, avatarUrl }: MemberCardProps) => {
           <AvatarFallback>{getInitials(name)}</AvatarFallback>
         </Avatar>
         <div className="flex-grow flex flex-col justify-center">
-            <p className="font-semibold leading-tight break-words">{name}</p>
+            <p className="font-semibold leading-tight break-words">{fullName}</p>
             <p className="text-xs text-muted-foreground break-words">{position}</p>
         </div>
       </CardContent>

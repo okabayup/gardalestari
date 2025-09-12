@@ -15,15 +15,16 @@ import {
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Loader2, Search } from 'lucide-react';
-import { getMembers, Member } from '@/app/actions/members';
+import { getMembers, MemberWithStatus } from '@/app/actions/members';
 import { useToast } from '@/hooks/use-toast';
+import { formatFullName } from '@/lib/utils';
 
 
 const TABS = ['Semua', 'DPP', 'DPD', 'DPC', 'Dewan Kehormatan', 'Anggota Istimewa'];
 
 export default function MembersPage() {
   const { toast } = useToast();
-  const [allMembers, setAllMembers] = useState<Member[]>([]);
+  const [allMembers, setAllMembers] = useState<MemberWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Semua');
   const [searchTerm, setSearchTerm] = useState('');
@@ -74,7 +75,7 @@ export default function MembersPage() {
     // Filter berdasarkan pencarian nama
     if (searchTerm) {
       members = members.filter((member) =>
-        member.name.toLowerCase().includes(searchTerm.toLowerCase())
+        formatFullName(member.name, member.titlePrefix, member.titlePostfix).toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -160,7 +161,9 @@ export default function MembersPage() {
                 <MemberCard
                     key={member.id}
                     name={member.name}
-                    position={member.position}
+                    titlePrefix={member.titlePrefix}
+                    titlePostfix={member.titlePostfix}
+                    position={member.position || 'Anggota'}
                     avatarUrl={member.avatarUrl}
                 />
                 ))

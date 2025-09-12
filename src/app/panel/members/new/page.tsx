@@ -20,6 +20,8 @@ import Image from 'next/image';
 
 const formSchema = z.object({
   fullName: z.string().min(3, 'Nama lengkap minimal 3 karakter'),
+  titlePrefix: z.string().optional(),
+  titlePostfix: z.string().optional(),
   positionId: z.string({ required_error: "Jabatan wajib dipilih" }),
   type: z.enum(['pusat', 'daerah', 'cabang', 'pembina', 'pengawas', 'penasehat'], { required_error: "Tipe keanggotaan wajib dipilih" }),
   isSpecialMember: z.boolean().default(false),
@@ -105,11 +107,22 @@ export default function NewManualMemberPage() {
           <CardDescription>Isi informasi dasar untuk anggota baru.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="fullName">Nama Lengkap</Label>
-            <Input id="fullName" {...register('fullName')} />
-            {errors.fullName && <p className="text-sm text-destructive">{errors.fullName.message}</p>}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className="space-y-2 md:col-span-1">
+                <Label htmlFor="titlePrefix">Gelar Depan</Label>
+                <Input id="titlePrefix" {...register('titlePrefix')} placeholder="Prof. Dr."/>
+              </div>
+              <div className="space-y-2 md:col-span-3">
+                <Label htmlFor="fullName">Nama Lengkap</Label>
+                <Input id="fullName" {...register('fullName')} />
+                {errors.fullName && <p className="text-sm text-destructive">{errors.fullName.message}</p>}
+              </div>
+               <div className="space-y-2 md:col-span-1">
+                <Label htmlFor="titlePostfix">Gelar Belakang</Label>
+                <Input id="titlePostfix" {...register('titlePostfix')} placeholder="S.T., M.Kom."/>
+              </div>
           </div>
+
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">

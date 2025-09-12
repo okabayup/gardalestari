@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -31,6 +32,7 @@ import { Loader2, MoreHorizontal, Edit, ShieldCheck, PlusCircle } from 'lucide-r
 import EditMemberDialog from '@/components/admin/EditMemberDialog';
 import ViewVerificationDialog from '@/components/admin/ViewVerificationDialog';
 import { useRouter } from 'next/navigation';
+import { formatFullName } from '@/lib/utils';
 
 export default function AdminMembersPage() {
   const { toast } = useToast();
@@ -68,7 +70,7 @@ export default function AdminMembersPage() {
     if (dialog === 'verify') setIsVerificationDialogOpen(true);
   };
   
-  const handleSaveDetails = async (id: string, details: { positionId?: string; type?: MemberType; region?: string, verificationStatus?: VerificationStatus, isSpecialMember?: boolean }) => {
+  const handleSaveDetails = async (id: string, details: { positionId?: string; type?: MemberType; region?: string, verificationStatus?: VerificationStatus, isSpecialMember?: boolean, titlePrefix?: string, titlePostfix?: string }) => {
     setIsSavingDetails(true);
     try {
         await updateMemberDetails(id, details);
@@ -137,7 +139,7 @@ export default function AdminMembersPage() {
                 ) : members.length > 0 ? (
                   members.map((member) => (
                     <TableRow key={member.id}>
-                      <TableCell className="font-medium">{member.name}</TableCell>
+                      <TableCell className="font-medium">{formatFullName(member.name, member.titlePrefix, member.titlePostfix)}</TableCell>
                       <TableCell className="hidden md:table-cell">{member.phoneNumber}</TableCell>
                       <TableCell>{getStatusBadge(member.verificationStatus)}</TableCell>
                       <TableCell className="hidden md:table-cell">{member.position}</TableCell>

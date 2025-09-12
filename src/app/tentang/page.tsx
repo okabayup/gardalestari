@@ -9,6 +9,8 @@ import { getAppSettings } from '../actions/settings';
 import { Separator } from '@/components/ui/separator';
 import { getMembers, MemberWithStatus } from '../actions/members';
 import { MemberCard } from '@/components/members/MemberCard';
+import { formatFullName } from '@/lib/utils';
+
 
 const InfoSection = ({ title, children, icon: Icon }: { title: string, children: React.ReactNode, icon: React.ElementType }) => (
     <div className="space-y-4">
@@ -28,7 +30,14 @@ const BoardSection = ({ title, members }: { title: string, members: MemberWithSt
         {members.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {members.map(member => (
-                    <MemberCard key={member.id} name={member.name} position={member.position || 'Anggota'} avatarUrl={member.avatarUrl} />
+                    <MemberCard 
+                        key={member.id} 
+                        name={member.name} 
+                        position={member.position || 'Anggota'} 
+                        avatarUrl={member.avatarUrl}
+                        titlePrefix={member.titlePrefix}
+                        titlePostfix={member.titlePostfix}
+                    />
                 ))}
             </div>
         ) : (
@@ -45,7 +54,14 @@ const ExecutiveBoardSection = ({ title, members }: { title: string, members: Mem
             <h3 className="font-headline text-xl font-semibold mt-6 mb-4">{title}</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {members.map(member => (
-                    <MemberCard key={member.id} name={member.name} position={member.position || 'Anggota'} avatarUrl={member.avatarUrl} />
+                    <MemberCard 
+                        key={member.id} 
+                        name={member.name} 
+                        position={member.position || 'Anggota'} 
+                        avatarUrl={member.avatarUrl}
+                        titlePrefix={member.titlePrefix}
+                        titlePostfix={member.titlePostfix}
+                    />
                 ))}
             </div>
         </div>

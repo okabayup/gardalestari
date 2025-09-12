@@ -16,7 +16,7 @@ interface EditMemberDialogProps {
   member: MemberWithStatus;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (id: string, details: { positionId?: string, type?: MemberType, region?: string, verificationStatus?: VerificationStatus, isSpecialMember?: boolean }) => void;
+  onSave: (id: string, details: { positionId?: string, type?: MemberType, region?: string, verificationStatus?: VerificationStatus, isSpecialMember?: boolean, titlePrefix?: string, titlePostfix?: string }) => void;
   isSaving: boolean;
 }
 
@@ -45,6 +45,8 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
   const [region, setRegion] = useState(member.region || '');
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>(member.verificationStatus || 'unverified');
   const [isSpecialMember, setIsSpecialMember] = useState(member.isSpecialMember || false);
+  const [titlePrefix, setTitlePrefix] = useState(member.titlePrefix || '');
+  const [titlePostfix, setTitlePostfix] = useState(member.titlePostfix || '');
   const [positions, setPositions] = useState<Position[]>([]);
 
   useEffect(() => {
@@ -58,6 +60,8 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
         setRegion(member.region || '');
         setVerificationStatus(member.verificationStatus || 'unverified');
         setIsSpecialMember(member.isSpecialMember || false);
+        setTitlePrefix(member.titlePrefix || '');
+        setTitlePostfix(member.titlePostfix || '');
     }
   }, [member, isOpen]);
   
@@ -68,12 +72,14 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
   }, [type]);
 
   const handleSave = () => {
-    const detailsToSave: { positionId?: string, type?: MemberType, region?: string, verificationStatus?: VerificationStatus, isSpecialMember?: boolean } = {
+    const detailsToSave: { positionId?: string, type?: MemberType, region?: string, verificationStatus?: VerificationStatus, isSpecialMember?: boolean, titlePrefix?: string, titlePostfix?: string } = {
         positionId: positionId === NO_POSITION_VALUE ? undefined : positionId,
         type: type === 'anggota' ? undefined : type,
         region: region,
         verificationStatus: verificationStatus,
         isSpecialMember: isSpecialMember,
+        titlePrefix: titlePrefix,
+        titlePostfix: titlePostfix,
     };
     onSave(member.id, detailsToSave);
   };
@@ -88,6 +94,20 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
+           <div className="grid grid-cols-5 gap-2">
+                <div className="space-y-2 col-span-1">
+                    <Label htmlFor="titlePrefix">Gelar Depan</Label>
+                    <Input id="titlePrefix" value={titlePrefix} onChange={e => setTitlePrefix(e.target.value)} />
+                </div>
+                 <div className="space-y-2 col-span-3">
+                    <Label>Nama</Label>
+                    <Input value={member.name} disabled />
+                </div>
+                <div className="space-y-2 col-span-1">
+                    <Label htmlFor="titlePostfix">Gelar Belakang</Label>
+                    <Input id="titlePostfix" value={titlePostfix} onChange={e => setTitlePostfix(e.target.value)} />
+                </div>
+            </div>
           <div className="space-y-2">
             <Label htmlFor="position">Jabatan</Label>
             <Select value={positionId} onValueChange={setPositionId}>

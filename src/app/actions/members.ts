@@ -9,6 +9,7 @@ import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getWhatsappTemplate } from './whatsapp';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { generateUniqueUsername } from './user';
+import { formatFullName } from '@/lib/utils';
 
 export type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected' | 'manual';
 export type MemberType = 'pusat' | 'daerah' | 'cabang' | 'pembina' | 'pengawas' | 'penasehat';
@@ -18,6 +19,8 @@ export interface Member {
   id: string;
   name: string;
   username: string;
+  titlePrefix?: string;
+  titlePostfix?: string;
   positionId?: string; 
   type?: MemberType;
   region?: string;
@@ -86,6 +89,8 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
       id: docSnap.id,
       name: data.fullName || data.displayName || 'Nama Tidak Diketahui',
       username: data.username || `user_${docSnap.id.substring(0, 5)}`,
+      titlePrefix: data.titlePrefix || '',
+      titlePostfix: data.titlePostfix || '',
       phoneNumber: data.phoneNumber || 'N/A',
       waNumber: data.waNumber,
       waVerified: data.waVerified || false,
@@ -116,7 +121,7 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
 }
 
 // Update member details (position, type, region, verification status)
-export async function updateMemberDetails(id: string, details: { positionId?: string, type?: MemberType, region?: string, verificationStatus?: VerificationStatus, isSpecialMember?: boolean }) {
+export async function updateMemberDetails(id: string, details: { positionId?: string, type?: MemberType, region?: string, verificationStatus?: VerificationStatus, isSpecialMember?: boolean, titlePrefix?: string, titlePostfix?: string }) {
     try {
         const memberDocRef = doc(db, 'users', id);
         const currentMemberDoc = await getDoc(memberDocRef);
@@ -153,6 +158,14 @@ export async function updateMemberDetails(id: string, details: { positionId?: st
 
         if (details.isSpecialMember !== undefined) {
             dataToUpdate.isSpecialMember = details.isSpecialMember;
+        }
+
+        if (details.titlePrefix !== undefined) {
+            dataToUpdate.titlePrefix = details.titlePrefix;
+        }
+
+        if (details.titlePostfix !== undefined) {
+            dataToUpdate.titlePostfix = details.titlePostfix;
         }
         
         await setDoc(memberDocRef, dataToUpdate, { merge: true });
@@ -193,6 +206,8 @@ export async function createManualMember(
         positionId: string,
         type: MemberType,
         isSpecialMember: boolean,
+        titlePrefix?: string,
+        titlePostfix?: string,
     },
     photoFile?: File
 ) {
