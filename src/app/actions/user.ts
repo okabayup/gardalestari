@@ -254,14 +254,12 @@ export async function saveWaNumber(userId: string, waNumber: string): Promise<{ 
             waVerified: false,
         }, { merge: true });
 
-        // The sendWhatsAppMessage function will throw an error on failure, which will be caught.
         await sendWhatsAppMessage(waNumber, `Kode verifikasi Garda Lestari Anda adalah: ${otp}`);
         
         return { success: true };
     } catch (error) {
         const errorMessage = (error as Error).message || 'Gagal mengirimkan kode OTP.';
         console.error(`Failed to send OTP to ${waNumber}:`, errorMessage);
-        // Return a structured error object instead of throwing.
         return { success: false, error: errorMessage };
     }
 }
