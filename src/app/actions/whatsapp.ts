@@ -3,6 +3,8 @@
 
 import { db } from '@/lib/firebase';
 import { collection, getDocs, doc, setDoc, getDoc } from 'firebase/firestore';
+import { sendWhatsAppMessage as sendWhatsAppMessageSatuConnect } from '@/services/whatsapp';
+
 
 interface BotState {
     status: 'IDLE' | 'CONNECTING' | 'CONNECTED' | 'DISCONNECTED' | 'NEEDS_QR';
@@ -55,4 +57,15 @@ export async function logoutBot() {
          console.error("Error logging out bot:", error);
     }
     return { success: true, message: 'Logout request sent to bot.' };
+}
+
+export async function sendTestMessage(phoneNumber: string, message: string) {
+    try {
+        await sendWhatsAppMessageSatuConnect(phoneNumber, message);
+        return { success: true };
+    } catch (error) {
+        const errorMessage = (error instanceof Error) ? error.message : 'Unknown error occurred';
+        console.error("Error in sendTestMessage action:", errorMessage);
+        throw new Error(errorMessage);
+    }
 }
