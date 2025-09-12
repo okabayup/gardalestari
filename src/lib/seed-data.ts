@@ -27,7 +27,7 @@ const initialProgramTags = [
     'Pelatihan', 'Kompetisi', 'Pendanaan', 'Relawan', 'Magang', 'Riset', 'Beasiswa'
 ];
 
-export const initialPositions = [
+const initialPositions = [
     "Dewan Pembina",
     "Dewan Pengawas",
     "Dewan Penasihat",
@@ -89,4 +89,5 @@ export async function seedInitialData() {
     await seedCollection(programTagsCollection, initialProgramTags, 'programTags');
     await seedCollection(positionsCollection, initialPositions, 'positions');
 }
+
 
