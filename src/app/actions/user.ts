@@ -4,7 +4,7 @@
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, DocumentData, limit, getDoc, doc, setDoc } from 'firebase/firestore';
 import type { MemberWithStatus, MemberType } from './members';
-import type { Position } from '@/lib/definitions';
+import type { Position, PermissionId } from '@/lib/definitions';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 
 
@@ -243,7 +243,7 @@ export async function searchUsers(searchQuery: string, limitCount: number = 5): 
 }
 
 
-export async function saveWaNumber(userId: string, waNumber: string): Promise<{ success: boolean }> {
+export async function saveWaNumber(userId: string, waNumber: string): Promise<{ success: boolean; error?: string }> {
     try {
         const userDocRef = doc(db, 'users', userId);
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -254,13 +254,15 @@ export async function saveWaNumber(userId: string, waNumber: string): Promise<{ 
             waVerified: false,
         }, { merge: true });
 
+        // The sendWhatsAppMessage function will throw an error on failure, which will be caught.
         await sendWhatsAppMessage(waNumber, `Kode verifikasi Garda Lestari Anda adalah: ${otp}`);
         
         return { success: true };
     } catch (error) {
-        console.error(`Failed to send OTP to ${waNumber}:`, error);
-        // Re-throw the error so the client-side catch block can handle it with a specific message.
-        throw new Error((error as Error).message || 'Gagal mengirimkan kode OTP.');
+        const errorMessage = (error as Error).message || 'Gagal mengirimkan kode OTP.';
+        console.error(`Failed to send OTP to ${waNumber}:`, errorMessage);
+        // Return a structured error object instead of throwing.
+        return { success: false, error: errorMessage };
     }
 }
 
