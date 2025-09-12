@@ -115,6 +115,29 @@ export default function PostCard({ post, onToggleLike, onArchive, onUnarchive, c
           }
       }
   }
+
+  const handleShare = async () => {
+    const shareData = {
+      title: `Postingan oleh ${post.author.username}`,
+      text: post.caption.substring(0, 100) + '...',
+      url: `${window.location.origin}/p/${post.id}`,
+    };
+    if (navigator.share && navigator.canShare(shareData)) {
+      try {
+        await navigator.share(shareData);
+        logAnalyticsEvent('share', { content_type: 'post', item_id: post.id });
+      } catch (err) {
+        console.error('Error sharing:', err);
+      }
+    } else {
+      // Fallback for browsers that don't support Web Share API
+      navigator.clipboard.writeText(shareData.url);
+      toast({
+        title: 'Tautan disalin!',
+        description: 'Tautan ke postingan ini telah disalin ke clipboard Anda.',
+      });
+    }
+  };
   
   const isAuthor = currentUserId === post.author.id;
   const isArchived = post.status === 'archived';
@@ -217,11 +240,11 @@ export default function PostCard({ post, onToggleLike, onArchive, onUnarchive, c
                     <CommentList comments={comments} />
                 </SheetContent>
             </Sheet>
-            <Button variant="ghost" size="icon" disabled={isArchived}>
+            <Button variant="ghost" size="icon" onClick={handleShare} disabled={isArchived}>
                 <Send className="h-5 w-5" />
             </Button>
         </div>
-        <div className="px-1 text-sm font-semibold">{post.likesCount.toLocaleString()} likes</div>
+        <div className="px-1 text-sm font-semibold">{post.likesCount.toLocaleString()} suka</div>
         {post.commentsCount > 0 && !isDetailPage && (
            <Sheet open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
             <SheetTrigger asChild>

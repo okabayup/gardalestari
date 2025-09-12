@@ -180,13 +180,13 @@ export async function getTasksForProject(projectId: string): Promise<ProjectTask
       const data = doc.data();
       let dueDateString: string | undefined = undefined;
       // Handle both Timestamp and string for dueDate
-      if (data.dueDate) {
-        if (typeof data.dueDate.toDate === 'function') { // It's a Timestamp
-          dueDateString = data.dueDate.toDate().toISOString();
-        } else if (typeof data.dueDate === 'string') { // It's already a string
-          dueDateString = data.dueDate;
+        if (data.dueDate) {
+            if (typeof data.dueDate.toDate === 'function') { // It's a Timestamp
+            dueDateString = data.dueDate.toDate().toISOString();
+            } else if (typeof data.dueDate === 'string') { // It's already a string
+            dueDateString = data.dueDate;
+            }
         }
-      }
       return {
           id: doc.id,
           ...data,

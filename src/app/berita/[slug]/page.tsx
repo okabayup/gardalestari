@@ -6,53 +6,24 @@ import { notFound, useParams } from 'next/navigation';
 import LandingHeader from '@/components/layout/LandingHeader';
 import Footer from '@/components/landing/Footer';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getBeritaPosts, getBeritaPost } from '@/app/actions/berita';
+import { getBeritaPost } from '@/app/actions/berita';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import type { Metadata } from 'next';
 import { useEffect, useState } from 'react';
 import type { BeritaPost } from '@/app/actions/berita';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Share2 } from 'lucide-react';
 import { logAnalyticsEvent } from '@/lib/analytics';
-
-
-// export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-//   const post = await getBeritaPost(params.slug);
-
-//   if (!post) {
-//     return {
-//       title: 'Berita Tidak Ditemukan',
-//       description: 'Artikel berita yang Anda cari tidak ada atau telah dipindahkan.',
-//     };
-//   }
-
-//   return {
-//     title: `${post.title} | Garda Lestari`,
-//     description: post.excerpt,
-//     openGraph: {
-//       title: post.title,
-//       description: post.excerpt,
-//       images: [
-//         {
-//           url: post.imageUrl,
-//           width: 1200,
-//           height: 630,
-//           alt: post.title,
-//         },
-//       ],
-//       locale: 'id_ID',
-//       type: 'article',
-//     },
-//   };
-// }
-
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 export default function BeritaPostPage() {
   const params = useParams();
   const slug = params.slug as string;
   const [post, setPost] = useState<BeritaPost | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (slug) {
@@ -71,6 +42,29 @@ export default function BeritaPostPage() {
       });
     }
   }, [slug]);
+
+  const handleShare = async () => {
+    if (!post) return;
+    const shareData = {
+      title: post.title,
+      text: post.excerpt,
+      url: window.location.href,
+    };
+    if (navigator.share && navigator.canShare(shareData)) {
+      try {
+        await navigator.share(shareData);
+        logAnalyticsEvent('share', { content_type: 'berita', item_id: post.id });
+      } catch (err) {
+        console.error('Error sharing:', err);
+      }
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: 'Tautan disalin!',
+        description: 'Tautan berita telah disalin ke clipboard Anda.',
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -105,15 +99,21 @@ export default function BeritaPostPage() {
           <div className="p-6 -mt-24 relative z-10 space-y-4">
             <Badge variant="secondary">{post.category}</Badge>
             <h1 className="font-headline text-3xl md:text-4xl font-bold">{post.title}</h1>
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10">
-                <AvatarImage />
-                <AvatarFallback>{post.author ? post.author.charAt(0) : 'A'}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-semibold">{post.author}</p>
-                <p className="text-sm text-muted-foreground">{formattedDate}</p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage />
+                  <AvatarFallback>{post.author ? post.author.charAt(0) : 'A'}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold">{post.author}</p>
+                  <p className="text-sm text-muted-foreground">{formattedDate}</p>
+                </div>
               </div>
+              <Button variant="outline" size="icon" onClick={handleShare}>
+                <Share2 className="h-4 w-4" />
+                <span className="sr-only">Bagikan</span>
+              </Button>
             </div>
             <div
               className="prose dark:prose-invert mt-8 max-w-none prose-h1:font-headline prose-h2:font-headline prose-p:text-base prose-p:leading-relaxed prose-a:text-primary hover:prose-a:underline"
