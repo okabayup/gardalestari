@@ -19,7 +19,7 @@ import { getMembers, Member } from '@/app/actions/members';
 import { useToast } from '@/hooks/use-toast';
 
 
-const TABS = ['Semua', 'DPP', 'DPD', 'DPC', 'Dewan Pembina', 'Dewan Pengawas', 'Dewan Penasehat', 'Anggota Istimewa'];
+const TABS = ['Semua', 'DPP', 'DPD', 'DPC', 'Dewan Kehormatan', 'Anggota Istimewa'];
 
 export default function MembersPage() {
   const { toast } = useToast();
@@ -65,12 +65,8 @@ export default function MembersPage() {
       members = members.filter((member) => member.type === 'daerah');
     } else if (activeTab === 'DPC') {
       members = members.filter((member) => member.type === 'cabang');
-    } else if (activeTab === 'Dewan Pembina') {
-        members = members.filter((member) => member.type === 'pembina');
-    } else if (activeTab === 'Dewan Pengawas') {
-        members = members.filter((member) => member.type === 'pengawas');
-    } else if (activeTab === 'Dewan Penasehat') {
-        members = members.filter((member) => member.type === 'penasehat');
+    } else if (activeTab === 'Dewan Kehormatan') {
+        members = members.filter((member) => ['pembina', 'pengawas', 'penasehat'].includes(member.type || ''));
     } else if (activeTab === 'Anggota Istimewa') {
       members = members.filter((member) => member.isSpecialMember);
     }

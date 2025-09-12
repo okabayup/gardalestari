@@ -57,7 +57,7 @@ export default async function AboutPage() {
     const settings = await getAppSettings();
     const members = await getMembers();
 
-    const dewanKehormatan = members.filter(m => m.type === 'pembina' || m.type === 'pengawas' || m.type === 'penasehat');
+    const dewanKehormatan = members.filter(m => ['pembina', 'pengawas', 'penasehat'].includes(m.type || ''));
     const dpp = members.filter(m => m.type === 'pusat');
     const dpd = members.filter(m => m.type === 'daerah');
     const dpc = members.filter(m => m.type === 'cabang');

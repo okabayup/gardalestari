@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -11,7 +10,7 @@ import {
 } from '@/app/actions/members';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -28,12 +27,14 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { Loader2, MoreHorizontal, Edit, ShieldCheck } from 'lucide-react';
+import { Loader2, MoreHorizontal, Edit, ShieldCheck, PlusCircle } from 'lucide-react';
 import EditMemberDialog from '@/components/admin/EditMemberDialog';
 import ViewVerificationDialog from '@/components/admin/ViewVerificationDialog';
+import { useRouter } from 'next/navigation';
 
 export default function AdminMembersPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [members, setMembers] = useState<MemberWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSavingDetails, setIsSavingDetails] = useState(false);
@@ -67,7 +68,7 @@ export default function AdminMembersPage() {
     if (dialog === 'verify') setIsVerificationDialogOpen(true);
   };
   
-  const handleSaveDetails = async (id: string, details: { positionId?: string; type?: MemberType; region?: string, verificationStatus?: VerificationStatus }) => {
+  const handleSaveDetails = async (id: string, details: { positionId?: string; type?: MemberType; region?: string, verificationStatus?: VerificationStatus, isSpecialMember?: boolean }) => {
     setIsSavingDetails(true);
     try {
         await updateMemberDetails(id, details);
@@ -99,11 +100,21 @@ export default function AdminMembersPage() {
   return (
     <>
       <div className="space-y-6">
-        <div>
-          <h1 className="font-headline text-2xl font-bold">Manajemen Anggota</h1>
-          <p className="text-muted-foreground">Kelola jabatan, peran, dan status verifikasi anggota.</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-headline text-2xl font-bold">Manajemen Anggota</h1>
+            <p className="text-muted-foreground">Kelola jabatan, peran, dan status verifikasi anggota.</p>
+          </div>
+          <Button onClick={() => router.push('/panel/members/new')}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Tambah Anggota
+          </Button>
         </div>
         <Card>
+           <CardHeader>
+             <CardTitle>Daftar Anggota</CardTitle>
+             <CardDescription>Total {members.length} anggota ditemukan.</CardDescription>
+          </CardHeader>
           <CardContent className="p-0">
             <Table>
               <TableHeader>

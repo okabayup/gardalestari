@@ -1,14 +1,16 @@
 
 'use server';
 
-import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, updateDoc, deleteField, query, setDoc, Timestamp, getDoc } from 'firebase/firestore';
+import { db, storage } from '@/lib/firebase';
+import { collection, getDocs, doc, updateDoc, deleteField, query, setDoc, Timestamp, getDoc, addDoc } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { PermissionId, Position } from '@/lib/definitions';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getWhatsappTemplate } from './whatsapp';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { generateUniqueUsername } from './user';
 
-export type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected';
+export type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected' | 'manual';
 export type MemberType = 'pusat' | 'daerah' | 'cabang' | 'pembina' | 'pengawas' | 'penasehat';
 
 
@@ -181,5 +183,46 @@ export async function updateMemberDetails(id: string, details: { positionId?: st
     } catch (error) {
         console.error("Error updating member details:", error);
         throw new Error("Gagal memperbarui detail anggota.");
+    }
+}
+
+// Manually create a member without an auth account
+export async function createManualMember(
+    data: {
+        fullName: string,
+        positionId: string,
+        type: MemberType,
+        isSpecialMember: boolean,
+    },
+    photoFile?: File
+) {
+    try {
+        let avatarUrl = `https://picsum.photos/seed/${data.fullName.replace(/\s+/g, '-')}/200/200`;
+        if (photoFile) {
+            const storageRef = ref(storage, `profile-pictures/${Date.now()}-${photoFile.name}`);
+            await uploadBytes(storageRef, photoFile);
+            avatarUrl = await getDownloadURL(storageRef);
+        }
+
+        const username = await generateUniqueUsername(data.fullName);
+
+        const newMemberData = {
+            ...data,
+            username,
+            avatarUrl,
+            phoneNumber: 'N/A',
+            verificationStatus: 'manual' as VerificationStatus,
+            createdAt: Timestamp.now(),
+            level: 'Bronze',
+            points: 0,
+        };
+
+        await addDoc(usersCollection, newMemberData);
+        revalidatePath('/panel/members');
+        revalidatePath('/members');
+
+    } catch (error) {
+        console.error("Error creating manual member:", error);
+        throw new Error("Gagal membuat anggota manual.");
     }
 }

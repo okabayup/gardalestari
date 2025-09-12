@@ -40,6 +40,27 @@ export async function checkUsernameExists(username: string): Promise<boolean> {
   }
 }
 
+/**
+ * Generates a unique username based on a full name.
+ * @param fullName The full name to base the username on.
+ * @returns {Promise<string>} A unique username.
+ */
+export async function generateUniqueUsername(fullName: string): Promise<string> {
+    const baseUsername = fullName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15) || 'user';
+    let username = baseUsername;
+    
+    while (true) {
+        const q = query(collection(db, 'users'), where("username", "==", username));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) {
+            return username;
+        }
+        // If username exists, append a random number
+        username = `${baseUsername}${Math.floor(Math.random() * 1000)}`;
+    }
+}
+
+
 export async function getUserByUid(uid: string): Promise<(MemberWithStatus & { waNumber?: string }) | null> {
     if (!uid) return null;
     try {
@@ -211,7 +232,7 @@ export async function searchUsers(searchQuery: string, limitCount: number = 5): 
 
     const [usernameSnapshot, fullNameSnapshot] = await Promise.all([
         getDocs(usernameQuery),
-        getDocs(fullNameQuery)
+        getDocs(fullNameSnapshot)
     ]);
     
     const usersMap = new Map<string, PublicUser>();
