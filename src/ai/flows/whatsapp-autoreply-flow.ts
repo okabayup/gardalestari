@@ -7,13 +7,14 @@
  *   analyzes the intent, and performs the appropriate action (reply, fetch data, etc.).
  */
 
-import { ai } from '@/ai/genkit';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { z } from 'zod';
 import { getDocument } from '@/app/actions/documents';
 import { getLatestProgramsText } from '@/app/actions/whatsapp';
 import { createIdea } from '@/app/actions/ideas';
 import { getUserByWaNumber } from '@/app/actions/user';
+import { genkit } from 'genkit';
+import { googleAI } from '@genkit-ai/googleai';
 
 const WhatsAppReplyInputSchema = z.object({
   sender: z.string().describe('The phone number of the person who sent the message (e.g., 628123...).'),
@@ -35,7 +36,12 @@ const IntentSchema = z.object({
 
 
 export async function generateWhatsAppReply(input: z.infer<typeof WhatsAppReplyInputSchema>): Promise<void> {
-  
+  // Lazily initialize AI instance within the server action
+  const ai = genkit({
+    plugins: [googleAI()],
+    model: 'googleai/gemini-2.5-pro',
+  });
+
   const intentParserPrompt = ai.definePrompt({
     name: 'whatsAppIntentParser',
     input: { schema: z.object({ message: z.string() }) },
@@ -98,7 +104,7 @@ Your reply:
       } else {
         const doc = await getDocument(intentOutput.nomorDokumen);
         if (!doc) {
-          replyMessage = `Dokumen dengan nomor ${intentOutput.nomorDokumen} tidak ditemukan.`;
+          replyMessage = `Dokumen dengan nomor *${intentOutput.nomorDokumen}* tidak ditemukan.`;
         } else {
           replyMessage = `Status untuk dokumen "${doc.title}" adalah: *${doc.status}*.`;
         }
@@ -114,7 +120,7 @@ Your reply:
              replyMessage = 'Anda harus menjadi anggota terverifikasi untuk mengajukan ide. Silakan daftar dan verifikasi akun Anda terlebih dahulu.';
          } else {
              await createIdea(user.id, intentOutput.judulIde, intentOutput.deskripsiIde, 'WhatsApp');
-             replyMessage = `Terima kasih! Ide Anda "${intentOutput.judulIde}" telah berhasil diajukan dan akan segera ditinjau.`;
+             replyMessage = `Terima kasih! Ide Anda *"${intentOutput.judulIde}"* telah berhasil diajukan dan akan segera ditinjau.`;
          }
       }
       break;
