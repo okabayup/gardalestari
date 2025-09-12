@@ -24,18 +24,24 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }
   
   const isMapPage = pathname === '/map';
+  const needsWaVerification = user && !user.waVerified;
 
   return (
     <div className="relative mx-auto flex min-h-screen w-full max-w-lg flex-col bg-background">
-      {!isMapPage && <Header />}
-      <main className="flex-1 pb-16">{children}</main>
-      {!isMapPage && (
+      {needsWaVerification ? (
+         <WhatsAppVerificationDialog user={user} />
+      ) : (
         <>
-          <BottomNav />
-          <InstallPWA />
+          {!isMapPage && <Header />}
+          <main className="flex-1 pb-16">{children}</main>
+          {!isMapPage && (
+            <>
+              <BottomNav />
+              <InstallPWA />
+            </>
+          )}
         </>
       )}
-      <WhatsAppVerificationDialog user={user} />
     </div>
   );
 }

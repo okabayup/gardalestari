@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -20,7 +20,6 @@ interface WhatsAppVerificationDialogProps {
 }
 
 export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificationDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [waNumber, setWaNumber] = useState('');
   const [otp, setOtp] = useState('');
@@ -30,21 +29,10 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
   const { refreshUser } = useAuth();
   
   useEffect(() => {
-    if (user && !user.waVerified) {
-      const timer = setTimeout(() => {
-        const hasBeenShown = sessionStorage.getItem('waVerifyDialogShown');
-        if (!hasBeenShown) {
-           setIsOpen(true);
-           if (user.phoneNumber) {
-             setWaNumber(user.phoneNumber.replace(/^\+/, ''));
-           }
-           sessionStorage.setItem('waVerifyDialogShown', 'true');
-        }
-      }, 5000); 
-
-      return () => clearTimeout(timer);
-    }
-  }, [user]);
+     if (user.phoneNumber) {
+        setWaNumber(user.phoneNumber.replace(/^\+/, ''));
+     }
+  }, [user.phoneNumber]);
 
 
   const handleSendOtp = async () => {
@@ -82,7 +70,6 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
       if (success) {
         toast({ title: 'Verifikasi Berhasil!', description: 'Nomor WhatsApp Anda telah diverifikasi.' });
         await refreshUser();
-        setIsOpen(false);
       } else {
         throw new Error('Kode OTP yang Anda masukkan salah.');
       }
@@ -95,12 +82,12 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
 
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent>
+    <Dialog open={true}>
+      <DialogContent hideClose={true} onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>Verifikasi Nomor WhatsApp</DialogTitle>
           <DialogDescription>
-            Untuk menerima notifikasi penting seperti status dokumen dan pengumuman program, mohon verifikasi nomor WhatsApp Anda.
+            Untuk melanjutkan, mohon verifikasi nomor WhatsApp Anda untuk menerima notifikasi penting seperti status dokumen dan pengumuman program.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
@@ -136,9 +123,6 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
                </div>
             </div>
         </div>
-        <DialogFooter>
-            <Button variant="outline" onClick={() => setIsOpen(false)}>Nanti Saja</Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
