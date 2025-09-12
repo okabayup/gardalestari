@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Leaf, Users, Sprout, Ship, TreePine, Handshake, HandHeart, Target, Newspaper, Calendar, Heart, ArrowRight, Briefcase, Award, TrendingUp, Lightbulb, BadgeCheck, FileCheck } from 'lucide-react';
+import { Leaf, Users, Sprout, Ship, TreePine, Handshake, HandHeart, Target, Newspaper, Calendar, Heart, ArrowRight, Briefcase, Award, TrendingUp, Lightbulb, BadgeCheck, FileCheck, Video } from 'lucide-react';
 import LandingHeader from '@/components/layout/LandingHeader';
 import { getAppSettings } from './actions/settings';
 import { getEvents } from './actions/events';
@@ -15,6 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import BeritaPostCard from '@/components/berita/BeritaPostCard';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import PartnerSlider from '@/components/landing/PartnerSlider';
+import VideoSlider from '@/components/landing/VideoSlider';
 
 const StatCard = ({ icon, value, label }: { icon: React.ReactNode, value: string, label: string }) => (
     <div className="flex flex-col items-center text-center">
@@ -82,14 +83,18 @@ export default async function LandingPage() {
   const programs = await getPrograms();
   const members = await getMembers();
   const partners = await getPartners();
-  const latestPosts = await getBeritaPosts();
+  const allPosts = await getBeritaPosts();
+  
+  const latestArticles = allPosts.filter(p => p.type === 'artikel');
+  const featuredVideos = allPosts.filter(p => p.type === 'video' && p.isFeatured);
+
   const featuredPartners = partners.filter(p => p.isFeatured);
   const WHATSAPP_LINK = "https://wa.me/6285937010409";
 
   const totalMembers = members.length + (settings.dummyMembers || 0);
   const totalPrograms = programs.length + (settings.dummyPrograms || 0);
   const totalEvents = events.length + (settings.dummyEvents || 0);
-  const totalNews = latestPosts.length + (settings.dummyNews || 0);
+  const totalNews = allPosts.length + (settings.dummyNews || 0);
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
@@ -227,9 +232,30 @@ export default async function LandingPage() {
             </div>
         </section>
 
+        {/* Featured Videos Section */}
+        {featuredVideos.length > 0 && (
+          <section id="video" className="w-full bg-background py-16 md:py-28">
+            <div className="container">
+               <div className="mb-14 text-center">
+                <span className="text-sm font-semibold uppercase text-primary">Video Unggulan</span>
+                <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl mt-2">Liputan & Cerita Visual</h2>
+                <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Tonton cerita inspiratif dan liputan kegiatan kami langsung dari lapangan.</p>
+              </div>
+              <VideoSlider videos={featuredVideos} />
+               <div className="mt-12 text-center">
+                <Button asChild>
+                  <Link href="/video">
+                    Lihat Semua Video <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Latest News Section */}
-        {latestPosts.length > 0 && (
-          <section id="news" className="w-full bg-background py-16 md:py-28">
+        {latestArticles.length > 0 && (
+          <section id="news" className="w-full bg-secondary py-16 md:py-28">
             <div className="container">
               <div className="mb-14 text-center">
                 <span className="text-sm font-semibold uppercase text-primary">Kabar Terbaru</span>
@@ -240,7 +266,7 @@ export default async function LandingPage() {
               <div className="md:hidden"> {/* Horizontal Scroll for Mobile */}
                  <ScrollArea className="w-full">
                     <div className="flex space-x-4 pb-4">
-                      {latestPosts.slice(0, 3).map((post) => (
+                      {latestArticles.slice(0, 3).map((post) => (
                         <div key={post.id} className="w-72 flex-shrink-0">
                            <BeritaPostCard {...post} />
                         </div>
@@ -251,7 +277,7 @@ export default async function LandingPage() {
               </div>
 
               <div className="hidden md:grid md:grid-cols-3 gap-6"> {/* Grid for Desktop */}
-                {latestPosts.slice(0, 3).map((post) => (
+                {latestArticles.slice(0, 3).map((post) => (
                   <BeritaPostCard key={post.id} {...post} />
                 ))}
               </div>
@@ -268,7 +294,7 @@ export default async function LandingPage() {
         )}
         
         {/* Call to Action Section */}
-        <section id="partnership" className="w-full bg-secondary py-16 md:py-28 overflow-hidden">
+        <section id="partnership" className="w-full bg-background py-16 md:py-28 overflow-hidden">
           <div className="container">
             <div className="mb-14 text-center animate-in fade-in zoom-in-95 duration-500">
               <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">Jadilah Bagian dari Dampak</h2>

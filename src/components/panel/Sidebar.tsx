@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -26,6 +27,7 @@ import {
   Presentation,
   Lightbulb,
   MessageCircle,
+  Video
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
@@ -49,6 +51,7 @@ const navGroups: {
     icon: Presentation,
     items: [
       { href: '/panel/berita', icon: Newspaper, label: 'Berita', permission: 'manage_news' },
+      { href: '/panel/video', icon: Video, label: 'Video', permission: 'manage_news' },
       { href: '/panel/events', icon: Calendar, label: 'Acara', permission: 'manage_events' },
       { href: '/panel/landing', icon: Landmark, label: 'Halaman Utama', permission: 'manage_landing_page' },
     ],
