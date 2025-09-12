@@ -3,7 +3,7 @@
 
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { sendWhatsAppMessage as sendWhatsAppMessageSatuConnect } from '@/services/whatsapp';
+import { sendWhatsAppMessage as sendWhatsAppMessageSatuConnect, sendBulkWhatsAppMessage as sendBulkWhatsAppMessageSatuConnect } from '@/services/whatsapp';
 import { revalidatePath } from 'next/cache';
 import { getPrograms } from './programs';
 
@@ -135,6 +135,22 @@ export async function sendTestMessage(phoneNumber: string, message: string) {
         throw new Error(errorMessage);
     }
 }
+
+export async function sendBulkTestMessage(phoneNumbers: string, message: string) {
+    try {
+        const numbersArray = phoneNumbers.split(',').map(num => num.trim()).filter(Boolean);
+        if (numbersArray.length === 0) {
+            throw new Error('Tidak ada nomor telepon yang valid.');
+        }
+        await sendBulkWhatsAppMessageSatuConnect(numbersArray, message);
+        return { success: true, count: numbersArray.length };
+    } catch (error) {
+        const errorMessage = (error instanceof Error) ? error.message : 'Unknown error occurred';
+        console.error("Error in sendBulkTestMessage action:", errorMessage);
+        throw new Error(errorMessage);
+    }
+}
+
 
 export async function getLatestProgramsText(): Promise<string> {
     const programs = await getPrograms();
