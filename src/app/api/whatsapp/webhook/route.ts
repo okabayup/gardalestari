@@ -17,14 +17,16 @@ export async function POST(req: NextRequest) {
 
     const { type, sender, message } = payload;
 
-    if (type === 'text') {
+    if (type === 'text' && sender && message) {
         console.log(`[Text Message] From: ${sender} | Message: "${message}"`);
         // Do not await this. Respond quickly to the webhook.
+        // The actual processing will happen in the background.
         generateWhatsAppReply({ sender, message }).catch(err => {
             console.error(`Error processing AI auto-reply for ${sender}:`, err);
         });
     }
 
+    // Immediately respond to the webhook to prevent timeouts
     return NextResponse.json({ success: true, message: 'Webhook received and processing initiated' });
 
   } catch (error) {
