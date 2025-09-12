@@ -8,6 +8,7 @@ import { Loader2 } from 'lucide-react';
 import InstallPWA from './InstallPWA';
 import { useFcm } from '@/hooks/use-fcm';
 import { usePathname } from 'next/navigation';
+import VerificationFlow from '@/components/auth/VerificationFlow';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useRequireAuth();
@@ -20,6 +21,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
       </div>
     );
+  }
+  
+  // If user is unverified, force them into the verification flow.
+  if (user.verificationStatus === 'unverified') {
+    return <VerificationFlow />;
   }
   
   const isMapPage = pathname === '/map';

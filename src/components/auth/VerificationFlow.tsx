@@ -3,14 +3,13 @@
 
 import { useState, useRef, useEffect, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Camera, ArrowLeft, User, Fingerprint, CheckCircle, MessageSquare } from 'lucide-react';
+import { Loader2, Camera, User, Fingerprint, CheckCircle, MessageSquare } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { readKtp } from '@/ai/flows/ocr-ktp-flow';
 import { saveWaNumber, verifyWaNumber } from '@/app/actions/user';
@@ -18,15 +17,20 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ImageCropper from '@/components/profile/ImageCropper';
 import Image from 'next/image';
+import { Progress } from '@/components/ui/progress';
 
-type Step = 'data' | 'whatsapp' | 'ktp' | 'selfie' | 'confirm' | 'submitting';
+type Step = 'welcome' | 'data' | 'whatsapp' | 'ktp' | 'selfie' | 'confirm' | 'submitting';
 
-export default function VerifyProfilePage() {
-  const { user, submitForVerification, refreshUser } = useAuth();
+const STEPS_COUNT = 6; // Total number of steps for the user
+
+export default function VerificationFlow() {
+  const { user, submitForVerification, refreshUser, signOut } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   
-  const [step, setStep] = useState<Step>('data');
+  const [step, setStep] = useState<Step>('welcome');
+  const [progress, setProgress] = useState(0);
+  
   const [fullName, setFullName] = useState('');
   const [nik, setNik] = useState('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -37,7 +41,6 @@ export default function VerifyProfilePage() {
   const [otp, setOtp] = useState('');
   const [loadingSendOtp, setLoadingSendOtp] = useState(false);
   const [loadingVerifyOtp, setLoadingVerifyOtp] = useState(false);
-
 
   const [ktpDataUrl, setKtpDataUrl] = useState<string | null>(null);
   const [selfieDataUrl, setSelfieDataUrl] = useState<string | null>(null);
@@ -52,16 +55,16 @@ export default function VerifyProfilePage() {
   const [cropperSrc, setCropperSrc] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user?.verificationStatus === 'permanent' || user?.verificationStatus === 'temporary') {
-      router.replace('/profile/me');
-    }
-     if (user?.phoneNumber) {
+    // Pre-fill WhatsApp number from auth if available
+    if (user?.phoneNumber) {
         const rawNumber = user.phoneNumber.replace(/\D/g, '');
+        // Ensure it has country code, default to 62 if not present
         setWaNumber(rawNumber.startsWith('62') ? rawNumber : `62${rawNumber}`);
      }
-  }, [user, router]);
-  
+  }, [user?.phoneNumber]);
+
   useEffect(() => {
+    // Stop camera when component unmounts
     return () => {
       stopCamera();
     };
@@ -71,13 +74,26 @@ export default function VerifyProfilePage() {
     async function switchCameraForStep() {
       if (step === 'ktp') {
         await startCamera('environment');
+        setProgress((3 / STEPS_COUNT) * 100);
       } else if (step === 'selfie') {
         await startCamera('user');
+        setProgress((4 / STEPS_COUNT) * 100);
       } else {
         stopCamera();
       }
     }
     switchCameraForStep();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+  
+  useEffect(() => {
+    switch (step) {
+      case 'welcome': setProgress(0); break;
+      case 'data': setProgress((1 / STEPS_COUNT) * 100); break;
+      case 'whatsapp': setProgress((2 / STEPS_COUNT) * 100); break;
+      case 'confirm': setProgress((5 / STEPS_COUNT) * 100); break;
+      case 'submitting': setProgress(100); break;
+    }
   }, [step]);
 
 
@@ -153,9 +169,13 @@ export default function VerifyProfilePage() {
     }
     setLoadingSendOtp(true);
     try {
-      await saveWaNumber(user.uid, waNumber);
-      toast({ title: 'Kode OTP terkirim!', description: 'Periksa WhatsApp Anda.' });
-      setOtpSent(true);
+      const result = await saveWaNumber(user.uid, waNumber);
+      if (result.success) {
+         toast({ title: 'Kode OTP terkirim!', description: 'Periksa WhatsApp Anda.' });
+         setOtpSent(true);
+      } else {
+        throw new Error(result.error || 'Gagal mengirim pesan.');
+      }
     } catch (error) {
       const errorMessage = (error as Error).message || 'Terjadi kesalahan pada sisi klien.';
       console.error("Error from handleSendOtp:", error);
@@ -278,12 +298,11 @@ export default function VerifyProfilePage() {
       await submitForVerification(verificationData);
       
       toast({
-        title: 'Verifikasi Berhasil!',
-        description: 'Akun Anda telah terverifikasi. Selamat datang di Garda Lestari!',
-        duration: 5000,
+        title: 'Pengajuan Terkirim!',
+        description: 'Pengajuan verifikasi Anda telah berhasil dikirim. Tim kami akan segera meninjaunya.',
+        duration: 8000,
       });
-      router.push('/feed');
-
+      // The user state will be updated by the auth provider, and MainLayout will re-render to show the app.
     } catch (error) {
       console.error(error);
       const errorMessage = (error as Error).message || 'Terjadi kesalahan. Silakan coba lagi.';
@@ -301,8 +320,17 @@ export default function VerifyProfilePage() {
 
   const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').substring(0, 2) : '?';
 
-  const renderStep = () => {
+  const renderContent = () => {
     switch (step) {
+      case 'welcome':
+        return (
+          <div className="text-center space-y-6">
+              <h2 className="text-2xl font-bold font-headline">Selamat Datang di Garda Lestari!</h2>
+              <p className="text-muted-foreground">Sebelum melanjutkan, Anda perlu menyelesaikan verifikasi keanggotaan. Proses ini cepat dan hanya membutuhkan beberapa langkah untuk memastikan keamanan komunitas kita.</p>
+              <p className="text-muted-foreground">Siapkan KTP Anda untuk memulai.</p>
+              <Button size="lg" className="w-full" onClick={() => setStep('data')}>Mulai Verifikasi</Button>
+          </div>
+        );
       case 'data':
         return (
           <form onSubmit={handleDataSubmit} className="space-y-6">
@@ -337,7 +365,7 @@ export default function VerifyProfilePage() {
                </div>
             </div>
             <Button size="lg" className="w-full" type="submit">
-              Lanjutkan ke Verifikasi WhatsApp
+              Lanjutkan
             </Button>
           </form>
         );
@@ -432,7 +460,7 @@ export default function VerifyProfilePage() {
                     </div>
                 </div>
                  <Button size="lg" className="w-full" onClick={handleSubmit}>
-                    <CheckCircle className="mr-2 h-4 w-4" /> Kirim Verifikasi
+                    <CheckCircle className="mr-2 h-4 w-4" /> Kirim Pengajuan Verifikasi
                  </Button>
             </div>
         );
@@ -465,62 +493,44 @@ export default function VerifyProfilePage() {
       </>
   );
 
-  const handleBack = () => {
-    switch (step) {
-      case 'whatsapp':
-        setStep('data');
-        break;
-      case 'ktp':
-        setStep('whatsapp');
-        break;
-      case 'selfie':
-        setStep('ktp');
-        break;
-      case 'confirm':
-        setStep('selfie');
-        break;
-      default:
-        router.back();
-    }
-  };
-
   const getStepDescription = () => {
     switch (step) {
-      case 'data': return "Langkah 1: Isi data diri dan unggah foto profil.";
-      case 'whatsapp': return "Langkah 2: Verifikasi nomor WhatsApp Anda.";
-      case 'ktp': return "Langkah 3: Ambil Foto KTP Anda.";
-      case 'selfie': return "Langkah 4: Ambil Foto Selfie Anda.";
-      case 'confirm': return "Langkah 5: Konfirmasi data Anda sebelum mengirim.";
+      case 'welcome': return "Selamat datang di proses verifikasi keanggotaan.";
+      case 'data': return "Langkah 1 dari 5: Isi data diri Anda.";
+      case 'whatsapp': return "Langkah 2 dari 5: Verifikasi nomor WhatsApp.";
+      case 'ktp': return "Langkah 3 dari 5: Ambil Foto KTP.";
+      case 'selfie': return "Langkah 4 dari 5: Ambil Foto Selfie.";
+      case 'confirm': return "Langkah 5 dari 5: Konfirmasi data Anda.";
       case 'submitting': return "Sedang memproses pengajuan Anda.";
       default: return "Verifikasi Identitas";
     }
   };
 
   return (
-    <MainLayout>
-       {cropperSrc && (
-        <ImageCropper
-          src={cropperSrc}
-          onCropComplete={onCropComplete}
-          onClose={() => setCropperSrc(null)}
-        />
-      )}
-      <div className="p-6 space-y-6">
-        {step !== 'submitting' && (
-          <Button variant="outline" onClick={handleBack} className="mb-4">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
-          </Button>
-        )}
-        <Card>
-          <CardHeader>
-            <CardTitle>Verifikasi Identitas</CardTitle>
-            <CardDescription>{getStepDescription()}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {renderStep()}
-          </CardContent>
-        </Card>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-secondary p-4">
+          {cropperSrc && (
+            <ImageCropper
+              src={cropperSrc}
+              onCropComplete={onCropComplete}
+              onClose={() => setCropperSrc(null)}
+            />
+          )}
+          <div className="w-full max-w-md">
+            <div className="text-center mb-6">
+                <Image src="/logo.png" alt="Garda Lestari Logo" width={160} height={42} className="h-auto w-40 mx-auto" />
+            </div>
+            <Card>
+              <CardHeader>
+                  <Progress value={progress} className="h-2 mb-4" />
+                  <CardTitle>{step === 'welcome' ? 'Verifikasi Keanggotaan' : `Langkah ${Math.floor(progress / (100 / STEPS_COUNT))}`}</CardTitle>
+                  <CardDescription>{getStepDescription()}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {renderContent()}
+              </CardContent>
+            </Card>
+            <Button variant="link" size="sm" className="mt-4 text-muted-foreground" onClick={signOut}>Keluar</Button>
+          </div>
       </div>
-    </MainLayout>
   );
 }

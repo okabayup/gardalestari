@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { LayoutGrid, Users, Sprout, CalendarDays, Briefcase, Award, FolderKanban, Megaphone, FileText, Handshake, Map, Vote, Lightbulb } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { Separator } from '../ui/separator';
+import { useAuth } from '@/hooks/use-auth';
 
 const navItems = [
   { href: '/feed', label: 'Beranda', icon: LayoutGrid },
@@ -64,6 +65,12 @@ const DirectorySheet = () => {
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  
+  // Don't render the nav if user is unverified, as they'll be in the verification flow
+  if (user?.verificationStatus === 'unverified') {
+    return null;
+  }
 
   return (
     <div className="fixed bottom-0 z-40 h-16 w-full max-w-lg border-t bg-background/70 backdrop-blur-lg">
