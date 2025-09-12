@@ -25,6 +25,7 @@ import {
   Building2,
   Presentation,
   Lightbulb,
+  MessageCircle,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
@@ -60,6 +61,7 @@ const navGroups: {
       { href: '/panel/notifications', icon: Bell, label: 'Notifikasi', permission: 'send_notifications' },
       { href: '/panel/evoting', icon: Vote, label: 'E-Voting', permission: 'manage_evoting' },
       { href: '/panel/achievements', icon: Award, label: 'Prestasi', permission: 'manage_achievements' },
+      { href: '/panel/whatsapp', icon: MessageCircle, label: 'Manajemen WhatsApp', permission: 'manage_whatsapp' },
     ]
   },
    {
