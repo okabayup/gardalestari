@@ -12,17 +12,10 @@ import { Loader2, PlusCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Timestamp } from 'firebase/firestore';
 
-// Helper to convert Firestore Timestamp-like objects to Date
-const toJsDate = (timestamp: any): Date => {
-    if (timestamp instanceof Timestamp) {
-        return timestamp.toDate();
-    }
-    if (timestamp && typeof timestamp.seconds === 'number' && typeof timestamp.nanoseconds === 'number') {
-        return new Timestamp(timestamp.seconds, timestamp.nanoseconds).toDate();
-    }
-    return new Date();
+const toJsDateSafe = (dateString: string): Date => {
+  const date = new Date(dateString);
+  return isNaN(date.getTime()) ? new Date() : date;
 };
 
 
@@ -61,16 +54,10 @@ export default function ProgramsPage() {
 
   const { ongoingPrograms, pastPrograms } = useMemo(() => {
     const now = new Date();
-    const ongoing = filteredPrograms.filter(p => toJsDate(p.endDate) > now);
-    const past = filteredPrograms.filter(p => toJsDate(p.endDate) <= now);
+    const ongoing = filteredPrograms.filter(p => toJsDateSafe(p.endDate) > now);
+    const past = filteredPrograms.filter(p => toJsDateSafe(p.endDate) <= now);
     return { ongoingPrograms: ongoing, pastPrograms: past };
   }, [filteredPrograms]);
-
-  const formatProgramForCard = (program: Program) => ({
-      ...program,
-      formattedStartDate: format(toJsDate(program.startDate), "d MMM yyyy", { locale: id }),
-      formattedEndDate: format(toJsDate(program.endDate), "d MMM yyyy", { locale: id }),
-  });
 
 
   return (
@@ -116,7 +103,7 @@ export default function ProgramsPage() {
                 <h2 className="font-headline text-2xl font-semibold">Sedang Berlangsung</h2>
                 <div className="grid gap-6">
                   {ongoingPrograms.map((program) => (
-                    <ProgramCard key={program.id} {...formatProgramForCard(program)} />
+                    <ProgramCard key={program.id} {...program} />
                   ))}
                 </div>
               </div>
@@ -129,7 +116,7 @@ export default function ProgramsPage() {
                     <h2 className="font-headline text-2xl font-semibold">Telah Berakhir</h2>
                     <div className="grid gap-6">
                         {pastPrograms.map((program) => (
-                           <ProgramCard key={program.id} {...formatProgramForCard(program)} isPast />
+                           <ProgramCard key={program.id} {...program} isPast />
                         ))}
                     </div>
                 </div>

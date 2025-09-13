@@ -1,4 +1,6 @@
 
+'use client';
+
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,14 +9,21 @@ import type { Program } from '@/app/actions/programs';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Button } from '../ui/button';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
 
-interface ProgramCardProps extends Omit<Program, 'startDate' | 'endDate'> {
+interface ProgramCardProps extends Program {
   isPast?: boolean;
-  formattedStartDate: string;
-  formattedEndDate: string;
 }
 
-export default function ProgramCard({ id, title, description, imageUrl, imageHint, tags, formattedStartDate, formattedEndDate, isPast }: ProgramCardProps) {
+const toJsDateSafe = (dateString: string): Date => {
+  const date = new Date(dateString);
+  return isNaN(date.getTime()) ? new Date() : date;
+};
+
+export default function ProgramCard({ id, title, description, imageUrl, imageHint, tags, startDate, endDate, isPast }: ProgramCardProps) {
+  const formattedStartDate = format(toJsDateSafe(startDate), "d MMM yyyy", { locale: id });
+  const formattedEndDate = format(toJsDateSafe(endDate), "d MMM yyyy", { locale: id });
 
   return (
     <Card className={cn("overflow-hidden transition-all hover:shadow-lg flex flex-col", isPast && "opacity-70")}>
