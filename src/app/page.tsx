@@ -47,11 +47,7 @@ export default async function LandingPage() {
   const partners = await getPartners();
   const allPosts = await getBeritaPosts();
   
-  const flagshipPrograms = allPrograms.filter(p => p.category === 'flagship').map(p => ({
-    ...p,
-    startDate: p.startDate.toDate().toISOString(),
-    endDate: p.endDate.toDate().toISOString(),
-  }));
+  const flagshipPrograms = allPrograms.filter(p => p.category === 'flagship');
   const featuredArticles = allPosts.filter(p => p.type === 'artikel' && p.isFeatured).slice(0,3);
   const featuredVideos = allPosts.filter(p => p.type === 'video' && p.isFeatured);
 
