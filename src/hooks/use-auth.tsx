@@ -152,15 +152,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return user.permissions.includes(permission);
   }
 
-  const signInWithPhone = async (phoneNumber: string, appVerifierContainerId: string) => {
+ const signInWithPhone = async (phoneNumber: string, appVerifierContainerId: string) => {
     if (typeof window !== 'undefined') {
         if (!window.recaptchaVerifier) {
-            window.recaptchaVerifier = new RecaptchaVerifier(auth, appVerifierContainerId, {
+            // Ensure the container is empty before creating a new verifier
+            const container = document.getElementById(appVerifierContainerId);
+            if (container) {
+                container.innerHTML = '';
+            }
+            
+            const verifier = new RecaptchaVerifier(auth, appVerifierContainerId, {
                 'size': 'invisible',
                 'callback': () => {},
                 'expired-callback': () => {
                     if (window.recaptchaVerifier) {
-                        window.recaptchaVerifier.clear();
                         window.recaptchaVerifier = undefined;
                     }
                     toast({
@@ -170,7 +175,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     });
                 }
             });
-            await window.recaptchaVerifier.render();
+            window.recaptchaVerifier = verifier;
+            await verifier.render();
         }
 
         const appVerifier = window.recaptchaVerifier;
@@ -180,7 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             window.confirmationResult = confirmationResult;
         } catch (error) {
             // Reset verifier on error to allow re-try
-            if (window.recaptchaVerifier) {
+             if (window.recaptchaVerifier) {
                 window.recaptchaVerifier.clear();
                 window.recaptchaVerifier = undefined;
             }
@@ -189,7 +195,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }
   };
-
+  
   const generateUniqueUsername = async (fullName: string): Promise<string> => {
     const baseUsername = fullName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15) || 'user';
     let username = baseUsername;
@@ -244,10 +250,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
-      if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.clear();
-        window.recaptchaVerifier = undefined;
-      }
+       if (window.recaptchaVerifier) {
+            window.recaptchaVerifier.clear();
+            window.recaptchaVerifier = undefined;
+        }
     } catch (error) {
       console.error("Error signing out: ", error);
     }
