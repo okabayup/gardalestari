@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { getProjectById, getColumnsForProject, getTasksForProject, createTask } from '@/app/actions/projects';
-import type { Project, ProjectColumn, ProjectTask } from '@/app/actions/projects';
+import type { Project, ProjectColumn, ProjectTask } from '@/lib/definitions';
 import { Loader2, ArrowLeft, Scroll } from 'lucide-react';
 import ProjectBoard from '@/components/projects/ProjectBoard';
 import { Button } from '@/components/ui/button';

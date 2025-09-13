@@ -24,6 +24,7 @@ import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from './user';
 import { getWhatsappTemplate } from './whatsapp';
 import type { Project, ProjectColumn, ProjectTask, CommentWithAuthor, IdeaAuthor } from '@/lib/definitions';
+import { sendNotification } from './notifications';
 
 const projectsCollection = collection(db, 'projects');
 const usersCollection = collection(db, 'users');
@@ -211,16 +212,24 @@ export async function updateTask(projectId: string, taskId: string, updates: Par
             const project = await getProjectById(projectId);
             const template = await getWhatsappTemplate('new_task_assigned');
 
-            if (template.isActive) {
-                for (const assigneeId of newAssignees) {
-                    const user = await getUserByUid(assigneeId);
-                    if (user?.waNumber) {
+            for (const assigneeId of newAssignees) {
+                const user = await getUserByUid(assigneeId);
+                if (user) {
+                     if (template.isActive && user.waNumber) {
                         const message = template.message
                             .replace('{namaPengguna}', user.name)
                             .replace('{namaTugas}', updates.title || currentTask.title)
                             .replace('{namaProyek}', project?.title || 'tanpa nama');
                         await sendWhatsAppMessage(user.waNumber, message);
                     }
+                    await sendNotification(
+                        { 
+                            title: 'Tugas Baru untuk Anda', 
+                            body: `Anda ditugaskan pada tugas "${updates.title || currentTask.title}" di proyek "${project?.title || ''}".`,
+                            link: `/panel/projects/${projectId}`
+                        },
+                        { type: 'users', userIds: [assigneeId] }
+                    );
                 }
             }
         }

@@ -10,6 +10,7 @@ import { getWhatsappTemplate } from './whatsapp';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { generateUniqueUsername } from './user';
 import { formatFullName } from '@/lib/utils';
+import { sendNotification } from './notifications';
 
 const usersCollection = collection(db, 'users');
 const positionsCollection = collection(db, 'positions');
@@ -153,24 +154,34 @@ export async function updateMemberDetails(id: string, details: { positionId?: st
         
         await setDoc(memberDocRef, dataToUpdate, { merge: true });
 
-        // Send WhatsApp notification if verification status changes
+        // Send WhatsApp and Push notification if verification status changes
         if (details.verificationStatus && details.verificationStatus !== currentMemberData.verificationStatus) {
             const memberPhoneNumber = currentMemberData.waNumber;
-            if (memberPhoneNumber) {
-                let templateId: 'member_verified_permanent' | 'member_verification_rejected' | null = null;
-                if (details.verificationStatus === 'permanent') {
-                    templateId = 'member_verified_permanent';
-                } else if (details.verificationStatus === 'rejected') {
-                    templateId = 'member_verification_rejected';
+            const memberName = currentMemberData.fullName;
+            let templateId: 'member_verified_permanent' | 'member_verification_rejected' | null = null;
+            let notificationPayload: { title: string, body: string } | null = null;
+            
+            if (details.verificationStatus === 'permanent') {
+                templateId = 'member_verified_permanent';
+                notificationPayload = { title: 'Verifikasi Berhasil!', body: 'Selamat! Akun Anda telah diverifikasi secara permanen.' };
+            } else if (details.verificationStatus === 'rejected') {
+                templateId = 'member_verification_rejected';
+                 notificationPayload = { title: 'Verifikasi Ditolak', body: 'Pengajuan verifikasi Anda ditolak. Silakan periksa kembali data Anda.' };
+            }
+            
+            if (templateId) {
+                const template = await getWhatsappTemplate(templateId);
+                if (template.isActive && memberPhoneNumber) {
+                     const message = template.message.replace('{namaPengguna}', memberName);
+                     await sendWhatsAppMessage(memberPhoneNumber, message);
                 }
-                
-                if (templateId) {
-                    const template = await getWhatsappTemplate(templateId);
-                    if (template.isActive) {
-                         const message = template.message.replace('{namaPengguna}', currentMemberData.fullName);
-                         await sendWhatsAppMessage(memberPhoneNumber, message);
-                    }
-                }
+            }
+
+            if (notificationPayload) {
+                await sendNotification(
+                    { ...notificationPayload, link: '/profile/me' },
+                    { type: 'users', userIds: [id] }
+                );
             }
         }
         
