@@ -7,7 +7,7 @@ import Footer from '@/components/landing/Footer';
 import { ShieldAlert } from 'lucide-react';
 
 export default function DeleteDataPage() {
-  const WHATSAPP_LINK = "https://wa.me/6285937010409?text=Saya%20ingin%20mengajukan%20penghapusan%20data%20akun%20Garda%20Lestari%20saya.";
+  const WHATSAPP_LINK = "https://wa.me/6285144904161?text=Saya%20ingin%20mengajukan%20penghapusan%20data%20akun%20Garda%20Lestari%20saya.";
   const EMAIL_LINK = "mailto:halo@gardalestari.org?subject=Permintaan%20Penghapusan%20Data%20Akun";
 
   return (

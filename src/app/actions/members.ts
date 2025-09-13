@@ -75,7 +75,6 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
       position: positionName,
       positionId: data.positionId,
       type: data.type || undefined,
-      region: data.region || undefined,
       isSpecialMember: data.isSpecialMember || false,
       joinDate: joinDate,
       ktpImageUrl: data.ktpImageUrl,

@@ -45,7 +45,7 @@ export default function Footer() {
                         <h4 className="font-semibold">Hubungi Kami</h4>
                         <div className="text-sm text-muted-foreground">
                            <p>Email: <a href="mailto:halo@gardalestari.org" className="text-primary hover:underline">halo@gardalestari.org</a></p>
-                           <p>Telepon: <a href="https://wa.me/6285937010409" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">0859-3701-0409 (WhatsApp)</a></p>
+                           <p>Telepon: <a href="https://wa.me/6285144904161" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">0851-4490-4161 (WhatsApp)</a></p>
                         </div>
                         <div className="flex items-center gap-4 mt-2">
                            <Link href={settings.instagram || '#'} target="_blank" aria-label="Instagram" className="text-muted-foreground hover:text-primary"><Heart size={20} /></Link>
