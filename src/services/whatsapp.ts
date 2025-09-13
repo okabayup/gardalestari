@@ -36,17 +36,22 @@ export async function sendWhatsAppMessage(phoneNumber: string, message: string):
     });
     
     if (response.ok) {
-        const responseBody = await response.json();
-        console.log('SatuConnect API Response (single):', JSON.stringify(responseBody, null, 2));
+        try {
+            const responseBody = await response.json();
+            console.log('SatuConnect API Response (single):', JSON.stringify(responseBody, null, 2));
 
-        // Handle inconsistent API behavior where success is reported as an error message
-        if (responseBody.status === true || responseBody.message === 'Message sent successfully') {
-            console.log('Successfully sent WhatsApp message to', phoneNumber);
-            return { success: true, data: responseBody.data };
-        } else {
-            const errorMessage = responseBody.message || `API responded with status ${response.status}`;
-            console.error('SatuConnect API Error:', errorMessage);
-            return { success: false, error: errorMessage, data: responseBody };
+            if (responseBody.status === true || responseBody.message === 'Message sent successfully') {
+                console.log('Successfully sent WhatsApp message to', phoneNumber);
+                return { success: true, data: responseBody.data };
+            } else {
+                const errorMessage = responseBody.message || `API responded with status ${response.status}`;
+                console.error('SatuConnect API Error:', errorMessage);
+                return { success: false, error: errorMessage, data: responseBody };
+            }
+        } catch (jsonError) {
+             const errorText = await response.text();
+             console.error('SatuConnect API JSON parsing error. Response body:', errorText);
+             return { success: false, error: 'Failed to parse API response. Body: ' + errorText };
         }
     } else {
         const errorText = await response.text();
@@ -98,16 +103,22 @@ export async function sendBulkWhatsAppMessage(phoneNumbers: string[], message: s
       }),
     });
 
-    const responseBody = await response.json();
-    console.log('SatuConnect API Response (bulk):', JSON.stringify(responseBody, null, 2));
+    try {
+        const responseBody = await response.json();
+        console.log('SatuConnect API Response (bulk):', JSON.stringify(responseBody, null, 2));
 
-    if (responseBody.status === true) {
-      console.log(`Successfully sent bulk WhatsApp message to ${responseBody.data?.sentCount} recipients.`);
-      return { success: true, data: responseBody.data };
-    } else {
-      const errorMessage = responseBody.message || `API responded with status ${response.status}`;
-      console.error('SatuConnect Bulk API Error:', errorMessage, responseBody.partialSuccess || '');
-      return { success: false, error: errorMessage, data: responseBody };
+        if (responseBody.status === true) {
+            console.log(`Successfully sent bulk WhatsApp message to ${responseBody.data?.sentCount} recipients.`);
+            return { success: true, data: responseBody.data };
+        } else {
+            const errorMessage = responseBody.message || `API responded with status ${response.status}`;
+            console.error('SatuConnect Bulk API Error:', errorMessage, responseBody.partialSuccess || '');
+            return { success: false, error: errorMessage, data: responseBody };
+        }
+    } catch (jsonError) {
+         const errorText = await response.text();
+         console.error('SatuConnect Bulk API JSON parsing error. Response body:', errorText);
+         return { success: false, error: 'Failed to parse bulk API response. Body: ' + errorText };
     }
 
   } catch (error) {
