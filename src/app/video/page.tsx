@@ -5,16 +5,18 @@ import Footer from '@/components/landing/Footer';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { PlayCircle } from 'lucide-react';
+import Image from 'next/image';
 
 const VideoPostCard = ({ video }: { video: BeritaPost }) => {
   return (
     <Link href={`/video/${video.slug}`}>
       <Card className="overflow-hidden group">
         <CardContent className="relative aspect-video p-0">
-          <img
+          <Image
             src={`https://img.youtube.com/vi/${video.youtubeId}/hqdefault.jpg`}
             alt={video.title}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
               <PlayCircle className="h-12 w-12 text-white/80 group-hover:text-white transition-colors" />
