@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import type { Program } from '@/lib/definitions';
@@ -25,6 +25,15 @@ interface FlagshipProgramSliderProps {
 
 const ProgramSliderCard = ({ program }: { program: SerializableProgram }) => {
     const isExternalSubmission = program.submissionType === 'external' && program.applicationUrl;
+    const [formattedDate, setFormattedDate] = useState<string | null>(null);
+
+    useEffect(() => {
+        // Format date only on the client-side after hydration
+        setFormattedDate(
+            `${format(new Date(program.startDate), "d MMM", { locale: id })} - ${format(new Date(program.endDate), "d MMM yyyy", { locale: id })}`
+        );
+    }, [program.startDate, program.endDate]);
+
 
     const actionButton = isExternalSubmission ? (
         <Button asChild size="sm">
@@ -58,7 +67,9 @@ const ProgramSliderCard = ({ program }: { program: SerializableProgram }) => {
                             ))}
                         </div>
                         <h3 className="text-white font-bold text-lg line-clamp-2">{program.title}</h3>
-                        <p className="text-xs text-white/80">{format(new Date(program.startDate), "d MMM", { locale: id })} - {format(new Date(program.endDate), "d MMM yyyy", { locale: id })}</p>
+                        <p className="text-xs text-white/80 h-4">
+                            {formattedDate || 'Memuat tanggal...'}
+                        </p>
                     </div>
                 </CardContent>
                 <div className="p-4 bg-card">
