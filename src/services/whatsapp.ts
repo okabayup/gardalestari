@@ -39,15 +39,11 @@ export async function sendWhatsAppMessage(phoneNumber: string, message: string):
         const responseBody = await response.json();
         console.log('SatuConnect API Response (single):', JSON.stringify(responseBody, null, 2));
 
-        if (responseBody.status === true) {
+        // Handle inconsistent API behavior where success is reported as an error message
+        if (responseBody.status === true || responseBody.message === 'Message sent successfully') {
             console.log('Successfully sent WhatsApp message to', phoneNumber);
             return { success: true, data: responseBody.data };
         } else {
-            // Handle inconsistent API behavior where success is reported as an error
-            if (responseBody.message === 'Message sent successfully') {
-                console.log('Handled inconsistent success response for', phoneNumber);
-                return { success: true, data: responseBody.data };
-            }
             const errorMessage = responseBody.message || `API responded with status ${response.status}`;
             console.error('SatuConnect API Error:', errorMessage);
             return { success: false, error: errorMessage, data: responseBody };
