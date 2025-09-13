@@ -3,7 +3,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sparkles, Bot, User, Send, Loader2, Link as LinkIcon, Lightbulb, UserCircle, BrainCircuit, Mic, MessageSquare, Plus, Trash2 } from 'lucide-react';
@@ -81,31 +81,33 @@ const RenderMessage = ({ message }: { message: Message }) => {
 
     return (
         <div className="space-y-3">
-             <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed">
-                {parts.map((part, index) => {
-                    const match = part.match(/\[(?:Sumber|Ide|Program|Event|Achievement) (\d+)\]/);
-                    if (match) {
-                    const num = parseInt(match[1], 10);
-                    const citation = citations?.[num - 1];
+             <ScrollArea className="max-h-64">
+                <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed pr-4">
+                    {parts.map((part, index) => {
+                        const match = part.match(/\[(?:Sumber|Ide|Program|Event|Achievement) (\d+)\]/);
+                        if (match) {
+                        const num = parseInt(match[1], 10);
+                        const citation = citations?.[num - 1];
 
-                    if (citation) {
-                        return (
-                        <Popover key={index}>
-                            <PopoverTrigger asChild>
-                                <sup className="mx-0.5 -top-0.5 relative">
-                                <button className="px-1.5 py-0.5 bg-primary/10 text-primary rounded-md text-xs font-semibold hover:bg-primary/20">{num}</button>
-                                </sup>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-72">
-                                <CitationCard citation={citation} />
-                            </PopoverContent>
-                            </Popover>
-                        );
-                    }
-                    }
-                    return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
-                })}
-            </div>
+                        if (citation) {
+                            return (
+                            <Popover key={index}>
+                                <PopoverTrigger asChild>
+                                    <sup className="mx-0.5 -top-0.5 relative">
+                                    <button className="px-1.5 py-0.5 bg-primary/10 text-primary rounded-md text-xs font-semibold hover:bg-primary/20">{num}</button>
+                                    </sup>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-72">
+                                    <CitationCard citation={citation} />
+                                </PopoverContent>
+                                </Popover>
+                            );
+                        }
+                        }
+                        return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
+                    })}
+                </div>
+            </ScrollArea>
             {audioUrl && (
                 <audio ref={audioRef} controls src={audioUrl} className="w-full h-10" />
             )}
@@ -340,6 +342,9 @@ export default function Assistant() {
       </Button>
        <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="h-[85vh] w-[95vw] max-w-4xl flex flex-col p-0 gap-0">
+           <DialogHeader className="sr-only">
+            <DialogTitle>AI Assistant</DialogTitle>
+          </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] h-full">
             <div className="hidden md:flex flex-col bg-muted/50 border-r h-full">
                 <div className="p-4 border-b">
