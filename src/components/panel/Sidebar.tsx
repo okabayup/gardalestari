@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import Link from 'next/link';
@@ -27,7 +25,8 @@ import {
   Presentation,
   Lightbulb,
   MessageCircle,
-  Video
+  Video,
+  Database,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
@@ -53,7 +52,6 @@ const navGroups: {
     icon: Presentation,
     items: [
       { href: '/panel/berita', icon: Newspaper, label: 'Berita', permission: 'manage_news' },
-      { href: '/panel/video', icon: Video, label: 'Video', permission: 'manage_news' },
       { href: '/panel/events', icon: Calendar, label: 'Acara', permission: 'manage_events' },
       { href: '/panel/landing', icon: Landmark, label: 'Halaman Utama', permission: 'manage_landing_page' },
     ],
@@ -95,6 +93,7 @@ const navGroups: {
       { href: '/panel/positions', icon: UserCheck, label: 'Jabatan', permission: 'manage_positions' },
       { href: '/panel/forms', icon: FileText, label: 'Formulir', permission: 'manage_forms' },
       { href: '/panel/map-data', icon: Map, label: 'Data Peta', permission: 'manage_map_data' },
+      { href: '/panel/data-bank', icon: Database, label: 'Bank Data', permission: 'manage_data_bank'},
     ],
   },
    {

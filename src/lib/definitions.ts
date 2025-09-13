@@ -1,4 +1,3 @@
-
 import { Timestamp } from "firebase/firestore";
 
 export const ALL_PERMISSIONS = [
@@ -26,6 +25,7 @@ export const ALL_PERMISSIONS = [
     { id: 'manage_projects', label: 'Kelola Proyek' },
     { id: 'manage_whatsapp', label: 'Kelola WhatsApp Bot' },
     { id: 'manage_ideas', label: 'Kelola Bank Ide'},
+    { id: 'manage_data_bank', label: 'Kelola Bank Data'},
 ] as const;
 
 export type PermissionId = typeof ALL_PERMISSIONS[number]['id'];
@@ -119,6 +119,18 @@ export interface BeritaPost {
   category: string;
   youtubeId?: string;
   isFeatured?: boolean;
+}
+
+// --- Data Bank ---
+export interface DataBankEntry {
+  id?: string;
+  title: string;
+  summary: string;
+  content: string;
+  category: 'Kebijakan' | 'Data Sektoral' | 'Riset' | 'Lainnya';
+  source: string;
+  publishedDate: Timestamp;
+  createdAt: Timestamp;
 }
 
 // --- Documents ---
@@ -531,4 +543,18 @@ export interface WhatsAppTemplate {
     message: string;
     isActive: boolean;
     placeholders: string[];
+}
+
+// --- Assistant ---
+export interface Citation {
+  sourceId: string;
+  type: 'data' | 'idea';
+  title: string;
+  summary: string;
+  url: string;
+}
+
+export interface AssistantOutput {
+  responseText: string;
+  citations: Citation[];
 }

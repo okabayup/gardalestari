@@ -134,6 +134,29 @@ export async function getIdeas(
     return ideas;
 }
 
+/**
+ * Searches the idea bank for relevant entries based on a query.
+ * To be used by an AI tool.
+ * @param searchQuery The keywords or question to search for.
+ * @returns A list of relevant ideas.
+ */
+export async function searchIdeaBank(searchQuery: string): Promise<Partial<Idea>[]> {
+    // For simplicity, we reuse the getIdeas logic and reformat the output.
+    // A more optimized version might use a dedicated search query.
+    const ideas = await getIdeas('', 'top', 'Semua', searchQuery);
+
+    // Return a partial object to keep the payload for the AI small
+    return ideas.slice(0, 5).map(idea => ({
+        id: idea.id,
+        title: idea.title,
+        description: idea.description,
+        category: idea.category,
+        voteScore: idea.voteScore,
+        commentCount: idea.commentCount,
+    }));
+}
+
+
 // Get a single idea by ID
 export async function getIdeaById(ideaId: string, currentUserId?: string): Promise<IdeaWithAuthor | null> {
     const ideaRef = doc(db, 'ideas', ideaId);

@@ -9,3 +9,4 @@ import './flows/image-generate-flow';
 import './flows/news-generator-flow';
 import './flows/stamp-pdf-flow';
 import './flows/whatsapp-autoreply-flow';
+import './flows/assistant-flow';
