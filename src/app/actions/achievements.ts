@@ -2,12 +2,45 @@
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, limit } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import type { Achievement } from '@/lib/definitions';
 
 const achievementsCollection = collection(db, 'achievements');
+
+// === Public Functions for AI Tool ===
+
+/**
+ * Searches the achievements based on a query.
+ * To be used by an AI tool.
+ * @param searchQuery The keywords to search for.
+ * @returns A list of relevant achievements.
+ */
+export async function searchAchievements(searchQuery: string): Promise<Partial<Achievement>[]> {
+    const q = query(
+        achievementsCollection,
+        orderBy('date', 'desc'),
+        limit(20)
+    );
+
+    const snapshot = await getDocs(q);
+    const allEntries: Achievement[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Achievement));
+
+    const searchTerms = searchQuery.toLowerCase().split(' ');
+    const results = allEntries.filter(entry => {
+        const searchableText = `${entry.title} ${entry.description} ${entry.userName}`.toLowerCase();
+        return searchTerms.some(term => searchableText.includes(term));
+    }).slice(0, 5); // Return top 5 matches
+
+    return results.map(entry => ({
+        id: entry.id,
+        title: entry.title,
+        userName: entry.userName,
+        date: entry.date,
+    }));
+}
+
 
 // Get all achievements, ordered by date
 export async function getAchievements(): Promise<Achievement[]> {

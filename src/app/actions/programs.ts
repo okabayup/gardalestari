@@ -2,7 +2,7 @@
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, getDocs as getFirestoreDocs, query, where } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, getDocs as getFirestoreDocs, query, where, orderBy, limit } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import { getWhatsappTemplate } from './whatsapp';
@@ -11,6 +11,39 @@ import type { Program, ProgramFormData, ProgramTag } from '@/lib/definitions';
 
 const programsCollection = collection(db, 'programs');
 const tagsCollection = collection(db, 'programTags');
+
+// === Public Functions for AI Tool ===
+
+/**
+ * Searches programs based on a query.
+ * To be used by an AI tool.
+ * @param searchQuery The keywords to search for.
+ * @returns A list of relevant programs.
+ */
+export async function searchPrograms(searchQuery: string): Promise<Partial<Program>[]> {
+    const q = query(
+        programsCollection,
+        orderBy('endDate', 'desc'),
+        limit(10)
+    );
+
+    const snapshot = await getDocs(q);
+    const allEntries: Program[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Program));
+
+    const searchTerms = searchQuery.toLowerCase().split(' ');
+    const results = allEntries.filter(entry => {
+        const searchableText = `${entry.title} ${entry.description} ${entry.tags.join(' ')}`.toLowerCase();
+        return searchTerms.some(term => searchableText.includes(term));
+    }).slice(0, 5);
+
+    return results.map(entry => ({
+        id: entry.id,
+        title: entry.title,
+        endDate: entry.endDate,
+        category: entry.category,
+    }));
+}
+
 
 // Get all programs
 export async function getPrograms(): Promise<Program[]> {

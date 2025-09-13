@@ -1,19 +1,26 @@
+
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sparkles, Bot, User, Send, Loader2, Link as LinkIcon, Lightbulb } from 'lucide-react';
+import { Sparkles, Bot, User, Send, Loader2, Link as LinkIcon, Lightbulb, UserCircle, BrainCircuit } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { answerQuestion } from '@/ai/flows/assistant-flow';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
-import { format } from 'date-fns';
 import Link from 'next/link';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import type { AssistantOutput, Citation } from '@/lib/definitions';
+import { marked } from 'marked';
 
+const samplePrompts = [
+    'Bagaimana cara mengajukan ide baru?',
+    'Bantu saya membuat ide bisnis di sektor pertanian.',
+    'Program apa saja yang sedang dibuka?',
+    'Bagaimana cara melihat Kartu Tanda Anggota saya?',
+];
 
 interface Message {
   role: 'user' | 'assistant';
@@ -40,70 +47,75 @@ const CitationCard = ({ citation }: { citation: Citation }) => {
     )
 }
 
-// Function to parse the response text and render citations as links
-const RenderWithCitations = ({ text, citations }: { text: string; citations: Citation[] | undefined }) => {
-  if (!citations || citations.length === 0) {
-    return <p>{text}</p>;
-  }
+const RenderMessage = ({ message }: { message: Message }) => {
+    const { content, citations } = message;
 
-  const parts = text.split(/(\[Sumber \d+\]|\[Ide \d+\])/g);
+    const renderer = new marked.Renderer();
+    const linkRenderer = renderer.link;
+    renderer.link = (href, title, text) => {
+        const html = linkRenderer.call(renderer, href, title, text);
+        return html.replace(/^<a /, '<a target="_blank" rel="noopener noreferrer" ');
+    };
 
-  return (
-    <p>
-      {parts.map((part, index) => {
-        const match = part.match(/\[(?:Sumber|Ide) (\d+)\]/);
-        if (match) {
-          const num = parseInt(match[1], 10);
-          const citation = citations[num - 1];
+    const rawHtml = marked(content, { renderer }) as string;
+    const parts = rawHtml.split(/(\[Sumber \d+\]|\[Ide \d+\]|\[Program \d+\]|\[Event \d+\]|\[Achievement \d+\])/g);
 
-          if (citation) {
-            return (
-              <Popover key={index}>
-                  <PopoverTrigger asChild>
-                    <sup className="mx-0.5">
-                      <button className="px-1.5 py-0.5 bg-primary/10 text-primary rounded-md text-xs font-semibold hover:bg-primary/20">{num}</button>
-                    </sup>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-72">
-                    <CitationCard citation={citation} />
-                  </PopoverContent>
-                </Popover>
-            );
-          }
-        }
-        return part;
-      })}
-    </p>
-  );
+    return (
+        <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed">
+            {parts.map((part, index) => {
+                const match = part.match(/\[(?:Sumber|Ide|Program|Event|Achievement) (\d+)\]/);
+                if (match) {
+                const num = parseInt(match[1], 10);
+                const citation = citations?.[num - 1];
+
+                if (citation) {
+                    return (
+                    <Popover key={index}>
+                        <PopoverTrigger asChild>
+                            <sup className="mx-0.5 -top-0.5 relative">
+                            <button className="px-1.5 py-0.5 bg-primary/10 text-primary rounded-md text-xs font-semibold hover:bg-primary/20">{num}</button>
+                            </sup>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-72">
+                            <CitationCard citation={citation} />
+                        </PopoverContent>
+                        </Popover>
+                    );
+                }
+                }
+                 // Use dangerouslySetInnerHTML for Markdown-rendered parts
+                return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
+            })}
+        </div>
+    );
 };
 
 
-const AssistantUI = () => {
+const AssistantUI = ({ onSendMessage }: { onSendMessage: (message: string) => Promise<AssistantOutput> }) => {
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: "Halo! Saya Garda, asisten AI Anda. Apa yang bisa saya bantu hari ini? Anda bisa bertanya tentang cara menggunakan aplikasi, atau meminta bantuan untuk brainstorming ide." }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const { user } = useAuth();
-
+  
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
-    }
+    scrollAreaRef.current?.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isLoading || !user) return;
+  const handleSubmit = async (prompt?: string) => {
+    const userQuery = prompt || input;
+    if (!userQuery.trim() || isLoading) return;
 
-    const userMessage: Message = { role: 'user', content: input };
+    const userMessage: Message = { role: 'user', content: userQuery };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
     try {
-      const assistantResponse: AssistantOutput = await answerQuestion({ query: input, userId: user.uid });
+      const history = messages.slice(0, -1); // Exclude the initial welcome message
+      const assistantResponse = await onSendMessage(userQuery);
+      
       const assistantMessage: Message = {
         role: 'assistant',
         content: assistantResponse.responseText,
@@ -123,56 +135,87 @@ const AssistantUI = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <ScrollArea className="flex-1 -mx-6 px-6" ref={scrollAreaRef}>
-        <div className="space-y-6">
-          {messages.map((message, index) => (
-            <div key={index} className={`flex items-start gap-3 ${message.role === 'user' ? 'justify-end' : ''}`}>
-              {message.role === 'assistant' && (
-                <div className="flex-shrink-0 h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                  <Bot size={20} />
-                </div>
-              )}
-              <div className={`max-w-[80%] rounded-lg p-3 text-sm ${message.role === 'user' ? 'bg-secondary text-secondary-foreground' : 'bg-background'}`}>
-                <RenderWithCitations text={message.content} citations={message.citations} />
-              </div>
-               {message.role === 'user' && (
-                <div className="flex-shrink-0 h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                  <User size={20} />
-                </div>
-              )}
-            </div>
-          ))}
-          {isLoading && (
-             <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
+        <ScrollArea className="flex-1 -mx-6 px-6" ref={scrollAreaRef}>
+            <div className="space-y-6">
+            {messages.map((message, index) => (
+                <div key={index} className={`flex items-start gap-3 ${message.role === 'user' ? 'justify-end' : ''}`}>
+                {message.role === 'assistant' && (
+                    <div className="flex-shrink-0 h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
                     <Bot size={20} />
+                    </div>
+                )}
+                <div className={`max-w-[85%] rounded-lg p-3 text-sm ${message.role === 'user' ? 'bg-secondary text-secondary-foreground' : 'bg-background'}`}>
+                    <RenderMessage message={message} />
                 </div>
-                <div className="rounded-lg p-3 text-sm bg-background">
-                    <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                {message.role === 'user' && (
+                    <div className="flex-shrink-0 h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                    <UserCircle size={24} />
+                    </div>
+                )}
                 </div>
-             </div>
-          )}
-        </div>
-      </ScrollArea>
-      <SheetFooter className="pt-4">
-        <form onSubmit={handleSubmit} className="flex w-full items-center gap-2">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Tanyakan sesuatu pada Garda..."
-            disabled={isLoading}
-          />
-          <Button type="submit" size="icon" disabled={isLoading || !input.trim()}>
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          </Button>
-        </form>
-      </SheetFooter>
+            ))}
+            {isLoading && (
+                <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
+                        <Bot size={20} />
+                    </div>
+                    <div className="rounded-lg p-3 text-sm bg-background">
+                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    </div>
+                </div>
+            )}
+            {messages.length === 1 && (
+                <div className="space-y-2 pt-4">
+                    <p className="text-xs text-muted-foreground font-semibold">Atau coba salah satu dari ini:</p>
+                    <div className="flex flex-wrap gap-2">
+                        {samplePrompts.map(prompt => (
+                            <Button key={prompt} size="sm" variant="outline" onClick={() => handleSubmit(prompt)}>
+                                {prompt}
+                            </Button>
+                        ))}
+                    </div>
+                </div>
+            )}
+            </div>
+        </ScrollArea>
+        <DialogFooter className="pt-4">
+            <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="flex w-full items-center gap-2">
+            <Input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Tanyakan sesuatu pada Garda..."
+                disabled={isLoading}
+            />
+            <Button type="submit" size="icon" disabled={isLoading || !input.trim()}>
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </Button>
+            </form>
+        </DialogFooter>
     </div>
   );
 };
 
 export default function Assistant() {
   const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuth();
+  const [conversationHistory, setConversationHistory] = useState<Message[]>([]);
+
+  const handleSendMessage = async (query: string): Promise<AssistantOutput> => {
+    if (!user) throw new Error("User not authenticated");
+    
+    const response = await answerQuestion({ 
+        query, 
+        userId: user.uid,
+        history: conversationHistory 
+    });
+
+    setConversationHistory(prev => [
+        ...prev,
+        { role: 'user', content: query },
+        { role: 'assistant', content: response.responseText, citations: response.citations }
+    ]);
+    return response;
+  }
 
   return (
     <>
@@ -181,20 +224,20 @@ export default function Assistant() {
         size="icon"
         onClick={() => setIsOpen(true)}
       >
-        <Sparkles className="h-6 w-6" />
+        <BrainCircuit className="h-6 w-6" />
         <span className="sr-only">Buka Asisten AI</span>
       </Button>
-      <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetContent side="bottom" className="h-[85vh] flex flex-col rounded-t-lg">
-          <SheetHeader>
-            <SheetTitle>Asisten AI Garda</SheetTitle>
-            <SheetDescription>
+       <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="h-[85vh] w-[95vw] max-w-2xl flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Asisten AI Garda</DialogTitle>
+            <DialogDescription>
               Tanyakan apa saja tentang Garda Lestari atau minta bantuan untuk brainstorming ide.
-            </SheetDescription>
-          </SheetHeader>
-          <AssistantUI />
-        </SheetContent>
-      </Sheet>
+            </DialogDescription>
+          </DialogHeader>
+          <AssistantUI onSendMessage={handleSendMessage} />
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -1,3 +1,4 @@
+
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
 
@@ -548,14 +549,18 @@ export interface WhatsAppTemplate {
 
 // --- Assistant ---
 export const AssistantInputSchema = z.object({
-  query: z.string().describe('The user\'s question or request.'),
+  query: z.string().describe("The user's question or request."),
   userId: z.string().describe('The ID of the user asking the question.'),
+  history: z.array(z.object({
+      role: z.enum(['user', 'assistant']),
+      content: z.string(),
+  })).optional().describe('The previous conversation history.'),
 });
 export type AssistantInput = z.infer<typeof AssistantInputSchema>;
 
 export const CitationSchema = z.object({
   sourceId: z.string().describe('The unique ID of the source document or idea.'),
-  type: z.enum(['data', 'idea']).describe('The type of the source.'),
+  type: z.enum(['data', 'idea', 'program', 'event', 'achievement']).describe('The type of the source.'),
   title: z.string().describe('The title of the source.'),
   summary: z.string().describe('A brief summary of the source content.'),
   url: z.string().describe('The URL to view the full source.'),
@@ -563,7 +568,7 @@ export const CitationSchema = z.object({
 export type Citation = z.infer<typeof CitationSchema>;
 
 export const AssistantOutputSchema = z.object({
-  responseText: z.string().describe('The main text of the AI\'s answer, formatted in Markdown. This text MUST include citation markers like [Source 1], [Idea 2], etc., corresponding to the `citations` array.'),
+  responseText: z.string().describe('The main text of the AI\'s answer, formatted in Markdown. This text MUST include citation markers like [Sumber 1], [Ide 2], etc., corresponding to the `citations` array.'),
   citations: z.array(CitationSchema).describe('An array of sources cited in the `responseText`.'),
 });
 export type AssistantOutput = z.infer<typeof AssistantOutputSchema>;

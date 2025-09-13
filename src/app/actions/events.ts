@@ -2,12 +2,45 @@
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, limit } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import type { Event } from '@/lib/definitions';
 
 const eventsCollection = collection(db, 'events');
+
+// === Public Functions for AI Tool ===
+
+/**
+ * Searches events based on a query.
+ * To be used by an AI tool.
+ * @param searchQuery The keywords to search for.
+ * @returns A list of relevant events.
+ */
+export async function searchEvents(searchQuery: string): Promise<Partial<Event>[]> {
+    const q = query(
+        eventsCollection,
+        orderBy('date', 'desc'),
+        limit(10)
+    );
+
+    const snapshot = await getDocs(q);
+    const allEntries: Event[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
+
+    const searchTerms = searchQuery.toLowerCase().split(' ');
+    const results = allEntries.filter(entry => {
+        const searchableText = `${entry.title} ${entry.description} ${entry.location}`.toLowerCase();
+        return searchTerms.some(term => searchableText.includes(term));
+    }).slice(0, 5);
+
+    return results.map(entry => ({
+        id: entry.id,
+        title: entry.title,
+        date: entry.date,
+        location: entry.location,
+    }));
+}
+
 
 // Get all events, ordered by date
 export async function getEvents(): Promise<Event[]> {
