@@ -31,15 +31,22 @@ import { id } from 'date-fns/locale';
 import { useAuth } from '@/hooks/use-auth';
 import { Timestamp } from 'firebase/firestore';
 
+// Define a serializable Program type for the client
+type SerializableProgram = Omit<Program, 'startDate' | 'endDate' | 'createdAt'> & {
+  startDate: string;
+  endDate: string;
+};
+
+
 export default function AdminProgramsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { hasPermission } = useAuth();
-  const [programs, setPrograms] = useState<Program[]>([]);
+  const [programs, setPrograms] = useState<SerializableProgram[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
-  const [programToDelete, setProgramToDelete] = useState<Program | null>(null);
+  const [programToDelete, setProgramToDelete] = useState<SerializableProgram | null>(null);
 
   const canManage = hasPermission('manage_programs');
   const canDelete = hasPermission('delete_programs');
@@ -48,7 +55,12 @@ export default function AdminProgramsPage() {
     setLoading(true);
     try {
       const fetchedPrograms = await getPrograms();
-      setPrograms(fetchedPrograms);
+      const serializablePrograms = fetchedPrograms.map(p => ({
+          ...p,
+          startDate: p.startDate.toDate().toISOString(),
+          endDate: p.endDate.toDate().toISOString(),
+      }));
+      setPrograms(serializablePrograms);
     } catch (error) {
       toast({
           variant: "destructive",
@@ -64,7 +76,7 @@ export default function AdminProgramsPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleDeleteClick = (program: Program) => {
+  const handleDeleteClick = (program: SerializableProgram) => {
     setProgramToDelete(program);
     setShowDeleteAlert(true);
   };
@@ -90,17 +102,6 @@ export default function AdminProgramsPage() {
     }
   };
   
-  const toJsDate = (timestamp: any): Date => {
-      if (timestamp instanceof Timestamp) {
-          return timestamp.toDate();
-      }
-      // Handle case where it's already a plain object
-      if (timestamp && typeof timestamp.seconds === 'number' && typeof timestamp.nanoseconds === 'number') {
-          return new Timestamp(timestamp.seconds, timestamp.nanoseconds).toDate();
-      }
-      // Fallback for unexpected types
-      return new Date();
-  };
 
   return (
     <>
@@ -156,7 +157,7 @@ export default function AdminProgramsPage() {
                               {program.category === 'flagship' ? 'Unggulan' : 'Berkelanjutan'}
                           </Badge>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell">{format(toJsDate(program.endDate), 'dd MMM yyyy', {locale: id})}</TableCell>
+                      <TableCell className="hidden md:table-cell">{format(new Date(program.endDate), 'dd MMM yyyy', {locale: id})}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
