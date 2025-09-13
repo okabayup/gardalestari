@@ -8,12 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Award, FileText, Globe, Info, Target, Landmark, Download, Loader2 } from 'lucide-react';
+import { Award, FileText, Globe, Info, Target, Landmark, Download, Loader2, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { logAnalyticsEvent } from '@/lib/analytics';
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { useRouter } from 'next/navigation';
 
 interface ProgramDetailPageProps {
   params: { id: string };
@@ -34,6 +35,8 @@ const InfoCard = ({ icon, title, children }: { icon: React.ReactNode, title: str
 )
 
 const ProgramDetailClient = ({ program }: { program: Program }) => {
+    const router = useRouter();
+
     useEffect(() => {
         logAnalyticsEvent('view_item', {
             item_id: program.id,
@@ -80,7 +83,7 @@ const ProgramDetailClient = ({ program }: { program: Program }) => {
       endDate: program.endDate.toDate().toISOString(),
       description: program.description,
       image: program.imageUrl,
-      eventStatus: isPast ? 'https://schema.org/EventCancelled' : 'https://schema.org/EventScheduled',
+      eventStatus: isPast ? 'https://schema.org/EventCompleted' : 'https://schema.org/EventScheduled',
       location: {
         '@type': 'Place',
         name: 'Online',
@@ -106,6 +109,11 @@ const ProgramDetailClient = ({ program }: { program: Program }) => {
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
+            <div className="p-6">
+                <Button variant="outline" onClick={() => router.back()}>
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
+                </Button>
+            </div>
             <div className="relative h-48 md:h-64 w-full">
                 <Image
                     src={program.imageUrl || 'https://picsum.photos/1200/800'}

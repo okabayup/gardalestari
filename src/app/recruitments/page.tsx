@@ -56,6 +56,43 @@ const RecruitmentCard = ({ recruitment }: { recruitment: Recruitment }) => {
   )
 }
 
+const JobPostingSchema = ({ recruitment }: { recruitment: Recruitment }) => {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'JobPosting',
+    title: recruitment.title,
+    description: `<p>${recruitment.description}</p> <h4>Persyaratan:</h4> <ul>${recruitment.requirements.split('\n').map(req => `<li>${req.replace('-', '').trim()}</li>`).join('')}</ul>`,
+    datePosted: recruitment.createdAt.toDate().toISOString(),
+    validThrough: recruitment.deadline.toDate().toISOString(),
+    employmentType: 'FULL_TIME', // Assuming full-time, can be parameterized later
+    hiringOrganization: {
+      '@type': 'Organization',
+      name: recruitment.partnerName || 'Garda Lestari',
+      logo: recruitment.partnerLogoUrl
+    },
+    jobLocation: {
+      '@type': 'Place',
+      address: {
+        '@type': 'PostalAddress',
+        addressCountry: 'ID'
+      }
+    },
+     directApply: true,
+     applicationContact: {
+        '@type': 'ContactPoint',
+        url: recruitment.applicationUrl
+     }
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
+  );
+};
+
+
 export default function RecruitmentsPage() {
   const [recruitments, setRecruitments] = useState<Recruitment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,6 +118,7 @@ export default function RecruitmentsPage() {
   return (
     <MainLayout>
       <div className="p-6 space-y-6">
+         {recruitments.map(rec => <JobPostingSchema key={`schema-${rec.id}`} recruitment={rec} />)}
         <div className="text-center sm:text-left">
           <h1 className="font-headline text-3xl font-bold">Peluang Rekrutmen</h1>
           <p className="text-muted-foreground">Temukan kesempatan karir di Garda Lestari dan mitra kami.</p>

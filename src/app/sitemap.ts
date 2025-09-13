@@ -37,5 +37,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticRoutes, ...contentRoutes, ...programRoutes];
+  // Rute dinamis untuk acara
+  const events = await getEvents();
+  const eventRoutes = events.map((event) => ({
+    url: `${BASE_URL}/events/${event.id}`,
+    lastModified: event.date.toDate().toISOString(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }));
+
+  return [...staticRoutes, ...contentRoutes, ...programRoutes, ...eventRoutes];
 }
