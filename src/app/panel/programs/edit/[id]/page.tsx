@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -271,7 +272,7 @@ export default function EditProgramPage() {
                               initialFocus
                               mode="range"
                               defaultMonth={field.value?.from}
-                              selected={{ from: field.value.from, to: field.value.to }}
+                              selected={{ from: field.value?.from, to: field.value?.to }}
                               onSelect={(range) => field.onChange(range || { from: undefined, to: undefined })}
                               numberOfMonths={1}
                           />
