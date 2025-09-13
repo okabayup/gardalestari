@@ -81,31 +81,33 @@ const RenderMessage = ({ message }: { message: Message }) => {
 
     return (
         <div className="space-y-3">
-             <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed pr-4">
-                {parts.map((part, index) => {
-                    const match = part.match(/\[(?:Sumber|Ide|Program|Event|Achievement) (\d+)\]/);
-                    if (match) {
-                    const num = parseInt(match[1], 10);
-                    const citation = citations?.[num - 1];
+             <ScrollArea className="max-h-60 pr-4">
+                 <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed">
+                    {parts.map((part, index) => {
+                        const match = part.match(/\[(?:Sumber|Ide|Program|Event|Achievement) (\d+)\]/);
+                        if (match) {
+                        const num = parseInt(match[1], 10);
+                        const citation = citations?.[num - 1];
 
-                    if (citation) {
-                        return (
-                        <Popover key={index}>
-                            <PopoverTrigger asChild>
-                                <sup className="mx-0.5 -top-0.5 relative">
-                                <button className="px-1.5 py-0.5 bg-primary/10 text-primary rounded-md text-xs font-semibold hover:bg-primary/20">{num}</button>
-                                </sup>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-72">
-                                <CitationCard citation={citation} />
-                            </PopoverContent>
-                            </Popover>
-                        );
-                    }
-                    }
-                    return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
-                })}
-            </div>
+                        if (citation) {
+                            return (
+                            <Popover key={index}>
+                                <PopoverTrigger asChild>
+                                    <sup className="mx-0.5 -top-0.5 relative">
+                                    <button className="px-1.5 py-0.5 bg-primary/10 text-primary rounded-md text-xs font-semibold hover:bg-primary/20">{num}</button>
+                                    </sup>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-72">
+                                    <CitationCard citation={citation} />
+                                </PopoverContent>
+                                </Popover>
+                            );
+                        }
+                        }
+                        return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
+                    })}
+                </div>
+            </ScrollArea>
             {audioUrl && (
                 <audio ref={audioRef} controls src={audioUrl} className="w-full h-10" />
             )}
@@ -125,7 +127,9 @@ const AssistantUI = ({ thread, onSendMessage, isLoading, onNewThread }: {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
-    scrollAreaRef.current?.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
+    if (scrollAreaRef.current) {
+        scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
+    }
   }, [thread.messages]);
 
   const handleSubmit = (isVoice = false) => {
@@ -330,11 +334,11 @@ export default function Assistant() {
   return (
     <>
       <Button
-        className="fixed bottom-36 right-4 h-14 w-14 rounded-full shadow-lg"
+        className="fixed bottom-36 right-4 h-12 w-12 rounded-full shadow-lg bg-background/70 backdrop-blur-lg"
         size="icon"
         onClick={() => setIsOpen(true)}
       >
-        <BrainCircuit className="h-6 w-6" />
+        <Bot className="h-6 w-6" />
         <span className="sr-only">Buka Asisten AI</span>
       </Button>
        <Dialog open={isOpen} onOpenChange={setIsOpen}>

@@ -181,7 +181,7 @@ export default function FeedPage() {
             {!loadingMore && !lastVisibleId && posts.length > 0 && <p className="text-sm text-muted-foreground">Anda telah mencapai akhir.</p>}
         </div>
       </div>
-      <Button asChild className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg" size="icon">
+      <Button asChild className="fixed bottom-20 right-4 h-12 w-12 rounded-full shadow-lg bg-background/70 backdrop-blur-lg" size="icon">
         <Link href="/feed/new">
             <Plus className="h-6 w-6" />
             <span className="sr-only">Buat Postingan Baru</span>
