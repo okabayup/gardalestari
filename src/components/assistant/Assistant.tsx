@@ -41,7 +41,7 @@ const CitationCard = ({ citation }: { citation: Citation }) => {
 }
 
 // Function to parse the response text and render citations as links
-const RenderWithCitations = ({ text, citations }: { text: string, citations: Citation[] }) => {
+const RenderWithCitations = ({ text, citations }: { text: string; citations: Citation[] | undefined }) => {
   if (!citations || citations.length === 0) {
     return <p>{text}</p>;
   }
@@ -53,7 +53,7 @@ const RenderWithCitations = ({ text, citations }: { text: string, citations: Cit
       {parts.map((part, index) => {
         const match = part.match(/\[(?:Sumber|Ide) (\d+)\]/);
         if (match) {
-          const num = parseInt(match[2], 10);
+          const num = parseInt(match[1], 10);
           const citation = citations[num - 1];
 
           if (citation) {
@@ -103,7 +103,7 @@ const AssistantUI = () => {
     setIsLoading(true);
 
     try {
-      const assistantResponse = await answerQuestion({ query: input, userId: user.uid });
+      const assistantResponse: AssistantOutput = await answerQuestion({ query: input, userId: user.uid });
       const assistantMessage: Message = {
         role: 'assistant',
         content: assistantResponse.responseText,
@@ -133,7 +133,7 @@ const AssistantUI = () => {
                 </div>
               )}
               <div className={`max-w-[80%] rounded-lg p-3 text-sm ${message.role === 'user' ? 'bg-secondary text-secondary-foreground' : 'bg-background'}`}>
-                {message.citations ? <RenderWithCitations text={message.content} citations={message.citations} /> : <p>{message.content}</p>}
+                <RenderWithCitations text={message.content} citations={message.citations} />
               </div>
                {message.role === 'user' && (
                 <div className="flex-shrink-0 h-8 w-8 rounded-full bg-muted flex items-center justify-center">

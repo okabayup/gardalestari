@@ -1,4 +1,5 @@
 import { Timestamp } from "firebase/firestore";
+import {z} from 'zod';
 
 export const ALL_PERMISSIONS = [
     { id: 'manage_users', label: 'Kelola Anggota & Verifikasi' },
@@ -546,15 +547,23 @@ export interface WhatsAppTemplate {
 }
 
 // --- Assistant ---
-export interface Citation {
-  sourceId: string;
-  type: 'data' | 'idea';
-  title: string;
-  summary: string;
-  url: string;
-}
+export const AssistantInputSchema = z.object({
+  query: z.string().describe('The user\'s question or request.'),
+  userId: z.string().describe('The ID of the user asking the question.'),
+});
+export type AssistantInput = z.infer<typeof AssistantInputSchema>;
 
-export interface AssistantOutput {
-  responseText: string;
-  citations: Citation[];
-}
+export const CitationSchema = z.object({
+  sourceId: z.string().describe('The unique ID of the source document or idea.'),
+  type: z.enum(['data', 'idea']).describe('The type of the source.'),
+  title: z.string().describe('The title of the source.'),
+  summary: z.string().describe('A brief summary of the source content.'),
+  url: z.string().describe('The URL to view the full source.'),
+});
+export type Citation = z.infer<typeof CitationSchema>;
+
+export const AssistantOutputSchema = z.object({
+  responseText: z.string().describe('The main text of the AI\'s answer, formatted in Markdown. This text MUST include citation markers like [Source 1], [Idea 2], etc., corresponding to the `citations` array.'),
+  citations: z.array(CitationSchema).describe('An array of sources cited in the `responseText`.'),
+});
+export type AssistantOutput = z.infer<typeof AssistantOutputSchema>;

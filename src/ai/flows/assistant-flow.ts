@@ -6,15 +6,18 @@
  * knowledge, tools, and response generation process.
  *
  * - answerQuestion: The main function to interact with the assistant.
- * - AssistantInput: The Zod schema for the assistant's input.
- * - AssistantOutput: The Zod schema for the assistant's structured output.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { searchDataBank, DataBankEntry } from '@/app/actions/bank-data';
 import { searchIdeaBank, Idea } from '@/app/actions/ideas';
-import { format } from 'date-fns';
+import { 
+  AssistantInputSchema, 
+  AssistantOutputSchema,
+  type AssistantInput, 
+  type AssistantOutput,
+} from '@/lib/definitions';
 
 // Define tools for the AI to use
 const searchDataBankTool = ai.defineTool(
@@ -36,28 +39,6 @@ const searchIdeaBankTool = ai.defineTool(
   },
   async (query) => searchIdeaBank(query)
 );
-
-
-// Define input and output schemas
-export const AssistantInputSchema = z.object({
-  query: z.string().describe('The user\'s question or request.'),
-  userId: z.string().describe('The ID of the user asking the question.'),
-});
-export type AssistantInput = z.infer<typeof AssistantInputSchema>;
-
-const CitationSchema = z.object({
-  sourceId: z.string().describe('The unique ID of the source document or idea.'),
-  type: z.enum(['data', 'idea']).describe('The type of the source.'),
-  title: z.string().describe('The title of the source.'),
-  summary: z.string().describe('A brief summary of the source content.'),
-  url: z.string().describe('The URL to view the full source.'),
-});
-
-export const AssistantOutputSchema = z.object({
-  responseText: z.string().describe('The main text of the AI\'s answer, formatted in Markdown. This text MUST include citation markers like [Source 1], [Idea 2], etc., corresponding to the `citations` array.'),
-  citations: z.array(CitationSchema).describe('An array of sources cited in the `responseText`.'),
-});
-export type AssistantOutput = z.infer<typeof AssistantOutputSchema>;
 
 
 const assistantPrompt = ai.definePrompt({
