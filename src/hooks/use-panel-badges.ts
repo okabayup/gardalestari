@@ -1,7 +1,7 @@
 
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { getPendingVerificationCount } from '@/app/actions/members';
 import { useAuth } from './use-auth';
 
@@ -18,7 +18,7 @@ export const PanelBadgesProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const { user } = useAuth();
   const [badges, setBadges] = useState({ pendingMembers: 0 });
 
-  const fetchBadges = async () => {
+  const fetchBadges = useCallback(async () => {
     if (!user) return;
     try {
       const pendingCount = await getPendingVerificationCount();
@@ -26,14 +26,14 @@ export const PanelBadgesProvider: React.FC<{ children: React.ReactNode }> = ({ c
     } catch (error) {
       console.error("Failed to fetch panel badges:", error);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchBadges();
     const interval = setInterval(fetchBadges, 60000); // Poll every minute
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, fetchBadges]);
 
   return (
     <PanelBadgesContext.Provider value={{ badges, refreshBadges: fetchBadges }}>
