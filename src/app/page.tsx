@@ -49,7 +49,7 @@ export default async function LandingPage() {
   const featuredVideos = allPosts.filter(p => p.type === 'video' && p.isFeatured);
 
   const featuredPartners = partners.filter(p => p.isFeatured);
-  const WHATSAPP_LINK = `https://wa.me/${process.env.WHATSAPP_NUMBER || '6285144904161'}`;
+  const WHATSAPP_LINK = `https://wa.me/${process.env.WHATSAPP_NUMBER || '6285176752610'}`;
 
   const totalMembers = members.length + (settings.dummyMembers || 0);
   const totalPrograms = programs.length + (settings.dummyPrograms || 0);
