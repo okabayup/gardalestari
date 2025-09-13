@@ -59,8 +59,12 @@ export default function ProgramsPage() {
     return allPrograms.filter(p => p.tags.includes(selectedTag));
   }, [allPrograms, selectedTag]);
 
-  const ongoingPrograms = useMemo(() => filteredPrograms.filter(p => new Date() < toJsDate(p.endDate)), [filteredPrograms]);
-  const pastPrograms = useMemo(() => filteredPrograms.filter(p => new Date() >= toJsDate(p.endDate)), [filteredPrograms]);
+  const { ongoingPrograms, pastPrograms } = useMemo(() => {
+    const now = new Date();
+    const ongoing = filteredPrograms.filter(p => toJsDate(p.endDate) > now);
+    const past = filteredPrograms.filter(p => toJsDate(p.endDate) <= now);
+    return { ongoingPrograms: ongoing, pastPrograms: past };
+  }, [filteredPrograms]);
 
   const formatProgramForCard = (program: Program) => ({
       ...program,

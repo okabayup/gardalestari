@@ -15,10 +15,23 @@ import { logAnalyticsEvent } from '@/lib/analytics';
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
+import { Timestamp } from 'firebase/firestore';
 
 interface ProgramDetailPageProps {
   params: { id: string };
 }
+
+// Helper to convert Firestore Timestamp-like objects to Date
+const toJsDate = (timestamp: any): Date => {
+    if (timestamp instanceof Timestamp) {
+        return timestamp.toDate();
+    }
+    if (timestamp && typeof timestamp.seconds === 'number' && typeof timestamp.nanoseconds === 'number') {
+        return new Timestamp(timestamp.seconds, timestamp.nanoseconds).toDate();
+    }
+    return new Date();
+};
+
 
 const InfoCard = ({ icon, title, children }: { icon: React.ReactNode, title: string, children: React.ReactNode }) => (
     <Card>
@@ -36,8 +49,10 @@ const InfoCard = ({ icon, title, children }: { icon: React.ReactNode, title: str
 
 const ProgramDetailClient = ({ program }: { program: Program }) => {
     const router = useRouter();
+    const [isPast, setIsPast] = useState(false);
 
     useEffect(() => {
+        setIsPast(new Date() > toJsDate(program.endDate));
         logAnalyticsEvent('view_item', {
             item_id: program.id,
             item_name: program.title,
@@ -45,11 +60,11 @@ const ProgramDetailClient = ({ program }: { program: Program }) => {
         });
     }, [program]);
 
-    const isPast = new Date() > program.endDate.toDate();
-    const deadline = format(program.endDate.toDate(), "dd MMMM yyyy", { locale: id });
+    const deadline = format(toJsDate(program.endDate), "dd MMMM yyyy", { locale: id });
     const submissionType = program.submissionType || 'external';
 
     const renderHtml = (text: string) => {
+        if (!text) return '';
         const listItems = text.split('\n').filter(line => line.trim() !== '').map((item, index) => {
             if (item.trim().startsWith('-') || item.trim().startsWith('*')) {
                 return `<li key=${index}>${item.trim().substring(1).trim()}</li>`;
@@ -79,8 +94,8 @@ const ProgramDetailClient = ({ program }: { program: Program }) => {
       '@context': 'https://schema.org',
       '@type': 'Event',
       name: program.title,
-      startDate: program.startDate.toDate().toISOString(),
-      endDate: program.endDate.toDate().toISOString(),
+      startDate: toJsDate(program.startDate).toISOString(),
+      endDate: toJsDate(program.endDate).toISOString(),
       description: program.description,
       image: program.imageUrl,
       eventStatus: isPast ? 'https://schema.org/EventCompleted' : 'https://schema.org/EventScheduled',
@@ -94,7 +109,7 @@ const ProgramDetailClient = ({ program }: { program: Program }) => {
         price: '0',
         priceCurrency: 'IDR',
         availability: isPast ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock',
-        validFrom: program.startDate.toDate().toISOString(),
+        validFrom: toJsDate(program.startDate).toISOString(),
       },
       organizer: {
         '@type': 'Organization',
