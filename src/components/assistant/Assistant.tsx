@@ -17,6 +17,7 @@ import type { AssistantOutput, Citation } from '@/lib/definitions';
 import { marked } from 'marked';
 import { cn } from '@/lib/utils';
 import { Separator } from '../ui/separator';
+import produce from 'immer';
 
 const samplePrompts = [
     'Bagaimana cara mengajukan ide baru?',
