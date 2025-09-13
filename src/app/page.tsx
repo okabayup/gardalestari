@@ -191,67 +191,73 @@ export default async function LandingPage() {
               </div>
             </div>
         </section>
-
+        
         {/* Featured Videos Section */}
-        {featuredVideos.length > 0 && (
-          <section id="video" className="w-full bg-background py-16 md:py-28">
-            <div className="container">
-               <div className="mb-14 text-center">
-                <span className="text-sm font-semibold uppercase text-primary">Video Unggulan</span>
-                <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl mt-2">Liputan & Cerita Visual</h2>
-                <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Tonton cerita inspiratif dan liputan kegiatan kami langsung dari lapangan.</p>
-              </div>
-              <VideoSlider videos={featuredVideos} />
-               <div className="mt-12 text-center">
-                <Button asChild>
-                  <Link href="/video">
-                    Lihat Semua Video <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
+        <section id="video" className="w-full bg-background py-16 md:py-28">
+          <div className="container">
+             <div className="mb-14 text-center">
+              <span className="text-sm font-semibold uppercase text-primary">Video Unggulan</span>
+              <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl mt-2">Liputan & Cerita Visual</h2>
+              <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Tonton cerita inspiratif dan liputan kegiatan kami langsung dari lapangan.</p>
             </div>
-          </section>
-        )}
+            {featuredVideos.length > 0 ? (
+              <VideoSlider videos={featuredVideos} />
+            ) : (
+              <p className="text-center text-muted-foreground">Belum ada video unggulan.</p>
+            )}
+             <div className="mt-12 text-center">
+              <Button asChild>
+                <Link href="/video">
+                  Lihat Semua Video <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </section>
 
         {/* Latest News Section */}
-        {latestArticles.length > 0 && (
-          <section id="news" className="w-full bg-secondary py-16 md:py-28">
-            <div className="container">
-              <div className="mb-14 text-center">
-                <span className="text-sm font-semibold uppercase text-primary">Kabar Terbaru</span>
-                <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl mt-2">Berita &amp; Wawasan</h2>
-                <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Ikuti perkembangan terbaru dari program, acara, dan riset yang kami lakukan.</p>
-              </div>
-              
-              <div className="md:hidden"> {/* Horizontal Scroll for Mobile */}
-                 <ScrollArea className="w-full">
-                    <div className="flex space-x-4 pb-4">
-                      {latestArticles.slice(0, 3).map((post) => (
-                        <div key={post.id} className="w-72 flex-shrink-0">
-                           <BeritaPostCard {...post} />
-                        </div>
-                      ))}
-                    </div>
-                    <ScrollBar orientation="horizontal" />
-                  </ScrollArea>
-              </div>
-
-              <div className="hidden md:grid md:grid-cols-3 gap-6"> {/* Grid for Desktop */}
-                {latestArticles.slice(0, 3).map((post) => (
-                  <BeritaPostCard key={post.id} {...post} />
-                ))}
-              </div>
-
-              <div className="mt-12 text-center">
-                <Button asChild>
-                  <Link href="/berita">
-                    Lihat Semua Berita <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
+        <section id="news" className="w-full bg-secondary py-16 md:py-28">
+          <div className="container">
+            <div className="mb-14 text-center">
+              <span className="text-sm font-semibold uppercase text-primary">Kabar Terbaru</span>
+              <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl mt-2">Berita &amp; Wawasan</h2>
+              <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Ikuti perkembangan terbaru dari program, acara, dan riset yang kami lakukan.</p>
             </div>
-          </section>
-        )}
+            
+            {latestArticles.length > 0 ? (
+              <>
+                <div className="md:hidden"> {/* Horizontal Scroll for Mobile */}
+                   <ScrollArea className="w-full">
+                      <div className="flex space-x-4 pb-4">
+                        {latestArticles.slice(0, 3).map((post) => (
+                          <div key={post.id} className="w-72 flex-shrink-0">
+                             <BeritaPostCard {...post} />
+                          </div>
+                        ))}
+                      </div>
+                      <ScrollBar orientation="horizontal" />
+                    </ScrollArea>
+                </div>
+
+                <div className="hidden md:grid md:grid-cols-3 gap-6"> {/* Grid for Desktop */}
+                  {latestArticles.slice(0, 3).map((post) => (
+                    <BeritaPostCard key={post.id} {...post} />
+                  ))}
+                </div>
+              </>
+            ) : (
+               <p className="text-center text-muted-foreground">Belum ada berita yang dipublikasikan.</p>
+            )}
+
+            <div className="mt-12 text-center">
+              <Button asChild>
+                <Link href="/berita">
+                  Lihat Semua Berita <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </section>
         
         {/* Call to Action Section */}
         <section id="partnership" className="w-full bg-background py-16 md:py-28 overflow-hidden">
