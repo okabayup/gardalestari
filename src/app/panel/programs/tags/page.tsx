@@ -49,7 +49,7 @@ export default function TagProgramPage() {
 
   useEffect(() => {
     fetchTags();
-  }, [toast]);
+  }, []);
 
   const onSubmit = async (data: FormData) => {
     try {
