@@ -20,7 +20,7 @@ import { useRouter } from 'next/navigation';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
-import { getNotificationsForUser, markNotificationsAsRead, Notification } from '@/app/actions/notifications';
+import { getNotificationsForUser, markNotificationsAsRead, Notification, getUnreadNotificationsCount } from '@/app/actions/notifications';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
 
@@ -41,24 +41,32 @@ export default function Header() {
   const { user, signOut, hasPermission } = useAuth();
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-
-  const unreadCount = notifications.filter(n => !n.read).length;
   
   useEffect(() => {
-    if (user && isSheetOpen) {
-        fetchNotifications();
+    if (user) {
+      const fetchCount = async () => {
+        const count = await getUnreadNotificationsCount(user.uid);
+        setUnreadCount(count);
+      };
+      fetchCount();
+      
+      const interval = setInterval(fetchCount, 60000); // Poll every minute
+      return () => clearInterval(interval);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, isSheetOpen])
+  }, [user]);
 
-  const fetchNotifications = async () => {
+  const handleOpenSheet = async () => {
+    setIsSheetOpen(true);
     if (!user) return;
+    
     setLoadingNotifications(true);
     try {
         const fetchedNotifications = await getNotificationsForUser(user.uid);
         setNotifications(fetchedNotifications);
+        setUnreadCount(0); // Optimistically set to 0
         
         const unreadIds = fetchedNotifications.filter(n => !n.read).map(n => n.id);
         if (unreadIds.length > 0) {
@@ -70,7 +78,6 @@ export default function Header() {
         setLoadingNotifications(false);
     }
   }
-
 
   const getInitials = (name: string | null | undefined) => {
     if (!name) return 'GL';
@@ -96,10 +103,10 @@ export default function Header() {
             <>
                <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetTrigger asChild>
-                   <Button variant="ghost" size="icon" className="relative">
+                   <Button variant="ghost" size="icon" className="relative" onClick={handleOpenSheet}>
                       <Bell className="h-5 w-5" />
                       {unreadCount > 0 && (
-                        <Badge className="absolute -top-1 -right-1 h-4 w-4 justify-center p-0 text-[10px]" variant="destructive">{unreadCount}</Badge>
+                        <Badge className="absolute -top-1 -right-1 h-4 w-4 justify-center p-0 text-[10px]" variant="destructive">{unreadCount > 9 ? '9+' : unreadCount}</Badge>
                       )}
                       <span className="sr-only">Notifikasi</span>
                     </Button>

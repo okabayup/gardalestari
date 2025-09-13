@@ -36,12 +36,14 @@ import Image from 'next/image';
 import { Button } from '../ui/button';
 import type { PermissionId } from '@/lib/definitions';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { usePanelBadges } from '@/hooks/use-panel-badges';
+import { Badge } from '../ui/badge';
 
 
 const navGroups: {
   group?: string;
   icon?: React.ElementType;
-  items: { href: string; icon: React.ElementType; label: string; permission?: PermissionId }[];
+  items: { href: string; icon: React.ElementType; label: string; permission?: PermissionId, badge?: keyof ReturnType<typeof usePanelBadges>['badges'] }[];
 }[] = [
   {
     items: [{ href: '/panel/dashboard', icon: Home, label: 'Dasbor' }],
@@ -89,7 +91,7 @@ const navGroups: {
     group: 'Manajemen Internal',
     icon: Users,
     items: [
-      { href: '/panel/members', icon: Users, label: 'Anggota', permission: 'manage_users' },
+      { href: '/panel/members', icon: Users, label: 'Anggota', permission: 'manage_users', badge: 'pendingMembers' },
       { href: '/panel/positions', icon: UserCheck, label: 'Jabatan', permission: 'manage_positions' },
       { href: '/panel/forms', icon: FileText, label: 'Formulir', permission: 'manage_forms' },
       { href: '/panel/map-data', icon: Map, label: 'Data Peta', permission: 'manage_map_data' },
@@ -107,6 +109,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const { user, signOut, hasPermission } = useAuth();
   const router = useRouter();
+  const { badges } = usePanelBadges();
 
   const handleSignOut = async () => {
     await signOut();
@@ -136,10 +139,10 @@ export function Sidebar() {
                 const visibleItems = group.items.filter(item => !item.permission || hasPermission(item.permission));
                 if (visibleItems.length === 0) return null;
 
-                if (!group.group) {
-                    const item = visibleItems[0];
+                const renderNavItem = (item: (typeof visibleItems)[0]) => {
                     const isActive = pathname.startsWith(item.href);
-                    return (
+                    const badgeCount = item.badge ? badges[item.badge] : 0;
+                     return (
                         <Link
                             key={item.href}
                             href={item.href}
@@ -150,14 +153,23 @@ export function Sidebar() {
                             >
                             <item.icon className="h-4 w-4" />
                             {item.label}
+                             {badgeCount > 0 && (
+                                <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
+                                    {badgeCount}
+                                </Badge>
+                            )}
                         </Link>
-                    );
+                    )
+                }
+
+                if (!group.group) {
+                    return renderNavItem(visibleItems[0]);
                 }
                 
                 return (
                     <AccordionItem key={group.group} value={group.group} className="border-b-0">
-                        <AccordionTrigger className="py-2 hover:no-underline">
-                            <div className="flex items-center gap-3">
+                        <AccordionTrigger className="py-2 hover:no-underline rounded-lg px-3 hover:bg-muted">
+                            <div className="flex items-center gap-3 text-muted-foreground">
                                 {group.icon && <group.icon className="h-4 w-4" />}
                                 {group.group}
                             </div>
@@ -165,6 +177,7 @@ export function Sidebar() {
                         <AccordionContent className="pl-7 pt-1 space-y-1">
                              {visibleItems.map((item) => {
                                 const isActive = pathname.startsWith(item.href);
+                                const badgeCount = item.badge ? badges[item.badge] : 0;
                                 return (
                                     <Link
                                         key={item.href}
@@ -176,6 +189,9 @@ export function Sidebar() {
                                     >
                                         <item.icon className="h-3 w-3" />
                                         {item.label}
+                                         {badgeCount > 0 && (
+                                            <Badge variant="secondary" className="ml-auto">{badgeCount}</Badge>
+                                        )}
                                     </Link>
                                 )
                             })}

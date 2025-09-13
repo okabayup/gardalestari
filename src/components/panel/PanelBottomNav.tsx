@@ -41,13 +41,15 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Separator } from '../ui/separator';
 import type { PermissionId } from '@/lib/definitions';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
+import { usePanelBadges } from '@/hooks/use-panel-badges';
+import { Badge } from '../ui/badge';
 
 
 const mainNavItems = [
     { href: '/panel/dashboard', icon: Home, label: 'Dasbor' },
     { href: '/panel/berita', icon: Newspaper, label: 'Berita', permission: 'manage_news' },
     { href: '/panel/programs', icon: Megaphone, label: 'Program', permission: 'manage_programs' },
-    { href: '/panel/members', icon: Users, label: 'Anggota', permission: 'manage_users' },
+    { href: '/panel/members', icon: Users, label: 'Anggota', permission: 'manage_users', badge: 'pendingMembers' as const },
 ];
 
 const groupedNavItems: {
@@ -173,6 +175,7 @@ const MoreMenuSheet = () => {
 export default function PanelBottomNav() {
   const pathname = usePathname();
   const { user, hasPermission } = useAuth();
+  const { badges } = usePanelBadges();
   
   if (!user || !user.permissions || user.permissions.length === 0) return null;
 
@@ -184,15 +187,19 @@ export default function PanelBottomNav() {
               return <div key={item.href} />;
             }
             const isActive = pathname.startsWith(item.href);
+            const badgeCount = item.badge ? badges[item.badge] : 0;
             return (
                 <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                    'flex h-full flex-col items-center justify-center gap-1 p-1 text-sm transition-colors hover:text-primary',
+                    'relative flex h-full flex-col items-center justify-center gap-1 p-1 text-sm transition-colors hover:text-primary',
                     isActive ? 'text-primary font-semibold' : 'text-muted-foreground'
                 )}
                 >
+                  {badgeCount > 0 && (
+                     <Badge className="absolute top-1 right-2 h-4 w-4 justify-center p-0 text-[10px]" variant="destructive">{badgeCount > 9 ? '9+' : badgeCount}</Badge>
+                  )}
                 <item.icon className="h-5 w-5" />
                 <span className="text-xs truncate">{item.label}</span>
                 </Link>

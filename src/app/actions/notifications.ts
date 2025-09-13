@@ -3,7 +3,7 @@
 
 import { db } from '@/lib/firebase';
 import { getMessaging } from 'firebase-admin/messaging';
-import { collection, addDoc, query, where, getDocs, serverTimestamp, updateDoc, documentId, FieldPath, orderBy, limit, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, serverTimestamp, updateDoc, documentId, FieldPath, orderBy, limit, writeBatch, getCountFromServer } from 'firebase/firestore';
 import { initializeAdminApp } from '@/lib/firebase-admin';
 import type { MemberType, Notification } from '@/lib/definitions';
 
@@ -173,4 +173,20 @@ export async function markNotificationsAsRead(userId: string, notificationIds: s
         batch.update(notifRef, { read: true });
     });
     await batch.commit();
+}
+
+export async function getUnreadNotificationsCount(userId: string): Promise<number> {
+  if (!userId) return 0;
+  try {
+    const q = query(
+      notificationsCollection,
+      where('userId', '==', userId),
+      where('read', '==', false)
+    );
+    const snapshot = await getCountFromServer(q);
+    return snapshot.data().count;
+  } catch (error) {
+    console.error("Error getting unread notifications count:", error);
+    return 0;
+  }
 }

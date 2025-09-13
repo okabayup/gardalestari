@@ -2,7 +2,7 @@
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, getDocs, doc, updateDoc, deleteField, query, setDoc, Timestamp, getDoc, addDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteField, query, setDoc, Timestamp, getDoc, addDoc, where,getCountFromServer } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { PermissionId, Position, MemberWithStatus, MemberType, VerificationStatus } from '@/lib/definitions';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
@@ -31,6 +31,18 @@ async function getPositionDetails(positionId?: string): Promise<{ name: string, 
         return { name: 'Anggota', permissions: [] };
     } catch {
         return { name: 'Anggota', permissions: [] };
+    }
+}
+
+// Get the count of members waiting for verification
+export async function getPendingVerificationCount(): Promise<number> {
+    try {
+        const q = query(usersCollection, where('verificationStatus', '==', 'temporary'));
+        const snapshot = await getCountFromServer(q);
+        return snapshot.data().count;
+    } catch (error) {
+        console.error("Error getting pending verification count:", error);
+        return 0;
     }
 }
 
