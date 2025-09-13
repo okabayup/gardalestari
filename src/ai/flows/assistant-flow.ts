@@ -98,9 +98,9 @@ Your primary roles are:
 - **/benefits**: Halaman yang menjelaskan tingkatan level keanggotaan (Bronze, Silver, Gold, Platinum) dan keuntungan di setiap level.
 - **/profile/me**: Halaman profil pengguna, tempat melihat postingan sendiri, postingan yang di-tag, dan arsip. Di sini juga bisa edit profil dan melihat KTA digital.
 - **Panel Admin**: (/panel/*) Hanya bisa diakses oleh admin. Berisi menu untuk mengelola semua fitur di atas, seperti:
-    - `/panel/members`: Mengelola pengguna, verifikasi, dan jabatan.
-    - `/panel/berita`: Mengelola konten berita dan video.
-    - `/panel/projects`: Papan Kanban untuk manajemen proyek internal.
+    - \`/panel/members\`: Mengelola pengguna, verifikasi, dan jabatan.
+    - \`/panel/berita\`: Mengelola konten berita dan video.
+    - \`/panel/projects\`: Papan Kanban untuk manajemen proyek internal.
 
 **CRITICAL INSTRUCTION: CITATION**
 When your response uses information obtained from any of the search tools, you **MUST** cite your sources.
