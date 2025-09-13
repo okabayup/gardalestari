@@ -17,6 +17,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import PartnerSlider from '@/components/landing/PartnerSlider';
 import VideoSlider from '@/components/landing/VideoSlider';
 import Footer from '@/components/landing/Footer';
+import FlagshipProgramSlider from '@/components/landing/FlagshipProgramSlider';
 
 
 const StatCard = ({ icon, value, label }: { icon: React.ReactNode, value: string, label: string }) => (
@@ -27,7 +28,7 @@ const StatCard = ({ icon, value, label }: { icon: React.ReactNode, value: string
     </div>
 );
 
-const flagshipPrograms = [
+const corePrograms = [
     { title: "Akses Pendanaan Proyek Sosial & Bisnis", icon: Award },
     { title: "Magang Lestari", icon: Briefcase },
     { title: "Job Lestari", icon: Users },
@@ -40,11 +41,12 @@ const flagshipPrograms = [
 export default async function LandingPage() {
   const settings = await getAppSettings();
   const events = await getEvents();
-  const programs = await getPrograms();
+  const allPrograms = await getPrograms();
   const members = await getMembers();
   const partners = await getPartners();
   const allPosts = await getBeritaPosts();
   
+  const flagshipPrograms = allPrograms.filter(p => p.category === 'flagship');
   const featuredArticles = allPosts.filter(p => p.type === 'artikel' && p.isFeatured).slice(0,3);
   const featuredVideos = allPosts.filter(p => p.type === 'video' && p.isFeatured);
 
@@ -52,7 +54,7 @@ export default async function LandingPage() {
   const WHATSAPP_LINK = `https://wa.me/${process.env.WHATSAPP_NUMBER || '6285176752610'}`;
 
   const totalMembers = members.length + (settings.dummyMembers || 0);
-  const totalPrograms = programs.length + (settings.dummyPrograms || 0);
+  const totalPrograms = allPrograms.length + (settings.dummyPrograms || 0);
   const totalEvents = events.length + (settings.dummyEvents || 0);
   const totalNews = allPosts.length + (settings.dummyNews || 0);
 
@@ -176,14 +178,22 @@ export default async function LandingPage() {
                 <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl mt-2">Inisiatif Utama Kami</h2>
                 <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Program-program inti yang kami tawarkan untuk pengembangan anggota dan inovasi.</p>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-                {flagshipPrograms.map((program) => (
-                    <Card key={program.title} className="p-4 text-center flex flex-col items-center justify-center transition-transform transform hover:scale-105 hover:shadow-xl duration-300">
-                      <program.icon className="h-8 w-8 text-primary mb-2"/>
-                      <p className="font-semibold text-sm">{program.title}</p>
-                    </Card>
+              
+              {flagshipPrograms.length > 0 && (
+                <div className="mb-12">
+                  <FlagshipProgramSlider programs={flagshipPrograms} />
+                </div>
+              )}
+              
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                {corePrograms.map((program) => (
+                    <div key={program.title} className="p-4 text-center flex flex-col items-center justify-center">
+                      <program.icon className="h-7 w-7 text-primary mb-2"/>
+                      <p className="font-semibold text-xs">{program.title}</p>
+                    </div>
                 ))}
               </div>
+
                <div className="mt-12 text-center">
                 <Button asChild>
                   <Link href="/programs">
