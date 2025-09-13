@@ -338,7 +338,7 @@ export default function Assistant() {
         size="icon"
         onClick={() => setIsOpen(true)}
       >
-        <Bot className="h-6 w-6" />
+        <Bot className="h-6 w-6 text-primary" />
         <span className="sr-only">Buka Asisten AI</span>
       </Button>
        <Dialog open={isOpen} onOpenChange={setIsOpen}>

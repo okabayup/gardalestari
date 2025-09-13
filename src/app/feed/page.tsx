@@ -183,7 +183,7 @@ export default function FeedPage() {
       </div>
       <Button asChild className="fixed bottom-20 right-4 h-12 w-12 rounded-full shadow-lg bg-background/70 backdrop-blur-lg" size="icon">
         <Link href="/feed/new">
-            <Plus className="h-6 w-6" />
+            <Plus className="h-6 w-6 text-primary" />
             <span className="sr-only">Buat Postingan Baru</span>
         </Link>
       </Button>
