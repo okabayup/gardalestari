@@ -23,55 +23,59 @@ import {
   type AssistantOutput,
 } from '@/lib/definitions';
 
+const SearchInputSchema = z.object({
+  query: z.string().describe('The search query.'),
+});
+
 // Define tools for the AI to use
 const searchDataBankTool = ai.defineTool(
   {
     name: 'searchDataBank',
     description: 'Search the Garda Lestari data bank for information on policies, sectoral data, research, etc.',
-    inputSchema: z.string(),
+    inputSchema: SearchInputSchema,
     outputSchema: z.array(z.custom<Partial<DataBankEntry>>()),
   },
-  async (query) => searchDataBank(query)
+  async ({ query }) => searchDataBank(query)
 );
 
 const searchIdeaBankTool = ai.defineTool(
   {
     name: 'searchIdeaBank',
     description: 'Search the Garda Lestari idea bank for existing ideas and proposals from members.',
-    inputSchema: z.string(),
+    inputSchema: SearchInputSchema,
     outputSchema: z.array(z.custom<Partial<Idea>>()),
   },
-  async (query) => searchIdeaBank(query)
+  async ({ query }) => searchIdeaBank(query)
 );
 
 const searchProgramsTool = ai.defineTool(
   {
     name: 'searchPrograms',
     description: 'Search for ongoing or past programs run by Garda Lestari or its partners.',
-    inputSchema: z.string(),
+    inputSchema: SearchInputSchema,
     outputSchema: z.array(z.custom<Partial<Program>>()),
   },
-  async (query) => searchPrograms(query)
+  async ({ query }) => searchPrograms(query)
 );
 
 const searchEventsTool = ai.defineTool(
   {
     name: 'searchEvents',
     description: 'Search for upcoming or past events, workshops, or webinars.',
-    inputSchema: z.string(),
+    inputSchema: SearchInputSchema,
     outputSchema: z.array(z.custom<Partial<Event>>()),
   },
-  async (query) => searchEvents(query)
+  async ({ query }) => searchEvents(query)
 );
 
 const searchAchievementsTool = ai.defineTool(
   {
     name: 'searchAchievements',
     description: "Search for achievements and awards won by Garda Lestari's members.",
-    inputSchema: z.string(),
+    inputSchema: SearchInputSchema,
     outputSchema: z.array(z.custom<Partial<Achievement>>()),
   },
-  async (query) => searchAchievements(query)
+  async ({ query }) => searchAchievements(query)
 );
 
 
@@ -97,7 +101,7 @@ Your primary roles are:
 - **/recruitments**: Papan lowongan pekerjaan, baik internal Garda Lestari maupun dari mitra.
 - **/benefits**: Halaman yang menjelaskan tingkatan level keanggotaan (Bronze, Silver, Gold, Platinum) dan keuntungan di setiap level.
 - **/profile/me**: Halaman profil pengguna, tempat melihat postingan sendiri, postingan yang di-tag, dan arsip. Di sini juga bisa edit profil dan melihat KTA digital.
-- **Panel Admin**: (/panel/*) Hanya bisa diakses oleh admin. Berisi menu untuk mengelola semua fitur di atas, seperti:
+- **Panel Admin**: (\`/panel/*\`) Hanya bisa diakses oleh admin. Berisi menu untuk mengelola semua fitur di atas, seperti:
     - \`/panel/members\`: Mengelola pengguna, verifikasi, dan jabatan.
     - \`/panel/berita\`: Mengelola konten berita dan video.
     - \`/panel/projects\`: Papan Kanban untuk manajemen proyek internal.

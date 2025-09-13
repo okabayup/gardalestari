@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sparkles, Bot, User, Send, Loader2, Link as LinkIcon, Lightbulb, UserCircle, BrainCircuit, Mic, MessageSquare, Plus, Trash2 } from 'lucide-react';
+import { Bot, User, Send, Loader2, Link as LinkIcon, Lightbulb, UserCircle, Mic, MessageSquare, Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { answerQuestion } from '@/ai/flows/assistant-flow';
 import { textToSpeech } from '@/ai/flows/tts-flow';
@@ -81,7 +81,7 @@ const RenderMessage = ({ message }: { message: Message }) => {
 
     return (
         <div className="space-y-3">
-             <ScrollArea className="max-h-60 pr-4">
+            <ScrollArea className="max-h-60 pr-4">
                  <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed">
                     {parts.map((part, index) => {
                         const match = part.match(/\[(?:Sumber|Ide|Program|Event|Achievement) (\d+)\]/);
@@ -344,8 +344,8 @@ export default function Assistant() {
        <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="h-[85vh] w-[95vw] max-w-4xl flex flex-col p-0 gap-0">
            <DialogHeader className="sr-only">
-                <DialogTitle>AI Assistant</DialogTitle>
-                <p>AI Assistant untuk Garda Lestari</p>
+                <DialogTitle>Asisten AI Garda</DialogTitle>
+                <p>Asisten AI untuk Garda Lestari</p>
            </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] h-full">
             <div className="hidden md:flex flex-col bg-muted/50 border-r h-full">
@@ -382,7 +382,7 @@ export default function Assistant() {
                     </Button>
                 </div>
             </div>
-            <div className="p-6 flex flex-col h-full">
+            <div className="p-6 flex flex-col h-full overflow-hidden">
                 {activeThread ? (
                     <AssistantUI 
                         thread={activeThread} 
@@ -392,7 +392,7 @@ export default function Assistant() {
                     />
                 ) : (
                      <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-                        <Sparkles className="h-10 w-10 mb-4"/>
+                        <Bot className="h-10 w-10 mb-4"/>
                         <p>Mulai percakapan baru atau pilih dari riwayat.</p>
                      </div>
                 )}
