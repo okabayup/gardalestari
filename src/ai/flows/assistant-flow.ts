@@ -23,59 +23,55 @@ import {
   type AssistantOutput,
 } from '@/lib/definitions';
 
-const SearchInputSchema = z.object({
-  query: z.string().describe('The search query.'),
-});
-
 // Define tools for the AI to use
 const searchDataBankTool = ai.defineTool(
   {
     name: 'searchDataBank',
     description: 'Search the Garda Lestari data bank for information on policies, sectoral data, research, etc.',
-    inputSchema: SearchInputSchema,
+    inputSchema: z.string(),
     outputSchema: z.array(z.custom<Partial<DataBankEntry>>()),
   },
-  async ({ query }) => searchDataBank(query)
+  async (query) => searchDataBank(query)
 );
 
 const searchIdeaBankTool = ai.defineTool(
   {
     name: 'searchIdeaBank',
     description: 'Search the Garda Lestari idea bank for existing ideas and proposals from members.',
-    inputSchema: SearchInputSchema,
+    inputSchema: z.string(),
     outputSchema: z.array(z.custom<Partial<Idea>>()),
   },
-  async ({ query }) => searchIdeaBank(query)
+  async (query) => searchIdeaBank(query)
 );
 
 const searchProgramsTool = ai.defineTool(
   {
     name: 'searchPrograms',
     description: 'Search for ongoing or past programs run by Garda Lestari or its partners.',
-    inputSchema: SearchInputSchema,
+    inputSchema: z.string(),
     outputSchema: z.array(z.custom<Partial<Program>>()),
   },
-  async ({ query }) => searchPrograms(query)
+  async (query) => searchPrograms(query)
 );
 
 const searchEventsTool = ai.defineTool(
   {
     name: 'searchEvents',
     description: 'Search for upcoming or past events, workshops, or webinars.',
-    inputSchema: SearchInputSchema,
+    inputSchema: z.string(),
     outputSchema: z.array(z.custom<Partial<Event>>()),
   },
-  async ({ query }) => searchEvents(query)
+  async (query) => searchEvents(query)
 );
 
 const searchAchievementsTool = ai.defineTool(
   {
     name: 'searchAchievements',
     description: "Search for achievements and awards won by Garda Lestari's members.",
-    inputSchema: SearchInputSchema,
+    inputSchema: z.string(),
     outputSchema: z.array(z.custom<Partial<Achievement>>()),
   },
-  async ({ query }) => searchAchievements(query)
+  async (query) => searchAchievements(query)
 );
 
 
@@ -92,15 +88,15 @@ Your primary roles are:
 3. **Brainstorming & Analysis**: Help users brainstorm ideas for social projects, businesses, or programs. Use the provided tools to search the internal "Data Bank", "Idea Bank", "Programs", "Events", and "Achievements" for relevant context, data, and inspiration.
 
 **APP KNOWLEDGE BASE:**
-- **/feed**: Halaman utama berisi linimasa postingan dari anggota, mirip media sosial.
-- **/members**: Direktori semua anggota. Ada filter berdasarkan tingkatan (DPP, DPD, DPC, Dewan Kehormatan).
-- **/programs**: Daftar semua program yang sedang berjalan atau sudah selesai. Pengguna bisa lihat detail dan cara mendaftar.
-- **/events**: Kalender acara, lokakarya, atau webinar yang akan datang.
-- **/ideas**: "Bank Ide". Tempat anggota mengajukan, mendiskusikan, dan memberikan suara pada ide-ide baru. Ide yang populer bisa diubah menjadi proyek.
-- **/achievements**: Galeri prestasi. Menampilkan pencapaian dan penghargaan yang diraih anggota.
-- **/recruitments**: Papan lowongan pekerjaan, baik internal Garda Lestari maupun dari mitra.
-- **/benefits**: Halaman yang menjelaskan tingkatan level keanggotaan (Bronze, Silver, Gold, Platinum) dan keuntungan di setiap level.
-- **/profile/me**: Halaman profil pengguna, tempat melihat postingan sendiri, postingan yang di-tag, dan arsip. Di sini juga bisa edit profil dan melihat KTA digital.
+- \`/feed\`: Halaman utama berisi linimasa postingan dari anggota, mirip media sosial.
+- \`/members\`: Direktori semua anggota. Ada filter berdasarkan tingkatan (DPP, DPD, DPC, Dewan Kehormatan).
+- \`/programs\`: Daftar semua program yang sedang berjalan atau sudah selesai. Pengguna bisa lihat detail dan cara mendaftar.
+- \`/events\`: Kalender acara, lokakarya, atau webinar yang akan datang.
+- \`/ideas\`: "Bank Ide". Tempat anggota mengajukan, mendiskusikan, dan memberikan suara pada ide-ide baru. Ide yang populer bisa diubah menjadi proyek.
+- \`/achievements\`: Galeri prestasi. Menampilkan pencapaian dan penghargaan yang diraih anggota.
+- \`/recruitments\`: Papan lowongan pekerjaan, baik internal Garda Lestari maupun dari mitra.
+- \`/benefits\`: Halaman yang menjelaskan tingkatan level keanggotaan (Bronze, Silver, Gold, Platinum) dan keuntungan di setiap level.
+- \`/profile/me\`: Halaman profil pengguna, tempat melihat postingan sendiri, postingan yang di-tag, dan arsip. Di sini juga bisa edit profil dan melihat KTA digital.
 - **Panel Admin**: (\`/panel/*\`) Hanya bisa diakses oleh admin. Berisi menu untuk mengelola semua fitur di atas, seperti:
     - \`/panel/members\`: Mengelola pengguna, verifikasi, dan jabatan.
     - \`/panel/berita\`: Mengelola konten berita dan video.
