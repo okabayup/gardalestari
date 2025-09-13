@@ -6,7 +6,7 @@ import { Loader2 } from 'lucide-react';
 import { Sidebar } from '@/components/panel/Sidebar';
 import { redirect } from 'next/navigation';
 import PanelBottomNav from '@/components/panel/PanelBottomNav';
-import { PanelBadgesProvider } from '@/hooks/use-panel-badges';
+import { PanelBadgesProvider } from '@/hooks/use-panel-badges.tsx';
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
