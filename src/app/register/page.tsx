@@ -53,7 +53,7 @@ export default function RegisterPage() {
         setIsSubmitting(true);
         try {
             const phoneNumber = phone.startsWith('+') ? phone : `+62${phone.replace(/^0/, '')}`;
-            await signInWithPhone(phoneNumber, 'recaptcha-container-register');
+            await signInWithPhone(phoneNumber, 'recaptcha-container');
             setStep('otp');
             toast({ title: 'OTP Terkirim', description: 'Silakan periksa ponsel Anda untuk kode verifikasi.' });
         } catch (error) {
@@ -89,7 +89,7 @@ export default function RegisterPage() {
 
     return (
         <div className="flex min-h-screen flex-col items-center justify-center bg-secondary p-4 relative overflow-hidden">
-            <div id="recaptcha-container-register" className="fixed bottom-0 left-0"></div>
+            <div id="recaptcha-container" className="fixed bottom-0 left-0"></div>
             <div className="absolute inset-0 -z-0">
                 <Image src="https://picsum.photos/seed/community-gathering/1920/1080" alt="Community gathering" fill className="object-cover opacity-10" />
                  <div className="absolute inset-0 bg-gradient-to-t from-secondary via-secondary/80 to-secondary"></div>

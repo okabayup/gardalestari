@@ -54,8 +54,14 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Declare recaptchaVerifier in a broader scope
-let recaptchaVerifier: RecaptchaVerifier | null = null;
+// Declare recaptchaVerifier in a broader scope on the window object
+declare global {
+    interface Window {
+        recaptchaVerifier?: RecaptchaVerifier;
+        confirmationResult?: ConfirmationResult;
+    }
+}
+
 const ADMIN_PHONE_NUMBER = process.env.NEXT_PUBLIC_ADMIN_PHONE_NUMBER;
 const OFFICIAL_ACCOUNT_PHONE = '+6285144904161';
 
@@ -63,8 +69,6 @@ const OFFICIAL_ACCOUNT_PHONE = '+6285144904161';
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
-  const pathname = usePathname();
   const { toast } = useToast();
 
   const fetchUserDetails = useCallback(async (user: User) => {
@@ -123,6 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshUser = useCallback(async () => {
     const currentUser = auth.currentUser;
     if (currentUser) {
+        await currentUser.reload();
         await fetchUserDetails(currentUser);
     }
   }, [fetchUserDetails]);
@@ -149,32 +154,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithPhone = async (phoneNumber: string, appVerifierContainerId: string) => {
     if (typeof window !== 'undefined') {
-        if (!recaptchaVerifier) {
-            recaptchaVerifier = new RecaptchaVerifier(auth, appVerifierContainerId, {
+        if (!window.recaptchaVerifier) {
+            window.recaptchaVerifier = new RecaptchaVerifier(auth, appVerifierContainerId, {
                 'size': 'invisible',
-                'callback': () => {}, // on success
+                'callback': () => {},
                 'expired-callback': () => {
-                    recaptchaVerifier?.clear();
-                    recaptchaVerifier = null;
-                     toast({
+                    if (window.recaptchaVerifier) {
+                        window.recaptchaVerifier.clear();
+                        window.recaptchaVerifier = undefined;
+                    }
+                    toast({
                         variant: 'destructive',
                         title: 'reCAPTCHA Kedaluwarsa',
                         description: 'Silakan coba lagi.',
                     });
                 }
             });
-            await recaptchaVerifier.render(); // Explicitly render the verifier
+            await window.recaptchaVerifier.render();
         }
+
+        const appVerifier = window.recaptchaVerifier;
         
         try {
-            const result = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
-            setConfirmationResult(result);
+            const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+            window.confirmationResult = confirmationResult;
         } catch (error) {
-             if (recaptchaVerifier) {
-                recaptchaVerifier.clear();
-                recaptchaVerifier = null;
+            // Reset verifier on error to allow re-try
+            if (window.recaptchaVerifier) {
+                window.recaptchaVerifier.clear();
+                window.recaptchaVerifier = undefined;
             }
-            throw error; // re-throw the error to be caught by the calling function
+            console.error("signInWithPhoneNumber error:", error);
+            throw error;
         }
     }
   };
@@ -195,10 +206,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 
   const verifyOtp = async (otp: string) => {
-    if (!confirmationResult) {
+    if (!window.confirmationResult) {
       throw new Error("No confirmation result available. Please request an OTP first.");
     }
-    const userCredential = await confirmationResult.confirm(otp);
+    const userCredential = await window.confirmationResult.confirm(otp);
     
     const userDocRef = doc(db, 'users', userCredential.user.uid);
     const userDoc = await getDoc(userDocRef);
@@ -227,15 +238,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logAnalyticsEvent('login', { method: 'phone' });
     }
 
-    setConfirmationResult(null);
+    window.confirmationResult = undefined;
   };
   
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
-      if (recaptchaVerifier) {
-        recaptchaVerifier.clear();
-        recaptchaVerifier = null;
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.clear();
+        window.recaptchaVerifier = undefined;
       }
     } catch (error) {
       console.error("Error signing out: ", error);
