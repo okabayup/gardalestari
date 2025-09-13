@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -47,7 +48,7 @@ import { Badge } from '../ui/badge';
 
 const mainNavItems = [
     { href: '/panel/dashboard', icon: Home, label: 'Dasbor' },
-    { href: '/panel/berita', icon: Newspaper, label: 'Berita', permission: 'manage_news' },
+    { href: '/panel/berita', icon: Newspaper, label: 'Konten', permission: 'manage_news' },
     { href: '/panel/programs', icon: Megaphone, label: 'Program', permission: 'manage_programs' },
     { href: '/panel/members', icon: Users, label: 'Anggota', permission: 'manage_users', badge: 'pendingMembers' as const },
 ];
@@ -69,6 +70,7 @@ const groupedNavItems: {
     group: 'Keterlibatan Anggota',
     icon: Lightbulb,
     items: [
+      { href: '/panel/ideas', icon: Lightbulb, label: 'Bank Ide', permission: 'manage_ideas'},
       { href: '/panel/announcements', icon: MegaphoneIcon, label: 'Pengumuman', permission: 'manage_announcements'},
       { href: '/panel/notifications', icon: Bell, label: 'Notifikasi', permission: 'send_notifications' },
       { href: '/panel/evoting', icon: Vote, label: 'E-Voting', permission: 'manage_evoting' },

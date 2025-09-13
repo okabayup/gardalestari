@@ -19,6 +19,7 @@ const navItems = [
 
 const directoryItems = [
     { href: '/ideas', label: 'Bank Ide', icon: Lightbulb },
+    { href: '/berita', label: 'Berita', icon: Newspaper },
     { href: '/video', label: 'Video', icon: Video },
     { href: '/recruitments', label: 'Rekrutmen', icon: Briefcase },
     { href: '/achievements', label: 'Prestasi', icon: Award },

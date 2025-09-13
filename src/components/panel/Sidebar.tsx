@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -51,7 +52,7 @@ const navGroups: {
     group: 'Publikasi',
     icon: Presentation,
     items: [
-      { href: '/panel/berita', icon: Newspaper, label: 'Berita', permission: 'manage_news' },
+      { href: '/panel/berita', icon: Newspaper, label: 'Berita & Video', permission: 'manage_news' },
       { href: '/panel/events', icon: Calendar, label: 'Acara', permission: 'manage_events' },
       { href: '/panel/landing', icon: Landmark, label: 'Halaman Utama', permission: 'manage_landing_page' },
     ],
