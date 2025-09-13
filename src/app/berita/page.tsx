@@ -12,7 +12,7 @@ export default function BeritaPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getBeritaPosts().then(data => {
+    getBeritaPosts('artikel').then(data => {
       setPosts(data);
       setLoading(false);
     });
