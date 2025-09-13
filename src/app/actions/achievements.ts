@@ -12,6 +12,15 @@ import { initializeAdminApp } from '@/lib/firebase-admin';
 
 const achievementsCollection = collection(db, 'achievements');
 
+const toAchievement = (doc: any): Achievement => {
+    const data = doc.data();
+    return {
+        id: doc.id,
+        ...data,
+        date: (data.date as Timestamp).toDate().toISOString(),
+    } as Achievement;
+}
+
 // === Public Functions for AI Tool ===
 
 /**
@@ -28,7 +37,7 @@ export async function searchAchievements(searchQuery: string): Promise<Partial<A
     );
 
     const snapshot = await getDocs(q);
-    const allEntries: Achievement[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Achievement));
+    const allEntries: Achievement[] = snapshot.docs.map(toAchievement);
 
     const searchTerms = searchQuery.toLowerCase().split(' ');
     const results = allEntries.filter(entry => {
@@ -49,18 +58,14 @@ export async function searchAchievements(searchQuery: string): Promise<Partial<A
 export async function getAchievements(): Promise<Achievement[]> {
   const q = query(achievementsCollection, orderBy('date', 'desc'));
   const snapshot = await getDocs(q);
-  const achievements: Achievement[] = [];
-  snapshot.forEach(doc => {
-    achievements.push({ id: doc.id, ...doc.data() } as Achievement);
-  });
-  return achievements;
+  return snapshot.docs.map(toAchievement);
 }
 
 // Get all achievements for a specific user
 export async function getAchievementsByUserId(userId: string): Promise<Achievement[]> {
   const q = query(achievementsCollection, where('userId', '==', userId), orderBy('date', 'desc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Achievement));
+  return snapshot.docs.map(toAchievement);
 }
 
 
@@ -69,19 +74,19 @@ export async function getAchievement(id: string): Promise<Achievement | null> {
     const docRef = doc(db, 'achievements', id);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() } as Achievement;
+        return toAchievement(docSnap);
     }
     return null;
 }
 
 // Create a new achievement (for admins)
-export async function createAchievement(data: Omit<Achievement, 'id'>, imageFile?: File) {
+export async function createAchievement(data: Omit<Achievement, 'id' | 'date'> & { date: Timestamp }, imageFile?: File) {
   try {
-    const achievementData: Omit<Achievement, 'id'> = { ...data };
+    const achievementData = { ...data };
     if (imageFile) {
         const imageRef = ref(storage, `achievements/${Date.now()}_${imageFile.name}`);
         await uploadBytes(imageRef, imageFile);
-        achievementData.imageUrl = await getDownloadURL(imageRef);
+        (achievementData as any).imageUrl = await getDownloadURL(imageRef);
     }
     await addDoc(achievementsCollection, achievementData);
     revalidatePath('/panel/achievements');
@@ -94,7 +99,7 @@ export async function createAchievement(data: Omit<Achievement, 'id'>, imageFile
 
 // Create a new achievement for the currently logged-in user
 export async function createMyAchievement(
-  data: Omit<Achievement, 'id' | 'userId' | 'userName' | 'userAvatar'>,
+  data: Omit<Achievement, 'id' | 'userId' | 'userName' | 'userAvatar' | 'date'> & { date: Timestamp },
   userId: string,
   imageFile?: File,
 ) {
@@ -107,7 +112,7 @@ export async function createMyAchievement(
     }
 
     try {
-        const achievementData: Omit<Achievement, 'id'> = {
+        const achievementData: Omit<Achievement, 'id' | 'date'> & { date: Timestamp } = {
             ...data,
             userId: user.uid,
             userName: user.displayName || 'Pengguna',
@@ -117,7 +122,7 @@ export async function createMyAchievement(
         if (imageFile) {
             const imageRef = ref(storage, `achievements/${Date.now()}_${imageFile.name}`);
             await uploadBytes(imageRef, imageFile);
-            achievementData.imageUrl = await getDownloadURL(imageRef);
+            (achievementData as any).imageUrl = await getDownloadURL(imageRef);
         }
         await addDoc(achievementsCollection, achievementData);
         revalidatePath('/achievements');
@@ -130,7 +135,7 @@ export async function createMyAchievement(
 
 
 // Update an existing achievement
-export async function updateAchievement(id: string, data: Partial<Omit<Achievement, 'id'>>, imageFile?: File) {
+export async function updateAchievement(id: string, data: Partial<Omit<Achievement, 'id' | 'date'>> & { date?: Timestamp }, imageFile?: File) {
   try {
     const docRef = doc(db, 'achievements', id);
     const dataToUpdate: { [key: string]: any } = { ...data };

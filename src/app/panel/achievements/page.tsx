@@ -44,6 +44,7 @@ export default function AdminAchievementsPage() {
 
   useEffect(() => {
     fetchAchievements();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchAchievements = async () => {
@@ -127,7 +128,7 @@ export default function AdminAchievementsPage() {
                         {item.userName}
                       </TableCell>
                       <TableCell className="font-medium">{item.title}</TableCell>
-                      <TableCell>{format(item.date.toDate(), 'dd MMM yyyy', { locale: id })}</TableCell>
+                      <TableCell>{format(new Date(item.date), 'dd MMM yyyy', { locale: id })}</TableCell>
                       <TableCell className="text-right">
                         {canManage && (
                             <DropdownMenu>

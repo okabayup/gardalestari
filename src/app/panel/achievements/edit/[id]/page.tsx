@@ -56,7 +56,7 @@ export default function EditAchievementPage() {
     if (id) {
         getAchievement(id).then(data => {
             if (data) {
-                reset({ ...data, date: data.date.toDate() });
+                reset({ ...data, date: new Date(data.date) });
             } else {
                  toast({ variant: 'destructive', title: 'Prestasi tidak ditemukan' });
                  router.push('/panel/achievements');

@@ -39,6 +39,7 @@ export default function AdminAnnouncementsPage() {
 
   useEffect(() => {
     fetchAnnouncements();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchAnnouncements = async () => {
@@ -112,7 +113,7 @@ export default function AdminAnnouncementsPage() {
                   announcements.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.title}</TableCell>
-                      <TableCell>{format(item.createdAt.toDate(), 'dd MMM yyyy, HH:mm', { locale: id })}</TableCell>
+                      <TableCell>{format(new Date(item.createdAt), 'dd MMM yyyy, HH:mm', { locale: id })}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

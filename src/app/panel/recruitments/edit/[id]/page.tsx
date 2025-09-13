@@ -16,7 +16,6 @@ import { Loader2, Calendar as CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
 import { getRecruitment, updateRecruitment } from '@/app/actions/recruitments';
 import { getPartners, Partner } from '@/app/actions/partners';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -69,7 +68,7 @@ export default function EditRecruitmentPage() {
             if (recruitmentData) {
                 reset({
                     ...recruitmentData,
-                    deadline: recruitmentData.deadline.toDate(),
+                    deadline: new Date(recruitmentData.deadline),
                 });
             } else {
                 toast({ variant: 'destructive', title: 'Data rekrutmen tidak ditemukan' });
@@ -87,11 +86,7 @@ export default function EditRecruitmentPage() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      const payload = {
-        ...data,
-        deadline: Timestamp.fromDate(data.deadline),
-      };
-      await updateRecruitment(recruitmentId, payload);
+      await updateRecruitment(recruitmentId, data);
       toast({ title: 'Rekrutmen berhasil diperbarui!' });
       router.push('/panel/recruitments');
     } catch (error) {

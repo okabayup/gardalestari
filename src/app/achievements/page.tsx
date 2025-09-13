@@ -27,7 +27,7 @@ const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
         )}
         <CardHeader>
             <CardTitle>{achievement.title}</CardTitle>
-            <CardDescription>{format(achievement.date.toDate(), 'dd MMMM yyyy', { locale: id })}</CardDescription>
+            <CardDescription>{format(new Date(achievement.date), 'dd MMMM yyyy', { locale: id })}</CardDescription>
         </CardHeader>
         <CardContent>
             <div className="flex items-center gap-2 mb-4">
@@ -53,7 +53,7 @@ export default function AchievementsPage() {
       .finally(() => setLoading(false));
   }, []);
   
-  const years = [...new Set(achievements.map(a => a.date.toDate().getFullYear()))];
+  const years = [...new Set(achievements.map(a => new Date(a.date).getFullYear()))];
 
   return (
     <MainLayout>
@@ -77,7 +77,7 @@ export default function AchievementsPage() {
                     </div>
                     <div className="grid md:grid-cols-2 gap-6">
                     {achievements
-                        .filter(a => a.date.toDate().getFullYear() === year)
+                        .filter(a => new Date(a.date).getFullYear() === year)
                         .map((item) => (
                         <AchievementCard key={item.id} achievement={item} />
                         ))}

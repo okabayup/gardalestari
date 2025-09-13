@@ -45,6 +45,7 @@ export default function AdminRecruitmentsPage() {
 
   useEffect(() => {
     fetchRecruitments();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchRecruitments = async () => {
@@ -128,7 +129,7 @@ export default function AdminRecruitmentsPage() {
                           </Badge>
                       </TableCell>
                        <TableCell>{item.type === 'internal' ? 'Garda Lestari' : item.partnerName}</TableCell>
-                      <TableCell>{format(item.deadline.toDate(), 'dd MMM yyyy', { locale: id })}</TableCell>
+                      <TableCell>{format(new Date(item.deadline), 'dd MMM yyyy', { locale: id })}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

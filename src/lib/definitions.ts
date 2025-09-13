@@ -50,9 +50,6 @@ export const initialPositions = [
     "Maritim (Kelautan & Perikanan)",
     "Kehutanan (Agroforestri & Rehabilitasi)",
     "Perdagangan Karbon & Energi Hijau",
-    "Wakil Ketua Bidang Pendapatan & Bisnis",
-    "Perusahaan",
-    "Investasi",
     "Wakil Ketua Bidang Pendukung & Strategis",
     "Hubungan Eksternal & Kemitraan",
     "Relawan & Kampanye Digital",
@@ -88,7 +85,7 @@ export interface Achievement {
   userAvatar: string;
   title: string;
   description: string;
-  date: Timestamp;
+  date: string; // Changed from Timestamp
   imageUrl?: string;
 }
 
@@ -97,7 +94,7 @@ export interface Announcement {
   id?: string;
   title: string;
   content: string;
-  createdAt: Timestamp;
+  createdAt: string; // Changed from Timestamp
   attachmentUrl?: string;
   attachmentName?: string;
 }
@@ -133,8 +130,8 @@ export interface DataBankEntry {
   content: string;
   category: 'Kebijakan' | 'Data Sektoral' | 'Riset' | 'Lainnya';
   source: string;
-  publishedDate: Timestamp;
-  createdAt: Timestamp;
+  publishedDate: string; // Changed from Timestamp
+  createdAt: string; // Changed from Timestamp
 }
 
 // --- Documents ---
@@ -144,7 +141,7 @@ export interface ImportantDocument {
   description?: string;
   documentNumber: string;
   category: string;
-  createdAt: Timestamp;
+  createdAt: string; // Changed from Timestamp
   fileUrl: string;
   fileName: string;
   authorId: string;
@@ -153,7 +150,7 @@ export interface ImportantDocument {
   approverId?: string;
   approvedById?: string;
   approvedByName?: string;
-  approvedAt?: Timestamp;
+  approvedAt?: string; // Changed from Timestamp
   rejectionReason?: string;
   rejectedById?: string;
   rejectedByName?: string;
@@ -169,7 +166,7 @@ export interface Event {
   id?: string;
   title: string;
   description: string;
-  date: Timestamp;
+  date: string; // Changed from Timestamp
   location: string;
   imageUrl: string;
   imageHint: string;
@@ -213,7 +210,7 @@ export interface Idea {
   description: string;
   category: string;
   authorId: string;
-  createdAt: Timestamp;
+  createdAt: string; // Changed from Timestamp
   status: IdeaStatus;
   upvotes: string[];
   downvotes: string[];
@@ -249,7 +246,7 @@ export interface MapData {
   category: MapDataCategory;
   latitude: number;
   longitude: number;
-  createdAt: Timestamp;
+  createdAt: string; // Changed from Timestamp
   budget?: number;
   disbursed?: number;
 }
@@ -317,7 +314,7 @@ export interface Post {
   caption: string;
   likes: string[];
   commentsCount: number;
-  createdAt: Timestamp;
+  createdAt: string; // Changed from Timestamp
   status: 'published' | 'archived';
   mentionedUserIds: string[];
 }
@@ -347,7 +344,7 @@ export interface Comment {
     id: string;
     authorId: string;
     text: string;
-    createdAt: Timestamp;
+    createdAt: string; // Changed from Timestamp
 }
 
 export interface CommentWithAuthor {
@@ -373,8 +370,8 @@ export interface Program {
   imageUrl: string;
   imageHint: string;
   tags: string[];
-  startDate: Timestamp;
-  endDate: Timestamp;
+  startDate: string; // Changed from Timestamp
+  endDate: string; // Changed from Timestamp
   source: ProgramSource;
   partnerId?: string; 
   benefits: string;
@@ -453,8 +450,8 @@ export interface Recruitment {
   description: string;
   requirements: string;
   applicationUrl: string;
-  deadline: Timestamp;
-  createdAt: Timestamp;
+  deadline: string; // Changed from Timestamp
+  createdAt: string; // Changed from Timestamp
 }
 
 // --- Settings ---
@@ -500,9 +497,9 @@ export interface VotingTopic {
   title: string;
   description: string;
   options: VotingOption[];
-  startDate: Timestamp;
-  endDate: Timestamp;
-  createdAt: Timestamp;
+  startDate: string; // Changed from Timestamp
+  endDate: string; // Changed from Timestamp
+  createdAt: string; // Changed from Timestamp
   totalVotes: number;
   voterIds: string[];
   coverImageUrl?: string;

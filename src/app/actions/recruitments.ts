@@ -9,15 +9,21 @@ import type { Recruitment } from '@/lib/definitions';
 const recruitmentsCollection = collection(db, 'recruitments');
 const partnersCollection = collection(db, 'partners');
 
+const toRecruitment = (doc: any): Recruitment => {
+    const data = doc.data();
+    return {
+        id: doc.id,
+        ...data,
+        deadline: (data.deadline as Timestamp).toDate().toISOString(),
+        createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
+    } as Recruitment;
+}
+
 // Get all recruitments
 export async function getRecruitments(): Promise<Recruitment[]> {
   const q = query(recruitmentsCollection, orderBy('deadline', 'asc'));
   const snapshot = await getDocs(q);
-  const data: Recruitment[] = [];
-  snapshot.forEach(doc => {
-    data.push({ id: doc.id, ...doc.data() } as Recruitment);
-  });
-  return data;
+  return snapshot.docs.map(toRecruitment);
 }
 
 // Get a single recruitment by ID
@@ -25,16 +31,17 @@ export async function getRecruitment(id: string): Promise<Recruitment | null> {
     const docRef = doc(db, 'recruitments', id);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() } as Recruitment;
+        return toRecruitment(docSnap);
     }
     return null;
 }
 
 // Create a new recruitment
-export async function createRecruitment(data: Omit<Recruitment, 'id' | 'createdAt' | 'partnerName' | 'partnerLogoUrl'>) {
+export async function createRecruitment(data: Omit<Recruitment, 'id' | 'createdAt' | 'partnerName' | 'partnerLogoUrl' | 'deadline'> & { deadline: Date }) {
   try {
-    const dataToCreate: Omit<Recruitment, 'id'> = {
+    const dataToCreate: { [key: string]: any } = {
         ...data,
+        deadline: Timestamp.fromDate(data.deadline),
         createdAt: Timestamp.now(),
     };
     
@@ -57,11 +64,15 @@ export async function createRecruitment(data: Omit<Recruitment, 'id' | 'createdA
 }
 
 // Update an existing recruitment
-export async function updateRecruitment(id: string, data: Partial<Omit<Recruitment, 'id' | 'createdAt'>>) {
+export async function updateRecruitment(id: string, data: Partial<Omit<Recruitment, 'id' | 'createdAt' | 'deadline'>> & { deadline?: Date }) {
   try {
     const docRef = doc(db, 'recruitments', id);
     const dataToUpdate: { [key: string]: any } = { ...data };
     
+    if (data.deadline) {
+        dataToUpdate.deadline = Timestamp.fromDate(data.deadline);
+    }
+
     if (data.type === 'external' && data.partnerId) {
         const partnerDoc = await getDoc(doc(partnersCollection, data.partnerId));
         if (partnerDoc.exists()) {

@@ -9,15 +9,20 @@ import type { Announcement } from '@/lib/definitions';
 
 const announcementsCollection = collection(db, 'announcements');
 
+const toAnnouncement = (doc: any): Announcement => {
+    const data = doc.data();
+    return {
+        id: doc.id,
+        ...data,
+        createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
+    } as Announcement;
+}
+
 // Get all announcements, ordered by creation date
 export async function getAnnouncements(): Promise<Announcement[]> {
   const q = query(announcementsCollection, orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
-  const announcements: Announcement[] = [];
-  snapshot.forEach(doc => {
-    announcements.push({ id: doc.id, ...doc.data() } as Announcement);
-  });
-  return announcements;
+  return snapshot.docs.map(toAnnouncement);
 }
 
 // Get a single announcement by ID
@@ -25,7 +30,7 @@ export async function getAnnouncement(id: string): Promise<Announcement | null> 
     const docRef = doc(db, 'announcements', id);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() } as Announcement;
+        return toAnnouncement(docSnap);
     }
     return null;
 }
@@ -33,7 +38,7 @@ export async function getAnnouncement(id: string): Promise<Announcement | null> 
 // Create a new announcement
 export async function createAnnouncement(data: Omit<Announcement, 'id' | 'createdAt'>, attachmentFile?: File) {
   try {
-    const announcementData = { 
+    const announcementData: { [key: string]: any } = { 
         ...data,
         createdAt: Timestamp.now()
     };

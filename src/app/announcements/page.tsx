@@ -18,7 +18,7 @@ const AnnouncementItem = ({ announcement }: { announcement: Announcement }) => {
       <CardHeader>
         <CardTitle className="text-lg">{announcement.title}</CardTitle>
         <CardDescription>
-          Dipublikasikan pada {format(announcement.createdAt.toDate(), 'dd MMMM yyyy, HH:mm', { locale: id })}
+          Dipublikasikan pada {format(new Date(announcement.createdAt), 'dd MMMM yyyy, HH:mm', { locale: id })}
         </CardDescription>
       </CardHeader>
       <CardContent>
