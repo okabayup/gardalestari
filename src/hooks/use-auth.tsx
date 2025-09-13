@@ -69,6 +69,7 @@ const OFFICIAL_ACCOUNT_PHONE = '+6285144904161';
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const { toast } = useToast();
 
   const fetchUserDetails = useCallback(async (user: User) => {
@@ -169,9 +170,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         description: 'Silakan coba lagi.',
                     });
                 },
-                 customParameters: {
+                customParameters: {
                     sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
-                 }
+                }
             });
             window.recaptchaVerifier = verifier;
             await verifier.render();
@@ -180,14 +181,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const appVerifier = window.recaptchaVerifier;
         
         try {
-            const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-            window.confirmationResult = confirmationResult;
+            const result = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+            setConfirmationResult(result);
         } catch (error) {
-             if (window.recaptchaVerifier) {
-                window.recaptchaVerifier.clear();
-                window.recaptchaVerifier = undefined;
-            }
             console.error("signInWithPhoneNumber error:", error);
+            // Don't clear verifier here so user can retry without new recaptcha
             throw error;
         }
     }
@@ -209,10 +207,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 
   const verifyOtp = async (otp: string) => {
-    if (!window.confirmationResult) {
+    if (!confirmationResult) {
       throw new Error("No confirmation result available. Please request an OTP first.");
     }
-    const userCredential = await window.confirmationResult.confirm(otp);
+    const userCredential = await confirmationResult.confirm(otp);
     
     const userDocRef = doc(db, 'users', userCredential.user.uid);
     const userDoc = await getDoc(userDocRef);
@@ -240,8 +238,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } else {
         logAnalyticsEvent('login', { method: 'phone' });
     }
-
-    window.confirmationResult = undefined;
   };
   
   const signOut = async () => {
@@ -392,3 +388,5 @@ export const useRequireAuth = (redirectTo = '/login') => {
 
   return { user, loading };
 };
+
+    
