@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useRouter, notFound } from 'next/navigation';
+import { useRouter, useParams, notFound } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
@@ -60,8 +60,10 @@ const AnalysisPanel = ({ analysis }: { analysis: EnhanceTextOutput | null }) => 
 };
 
 
-export default function EditBeritaPostPage({ params }: { params: { slug: string } }) {
+export default function EditBeritaPostPage() {
   const router = useRouter();
+  const params = useParams();
+  const slug = params.slug as string;
   const { toast } = useToast();
   const [post, setPost] = useState<BeritaPost | null>(null);
   const [categories, setCategories] = useState<BeritaCategory[]>([]);
@@ -79,7 +81,7 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
       setPageLoading(true);
       try {
         const [fetchedPost, fetchedCategories] = await Promise.all([
-          getBeritaPost(params.slug),
+          getBeritaPost(slug),
           getBeritaCategories()
         ]);
         
@@ -98,7 +100,7 @@ export default function EditBeritaPostPage({ params }: { params: { slug: string 
       }
     };
     fetchPostAndCategories();
-  }, [params.slug, reset, toast]);
+  }, [slug, reset, toast]);
 
   const generateSlug = (title: string) => {
     return title.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
