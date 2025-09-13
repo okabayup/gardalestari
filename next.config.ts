@@ -61,6 +61,12 @@ const nextConfig: NextConfig = {
         hostname: 'encrypted-tbn0.gstatic.com',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.youtube.com',
+        port: '',
+        pathname: '/**',
       }
       // Untuk menggunakan URL logo eksternal dari mitra,
       // tambahkan hostname mereka di sini. Contoh:
