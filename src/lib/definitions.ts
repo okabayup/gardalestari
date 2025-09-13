@@ -85,7 +85,7 @@ export interface Achievement {
   userAvatar: string;
   title: string;
   description: string;
-  date: string; // Changed from Timestamp
+  date: string;
   imageUrl?: string;
 }
 
@@ -94,7 +94,7 @@ export interface Announcement {
   id?: string;
   title: string;
   content: string;
-  createdAt: string; // Changed from Timestamp
+  createdAt: string;
   attachmentUrl?: string;
   attachmentName?: string;
 }
@@ -130,8 +130,8 @@ export interface DataBankEntry {
   content: string;
   category: 'Kebijakan' | 'Data Sektoral' | 'Riset' | 'Lainnya';
   source: string;
-  publishedDate: string; // Changed from Timestamp
-  createdAt: string; // Changed from Timestamp
+  publishedDate: Timestamp;
+  createdAt: Timestamp;
 }
 
 // --- Documents ---
@@ -141,7 +141,7 @@ export interface ImportantDocument {
   description?: string;
   documentNumber: string;
   category: string;
-  createdAt: string; // Changed from Timestamp
+  createdAt: string;
   fileUrl: string;
   fileName: string;
   authorId: string;
@@ -150,7 +150,7 @@ export interface ImportantDocument {
   approverId?: string;
   approvedById?: string;
   approvedByName?: string;
-  approvedAt?: string; // Changed from Timestamp
+  approvedAt?: string;
   rejectionReason?: string;
   rejectedById?: string;
   rejectedByName?: string;
@@ -166,7 +166,7 @@ export interface Event {
   id?: string;
   title: string;
   description: string;
-  date: string; // Changed from Timestamp
+  date: string;
   location: string;
   imageUrl: string;
   imageHint: string;
@@ -210,7 +210,7 @@ export interface Idea {
   description: string;
   category: string;
   authorId: string;
-  createdAt: string; // Changed from Timestamp
+  createdAt: Timestamp;
   status: IdeaStatus;
   upvotes: string[];
   downvotes: string[];
@@ -246,7 +246,7 @@ export interface MapData {
   category: MapDataCategory;
   latitude: number;
   longitude: number;
-  createdAt: string; // Changed from Timestamp
+  createdAt: string;
   budget?: number;
   disbursed?: number;
 }
@@ -314,7 +314,7 @@ export interface Post {
   caption: string;
   likes: string[];
   commentsCount: number;
-  createdAt: string; // Changed from Timestamp
+  createdAt: string;
   status: 'published' | 'archived';
   mentionedUserIds: string[];
 }
@@ -344,7 +344,7 @@ export interface Comment {
     id: string;
     authorId: string;
     text: string;
-    createdAt: string; // Changed from Timestamp
+    createdAt: string;
 }
 
 export interface CommentWithAuthor {
@@ -370,8 +370,8 @@ export interface Program {
   imageUrl: string;
   imageHint: string;
   tags: string[];
-  startDate: string; // Changed from Timestamp
-  endDate: string; // Changed from Timestamp
+  startDate: string;
+  endDate: string;
   source: ProgramSource;
   partnerId?: string; 
   benefits: string;
@@ -450,8 +450,8 @@ export interface Recruitment {
   description: string;
   requirements: string;
   applicationUrl: string;
-  deadline: string; // Changed from Timestamp
-  createdAt: string; // Changed from Timestamp
+  deadline: string;
+  createdAt: string;
 }
 
 // --- Settings ---
@@ -497,9 +497,9 @@ export interface VotingTopic {
   title: string;
   description: string;
   options: VotingOption[];
-  startDate: string; // Changed from Timestamp
-  endDate: string; // Changed from Timestamp
-  createdAt: string; // Changed from Timestamp
+  startDate: Timestamp;
+  endDate: Timestamp;
+  createdAt: Timestamp;
   totalVotes: number;
   voterIds: string[];
   coverImageUrl?: string;

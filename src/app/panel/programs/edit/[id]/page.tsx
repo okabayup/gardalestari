@@ -27,6 +27,8 @@ import { generateImage } from '@/ai/flows/image-generate-flow';
 import { cn } from '@/lib/utils';
 import { DateRange } from "react-day-picker";
 import Link from 'next/link';
+import { Timestamp } from 'firebase/firestore';
+
 
 const imageSourceSchema = z.enum(['ai', 'url', 'upload']);
 
@@ -137,10 +139,12 @@ export default function EditProgramPage() {
         setForms(formsData);
 
         if (programData) {
+            const startDate = programData.startDate ? new Date(programData.startDate) : new Date();
+            const endDate = programData.endDate ? new Date(programData.endDate) : new Date();
+
             reset({
                 ...programData,
-                dateRange: { from: programData.startDate.toDate(), to: programData.endDate.toDate() },
-                // Set default image source to URL since we're loading an existing program
+                dateRange: { from: startDate, to: endDate },
                 imageSource: 'url'
             });
             if (programData.attachmentUrl && programData.attachmentName) {
@@ -186,7 +190,7 @@ export default function EditProgramPage() {
         ...rest,
         startDate: dateRange.from,
         endDate: dateRange.to,
-        imageUrl: data.imageSource !== 'upload' ? finalImageUrl : data.imageUrl, // Keep existing URL if not changing via upload
+        imageUrl: data.imageSource !== 'upload' ? finalImageUrl : data.imageUrl,
         imageHint: data.imageHint || ''
       };
 
