@@ -5,7 +5,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutGrid, Users, Sprout, CalendarDays, Briefcase, Award, FolderKanban, Megaphone, FileText, Handshake, Map, Vote, Lightbulb, Video } from 'lucide-react';
+import { LayoutGrid, Users, Sprout, CalendarDays, Briefcase, Award, FolderKanban, Megaphone, FileText, Handshake, Map, Vote, Lightbulb, Video, Newspaper } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { Separator } from '../ui/separator';
 import { useAuth } from '@/hooks/use-auth';
