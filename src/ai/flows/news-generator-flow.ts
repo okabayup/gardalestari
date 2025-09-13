@@ -6,6 +6,8 @@
  * - generateNewsArticle - A function that generates a title, content with image placeholders, an excerpt, a category, and a cover image.
  * - NewsGeneratorInput - The input type for the generateNewsArticle function.
  * - NewsGeneratorOutput - The return type for the generateNewsArticle function.
+ * - suggestNewsTopics - A function that suggests SEO-friendly news topics.
+ * - NewsTopicSuggestionOutput - The return type for the suggestNewsTopics function.
  */
 
 import { ai } from '@/ai/genkit';
@@ -30,33 +32,85 @@ const NewsGeneratorOutputSchema = z.object({
 });
 export type NewsGeneratorOutput = z.infer<typeof NewsGeneratorOutputSchema>;
 
+const NewsTopicSuggestionOutputSchema = z.object({
+  topics: z.array(z.object({
+    title: z.string().describe('The suggested news title.'),
+    description: z.string().describe('A short (one sentence) description of what the article would be about.'),
+    keywords: z.array(z.string()).describe('A list of 2-3 relevant SEO keywords for the topic.'),
+  })).describe('A list of 5 news topic suggestions.'),
+});
+export type NewsTopicSuggestionOutput = z.infer<typeof NewsTopicSuggestionOutputSchema>;
+
+
 export async function generateNewsArticle(input: NewsGeneratorInput): Promise<NewsGeneratorOutput> {
   return newsGeneratorFlow(input);
 }
 
+export async function suggestNewsTopics(): Promise<NewsTopicSuggestionOutput> {
+    const topicSuggestionPrompt = ai.definePrompt({
+        name: 'newsTopicSuggestionPrompt',
+        output: { schema: NewsTopicSuggestionOutputSchema },
+        prompt: `You are an expert SEO strategist and journalist for Garda Lestari, a youth-led environmental and agricultural organization in Indonesia.
+Your task is to brainstorm 5 highly relevant and SEO-friendly news article topics based on current trends and common search queries in Indonesia related to agriculture, maritime, forestry, conservation, and youth innovation.
+
+For each topic, provide a catchy title, a short description, and a list of relevant SEO keywords.
+The topics should be engaging, informative, and aligned with Garda Lestari's mission.
+
+Example topics could be about:
+- Sustainable farming techniques for young farmers.
+- The role of technology in modern fishing.
+- Community-led forest conservation efforts.
+- Success stories of young eco-entrepreneurs.
+
+Provide the output in the requested JSON format.
+`,
+    });
+
+    const { output } = await topicSuggestionPrompt();
+    if (!output) {
+      throw new Error('Gagal mendapatkan saran topik dari AI.');
+    }
+    return output;
+}
+
+
 const prompt = ai.definePrompt({
   name: 'newsGeneratorPrompt',
   input: { schema: NewsGeneratorInputSchema },
-  // The prompt itself doesn't generate the final hints array or URL
-  // We specify the direct text-based output schema for the LLM call.
   output: { schema: NewsGeneratorOutputSchema.omit({ imageHints: true, coverImageUrl: true }) },
-  prompt: `You are an expert journalist and content creator for Garda Lestari, a youth-led environmental and agricultural organization.
-Your task is to write a complete news article based on the provided topic and description.
+  prompt: `You are an expert journalist and content creator for Garda Lestari, a youth-led environmental and agricultural organization in Indonesia. Your writing style is humanized, professional, informative, dense with information but easy to read.
 
-Your response must be in JSON format and adhere to the specified schema.
+Your task is to write a complete, high-quality news article based on the provided topic and description. The article must be well-researched, well-structured, and optimized for SEO.
 
-1.  **Topic**: If the topic is empty, create a relevant and engaging topic based on the description.
-2.  **Title**: Write a compelling, SEO-friendly title.
-3.  **Content**: Write a full, well-structured news article.
-    - The content MUST be in HTML format (using <p>, <h2>, <ul>, <li>, <strong> tags).
-    - CRITICAL: You must strategically embed AT LEAST TWO, but no more than three, image placeholders within the article's content. An image placeholder MUST look exactly like this: \`<!-- IMAGE_HINT: a very descriptive hint for an image -->\`. For example: \`<!-- IMAGE_HINT: young farmers smiling while holding fresh vegetables in a lush green field -->\`. Place these where an image would naturally fit to break up text and add visual interest.
-    - The first placeholder hint will be used for the cover image. Make it a good one.
-4.  **Excerpt**: Write a short summary (max 150 characters) for the article preview.
-5.  **Category**: Suggest a single, relevant category from this list: Pertanian, Perikanan, Kehutanan, Konservasi, Teknologi, Komunitas, Acara.
+**CRITICAL INSTRUCTIONS:**
+
+1.  **Topic and Title**:
+    -   If the provided topic is brief, expand upon it to create a compelling, SEO-friendly title that includes relevant keywords.
+    -   The final title must be engaging and accurately reflect the article's content.
+
+2.  **Content (HTML Format)**:
+    -   The content MUST be in well-structured HTML, using tags like \`<h2>\`, \`<h3>\`, \`<p>\`, \`<ul>\`, \`<li>\`, and \`<strong>\`.
+    -   The article must be dense and informative. Provide details, data, or examples to support your points. Avoid fluffy or generic statements.
+    -   Incorporate relevant SEO keywords naturally throughout the article, especially in headings and the first paragraph. Keywords could include "pertanian berkelanjutan", "inovasi pemuda", "konservasi hutan", "ekonomi biru", "teknologi perikanan", etc., depending on the topic.
+    -   The tone must be professional yet accessible (humanized). Address the reader and explain complex topics simply.
+
+3.  **Image Placeholders (CRITICAL)**:
+    -   You MUST strategically embed AT LEAST TWO, but no more than three, image placeholders within the article's content.
+    -   An image placeholder MUST look exactly like this: \`<!-- IMAGE_HINT: a very descriptive and professional photo prompt for an image -->\`.
+    -   Example: \`<!-- IMAGE_HINT: close-up shot of a young farmer smiling while holding freshly harvested organic vegetables in a lush green field during golden hour -->\`.
+    -   The FIRST image hint will be used for the article's cover image. Make it powerful and visually appealing.
+
+4.  **Excerpt**:
+    -   Write a short, engaging summary of the article (max 150 characters) for social media and search engine previews.
+
+5.  **Category**:
+    -   Suggest a single, relevant category from this list: Pertanian, Perikanan, Kehutanan, Konservasi, Teknologi, Komunitas, Acara.
 
 **Input:**
-- Topic: {{{topic}}}
-- Description: {{{description}}}
+-   Topic: {{{topic}}}
+-   Description: {{{description}}}
+
+Now, generate the complete, high-quality article in the requested JSON format.
 `,
 });
 

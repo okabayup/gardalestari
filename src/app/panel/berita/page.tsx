@@ -1,9 +1,10 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, MoreHorizontal, Loader2, Trash2, Sparkles, RefreshCw, Star } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Loader2, Trash2, Sparkles, RefreshCw, Star, Newspaper } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -116,9 +117,9 @@ export default function AdminBeritaPage() {
           </div>
           {canManage && (
              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => router.push('/panel/berita/generate')}>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    News Full Generator
+                <Button variant="outline" onClick={() => router.push('/panel/berita/newsroom')}>
+                    <Newspaper className="mr-2 h-4 w-4" />
+                    AI Newsroom
                 </Button>
                 <Button onClick={() => router.push('/panel/berita/new')}>
                 <PlusCircle className="mr-2 h-4 w-4" />
