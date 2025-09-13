@@ -8,18 +8,21 @@ import { useAuth } from '@/hooks/use-auth';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, Shield, Pencil, AlertTriangle, Loader2, Grid3x3, Archive, Tag, IdCard, Undo, History, Award, Info } from 'lucide-react';
+import { LogOut, Shield, Pencil, AlertTriangle, Loader2, Grid3x3, Archive, Tag, IdCard, Undo, History, Award, Info, PlusCircle } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import EditProfileModal from '@/components/profile/EditProfileModal';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getPostsByUserId, getArchivedPosts, getTaggedPosts, PostWithAuthor, unarchivePost } from '@/app/actions/posts';
+import { getAchievementsByUserId, Achievement } from '@/app/actions/achievements';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MembershipCardDialog from '@/components/members/MembershipCardDialog';
 import { useToast } from '@/hooks/use-toast';
 import PostCard from '@/components/feed/PostCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { MemberLevelBadge } from '@/components/members/MemberLevelBadge';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
 
 const ADMIN_PHONE_NUMBER = '+6285176752610';
 
@@ -104,6 +107,51 @@ const ArchivedPostsList = ({ posts, isLoading, onUnarchive }: { posts: PostWithA
     )
 }
 
+const AchievementList = ({ achievements, isLoading }: { achievements: Achievement[], isLoading: boolean }) => {
+    const router = useRouter();
+
+    if (isLoading) {
+       return <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+    }
+    if (!achievements || achievements.length === 0) {
+        return (
+            <div className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-lg">
+                <Award className="h-8 w-8 mx-auto mb-2"/>
+                <p>Anda belum menambahkan prestasi.</p>
+                 <Button size="sm" className="mt-4" onClick={() => router.push('/achievements/new')}>
+                    <PlusCircle className="mr-2 h-4 w-4"/> Tambah Prestasi
+                </Button>
+            </div>
+        )
+    }
+
+    return (
+        <div className="space-y-4">
+             <div className="text-right">
+                <Button size="sm" onClick={() => router.push('/achievements/new')}>
+                    <PlusCircle className="mr-2 h-4 w-4"/> Tambah Prestasi
+                </Button>
+            </div>
+            {achievements.map(item => (
+                <Card key={item.id}>
+                    {item.imageUrl && (
+                         <div className="relative h-32 w-full">
+                            <Image src={item.imageUrl} alt={item.title} fill className="object-cover rounded-t-lg" />
+                        </div>
+                    )}
+                    <CardHeader>
+                        <CardTitle className="text-base">{item.title}</CardTitle>
+                        <CardDescription>{format(item.date.toDate(), 'dd MMMM yyyy', { locale: id })}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-sm text-muted-foreground">{item.description}</p>
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+    )
+};
+
 
 const PlaceholderTab = ({ icon: Icon, title, description }: { icon: React.ElementType, title: string, description: string }) => (
     <div className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-lg">
@@ -165,10 +213,13 @@ export default function ProfileMePage() {
   const [userPosts, setUserPosts] = useState<PostWithAuthor[]>([]);
   const [archivedPosts, setArchivedPosts] = useState<PostWithAuthor[]>([]);
   const [taggedPosts, setTaggedPosts] = useState<PostWithAuthor[]>([]);
+  const [userAchievements, setUserAchievements] = useState<Achievement[]>([]);
 
   const [loadingUserPosts, setLoadingUserPosts] = useState(true);
   const [loadingArchived, setLoadingArchived] = useState(true);
   const [loadingTagged, setLoadingTagged] = useState(true);
+  const [loadingAchievements, setLoadingAchievements] = useState(true);
+
 
   const fetchAllData = () => {
      if (user && !authLoading) {
@@ -188,6 +239,12 @@ export default function ProfileMePage() {
       getTaggedPosts(user.uid).then(posts => {
         setTaggedPosts(posts);
         setLoadingTagged(false);
+      });
+
+      setLoadingAchievements(true);
+      getAchievementsByUserId(user.uid).then(achievements => {
+          setUserAchievements(achievements);
+          setLoadingAchievements(false);
       });
     }
   }
@@ -247,7 +304,7 @@ export default function ProfileMePage() {
                     <ProfilePostsGrid posts={taggedPosts} isLoading={loadingTagged} />
                 </TabsContent>
                  <TabsContent value="achievements" className="mt-4">
-                    <PlaceholderTab icon={Award} title="Prestasi" description="Daftar pencapaian dan penghargaan Anda akan muncul di sini." />
+                    <AchievementList achievements={userAchievements} isLoading={loadingAchievements} />
                 </TabsContent>
                 <TabsContent value="history" className="mt-4">
                     <PlaceholderTab icon={History} title="Riwayat Program" description="Riwayat program yang pernah Anda ikuti akan ditampilkan di sini." />
