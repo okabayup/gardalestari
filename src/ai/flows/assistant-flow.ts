@@ -28,50 +28,50 @@ const searchDataBankTool = ai.defineTool(
   {
     name: 'searchDataBank',
     description: 'Search the Garda Lestari data bank for information on policies, sectoral data, research, etc.',
-    inputSchema: z.string(),
+    inputSchema: z.object({ query: z.string() }),
     outputSchema: z.array(z.custom<Partial<DataBankEntry>>()),
   },
-  async (query) => searchDataBank(query)
+  async (input) => searchDataBank(input.query)
 );
 
 const searchIdeaBankTool = ai.defineTool(
   {
     name: 'searchIdeaBank',
     description: 'Search the Garda Lestari idea bank for existing ideas and proposals from members.',
-    inputSchema: z.string(),
+    inputSchema: z.object({ query: z.string() }),
     outputSchema: z.array(z.custom<Partial<Idea>>()),
   },
-  async (query) => searchIdeaBank(query)
+  async (input) => searchIdeaBank(input.query)
 );
 
 const searchProgramsTool = ai.defineTool(
   {
     name: 'searchPrograms',
     description: 'Search for ongoing or past programs run by Garda Lestari or its partners.',
-    inputSchema: z.string(),
+    inputSchema: z.object({ query: z.string() }),
     outputSchema: z.array(z.custom<Partial<Program>>()),
   },
-  async (query) => searchPrograms(query)
+  async (input) => searchPrograms(input.query)
 );
 
 const searchEventsTool = ai.defineTool(
   {
     name: 'searchEvents',
     description: 'Search for upcoming or past events, workshops, or webinars.',
-    inputSchema: z.string(),
+    inputSchema: z.object({ query: z.string() }),
     outputSchema: z.array(z.custom<Partial<Event>>()),
   },
-  async (query) => searchEvents(query)
+  async (input) => searchEvents(input.query)
 );
 
 const searchAchievementsTool = ai.defineTool(
   {
     name: 'searchAchievements',
     description: "Search for achievements and awards won by Garda Lestari's members.",
-    inputSchema: z.string(),
+    inputSchema: z.object({ query: z.string() }),
     outputSchema: z.array(z.custom<Partial<Achievement>>()),
   },
-  async (query) => searchAchievements(query)
+  async (input) => searchAchievements(input.query)
 );
 
 
