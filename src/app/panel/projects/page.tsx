@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -9,18 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, PlusCircle, KanbanSquare } from 'lucide-react';
 import Link from 'next/link';
-import { Timestamp } from 'firebase/firestore';
-
-const toJsDate = (timestamp: any): Date => {
-    if (timestamp instanceof Timestamp) {
-        return timestamp.toDate();
-    }
-    if (timestamp && typeof timestamp.seconds === 'number' && typeof timestamp.nanoseconds === 'number') {
-        return new Timestamp(timestamp.seconds, timestamp.nanoseconds).toDate();
-    }
-    return new Date();
-};
-
 
 export default function ProjectsPage() {
   const router = useRouter();
