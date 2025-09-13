@@ -97,8 +97,7 @@ export default function EditBeritaPostPage() {
         } else {
           setPost(fetchedPost);
           reset(fetchedPost);
-          // Auto-run analysis if content exists but score is missing
-          if (fetchedPost.content && !fetchedPost.seoScore) {
+          if (fetchedPost.content && !fetchedPost.seoScore && fetchedPost.type === 'artikel') {
               const result = await enhanceText({ text: fetchedPost.content });
               setAiAnalysis(result);
               setValue('seoScore', result.seoScore);
@@ -171,9 +170,8 @@ export default function EditBeritaPostPage() {
     if (!post || !post.id) return;
     setLoading(true);
     
-    // Recalculate SEO score if it's missing
     let seoScore = data.seoScore || 0;
-    if (!seoScore && data.content) {
+    if (!seoScore && data.content && data.type === 'artikel') {
         try {
             const analysis = await enhanceText({ text: data.content });
             seoScore = analysis.seoScore;

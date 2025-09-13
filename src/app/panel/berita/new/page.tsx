@@ -152,9 +152,8 @@ export default function NewBeritaPostPage() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     
-    // Recalculate SEO score if it's missing
     let seoScore = data.seoScore || 0;
-    if (!seoScore && data.content) {
+    if (!seoScore && data.content && data.type === 'artikel') {
         try {
             const analysis = await enhanceText({ text: data.content });
             seoScore = analysis.seoScore;
@@ -173,7 +172,7 @@ export default function NewBeritaPostPage() {
         imageUrl: data.imageUrl,
         imageHint: data.imageHint,
         content: data.content,
-        excerpt: data.content.replace(/<[^>]*>?/gm, '').substring(0, 150) + '...',
+        excerpt: data.content ? data.content.replace(/<[^>]*>?/gm, '').substring(0, 150) + '...' : '',
         category: data.category,
         type: data.type,
         youtubeId: data.youtubeId,
