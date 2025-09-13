@@ -11,6 +11,7 @@ type Settings = {
     instagram?: string;
     linkedin?: string;
     facebook?: string;
+    twitter?: string;
 };
 
 export default function Footer() {

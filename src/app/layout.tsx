@@ -5,44 +5,51 @@ import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import FirebaseAnalytics from '@/components/FirebaseAnalytics';
 import { Suspense } from 'react';
+import { getAppSettings } from './actions/settings';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://gardalestari.org';
 
-export const metadata: Metadata = {
-  metadataBase: new URL(BASE_URL),
-  title: {
-    default: 'Garda Lestari',
-    template: '%s | Garda Lestari',
-  },
-  description: 'Garda Lestari adalah organisasi kepemudaan yang berfokus pada inovasi di sektor agro-maritim dan kehutanan untuk pembangunan berkelanjutan di Indonesia.',
-  manifest: '/manifest.json',
-  icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon-16x16.png',
-    apple: '/apple-touch-icon.png',
-  },
-  openGraph: {
-    title: 'Garda Lestari',
-    description: 'Inovasi pemuda untuk kelestarian agro-maritim dan kehutanan Indonesia.',
-    url: BASE_URL,
-    siteName: 'Garda Lestari',
-    images: [
-      {
-        url: '/og-image.png', // Fallback OG image
-        width: 1200,
-        height: 630,
-      },
-    ],
-    locale: 'id_ID',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Garda Lestari',
-    description: 'Inovasi pemuda untuk kelestarian agro-maritim dan kehutanan Indonesia.',
-    images: ['/og-image.png'], // Fallback Twitter image
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getAppSettings();
+
+  return {
+    metadataBase: new URL(BASE_URL),
+    title: {
+      default: 'Garda Lestari: Aksi Nyata Anda untuk Bumi',
+      template: '%s | Garda Lestari',
+    },
+    description: 'Garda Lestari adalah organisasi kepemudaan yang berfokus pada inovasi di sektor agro-maritim dan kehutanan untuk pembangunan berkelanjutan di Indonesia.',
+    manifest: '/manifest.json',
+    icons: {
+      icon: '/favicon.ico',
+      shortcut: '/favicon-16x16.png',
+      apple: '/apple-touch-icon.png',
+    },
+    openGraph: {
+      title: 'Garda Lestari: Aksi Nyata Anda untuk Bumi',
+      description: 'Inovasi pemuda untuk kelestarian agro-maritim dan kehutanan Indonesia.',
+      url: BASE_URL,
+      siteName: 'Garda Lestari',
+      images: [
+        {
+          url: settings.heroImageUrl || '/og-image.png',
+          width: 1200,
+          height: 630,
+          alt: 'Lanskap Pertanian Indonesia',
+        },
+      ],
+      locale: 'id_ID',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Garda Lestari: Aksi Nyata Anda untuk Bumi',
+      description: 'Inovasi pemuda untuk kelestarian agro-maritim dan kehutanan Indonesia.',
+      images: [settings.heroImageUrl || '/og-image.png'],
+    },
+  };
+}
+
 
 export default function RootLayout({
   children,
