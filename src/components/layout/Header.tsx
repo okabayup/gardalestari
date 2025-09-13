@@ -155,9 +155,12 @@ export default function Header() {
                     <UserCircle className="mr-2 h-4 w-4" />
                     <span>Profil Saya</span>
                   </DropdownMenuItem>
-                   <DropdownMenuItem onClick={() => router.push('/benefits')} className="cursor-pointer">
-                    <Award className="mr-2 h-4 w-4" />
-                    <span>Level & Misi</span>
+                   <DropdownMenuItem onClick={() => router.push('/benefits')} className="cursor-pointer flex justify-between items-center">
+                    <div className="flex items-center">
+                      <Award className="mr-2 h-4 w-4" />
+                      <span>Level & Misi</span>
+                    </div>
+                    <Badge variant="secondary">Segera</Badge>
                   </DropdownMenuItem>
                   {hasPermission('manage_users') && (
                       <DropdownMenuItem onClick={() => router.push('/panel/dashboard')} className="cursor-pointer">
@@ -179,3 +182,5 @@ export default function Header() {
     </header>
   );
 }
+
+    

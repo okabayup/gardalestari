@@ -18,6 +18,7 @@ import { marked } from 'marked';
 import { cn } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 import { produce } from 'immer';
+import { Badge } from '../ui/badge';
 
 const samplePrompts = [
     'Bagaimana cara mengajukan ide baru?',
@@ -333,14 +334,19 @@ export default function Assistant() {
 
   return (
     <>
-      <Button
-        className="fixed bottom-36 right-4 h-12 w-12 rounded-full shadow-lg bg-background/70 backdrop-blur-lg"
-        size="icon"
-        onClick={() => setIsOpen(true)}
-      >
-        <Bot className="h-6 w-6 text-primary" />
-        <span className="sr-only">Buka Asisten AI</span>
-      </Button>
+      <div className="fixed bottom-36 right-4 z-50">
+        <div className="relative">
+            <Button
+                className="h-12 w-12 rounded-full shadow-lg"
+                size="icon"
+                onClick={() => setIsOpen(true)}
+            >
+                <Bot className="h-6 w-6" />
+                <span className="sr-only">Buka Asisten AI</span>
+            </Button>
+             <Badge variant="secondary" className="absolute -top-2 -right-3 text-xs">Segera</Badge>
+        </div>
+      </div>
        <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="h-[85vh] w-[95vw] max-w-4xl flex flex-col p-0 gap-0">
            <DialogHeader className="sr-only">
@@ -403,3 +409,5 @@ export default function Assistant() {
     </>
   );
 }
+
+    
