@@ -1,9 +1,9 @@
-# Allow all crawlers
+# Allow all user agents
 User-agent: *
 Allow: /
 
-# Disallow crawling of the admin panel
+# Disallow admin panel for all user agents
 Disallow: /panel/
 
-# Point to the sitemap
+# Sitemap location
 Sitemap: https://gardalestari.org/sitemap.xml

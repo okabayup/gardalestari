@@ -6,6 +6,7 @@ import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, 
 import { revalidatePath } from 'next/cache';
 import { notifyGoogleOfUpdate } from '@/services/indexing';
 import type { BeritaPost } from '@/lib/definitions';
+import { enhanceText } from '@/ai/flows/enhance-text-flow';
 
 const beritaPostsCollection = collection(db, 'beritaPosts');
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://gardalestari.org';
@@ -43,8 +44,15 @@ export async function getBeritaPost(slug: string) {
 // Create a new berita post
 export async function createBeritaPost(post: Omit<BeritaPost, 'id'>) {
   try {
-    // Firestore does not allow undefined values. Ensure all fields have a fallback.
-    const postData: BeritaPost = {
+    let finalSeoScore = post.seoScore || 0;
+    if (!finalSeoScore && post.content) {
+        try {
+            const analysis = await enhanceText({ text: post.content });
+            finalSeoScore = analysis.seoScore;
+        } catch(e) { console.error("Auto SEO analysis failed on create", e); }
+    }
+
+    const postData: Omit<BeritaPost, 'id'> = {
       title: post.title || 'Judul Default',
       slug: post.slug || 'slug-default',
       content: post.content || '<p>Konten default.</p>',
@@ -57,8 +65,9 @@ export async function createBeritaPost(post: Omit<BeritaPost, 'id'>) {
       type: post.type || 'artikel',
       youtubeId: post.youtubeId || '',
       isFeatured: post.isFeatured || false,
+      seoScore: finalSeoScore,
     };
-    const docRef = await addDoc(beritaPostsCollection, postData);
+    const docRef = await addDoc(beritaPostsCollection, { ...postData });
     
     const pathToRevalidate = postData.type === 'video' ? '/video' : '/berita';
     revalidatePath('/panel/berita');

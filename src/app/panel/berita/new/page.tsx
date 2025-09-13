@@ -95,7 +95,7 @@ export default function NewBeritaPostPage() {
   }, []);
 
   const generateSlug = (title: string) => {
-    return title.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/\s+/g, '-').replace(/-+/g, '-');
+    return title.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
   };
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,6 +151,19 @@ export default function NewBeritaPostPage() {
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
+    
+    // Recalculate SEO score if it's missing
+    let seoScore = data.seoScore || 0;
+    if (!seoScore && data.content) {
+        try {
+            const analysis = await enhanceText({ text: data.content });
+            seoScore = analysis.seoScore;
+            setAiAnalysis(analysis);
+        } catch (e) {
+            console.error("Failed to auto-update SEO score on save:", e);
+        }
+    }
+
     try {
       const newPost: Omit<BeritaPost, 'id'> = {
         title: data.title,
@@ -165,7 +178,7 @@ export default function NewBeritaPostPage() {
         type: data.type,
         youtubeId: data.youtubeId,
         isFeatured: data.isFeatured,
-        seoScore: data.seoScore,
+        seoScore: seoScore,
       };
       await createBeritaPost(newPost);
       toast({

@@ -27,7 +27,7 @@ const AnalysisPanel = ({ analysis }: { analysis: EnhanceTextOutput | null }) => 
     return (
       <div className="text-center text-sm text-muted-foreground p-4 border rounded-lg h-full flex flex-col justify-center">
         <Sparkles className="mx-auto h-8 w-8 mb-2" />
-        Jalankan "Sempurnakan dengan AI" untuk melihat analisis SEO dan Etika Pers.
+        Jalankan "Sempurnakan dengan AI" atau simpan untuk melihat analisis SEO dan Etika Pers.
       </div>
     );
   }
@@ -97,6 +97,12 @@ export default function EditBeritaPostPage() {
         } else {
           setPost(fetchedPost);
           reset(fetchedPost);
+          // Auto-run analysis if content exists but score is missing
+          if (fetchedPost.content && !fetchedPost.seoScore) {
+              const result = await enhanceText({ text: fetchedPost.content });
+              setAiAnalysis(result);
+              setValue('seoScore', result.seoScore);
+          }
         }
       } catch (error) {
          toast({ variant: 'destructive', title: 'Gagal memuat data' });
@@ -105,7 +111,7 @@ export default function EditBeritaPostPage() {
       }
     };
     fetchPostAndCategories();
-  }, [slug, reset, toast, router]);
+  }, [slug, reset, toast, router, setValue]);
 
   const generateSlug = (title: string) => {
     return title.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
@@ -165,8 +171,21 @@ export default function EditBeritaPostPage() {
     if (!post || !post.id) return;
     setLoading(true);
     
+    // Recalculate SEO score if it's missing
+    let seoScore = data.seoScore || 0;
+    if (!seoScore && data.content) {
+        try {
+            const analysis = await enhanceText({ text: data.content });
+            seoScore = analysis.seoScore;
+            setAiAnalysis(analysis);
+        } catch (e) {
+            console.error("Failed to auto-update SEO score on save:", e);
+        }
+    }
+
     const updatedData: Partial<BeritaPost> = {
         ...data,
+        seoScore: seoScore,
         excerpt: data.content ? data.content.replace(/<[^>]*>?/gm, '').substring(0, 150) + '...' : data.title
     };
 
