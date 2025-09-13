@@ -30,6 +30,7 @@ export default function RegisterPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [memberId, setMemberId] = useState('');
     const [isRegistrationOpen, setRegistrationOpen] = useState<boolean | null>(null);
+    const [countdown, setCountdown] = useState(0);
 
     useEffect(() => {
         const checkRegistrationStatus = async () => {
@@ -48,9 +49,19 @@ export default function RegisterPage() {
         }
     }, [user]);
 
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (countdown > 0) {
+            timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+        }
+        return () => clearTimeout(timer);
+    }, [countdown]);
+
+
     const handlePhoneSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
+        setCountdown(60);
         try {
             const phoneNumber = phone.startsWith('+') ? phone : `+62${phone.replace(/^0/, '')}`;
             await signInWithPhone(phoneNumber, 'recaptcha-container');
@@ -59,6 +70,7 @@ export default function RegisterPage() {
         } catch (error) {
             console.error(error);
             toast({ variant: 'destructive', title: 'Error', description: 'Gagal mengirim OTP. Pastikan nomor valid dan coba lagi.' });
+            setCountdown(0);
         } finally {
             setIsSubmitting(false);
         }
@@ -77,6 +89,23 @@ export default function RegisterPage() {
             setIsSubmitting(false);
         }
     };
+
+    const handleResendOtp = async () => {
+        if (countdown > 0) return;
+        setIsSubmitting(true);
+        setCountdown(60);
+        try {
+        const phoneNumber = phone.startsWith('+') ? phone : `+62${phone.replace(/^0/, '')}`;
+        await signInWithPhone(phoneNumber, 'recaptcha-container');
+        toast({ title: 'OTP Terkirim Kembali', description: 'Silakan periksa kembali ponsel Anda.' });
+        } catch (error) {
+        console.error(error);
+        toast({ variant: 'destructive', title: 'Gagal Mengirim Ulang OTP', description: 'Silakan coba lagi beberapa saat.' });
+        setCountdown(0);
+        } finally {
+        setIsSubmitting(false);
+        }
+    }
 
 
     if (loading || isRegistrationOpen === null) {
@@ -167,6 +196,9 @@ export default function RegisterPage() {
                                         <Button type="submit" className="w-full" disabled={isSubmitting}>
                                             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                             Verifikasi & Buat Akun
+                                        </Button>
+                                        <Button type="button" variant="link" className="w-full" onClick={handleResendOtp} disabled={countdown > 0 || isSubmitting}>
+                                            {countdown > 0 ? `Kirim ulang dalam ${countdown}s` : 'Kirim ulang kode OTP'}
                                         </Button>
                                     </form>
                                 )}

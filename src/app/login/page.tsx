@@ -19,6 +19,7 @@ export default function LoginPage() {
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [countdown, setCountdown] = useState(0);
 
   useEffect(() => {
     if (!loading && user) {
@@ -26,9 +27,18 @@ export default function LoginPage() {
     }
   }, [user, loading, router]);
 
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (countdown > 0) {
+      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [countdown]);
+
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setCountdown(60);
     try {
       // Firebase requires phone number in E.164 format (e.g., +6281234567890)
       const phoneNumber = phone.startsWith('+') ? phone : `+62${phone.replace(/^0/, '')}`;
@@ -38,6 +48,7 @@ export default function LoginPage() {
     } catch (error) {
       console.error(error);
       toast({ variant: 'destructive', title: 'Error', description: 'Gagal mengirim OTP. Pastikan nomor valid dan coba lagi.' });
+      setCountdown(0);
     } finally {
       setIsSubmitting(false);
     }
@@ -57,6 +68,24 @@ export default function LoginPage() {
       setIsSubmitting(false);
     }
   };
+  
+  const handleResendOtp = async () => {
+    if (countdown > 0) return;
+    setIsSubmitting(true);
+    setCountdown(60);
+    try {
+      const phoneNumber = phone.startsWith('+') ? phone : `+62${phone.replace(/^0/, '')}`;
+      await signInWithPhone(phoneNumber, 'recaptcha-container');
+      toast({ title: 'OTP Terkirim Kembali', description: 'Silakan periksa kembali ponsel Anda.' });
+    } catch (error) {
+      console.error(error);
+      toast({ variant: 'destructive', title: 'Gagal Mengirim Ulang OTP', description: 'Silakan coba lagi beberapa saat.' });
+      setCountdown(0);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
 
   if (loading || user) {
     return (
@@ -94,9 +123,9 @@ export default function LoginPage() {
                   onChange={(e) => setPhone(e.target.value)}
                   required
                 />
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Kirim OTP
+                <Button type="submit" className="w-full" disabled={isSubmitting || countdown > 0}>
+                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {countdown > 0 ? `Kirim Ulang OTP dalam ${countdown}s` : 'Kirim OTP'}
                 </Button>
               </form>
             ) : (
@@ -112,6 +141,9 @@ export default function LoginPage() {
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Verifikasi & Masuk
+                </Button>
+                 <Button type="button" variant="link" className="w-full" onClick={handleResendOtp} disabled={countdown > 0 || isSubmitting}>
+                    {countdown > 0 ? `Kirim ulang dalam ${countdown}s` : 'Kirim ulang kode OTP'}
                 </Button>
               </form>
             )}

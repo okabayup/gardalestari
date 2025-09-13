@@ -41,6 +41,7 @@ export default function VerificationFlow() {
   const [otp, setOtp] = useState('');
   const [loadingSendOtp, setLoadingSendOtp] = useState(false);
   const [loadingVerifyOtp, setLoadingVerifyOtp] = useState(false);
+  const [countdown, setCountdown] = useState(0);
 
   const [ktpDataUrl, setKtpDataUrl] = useState<string | null>(null);
   const [selfieDataUrl, setSelfieDataUrl] = useState<string | null>(null);
@@ -95,6 +96,14 @@ export default function VerificationFlow() {
       case 'submitting': setProgress(100); break;
     }
   }, [step]);
+  
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (countdown > 0) {
+      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [countdown]);
 
 
   const startCamera = async (facingMode: 'environment' | 'user') => {
@@ -163,11 +172,12 @@ export default function VerificationFlow() {
   };
 
   const handleSendOtp = async () => {
-    if (!waNumber.trim() || !user) {
-      toast({ variant: 'destructive', title: 'Nomor tidak boleh kosong' });
+    if (!waNumber.trim() || !user || countdown > 0) {
+      if (countdown > 0) toast({ variant: 'destructive', title: 'Mohon tunggu sebentar' });
       return;
     }
     setLoadingSendOtp(true);
+    setCountdown(60);
     try {
       const result = await saveWaNumber(user.uid, waNumber);
       if (result.success) {
@@ -180,6 +190,7 @@ export default function VerificationFlow() {
       const errorMessage = (error as Error).message || 'Terjadi kesalahan pada sisi klien.';
       console.error("Error from handleSendOtp:", error);
       toast({ variant: 'destructive', title: 'Gagal mengirim OTP', description: errorMessage, duration: 7000 });
+      setCountdown(0);
     } finally {
       setLoadingSendOtp(false);
     }
@@ -380,10 +391,10 @@ export default function VerificationFlow() {
                         value={waNumber}
                         onChange={(e) => setWaNumber(e.target.value)}
                         placeholder="cth: 6281234567890"
-                        disabled={otpSent || loadingSendOtp}
+                        disabled={otpSent || loadingSendOtp || countdown > 0}
                     />
-                    <Button onClick={handleSendOtp} disabled={loadingSendOtp}>
-                        {loadingSendOtp ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Kirim OTP'}
+                    <Button onClick={handleSendOtp} disabled={loadingSendOtp || countdown > 0}>
+                        {loadingSendOtp ? <Loader2 className="h-4 w-4 animate-spin" /> : (countdown > 0 ? `${countdown}s` : 'Kirim OTP')}
                     </Button>
                 </div>
                 </div>
@@ -403,6 +414,9 @@ export default function VerificationFlow() {
                             {loadingVerifyOtp ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Verifikasi'}
                         </Button>
                     </div>
+                     <Button type="button" variant="link" size="sm" className="w-full" onClick={handleSendOtp} disabled={countdown > 0 || loadingSendOtp}>
+                        {countdown > 0 ? `Kirim ulang dalam ${countdown}s` : 'Kirim ulang kode OTP'}
+                    </Button>
                     </div>
                 )}
             </div>
