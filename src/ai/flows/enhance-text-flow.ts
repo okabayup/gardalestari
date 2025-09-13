@@ -17,7 +17,7 @@ const EnhanceTextInputSchema = z.object({
 export type EnhanceTextInput = z.infer<typeof EnhanceTextInputSchema>;
 
 const EnhanceTextOutputSchema = z.object({
-  improvedText: z.string().describe('The full text of the article with grammar, spelling, and style improvements, in Markdown format.'),
+  improvedText: z.string().describe('The full text of the article with grammar, spelling, and style improvements, in well-structured HTML format. Use tags like `<h2>`, `<h3>`, `<p>`, `<strong>`, `<em>`, `<ul>`, and `<li>`.'),
   suggestedTitle: z.string().describe('A catchy and relevant title for the article.'),
   summary: z.string().describe('A brief summary of the article content.'),
   seoScore: z.number().describe('An SEO score from 0 to 100, based on keyword relevance and structure.'),
@@ -40,7 +40,7 @@ Your task is to analyze the provided article draft and enhance it.
 
 Your response must be in JSON format and adhere to the specified schema.
 
-1.  **Improve Text**: Review the entire article. Correct any grammatical errors, spelling mistakes, and awkward phrasing. Improve the flow and clarity. The output must be in Markdown format.
+1.  **Improve Text**: Review the entire article. Correct any grammatical errors, spelling mistakes, and awkward phrasing. Improve the flow and clarity. The output MUST be in well-structured HTML format. Use appropriate tags like \`<h2>\`, \`<h3>\` for subheadings, \`<p>\` for paragraphs, \`<strong>\` for bold text, \`<em>\` for italics, and \`<ul>\`/\`<li>\` for lists to improve readability.
 2.  **Suggest Title**: Create a compelling, catchy, and SEO-friendly title for the article.
 3.  **Summarize**: Write a concise summary of the article's key points.
 4.  **SEO Analysis**:
