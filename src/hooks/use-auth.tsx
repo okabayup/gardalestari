@@ -155,17 +155,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
  const signInWithPhone = async (phoneNumber: string, appVerifierContainerId: string) => {
     if (typeof window !== 'undefined') {
         if (!window.recaptchaVerifier) {
-            // Ensure the container is empty before creating a new verifier
-            const container = document.getElementById(appVerifierContainerId);
-            if (container) {
-                container.innerHTML = '';
-            }
-            
             const verifier = new RecaptchaVerifier(auth, appVerifierContainerId, {
                 'size': 'invisible',
                 'callback': () => {},
                 'expired-callback': () => {
                     if (window.recaptchaVerifier) {
+                        window.recaptchaVerifier.clear();
                         window.recaptchaVerifier = undefined;
                     }
                     toast({
@@ -173,7 +168,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         title: 'reCAPTCHA Kedaluwarsa',
                         description: 'Silakan coba lagi.',
                     });
-                }
+                },
+                 customParameters: {
+                    sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+                 }
             });
             window.recaptchaVerifier = verifier;
             await verifier.render();
@@ -185,7 +183,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
             window.confirmationResult = confirmationResult;
         } catch (error) {
-            // Reset verifier on error to allow re-try
              if (window.recaptchaVerifier) {
                 window.recaptchaVerifier.clear();
                 window.recaptchaVerifier = undefined;
