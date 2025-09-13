@@ -35,7 +35,7 @@ import Image from 'next/image';
 import { Button } from '../ui/button';
 import type { PermissionId } from '@/lib/definitions';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { usePanelBadges } from '@/hooks/use-panel-badges';
+import { usePanelBadges } from '@/hooks/use-panel-badges.tsx';
 import { Badge } from '../ui/badge';
 
 

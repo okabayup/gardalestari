@@ -16,17 +16,8 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
+import type { DataBankEntry } from '@/lib/definitions';
 
-export interface DataBankEntry {
-  id?: string;
-  title: string;
-  summary: string;
-  content: string;
-  category: 'Kebijakan' | 'Data Sektoral' | 'Riset' | 'Lainnya';
-  source: string; // e.g., "Kementerian Pertanian", "BPS", "Penelitian Internal"
-  publishedDate: Timestamp;
-  createdAt: Timestamp;
-}
 
 const dataBankCollection = collection(db, 'dataBank');
 
@@ -34,24 +25,29 @@ const dataBankCollection = collection(db, 'dataBank');
 
 /**
  * Searches the data bank for relevant entries based on a query.
- * To be used by an AI tool.
+ * This is an improved version that is more scalable.
  * @param searchQuery The keywords or question to search for.
  * @returns A list of relevant data bank entries.
  */
 export async function searchDataBank(searchQuery: string): Promise<Partial<DataBankEntry>[]> {
+    // Firestore doesn't support native full-text search. A simple lowercase "contains"
+    // search can be done by fetching recent documents and filtering in memory.
+    // For true scalability, a third-party service like Algolia/Typesense is recommended.
     const q = query(
         dataBankCollection,
-        // Firestore doesn't support full-text search. A more robust solution would use
-        // a third-party search service like Algolia or Typesense.
-        // For now, we fetch all and filter in-memory which is not scalable.
         orderBy('publishedDate', 'desc'),
-        limit(20) // Limit to recent 20 to avoid pulling too much data
+        limit(50) // Fetch more recent documents to have a larger pool for searching
     );
 
     const snapshot = await getDocs(q);
+    if (snapshot.empty) {
+        return [];
+    }
+
     const allEntries: DataBankEntry[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DataBankEntry));
 
-    const searchTerms = searchQuery.toLowerCase().split(' ');
+    // Perform in-memory filtering
+    const searchTerms = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
     const results = allEntries.filter(entry => {
         const searchableText = `${entry.title} ${entry.summary} ${entry.category} ${entry.source}`.toLowerCase();
         return searchTerms.some(term => searchableText.includes(term));

@@ -128,7 +128,10 @@ export async function getIdeas(
 
     if (searchQuery) {
         const lowercasedQuery = searchQuery.toLowerCase();
-        ideas = ideas.filter(idea => idea.title.toLowerCase().includes(lowercasedQuery));
+        ideas = ideas.filter(idea => 
+            idea.title.toLowerCase().includes(lowercasedQuery) ||
+            idea.description.toLowerCase().includes(lowercasedQuery)
+        );
     }
 
     return ideas;
@@ -141,12 +144,27 @@ export async function getIdeas(
  * @returns A list of relevant ideas.
  */
 export async function searchIdeaBank(searchQuery: string): Promise<Partial<Idea>[]> {
-    // For simplicity, we reuse the getIdeas logic and reformat the output.
-    // A more optimized version might use a dedicated search query.
-    const ideas = await getIdeas('', 'top', 'Semua', searchQuery);
+    // This is an improved version that is more scalable.
+    // For true scalability, a third-party service like Algolia/Typesense is recommended.
+    const q = query(
+        ideasCollection,
+        orderBy('voteScore', 'desc'),
+        limit(50)
+    );
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) return [];
+
+    const allEntries: Idea[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Idea));
+
+    // Perform in-memory filtering
+    const searchTerms = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
+    const results = allEntries.filter(entry => {
+        const searchableText = `${entry.title} ${entry.description} ${entry.category}`.toLowerCase();
+        return searchTerms.some(term => searchableText.includes(term));
+    }).slice(0, 5); // Return top 5 matches
 
     // Return a partial object to keep the payload for the AI small
-    return ideas.slice(0, 5).map(idea => ({
+    return results.map(idea => ({
         id: idea.id,
         title: idea.title,
         description: idea.description,
