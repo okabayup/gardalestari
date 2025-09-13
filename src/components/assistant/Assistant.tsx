@@ -81,33 +81,31 @@ const RenderMessage = ({ message }: { message: Message }) => {
 
     return (
         <div className="space-y-3">
-             <ScrollArea className="max-h-64">
-                <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed pr-4">
-                    {parts.map((part, index) => {
-                        const match = part.match(/\[(?:Sumber|Ide|Program|Event|Achievement) (\d+)\]/);
-                        if (match) {
-                        const num = parseInt(match[1], 10);
-                        const citation = citations?.[num - 1];
+             <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed pr-4">
+                {parts.map((part, index) => {
+                    const match = part.match(/\[(?:Sumber|Ide|Program|Event|Achievement) (\d+)\]/);
+                    if (match) {
+                    const num = parseInt(match[1], 10);
+                    const citation = citations?.[num - 1];
 
-                        if (citation) {
-                            return (
-                            <Popover key={index}>
-                                <PopoverTrigger asChild>
-                                    <sup className="mx-0.5 -top-0.5 relative">
-                                    <button className="px-1.5 py-0.5 bg-primary/10 text-primary rounded-md text-xs font-semibold hover:bg-primary/20">{num}</button>
-                                    </sup>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-72">
-                                    <CitationCard citation={citation} />
-                                </PopoverContent>
-                                </Popover>
-                            );
-                        }
-                        }
-                        return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
-                    })}
-                </div>
-            </ScrollArea>
+                    if (citation) {
+                        return (
+                        <Popover key={index}>
+                            <PopoverTrigger asChild>
+                                <sup className="mx-0.5 -top-0.5 relative">
+                                <button className="px-1.5 py-0.5 bg-primary/10 text-primary rounded-md text-xs font-semibold hover:bg-primary/20">{num}</button>
+                                </sup>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-72">
+                                <CitationCard citation={citation} />
+                            </PopoverContent>
+                            </Popover>
+                        );
+                    }
+                    }
+                    return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
+                })}
+            </div>
             {audioUrl && (
                 <audio ref={audioRef} controls src={audioUrl} className="w-full h-10" />
             )}
@@ -158,7 +156,6 @@ const AssistantUI = ({ thread, onSendMessage, isLoading, onNewThread }: {
     
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
-      setInput(transcript);
       onSendMessage(transcript, true);
     };
 
@@ -343,8 +340,9 @@ export default function Assistant() {
        <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="h-[85vh] w-[95vw] max-w-4xl flex flex-col p-0 gap-0">
            <DialogHeader className="sr-only">
-            <DialogTitle>AI Assistant</DialogTitle>
-          </DialogHeader>
+                <DialogTitle>AI Assistant</DialogTitle>
+                <p>AI Assistant untuk Garda Lestari</p>
+           </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] h-full">
             <div className="hidden md:flex flex-col bg-muted/50 border-r h-full">
                 <div className="p-4 border-b">
