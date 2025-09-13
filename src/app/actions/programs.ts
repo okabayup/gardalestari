@@ -58,7 +58,8 @@ export async function searchPrograms(searchQuery: string): Promise<Partial<Progr
 
 // Get all programs
 export async function getPrograms(): Promise<Program[]> {
-  const snapshot = await getDocs(query(programsCollection, orderBy('endDate', 'desc')));
+  const q = query(programsCollection, orderBy('endDate', 'desc'));
+  const snapshot = await getDocs(q);
   return snapshot.docs.map(toProgram);
 }
 
@@ -76,10 +77,11 @@ export async function getProgram(id: string): Promise<Program | null> {
 // Create a new program
 export async function createProgram(programData: ProgramFormData, attachmentFile?: File, imageFile?: File) {
   try {
-    const dataToCreate: Omit<Program, 'id' | 'startDate' | 'endDate'> & { startDate: Timestamp, endDate: Timestamp } = {
-        ...programData,
-        startDate: Timestamp.fromDate(new Date(programData.startDate)),
-        endDate: Timestamp.fromDate(new Date(programData.endDate)),
+    const { startDate, endDate, ...restData } = programData;
+    const dataToCreate: Omit<Program, 'id'> & { startDate: Timestamp, endDate: Timestamp } = {
+        ...restData,
+        startDate: Timestamp.fromDate(new Date(startDate)),
+        endDate: Timestamp.fromDate(new Date(endDate)),
     };
 
     if (imageFile) {
