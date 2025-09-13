@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -19,6 +18,7 @@ import { Separator } from '@/components/ui/separator';
 import { getBeritaCategories, BeritaCategory } from '@/app/actions/berita-kategori';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import RichTextEditor from '@/components/panel/RichTextEditor';
+import { Switch } from '@/components/ui/switch';
 
 type FormData = Omit<BeritaPost, 'id' | 'author' | 'date' | 'excerpt'>;
 
@@ -75,10 +75,12 @@ export default function NewBeritaPostPage() {
     defaultValues: {
       title: '',
       slug: '',
+      type: 'artikel',
       imageUrl: '',
       imageHint: '',
       content: '',
-      category: ''
+      category: '',
+      isFeatured: false,
     }
   });
 
@@ -157,11 +159,14 @@ export default function NewBeritaPostPage() {
         content: data.content,
         excerpt: data.content.replace(/<[^>]*>?/gm, '').substring(0, 150) + '...',
         category: data.category,
+        type: data.type,
+        youtubeId: data.youtubeId,
+        isFeatured: data.isFeatured,
       };
       await createBeritaPost(newPost);
       toast({
-        title: 'Berita Dibuat!',
-        description: 'Berita baru telah berhasil disimpan.',
+        title: 'Konten Dibuat!',
+        description: 'Konten baru telah berhasil disimpan.',
       });
       router.push('/panel/berita');
     } catch (error) {
@@ -175,11 +180,13 @@ export default function NewBeritaPostPage() {
     }
   };
 
+  const contentType = watch('type');
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-headline text-2xl font-bold">Editor Berita Cerdas</h1>
+          <h1 className="font-headline text-2xl font-bold">Editor Konten Cerdas</h1>
           <p className="text-muted-foreground">Buat dan sempurnakan berita dengan bantuan AI.</p>
         </div>
         <div className="flex gap-2">
@@ -188,7 +195,7 @@ export default function NewBeritaPostPage() {
             </Button>
             <Button type="submit" disabled={loading || loadingAi || loadingImage}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Simpan Berita
+              Simpan Konten
             </Button>
         </div>
       </div>
@@ -197,18 +204,83 @@ export default function NewBeritaPostPage() {
         <div className="lg:col-span-2 space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Konten Berita</CardTitle>
-                    <CardDescription>Isi detail berita di bawah ini. Gunakan fitur AI untuk membantu Anda.</CardDescription>
+                    <CardTitle>Konten</CardTitle>
+                    <CardDescription>Isi detail konten di bawah ini. Gunakan fitur AI untuk membantu Anda.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="space-y-2">
-                        <Label htmlFor="title">Judul Berita</Label>
-                        <Input id="title" placeholder="Judul yang menarik..." {...register('title', { required: true })} onChange={handleTitleChange} />
+                        <Label>Jenis Konten</Label>
+                         <Controller
+                          name="type"
+                          control={control}
+                          render={({ field }) => (
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="artikel">Artikel</SelectItem>
+                                <SelectItem value="video">Video</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="slug">Slug</Label>
-                        <Input id="slug" placeholder="contoh: berita-baru-saya" {...register('slug')} />
+                        <Label htmlFor="title">Judul</Label>
+                        <Input id="title" placeholder="Judul yang menarik..." {...register('title', { required: true })} onChange={handleTitleChange} />
                     </div>
+                    
+                    {contentType === 'artikel' && (
+                        <>
+                            <div className="space-y-2">
+                                <Label htmlFor="slug">Slug</Label>
+                                <Input id="slug" placeholder="contoh: berita-baru-saya" {...register('slug')} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="imageHint">Petunjuk Gambar (untuk AI)</Label>
+                                <div className="flex gap-2">
+                                    <Input id="imageHint" placeholder="Contoh: petani di sawah" {...register('imageHint')} />
+                                    <Button type="button" onClick={handleGenerateImage} disabled={loadingImage} className="whitespace-nowrap">
+                                        {loadingImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4" />}
+                                        Buat
+                                    </Button>
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="imageUrl">URL Gambar Utama</Label>
+                                <Input id="imageUrl" placeholder="https://... atau generate dengan AI" {...register('imageUrl')} />
+                            </div>
+                             <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <Label htmlFor="content">Konten Artikel</Label>
+                                    <Button type="button" size="sm" variant="outline" onClick={handleEnhanceWithAI} disabled={loadingAi}>
+                                        {loadingAi ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
+                                        Sempurnakan dengan AI
+                                    </Button>
+                                </div>
+                                <Controller
+                                    name="content"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <RichTextEditor
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                        />
+                                    )}
+                                />
+                            </div>
+                        </>
+                    )}
+
+                    {contentType === 'video' && (
+                         <div className="space-y-2">
+                            <Label htmlFor="youtubeId">ID Video YouTube</Label>
+                            <Input id="youtubeId" placeholder="Contoh: dQw4w9WgXcQ" {...register('youtubeId')} />
+                            <p className="text-xs text-muted-foreground">
+                                Salin ID dari URL YouTube. Contoh: dari `https://www.youtube.com/watch?v=`<strong className="text-primary">`dQw4w9WgXcQ`</strong>, ID-nya adalah `dQw4w9WgXcQ`.
+                            </p>
+                        </div>
+                    )}
+
                     <div className="space-y-2">
                       <Label htmlFor="category">Kategori</Label>
                       <Controller
@@ -218,7 +290,7 @@ export default function NewBeritaPostPage() {
                           render={({ field }) => (
                               <Select onValueChange={field.onChange} defaultValue={field.value}>
                                   <SelectTrigger id="category">
-                                      <SelectValue placeholder="Pilih kategori berita" />
+                                      <SelectValue placeholder="Pilih kategori" />
                                   </SelectTrigger>
                                   <SelectContent>
                                       {categories.map((cat) => (
@@ -231,38 +303,19 @@ export default function NewBeritaPostPage() {
                           )}
                       />
                     </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="imageHint">Petunjuk Gambar (untuk AI)</Label>
-                        <div className="flex gap-2">
-                            <Input id="imageHint" placeholder="Contoh: petani di sawah" {...register('imageHint')} />
-                            <Button type="button" onClick={handleGenerateImage} disabled={loadingImage} className="whitespace-nowrap">
-                                {loadingImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4" />}
-                                Buat
-                            </Button>
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="imageUrl">URL Gambar Utama</Label>
-                        <Input id="imageUrl" placeholder="https://... atau generate dengan AI" {...register('imageUrl')} />
-                    </div>
-                    <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                            <Label htmlFor="content">Konten Berita</Label>
-                            <Button type="button" size="sm" variant="outline" onClick={handleEnhanceWithAI} disabled={loadingAi}>
-                                {loadingAi ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
-                                Sempurnakan dengan AI
-                            </Button>
-                        </div>
+                     <div className="flex items-center space-x-2 pt-2">
                         <Controller
-                            name="content"
+                            name="isFeatured"
                             control={control}
                             render={({ field }) => (
-                                <RichTextEditor
-                                    value={field.value}
-                                    onChange={field.onChange}
+                                <Switch
+                                    id="isFeatured"
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
                                 />
                             )}
                         />
+                        <Label htmlFor="isFeatured">Jadikan Unggulan (Featured)</Label>
                     </div>
                 </CardContent>
             </Card>

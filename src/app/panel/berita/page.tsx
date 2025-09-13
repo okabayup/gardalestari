@@ -1,10 +1,9 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, MoreHorizontal, Loader2, Trash2, Sparkles, RefreshCw } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Loader2, Trash2, Sparkles, RefreshCw, Star } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from '@/components/ui/badge';
 import type { BeritaPost } from '@/lib/definitions';
+import { cn } from '@/lib/utils';
 
 export default function AdminBeritaPage() {
   const router = useRouter();
@@ -69,10 +69,10 @@ export default function AdminBeritaPage() {
     setShowDeleteAlert(true);
   };
 
-  const handleReindexClick = async (slug: string) => {
+  const handleReindexClick = async (slug: string, type: 'artikel' | 'video' = 'artikel') => {
     setIsReindexing(slug);
     try {
-        const result = await requestReindexing(slug);
+        const result = await requestReindexing(slug, type);
         toast({ title: "Sukses", description: result.message });
     } catch (error) {
          toast({ variant: "destructive", title: "Gagal", description: (error as Error).message });
@@ -88,15 +88,15 @@ export default function AdminBeritaPage() {
             await deleteBeritaPost(postToDelete.id);
             setPosts(posts.filter(p => p.id !== postToDelete.id));
             toast({
-                title: "Berita dihapus!",
+                title: "Konten dihapus!",
                 description: `"${postToDelete.title}" telah berhasil dihapus.`,
             });
         } catch (error) {
             console.error(error);
             toast({
                 variant: "destructive",
-                title: "Gagal menghapus berita",
-                description: "Terjadi kesalahan saat mencoba menghapus berita ini.",
+                title: "Gagal menghapus",
+                description: "Terjadi kesalahan saat mencoba menghapus konten ini.",
             });
         } finally {
             setIsDeleting(null);
@@ -111,8 +111,8 @@ export default function AdminBeritaPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-headline text-2xl font-bold">Manajemen Berita</h1>
-            <p className="text-muted-foreground">Buat, edit, dan kelola semua artikel berita.</p>
+            <h1 className="font-headline text-2xl font-bold">Manajemen Konten</h1>
+            <p className="text-muted-foreground">Buat, edit, dan kelola semua artikel dan video.</p>
           </div>
           {canManage && (
              <div className="flex gap-2">
@@ -130,8 +130,8 @@ export default function AdminBeritaPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
              <div>
-                <CardTitle>Daftar Artikel</CardTitle>
-                <CardDescription>Total {posts.length} artikel dipublikasikan.</CardDescription>
+                <CardTitle>Daftar Konten</CardTitle>
+                <CardDescription>Total {posts.length} konten dipublikasikan.</CardDescription>
              </div>
              {canManage && (
                 <Button variant="outline" size="sm" onClick={() => router.push('/panel/berita/kategori')}>
@@ -144,8 +144,8 @@ export default function AdminBeritaPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Judul</TableHead>
+                  <TableHead>Tipe</TableHead>
                   <TableHead>Kategori</TableHead>
-                  <TableHead className="hidden md:table-cell">Penulis</TableHead>
                   <TableHead className="hidden md:table-cell">Tanggal</TableHead>
                   <TableHead>
                     <span className="sr-only">Aksi</span>
@@ -162,9 +162,12 @@ export default function AdminBeritaPage() {
                 ) : posts.length > 0 ? (
                   posts.map((post) => (
                     <TableRow key={post.id}>
-                      <TableCell className="font-medium">{post.title}</TableCell>
+                      <TableCell className="font-medium flex items-center gap-2">
+                        {post.isFeatured && <Star className="h-4 w-4 text-yellow-500 fill-yellow-400" />}
+                        {post.title}
+                      </TableCell>
+                      <TableCell><Badge variant="outline">{post.type}</Badge></TableCell>
                       <TableCell><Badge variant="secondary">{post.category}</Badge></TableCell>
-                      <TableCell className="hidden md:table-cell">{post.author}</TableCell>
                       <TableCell className="hidden md:table-cell">{new Date(post.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -180,7 +183,7 @@ export default function AdminBeritaPage() {
                                 <DropdownMenuItem onClick={() => router.push(`/panel/berita/edit/${post.slug}`)}>
                                 Edit
                                 </DropdownMenuItem>
-                                 <DropdownMenuItem onClick={() => handleReindexClick(post.slug)} disabled={isReindexing === post.slug}>
+                                 <DropdownMenuItem onClick={() => handleReindexClick(post.slug, post.type)} disabled={isReindexing === post.slug}>
                                     {isReindexing === post.slug ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
                                     Minta Indeks Ulang
                                 </DropdownMenuItem>
@@ -203,7 +206,7 @@ export default function AdminBeritaPage() {
                 ) : (
                     <TableRow>
                         <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
-                            Belum ada berita.
+                            Belum ada konten.
                         </TableCell>
                     </TableRow>
                 )}
@@ -217,7 +220,7 @@ export default function AdminBeritaPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Anda yakin ingin menghapus?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini tidak dapat dibatalkan. Berita
+              Tindakan ini tidak dapat dibatalkan. Konten
               <span className="font-semibold"> "{postToDelete?.title}" </span>
               akan dihapus secara permanen.
             </AlertDialogDescription>

@@ -45,7 +45,7 @@ export default async function LandingPage() {
   const partners = await getPartners();
   const allPosts = await getBeritaPosts();
   
-  const latestArticles = allPosts.filter(p => p.type === 'artikel');
+  const featuredArticles = allPosts.filter(p => p.type === 'artikel' && p.isFeatured).slice(0,3);
   const featuredVideos = allPosts.filter(p => p.type === 'video' && p.isFeatured);
 
   const featuredPartners = partners.filter(p => p.isFeatured);
@@ -224,12 +224,12 @@ export default async function LandingPage() {
               <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Ikuti perkembangan terbaru dari program, acara, dan riset yang kami lakukan.</p>
             </div>
             
-            {latestArticles.length > 0 ? (
+            {featuredArticles.length > 0 ? (
               <>
                 <div className="md:hidden"> {/* Horizontal Scroll for Mobile */}
                    <ScrollArea className="w-full">
                       <div className="flex space-x-4 pb-4">
-                        {latestArticles.slice(0, 3).map((post) => (
+                        {featuredArticles.map((post) => (
                           <div key={post.id} className="w-72 flex-shrink-0">
                              <BeritaPostCard {...post} />
                           </div>
@@ -240,13 +240,13 @@ export default async function LandingPage() {
                 </div>
 
                 <div className="hidden md:grid md:grid-cols-3 gap-6"> {/* Grid for Desktop */}
-                  {latestArticles.slice(0, 3).map((post) => (
+                  {featuredArticles.map((post) => (
                     <BeritaPostCard key={post.id} {...post} />
                   ))}
                 </div>
               </>
             ) : (
-               <p className="text-center text-muted-foreground">Belum ada berita yang dipublikasikan.</p>
+               <p className="text-center text-muted-foreground">Belum ada berita unggulan yang dipublikasikan.</p>
             )}
 
             <div className="mt-12 text-center">
