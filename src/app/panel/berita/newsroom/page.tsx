@@ -8,9 +8,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Sparkles, Wand2 } from 'lucide-react';
-import { suggestNewsTopics, generateNewsArticle } from '@/ai/flows/news-generator-flow';
-import { createBeritaPost, BeritaPost } from '@/app/actions/berita';
+import { Loader2, Sparkles, ArrowRight } from 'lucide-react';
+import { suggestNewsTopics } from '@/ai/flows/news-generator-flow';
 
 interface TopicSuggestion {
   title: string;
@@ -21,11 +20,9 @@ interface TopicSuggestion {
 export default function NewsroomPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useAuth();
   
   const [suggestions, setSuggestions] = useState<TopicSuggestion[]>([]);
   const [generatingTopics, setGeneratingTopics] = useState(false);
-  const [generatingArticle, setGeneratingArticle] = useState<string | null>(null);
 
   const handleSuggestTopics = async () => {
     setGeneratingTopics(true);
@@ -33,7 +30,7 @@ export default function NewsroomPage() {
     try {
       const result = await suggestNewsTopics();
       setSuggestions(result.topics);
-      toast({ title: 'Ide Topik Dihasilkan!', description: 'Pilih salah satu untuk dibuat menjadi artikel.' });
+      toast({ title: 'Ide Topik Dihasilkan!', description: 'Pilih salah satu untuk dikembangkan menjadi artikel.' });
     } catch (error) {
       toast({ variant: 'destructive', title: 'Gagal Membuat Ide', description: (error as Error).message });
     } finally {
@@ -41,47 +38,12 @@ export default function NewsroomPage() {
     }
   };
   
-  const handleGenerateArticle = async (topic: TopicSuggestion) => {
-    if (!user) {
-        toast({ variant: 'destructive', title: 'Anda harus login' });
-        return;
-    }
-    setGeneratingArticle(topic.title);
-    toast({ title: 'AI sedang menulis artikel...', description: 'Ini mungkin butuh waktu hingga satu menit. Mohon jangan tutup halaman ini.' });
-    
-    try {
-        const articleResult = await generateNewsArticle({ topic: topic.title, description: topic.description });
-        
-        const newPost: Omit<BeritaPost, 'id'> = {
-            title: articleResult.title,
-            slug: articleResult.title.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-'),
-            author: user.displayName || 'Admin',
-            date: new Date().toISOString(),
-            imageUrl: articleResult.coverImageUrl,
-            imageHint: articleResult.imageHints?.[0] || 'AI generated image',
-            content: articleResult.content,
-            excerpt: articleResult.excerpt,
-            category: articleResult.category,
-            type: 'artikel',
-            isFeatured: false,
-        };
-
-        const createdPost = await createBeritaPost(newPost);
-        
-        toast({
-            title: 'Artikel Berhasil Dibuat & Disimpan!',
-            description: `Artikel "${createdPost.title}" telah dipublikasikan.`,
-            action: <Button variant="outline" size="sm" onClick={() => router.push(`/panel/berita/edit/${createdPost.slug}`)}>Edit</Button>
-        });
-
-        // Remove the generated topic from the list
-        setSuggestions(prev => prev.filter(s => s.title !== topic.title));
-
-    } catch (error) {
-        toast({ variant: 'destructive', title: 'Gagal Membuat Artikel', description: (error as Error).message, duration: 8000 });
-    } finally {
-        setGeneratingArticle(null);
-    }
+  const handleUseTopic = (topic: TopicSuggestion) => {
+    const params = new URLSearchParams({
+      topic: topic.title,
+      description: topic.description,
+    });
+    router.push(`/panel/berita/generate?${params.toString()}`);
   }
 
 
@@ -114,7 +76,7 @@ export default function NewsroomPage() {
         <Card>
           <CardHeader>
             <CardTitle>Hasil Ide Topik</CardTitle>
-            <CardDescription>Pilih salah satu ide di bawah ini untuk dibuat menjadi artikel lengkap oleh AI, termasuk gambar yang relevan.</CardDescription>
+            <CardDescription>Pilih salah satu ide di bawah ini untuk dikembangkan di halaman generator.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {suggestions.map((topic, index) => (
@@ -129,15 +91,11 @@ export default function NewsroomPage() {
                   </div>
                   <Button
                     className="w-full sm:w-auto"
-                    onClick={() => handleGenerateArticle(topic)}
-                    disabled={!!generatingArticle}
+                    variant="outline"
+                    onClick={() => handleUseTopic(topic)}
                   >
-                    {generatingArticle === topic.title ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Wand2 className="mr-2 h-4 w-4" />
-                    )}
-                    {generatingArticle === topic.title ? 'Membuat...' : 'Buat Artikel Ini'}
+                    Gunakan Topik Ini
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
               </Card>

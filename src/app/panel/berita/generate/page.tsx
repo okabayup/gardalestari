@@ -1,16 +1,16 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles } from 'lucide-react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { createBeritaPost, BeritaPost } from '@/app/actions/berita';
 import { useAuth } from '@/hooks/use-auth';
 import { generateNewsArticle, NewsGeneratorOutput } from '@/ai/flows/news-generator-flow';
@@ -23,12 +23,20 @@ interface GenerateForm {
 
 export default function GenerateBeritaPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<NewsGeneratorOutput | null>(null);
 
-  const { register, handleSubmit } = useForm<GenerateForm>();
+  const { register, handleSubmit, setValue } = useForm<GenerateForm>();
+
+  useEffect(() => {
+    const topic = searchParams.get('topic');
+    const description = searchParams.get('description');
+    if (topic) setValue('topic', topic);
+    if (description) setValue('description', description);
+  }, [searchParams, setValue]);
   
   const generateSlug = (title: string) => {
     if (!title) return '';
@@ -60,8 +68,7 @@ export default function GenerateBeritaPage() {
     setLoading(true);
 
     try {
-      // Ensure all required fields have a safe default value to prevent Firestore errors
-      const newPost: Omit<BeritaPost, 'id'> = {
+      const newPost: Omit<BeritaPost, 'id' | 'type' | 'youtubeId' | 'isFeatured'> = {
         title: generatedContent.title || 'Judul Dibuat AI',
         slug: generateSlug(generatedContent.title || 'judul-dibuat-ai'),
         author: user?.displayName || 'Admin',
@@ -73,7 +80,7 @@ export default function GenerateBeritaPage() {
         category: generatedContent.category || 'Umum',
       };
       
-      await createBeritaPost(newPost);
+      await createBeritaPost({ ...newPost, type: 'artikel' });
 
       toast({
         title: 'Berita Disimpan!',
@@ -116,12 +123,12 @@ export default function GenerateBeritaPage() {
             <CardContent>
               <form onSubmit={handleSubmit(onGenerate)} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="topic">Topik Berita (Opsional)</Label>
+                  <Label htmlFor="topic">Topik Berita</Label>
                   <Input id="topic" {...register('topic')} placeholder="Contoh: Panen raya di desa X" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="description">Deskripsi Singkat</Label>
-                  <Textarea id="description" {...register('description', { required: true })} placeholder="Jelaskan poin-poin utama atau ide untuk berita tersebut." />
+                  <Label htmlFor="description">Deskripsi & Konteks Tambahan</Label>
+                  <Textarea id="description" {...register('description', { required: true })} rows={6} placeholder="Jelaskan poin-poin utama, sudut pandang, atau detail spesifik yang harus ada di dalam berita." />
                 </div>
                 <Button type="submit" disabled={loading} className="w-full">
                   {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
@@ -151,7 +158,19 @@ export default function GenerateBeritaPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Konten</Label>
-                    <RichTextEditor value={generatedContent.content} onChange={(value) => setGeneratedContent(prev => prev ? {...prev, content: value} : null)} />
+                     <Controller
+                        name="content"
+                        control={{
+                          ...useForm().control,
+                          _defaultValues: { content: generatedContent.content },
+                        }}
+                        render={({ field }) => (
+                           <RichTextEditor 
+                            value={generatedContent.content} 
+                            onChange={(value) => setGeneratedContent(prev => prev ? {...prev, content: value} : null)}
+                          />
+                        )}
+                      />
                   </div>
                   <Button onClick={onSave} disabled={loading} className="w-full">
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
