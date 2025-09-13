@@ -37,7 +37,7 @@ export default function LoginPage() {
       toast({ title: 'OTP Terkirim', description: 'Silakan periksa ponsel Anda untuk kode verifikasi.' });
     } catch (error) {
       console.error(error);
-      toast({ variant: 'destructive', title: 'Error', description: 'Gagal mengirim OTP. Silakan coba lagi.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Gagal mengirim OTP. Pastikan nomor valid dan coba lagi.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -68,6 +68,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-secondary p-4">
+       <div id="recaptcha-container" className="fixed bottom-0 left-0"></div>
       <div className="w-full max-w-sm">
         <div className="text-center mb-6">
           <Link href="/" className="inline-block">
@@ -93,7 +94,6 @@ export default function LoginPage() {
                   onChange={(e) => setPhone(e.target.value)}
                   required
                 />
-                <div id="recaptcha-container" className="flex justify-center"></div>
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Kirim OTP

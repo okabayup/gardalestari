@@ -147,32 +147,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return user.permissions.includes(permission);
   }
 
-  const setupRecaptcha = (containerId: string) => {
-    // Ensure this runs only in the browser
-    if (typeof window === 'undefined') return;
-
-    // Clear previous instance and its container if it exists
-    if (recaptchaVerifier) {
-      recaptchaVerifier.clear();
-      recaptchaVerifier = null;
+  const signInWithPhone = async (phoneNumber: string, appVerifierContainerId: string) => {
+    if (typeof window !== 'undefined') {
+        if (!recaptchaVerifier) {
+            recaptchaVerifier = new RecaptchaVerifier(auth, appVerifierContainerId, {
+                'size': 'invisible',
+                'callback': () => {}, // on success
+                'expired-callback': () => {
+                    recaptchaVerifier?.clear();
+                    recaptchaVerifier = null;
+                     toast({
+                        variant: 'destructive',
+                        title: 'reCAPTCHA Kedaluwarsa',
+                        description: 'Silakan coba lagi.',
+                    });
+                }
+            });
+            await recaptchaVerifier.render(); // Explicitly render the verifier
+        }
+        
+        try {
+            const result = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
+            setConfirmationResult(result);
+        } catch (error) {
+             if (recaptchaVerifier) {
+                recaptchaVerifier.clear();
+                recaptchaVerifier = null;
+            }
+            throw error; // re-throw the error to be caught by the calling function
+        }
     }
-    const container = document.getElementById(containerId);
-    if (container) {
-      container.innerHTML = '';
-    }
-    
-    recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
-      'size': 'normal',
-      'callback': () => {},
-      'expired-callback': () => {
-        toast({
-            variant: 'destructive',
-            title: 'reCAPTCHA Kedaluwarsa',
-            description: 'Silakan selesaikan reCAPTCHA lagi.',
-        });
-      }
-    });
-  }
+  };
 
   const generateUniqueUsername = async (fullName: string): Promise<string> => {
     const baseUsername = fullName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15) || 'user';
@@ -188,21 +193,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
-
-  const signInWithPhone = async (phoneNumber: string, appVerifierContainerId: string) => {
-    if (typeof window !== 'undefined' && (pathname === '/login' || pathname === '/register')) {
-        if (!document.getElementById(appVerifierContainerId)) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
-        setupRecaptcha(appVerifierContainerId);
-        if(recaptchaVerifier) {
-            const result = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
-            setConfirmationResult(result);
-        } else {
-            throw new Error("Recaptcha verifier not initialized");
-        }
-    }
-  };
 
   const verifyOtp = async (otp: string) => {
     if (!confirmationResult) {
@@ -376,10 +366,15 @@ export const useRequireAuth = (redirectTo = '/login') => {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !user) {
-      redirect(redirectTo);
+    if (loading) {
+      return;
     }
-  }, [user, loading, redirectTo]);
+
+    if (!user) {
+      return redirect(redirectTo);
+    }
+    
+  }, [user, loading, redirectTo, pathname]);
 
   return { user, loading };
 };
