@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -263,12 +264,15 @@ export async function saveWaNumber(userId: string, waNumber: string) {
 
     try {
         const result = await sendWhatsAppMessage(waNumber, `Kode verifikasi Garda Lestari Anda adalah: ${otp}`);
+        // This logic is now handled robustly inside sendWhatsAppMessage
         if (!result.success) {
-            throw new Error(result.error || 'Unknown error from WhatsApp service.');
+            // Throw the specific error message from the service
+            throw new Error(result.error || 'Gagal mengirim OTP dari layanan WhatsApp.');
         }
         return result;
     } catch (error) {
         console.error(`Error in saveWaNumber action for ${waNumber}:`, error);
+        // Re-throw the error so the client can catch the specific message
         throw error;
     }
 }
