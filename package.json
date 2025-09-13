@@ -84,6 +84,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/react-leaflet": "^3.0.0",
+    "@types/wav": "^1.0.3",
     "genkit-cli": "^1.14.1",
     "pino-pretty": "^11.2.1",
     "postcss": "^8",
