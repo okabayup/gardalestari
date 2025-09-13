@@ -32,7 +32,6 @@ export const PanelBadgesProvider: React.FC<{ children: React.ReactNode }> = ({ c
     fetchBadges();
     const interval = setInterval(fetchBadges, 60000); // Poll every minute
     return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, fetchBadges]);
 
   return (
