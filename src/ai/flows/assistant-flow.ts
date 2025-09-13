@@ -23,58 +23,57 @@ import {
   type AssistantOutput,
 } from '@/lib/definitions';
 import { Message, Part, Tool, defineTool, GenerationCommon, generate, content, role } from 'genkit';
-import { geminiPro } from '@genkit-ai/googleai';
 
 
 // Define tools for the AI to use
-const searchDataBankTool = defineTool(
+const searchDataBankTool = ai.defineTool(
   {
     name: 'searchDataBank',
     description: 'Search the Garda Lestari data bank for information on policies, sectoral data, research, etc.',
     inputSchema: z.object({ query: z.string() }),
     outputSchema: z.array(z.custom<Partial<DataBankEntry>>()),
   },
-  async (input) => searchDataBank(input.query)
+  async ({ query }) => searchDataBank(query)
 );
 
-const searchIdeaBankTool = defineTool(
+const searchIdeaBankTool = ai.defineTool(
   {
     name: 'searchIdeaBank',
     description: 'Search the Garda Lestari idea bank for existing ideas and proposals from members.',
     inputSchema: z.object({ query: z.string() }),
     outputSchema: z.array(z.custom<Partial<Idea>>()),
   },
-  async (input) => searchIdeaBank(input.query)
+  async ({ query }) => searchIdeaBank(query)
 );
 
-const searchProgramsTool = defineTool(
+const searchProgramsTool = ai.defineTool(
   {
     name: 'searchPrograms',
     description: 'Search for ongoing or past programs run by Garda Lestari or its partners.',
     inputSchema: z.object({ query: z.string() }),
     outputSchema: z.array(z.custom<Partial<Program>>()),
   },
-  async (input) => searchPrograms(input.query)
+  async ({ query }) => searchPrograms(query)
 );
 
-const searchEventsTool = defineTool(
+const searchEventsTool = ai.defineTool(
   {
     name: 'searchEvents',
     description: 'Search for upcoming or past events, workshops, or webinars.',
     inputSchema: z.object({ query: z.string() }),
     outputSchema: z.array(z.custom<Partial<Event>>()),
   },
-  async (input) => searchEvents(input.query)
+  async ({ query }) => searchEvents(query)
 );
 
-const searchAchievementsTool = defineTool(
+const searchAchievementsTool = ai.defineTool(
   {
     name: 'searchAchievements',
     description: "Search for achievements and awards won by Garda Lestari's members.",
     inputSchema: z.object({ query: z.string() }),
     outputSchema: z.array(z.custom<Partial<Achievement>>()),
   },
-  async (input) => searchAchievements(input.query)
+  async ({ query }) => searchAchievements(query)
 );
 
 const availableTools: Record<string, Tool> = {
@@ -145,8 +144,6 @@ const assistantFlow = ai.defineFlow(
         
         const tools = Object.values(availableTools);
 
-        const model = geminiPro;
-
         const generationConfig: GenerationCommon = {
             temperature: 0.2,
         };
@@ -157,7 +154,6 @@ const assistantFlow = ai.defineFlow(
         ];
 
         const {candidates} = await generate({
-            model,
             tools,
             system: systemPrompt,
             messages,
@@ -194,7 +190,6 @@ const assistantFlow = ai.defineFlow(
                 messages.push({ role: 'tool', content: toolResponses});
                 
                 const nextResponse = await generate({
-                    model,
                     tools,
                     messages,
                     config: generationConfig,
