@@ -569,6 +569,6 @@ export type Citation = z.infer<typeof CitationSchema>;
 
 export const AssistantOutputSchema = z.object({
   responseText: z.string().describe('The main text of the AI\'s answer, formatted in Markdown. This text MUST include citation markers like [Sumber 1], [Ide 2], etc., corresponding to the `citations` array.'),
-  citations: z.array(CitationSchema).describe('An array of sources cited in the `responseText`.'),
+  citations: z.array(CitationSchema).optional().describe('An array of sources cited in the `responseText`.'),
 });
 export type AssistantOutput = z.infer<typeof AssistantOutputSchema>;

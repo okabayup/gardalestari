@@ -49,7 +49,7 @@ export default async function LandingPage() {
   const featuredVideos = allPosts.filter(p => p.type === 'video' && p.isFeatured);
 
   const featuredPartners = partners.filter(p => p.isFeatured);
-  const WHATSAPP_LINK = "https://wa.me/6285144904161";
+  const WHATSAPP_LINK = `https://wa.me/${process.env.WHATSAPP_NUMBER || '6285144904161'}`;
 
   const totalMembers = members.length + (settings.dummyMembers || 0);
   const totalPrograms = programs.length + (settings.dummyPrograms || 0);
@@ -58,7 +58,7 @@ export default async function LandingPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <LandingHeader />
+      <LandingHeader isRegistrationOpen={settings.isRegistrationOpen} />
 
       <main className="flex-1">
         {/* Hero Section */}
@@ -83,9 +83,11 @@ export default async function LandingPage() {
                   Garda Lestari adalah wadah bagi Anda yang peduli dan ingin beraksi untuk kelestarian agro, maritim, dan kehutanan Indonesia.
                 </p>
                 <div className="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
-                  <Button size="lg" asChild className="shadow-lg">
-                      <Link href="/register">Bergabunglah dengan Gerakan Kami</Link>
-                  </Button>
+                  {settings.isRegistrationOpen && (
+                    <Button size="lg" asChild className="shadow-lg">
+                        <Link href="/register">Bergabunglah dengan Gerakan Kami</Link>
+                    </Button>
+                  )}
                   <Button size="lg" variant="outline" asChild>
                       <Link href={WHATSAPP_LINK} target="_blank">Dukung Misi Kami</Link>
                   </Button>

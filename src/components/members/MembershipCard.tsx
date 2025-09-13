@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { VerifiedBadge } from './VerifiedBadge';
-import { MemberType } from '@/app/actions/members';
+import { MemberType } from '@/lib/definitions';
 import QRCode from 'qrcode.react';
 
 interface MembershipCardProps {

@@ -44,19 +44,15 @@ export default function WhatsAppVerificationDialog({ user }: WhatsAppVerificatio
     setLoadingSend(true);
     try {
       const result = await saveWaNumber(user.uid, waNumber);
-      if (result.success || result.error === 'Message sent successfully') {
+      if (result.success) {
          toast({ title: 'Kode OTP terkirim!', description: 'Periksa WhatsApp Anda.' });
          setOtpSent(true);
       } else {
-        toast({
-          variant: 'destructive',
-          title: 'Gagal mengirim OTP',
-          description: result.error || 'Terjadi kesalahan di server.'
-        });
+        throw new Error(result.error || 'Gagal mengirim pesan.');
       }
     } catch (error) {
       const errorMessage = (error as Error).message || 'Terjadi kesalahan pada sisi klien.';
-      toast({ variant: 'destructive', title: 'Gagal mengirim OTP', description: errorMessage });
+      toast({ variant: 'destructive', title: 'Gagal mengirim OTP', description: errorMessage, duration: 7000 });
     } finally {
       setLoadingSend(false);
     }

@@ -11,6 +11,8 @@ import { Download, Loader2, X, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '../ui/badge';
 import Link from 'next/link';
+import type { MemberType } from '@/lib/definitions';
+
 
 interface MembershipCardDialogProps {
   isOpen: boolean;
@@ -20,7 +22,7 @@ interface MembershipCardDialogProps {
     fullName?: string;
     username?: string;
     nik?: string;
-    type?: 'pusat' | 'daerah' | 'cabang' | 'pembina';
+    type?: MemberType;
     position?: string;
   };
 }

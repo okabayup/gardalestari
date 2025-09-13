@@ -1,13 +1,12 @@
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Loader2, Menu } from 'lucide-react';
-import { getAppSettings } from '@/app/actions/settings';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Separator } from '../ui/separator';
 
@@ -17,18 +16,12 @@ const navItems = [
   { href: '/programs', label: 'Program' },
 ];
 
+interface LandingHeaderProps {
+  isRegistrationOpen: boolean;
+}
 
-export default function LandingHeader() {
+export default function LandingHeader({ isRegistrationOpen }: LandingHeaderProps) {
   const { user, loading } = useAuth();
-  const [isRegistrationOpen, setRegistrationOpen] = useState(true);
-
-   useEffect(() => {
-    const checkRegistrationStatus = async () => {
-        const settings = await getAppSettings();
-        setRegistrationOpen(settings.isRegistrationOpen);
-    };
-    checkRegistrationStatus();
-  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

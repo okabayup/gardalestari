@@ -190,6 +190,10 @@ export default function RegisterPage() {
                                 name={user.displayName || 'Anggota Baru'}
                                 photoUrl={user.photoURL || ''}
                                 memberId={memberId}
+                                nik={user.nik || undefined}
+                                profileUrl={user.username ? `/profile/${user.username}` : '#'}
+                                joinDate={user.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString('id-ID') : ''}
+                                position={user.position}
                             />
                         )}
                         <Button size="lg" onClick={() => router.push('/profile/verify')}>
