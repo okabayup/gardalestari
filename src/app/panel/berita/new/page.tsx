@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Wand2 } from 'lucide-react';
+import { Loader2, Sparkles, Wand2, ArrowRight } from 'lucide-react';
 import { useForm, Controller } from 'react-hook-form';
 import { createBeritaPost, BeritaPost } from '@/app/actions/berita';
 import { useAuth } from '@/hooks/use-auth';
@@ -23,7 +23,7 @@ import { Switch } from '@/components/ui/switch';
 
 type FormData = Omit<BeritaPost, 'id' | 'author' | 'date' | 'excerpt'>;
 
-const AnalysisPanel = ({ analysis }: { analysis: EnhanceTextOutput | null }) => {
+const AnalysisPanel = ({ analysis, previousAnalysis }: { analysis: EnhanceTextOutput | null, previousAnalysis: EnhanceTextOutput | null }) => {
   if (!analysis) {
     return (
       <div className="text-center text-sm text-muted-foreground p-4 border rounded-lg h-full flex flex-col justify-center">
@@ -32,6 +32,8 @@ const AnalysisPanel = ({ analysis }: { analysis: EnhanceTextOutput | null }) => 
       </div>
     );
   }
+
+  const previousSeoScore = previousAnalysis?.seoScore;
 
   return (
     <Card className="h-full">
@@ -46,7 +48,14 @@ const AnalysisPanel = ({ analysis }: { analysis: EnhanceTextOutput | null }) => 
         </div>
         <Separator />
         <div className="space-y-2">
-          <Label>Skor SEO: {analysis.seoScore}/100</Label>
+           <div className="flex items-center gap-2">
+             <Label>Skor SEO:</Label>
+             {previousSeoScore && previousSeoScore !== analysis.seoScore && (
+                 <span className="text-xs font-mono text-muted-foreground">{previousSeoScore}</span>
+             )}
+             {previousSeoScore && previousSeoScore !== analysis.seoScore && <ArrowRight className="h-3 w-3 text-muted-foreground" />}
+             <span className="font-bold text-sm">{analysis.seoScore}/100</span>
+           </div>
           <Progress value={analysis.seoScore} className="h-2 [&>div]:bg-sky-500" />
           <p className="text-xs text-muted-foreground">{analysis.seoFeedback}</p>
         </div>
@@ -70,6 +79,7 @@ export default function NewBeritaPostPage() {
   const [loadingAi, setLoadingAi] = useState(false);
   const [loadingImage, setLoadingImage] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<EnhanceTextOutput | null>(null);
+  const [previousAiAnalysis, setPreviousAiAnalysis] = useState<EnhanceTextOutput | null>(null);
   const [categories, setCategories] = useState<BeritaCategory[]>([]);
 
   const { register, handleSubmit, watch, setValue, getValues, control } = useForm<FormData>({
@@ -111,6 +121,7 @@ export default function NewBeritaPostPage() {
       return;
     }
     setLoadingAi(true);
+    setPreviousAiAnalysis(aiAnalysis);
     try {
       const result = await enhanceText({ text: content });
       setAiAnalysis(result);
@@ -121,6 +132,7 @@ export default function NewBeritaPostPage() {
       toast({ title: 'Teks disempurnakan!', description: 'Konten, judul, dan analisis telah diperbarui oleh AI.' });
     } catch (error) {
       toast({ variant: 'destructive', title: 'Gagal', description: (error as Error).message });
+      setPreviousAiAnalysis(null); // Revert on failure
     } finally {
       setLoadingAi(false);
     }
@@ -338,7 +350,7 @@ export default function NewBeritaPostPage() {
         </div>
 
         <div className="lg:col-span-1">
-            <AnalysisPanel analysis={aiAnalysis} />
+            <AnalysisPanel analysis={aiAnalysis} previousAnalysis={previousAiAnalysis} />
         </div>
       </div>
     </form>
