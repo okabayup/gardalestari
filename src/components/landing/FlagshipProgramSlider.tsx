@@ -4,7 +4,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { Program } from '@/lib/definitions';
+import type { Program } from '@/lib/definitions';
 import Link from 'next/link';
 import Image from 'next/image';
 import { format } from 'date-fns';
@@ -14,12 +14,16 @@ import { Button } from '../ui/button';
 import { ArrowRight, Globe } from 'lucide-react';
 import Autoplay from "embla-carousel-autoplay"
 
+type SerializableProgram = Omit<Program, 'startDate' | 'endDate'> & {
+  startDate: string;
+  endDate: string;
+};
 
 interface FlagshipProgramSliderProps {
-  programs: Program[];
+  programs: SerializableProgram[];
 }
 
-const ProgramSliderCard = ({ program }: { program: Program }) => {
+const ProgramSliderCard = ({ program }: { program: SerializableProgram }) => {
     const isExternalSubmission = program.submissionType === 'external' && program.applicationUrl;
 
     const actionButton = isExternalSubmission ? (
@@ -54,7 +58,7 @@ const ProgramSliderCard = ({ program }: { program: Program }) => {
                             ))}
                         </div>
                         <h3 className="text-white font-bold text-lg line-clamp-2">{program.title}</h3>
-                        <p className="text-xs text-white/80">{format(program.startDate.toDate(), "d MMM", { locale: id })} - {format(program.endDate.toDate(), "d MMM yyyy", { locale: id })}</p>
+                        <p className="text-xs text-white/80">{format(new Date(program.startDate), "d MMM", { locale: id })} - {format(new Date(program.endDate), "d MMM yyyy", { locale: id })}</p>
                     </div>
                 </CardContent>
                 <div className="p-4 bg-card">
@@ -94,4 +98,3 @@ export default function FlagshipProgramSlider({ programs }: FlagshipProgramSlide
     </Carousel>
   );
 }
-
