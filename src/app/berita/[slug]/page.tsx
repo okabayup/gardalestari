@@ -1,4 +1,6 @@
 
+'use client';
+
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import LandingHeader from '@/components/layout/LandingHeader';
@@ -16,49 +18,49 @@ type Props = {
   params: { slug: string }
 }
 
-export async function generateMetadata(
-  { params }: Props,
-  parent: ResolvingMetadata
-): Promise<Metadata> {
-  const slug = params.slug;
-  const post = await getBeritaPost(slug);
+// export async function generateMetadata(
+//   { params }: Props,
+//   parent: ResolvingMetadata
+// ): Promise<Metadata> {
+//   const slug = params.slug;
+//   const post = await getBeritaPost(slug);
 
-  if (!post) {
-    return {
-      title: 'Berita Tidak Ditemukan',
-    }
-  }
+//   if (!post) {
+//     return {
+//       title: 'Berita Tidak Ditemukan',
+//     }
+//   }
   
-  const previousImages = (await parent).openGraph?.images || []
+//   const previousImages = (await parent).openGraph?.images || []
 
-  return {
-    title: post.title,
-    description: post.excerpt,
-    alternates: {
-      canonical: `/berita/${slug}`,
-    },
-    openGraph: {
-      title: post.title,
-      description: post.excerpt,
-      url: `/berita/${slug}`,
-      images: [
-        {
-          url: post.imageUrl,
-          width: 1200,
-          height: 630,
-          alt: post.title,
-        },
-        ...previousImages,
-      ],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: post.title,
-      description: post.excerpt,
-      images: [post.imageUrl],
-    },
-  }
-}
+//   return {
+//     title: post.title,
+//     description: post.excerpt,
+//     alternates: {
+//       canonical: `/berita/${slug}`,
+//     },
+//     openGraph: {
+//       title: post.title,
+//       description: post.excerpt,
+//       url: `/berita/${slug}`,
+//       images: [
+//         {
+//           url: post.imageUrl,
+//           width: 1200,
+//           height: 630,
+//           alt: post.title,
+//         },
+//         ...previousImages,
+//       ],
+//     },
+//     twitter: {
+//       card: 'summary_large_image',
+//       title: post.title,
+//       description: post.excerpt,
+//       images: [post.imageUrl],
+//     },
+//   }
+// }
 
 
 export default async function BeritaPostPage({ params }: Props) {
