@@ -56,8 +56,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Declare recaptchaVerifier in a broader scope
 let recaptchaVerifier: RecaptchaVerifier | null = null;
-const ADMIN_PHONE_NUMBER = process.env.NEXT_PUBLIC_ADMIN_PHONE_NUMBER || '6285176752610';
-const OFFICIAL_ACCOUNT_PHONE = '6285144904161';
+const ADMIN_PHONE_NUMBER = process.env.NEXT_PUBLIC_ADMIN_PHONE_NUMBER;
+const OFFICIAL_ACCOUNT_PHONE = '+6285144904161';
 
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -148,9 +148,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const setupRecaptcha = (containerId: string) => {
+    // Ensure this runs only in the browser
+    if (typeof window === 'undefined') return;
+
+    // Clear previous instance and its container if it exists
     if (recaptchaVerifier) {
-        const oldContainer = document.getElementById(containerId);
-        if(oldContainer) oldContainer.innerHTML = '';
+      recaptchaVerifier.clear();
+      recaptchaVerifier = null;
+    }
+    const container = document.getElementById(containerId);
+    if (container) {
+      container.innerHTML = '';
     }
     
     recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
