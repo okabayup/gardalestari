@@ -12,9 +12,11 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://gardalestari.org';
 
 // Get all berita posts (articles and videos)
 export async function getBeritaPosts(type?: 'artikel' | 'video') {
-  let q = query(beritaPostsCollection, orderBy('date', 'desc'));
+  let q;
   if (type) {
-      q = query(q, where('type', '==', type));
+      q = query(beritaPostsCollection, where('type', '==', type), orderBy('date', 'desc'));
+  } else {
+      q = query(beritaPostsCollection, orderBy('date', 'desc'));
   }
   const snapshot = await getDocs(q);
   const posts: BeritaPost[] = [];
