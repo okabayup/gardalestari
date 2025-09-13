@@ -22,9 +22,12 @@ import {
   type AssistantInput, 
   type AssistantOutput,
 } from '@/lib/definitions';
+import { Message, Part, Tool, defineTool, GenerationCommon, generate, content, role } from 'genkit';
+import { geminiPro } from '@genkit-ai/googleai';
+
 
 // Define tools for the AI to use
-const searchDataBankTool = ai.defineTool(
+const searchDataBankTool = defineTool(
   {
     name: 'searchDataBank',
     description: 'Search the Garda Lestari data bank for information on policies, sectoral data, research, etc.',
@@ -34,7 +37,7 @@ const searchDataBankTool = ai.defineTool(
   async (input) => searchDataBank(input.query)
 );
 
-const searchIdeaBankTool = ai.defineTool(
+const searchIdeaBankTool = defineTool(
   {
     name: 'searchIdeaBank',
     description: 'Search the Garda Lestari idea bank for existing ideas and proposals from members.',
@@ -44,7 +47,7 @@ const searchIdeaBankTool = ai.defineTool(
   async (input) => searchIdeaBank(input.query)
 );
 
-const searchProgramsTool = ai.defineTool(
+const searchProgramsTool = defineTool(
   {
     name: 'searchPrograms',
     description: 'Search for ongoing or past programs run by Garda Lestari or its partners.',
@@ -54,7 +57,7 @@ const searchProgramsTool = ai.defineTool(
   async (input) => searchPrograms(input.query)
 );
 
-const searchEventsTool = ai.defineTool(
+const searchEventsTool = defineTool(
   {
     name: 'searchEvents',
     description: 'Search for upcoming or past events, workshops, or webinars.',
@@ -64,7 +67,7 @@ const searchEventsTool = ai.defineTool(
   async (input) => searchEvents(input.query)
 );
 
-const searchAchievementsTool = ai.defineTool(
+const searchAchievementsTool = defineTool(
   {
     name: 'searchAchievements',
     description: "Search for achievements and awards won by Garda Lestari's members.",
@@ -74,13 +77,15 @@ const searchAchievementsTool = ai.defineTool(
   async (input) => searchAchievements(input.query)
 );
 
+const availableTools: Record<string, Tool> = {
+    searchDataBank: searchDataBankTool,
+    searchIdeaBank: searchIdeaBankTool,
+    searchPrograms: searchProgramsTool,
+    searchEvents: searchEventsTool,
+    searchAchievements: searchAchievementsTool
+};
 
-const assistantPrompt = ai.definePrompt({
-    name: 'assistantPrompt',
-    input: { schema: AssistantInputSchema },
-    output: { schema: AssistantOutputSchema },
-    tools: [searchDataBankTool, searchIdeaBankTool, searchProgramsTool, searchEventsTool, searchAchievementsTool],
-    prompt: `You are Garda, the official AI assistant for Garda Lestari, a youth-led organization focused on agro-maritime and forestry innovation in Indonesia. Your tone is professional, helpful, encouraging, and slightly formal. Always answer in Bahasa Indonesia. Use Markdown for formatting (e.g., *bold*, lists).
+const systemPrompt = `You are Garda, the official AI assistant for Garda Lestari, a youth-led organization focused on agro-maritime and forestry innovation in Indonesia. Your tone is professional, helpful, encouraging, and slightly formal. Always answer in Bahasa Indonesia. Use Markdown for formatting (e.g., *bold*, lists).
 
 Your primary roles are:
 1. **Guiding Users**: Help users understand and use the application's features. When asked how to do something, provide clear, step-by-step instructions.
@@ -127,19 +132,7 @@ AI Response (hypothetical):
     { "sourceId": "idea-789", "type": "idea", "title": "Ekowisata Pesisir", "summary": "Ide untuk mengembangkan...", "url": "/ideas/idea-789" }
   ]
 }
-
-Now, answer the user's query based on the conversation history and the new input.
-
-{{#if history}}
-**Conversation History:**
-{{#each history}}
-- **{{role}}**: {{content}}
-{{/each}}
-{{/if}}
-
-**User Query:** {{{query}}}
-`,
-});
+`;
 
 const assistantFlow = ai.defineFlow(
     {
@@ -148,18 +141,81 @@ const assistantFlow = ai.defineFlow(
       outputSchema: AssistantOutputSchema,
     },
     async (input) => {
-        const llmResponse = await assistantPrompt(input);
-        const output = llmResponse.output;
+        const { query, history } = input;
+        
+        const tools = Object.values(availableTools);
 
-        if (!output) {
-            throw new Error('AI assistant failed to generate a response.');
-        }
+        const model = geminiPro;
 
-        // Ensure the final output matches the schema, even if the model makes a mistake.
-        return {
-            responseText: output.responseText || 'Maaf, saya tidak dapat memproses permintaan Anda saat ini.',
-            citations: output.citations || [],
+        const generationConfig: GenerationCommon = {
+            temperature: 0.2,
         };
+
+        const messages: Message[] = [
+            ...history?.map(h => role(h.role, h.content)) || [],
+            role('user', query),
+        ];
+
+        const {candidates} = await generate({
+            model,
+            tools,
+            system: systemPrompt,
+            messages,
+            config: generationConfig,
+            output: {
+                format: 'json',
+                schema: AssistantOutputSchema
+            },
+        });
+
+        for (const candidate of candidates) {
+            let choice = candidate;
+            while(true) {
+                const toolCalls = choice.toolCalls();
+                if (!toolCalls || toolCalls.length === 0) {
+                     break; 
+                }
+
+                const toolResponses: Part[] = [];
+                for (const call of toolCalls) {
+                    const tool = availableTools[call.name];
+                    if (!tool) {
+                        toolResponses.push(content('tool', {
+                            name: call.name,
+                            error: `Tool ${call.name} not found.`
+                        }));
+                        continue;
+                    }
+                    const result = await tool.fn(call.args);
+                    toolResponses.push(content('tool', result, {name: call.name}));
+                }
+                
+                messages.push(choice.message);
+                messages.push({ role: 'tool', content: toolResponses});
+                
+                const nextResponse = await generate({
+                    model,
+                    tools,
+                    messages,
+                    config: generationConfig,
+                     output: {
+                        format: 'json',
+                        schema: AssistantOutputSchema
+                    },
+                });
+                choice = nextResponse.candidates[0];
+            }
+            
+            const finalOutput = choice.output<AssistantOutput>();
+            if (finalOutput) {
+                return {
+                    responseText: finalOutput.responseText || 'Maaf, saya tidak dapat memproses permintaan Anda saat ini.',
+                    citations: finalOutput.citations || [],
+                };
+            }
+        }
+        
+       throw new Error('AI assistant failed to generate a valid response.');
     }
 );
 
