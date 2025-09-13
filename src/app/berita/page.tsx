@@ -6,6 +6,7 @@ import BeritaPostCard from '@/components/berita/BeritaPostCard';
 import LandingHeader from '@/components/layout/LandingHeader';
 import Footer from '@/components/landing/Footer';
 import { useEffect, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 
 export default function BeritaPage() {
   const [posts, setPosts] = useState<BeritaPost[]>([]);
@@ -28,7 +29,9 @@ export default function BeritaPage() {
                     <p className="text-muted-foreground">Cerita dan wawasan dari lapangan.</p>
                 </div>
                 {loading ? (
-                  <p>Memuat...</p>
+                  <div className="flex justify-center py-20">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
                 ) : posts.length > 0 ? (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {posts.map((post) => (
