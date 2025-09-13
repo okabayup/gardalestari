@@ -144,7 +144,9 @@ export default function AdminProgramsPage() {
                               {program.category === 'flagship' ? 'Unggulan' : 'Berkelanjutan'}
                           </Badge>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell">{format(new Date(program.endDate), 'dd MMM yyyy', {locale: id})}</TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {program.endDate ? format(new Date(program.endDate), 'dd MMM yyyy', { locale: id }) : '-'}
+                      </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

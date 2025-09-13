@@ -28,7 +28,15 @@ export async function searchPrograms(searchQuery: string): Promise<Partial<Progr
     );
 
     const snapshot = await getDocs(q);
-    const allEntries: Program[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Program));
+    const allEntries: Program[] = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return { 
+            id: doc.id,
+            ...data,
+            startDate: data.startDate?.toDate().toISOString(),
+            endDate: data.endDate?.toDate().toISOString(),
+        } as Program;
+    });
 
     const searchTerms = searchQuery.toLowerCase().split(' ');
     const results = allEntries.filter(entry => {
@@ -50,10 +58,20 @@ export async function getPrograms(): Promise<Program[]> {
   const snapshot = await getDocs(programsCollection);
   const programs: Program[] = [];
   snapshot.forEach(doc => {
-    programs.push({ id: doc.id, ...doc.data() } as Program);
+    const data = doc.data();
+    programs.push({
+      id: doc.id,
+      ...data,
+      startDate: data.startDate?.toDate().toISOString(),
+      endDate: data.endDate?.toDate().toISOString(),
+    } as Program);
   });
   // Sort by end date, upcoming first
-  return programs.sort((a, b) => a.endDate.toMillis() - b.endDate.toMillis());
+  return programs.sort((a, b) => {
+      const dateA = a.endDate ? new Date(a.endDate).getTime() : 0;
+      const dateB = b.endDate ? new Date(b.endDate).getTime() : 0;
+      return dateB - dateA;
+  });
 }
 
 // Get a single program by ID
@@ -61,7 +79,13 @@ export async function getProgram(id: string): Promise<Program | null> {
     const programDocRef = doc(db, 'programs', id);
     const docSnap = await getDoc(programDocRef);
     if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() } as Program;
+        const data = docSnap.data();
+        return { 
+            id: docSnap.id, 
+            ...data,
+            startDate: data.startDate?.toDate().toISOString(),
+            endDate: data.endDate?.toDate().toISOString(),
+        } as Program;
     }
     return null;
 }
@@ -70,7 +94,7 @@ export async function getProgram(id: string): Promise<Program | null> {
 // Create a new program
 export async function createProgram(programData: ProgramFormData, attachmentFile?: File, imageFile?: File) {
   try {
-    const dataToCreate: Omit<Program, 'id'> = {
+    const dataToCreate: Omit<Program, 'id' | 'startDate' | 'endDate'> & { startDate: Timestamp, endDate: Timestamp } = {
         ...programData,
         startDate: Timestamp.fromDate(new Date(programData.startDate)),
         endDate: Timestamp.fromDate(new Date(programData.endDate)),
@@ -79,14 +103,14 @@ export async function createProgram(programData: ProgramFormData, attachmentFile
     if (imageFile) {
         const imageRef = ref(storage, `program-images/${Date.now()}_${imageFile.name}`);
         await uploadBytes(imageRef, imageFile);
-        dataToCreate.imageUrl = await getDownloadURL(imageRef);
+        (dataToCreate as any).imageUrl = await getDownloadURL(imageRef);
     }
 
     if (attachmentFile) {
         const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachmentFile.name}`);
         await uploadBytes(attachmentRef, attachmentFile);
-        dataToCreate.attachmentUrl = await getDownloadURL(attachmentRef);
-        dataToCreate.attachmentName = attachmentFile.name;
+        (dataToCreate as any).attachmentUrl = await getDownloadURL(attachmentRef);
+        (dataToCreate as any).attachmentName = attachmentFile.name;
     }
     const docRef = await addDoc(programsCollection, dataToCreate);
     
