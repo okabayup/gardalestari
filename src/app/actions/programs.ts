@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -11,6 +12,16 @@ import type { Program, ProgramFormData, ProgramTag } from '@/lib/definitions';
 
 const programsCollection = collection(db, 'programs');
 const tagsCollection = collection(db, 'programTags');
+
+const toProgram = (doc: any): Program => {
+    const data = doc.data();
+    return {
+        id: doc.id,
+        ...data,
+        startDate: data.startDate?.toDate().toISOString(),
+        endDate: data.endDate?.toDate().toISOString(),
+    } as Program;
+}
 
 // === Public Functions for AI Tool ===
 
@@ -28,15 +39,7 @@ export async function searchPrograms(searchQuery: string): Promise<Partial<Progr
     );
 
     const snapshot = await getDocs(q);
-    const allEntries: Program[] = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return { 
-            id: doc.id,
-            ...data,
-            startDate: data.startDate?.toDate().toISOString(),
-            endDate: data.endDate?.toDate().toISOString(),
-        } as Program;
-    });
+    const allEntries: Program[] = snapshot.docs.map(toProgram);
 
     const searchTerms = searchQuery.toLowerCase().split(' ');
     const results = allEntries.filter(entry => {
@@ -55,23 +58,8 @@ export async function searchPrograms(searchQuery: string): Promise<Partial<Progr
 
 // Get all programs
 export async function getPrograms(): Promise<Program[]> {
-  const snapshot = await getDocs(programsCollection);
-  const programs: Program[] = [];
-  snapshot.forEach(doc => {
-    const data = doc.data();
-    programs.push({
-      id: doc.id,
-      ...data,
-      startDate: data.startDate?.toDate().toISOString(),
-      endDate: data.endDate?.toDate().toISOString(),
-    } as Program);
-  });
-  // Sort by end date, upcoming first
-  return programs.sort((a, b) => {
-      const dateA = a.endDate ? new Date(a.endDate).getTime() : 0;
-      const dateB = b.endDate ? new Date(b.endDate).getTime() : 0;
-      return dateB - dateA;
-  });
+  const snapshot = await getDocs(query(programsCollection, orderBy('endDate', 'desc')));
+  return snapshot.docs.map(toProgram);
 }
 
 // Get a single program by ID
@@ -79,13 +67,7 @@ export async function getProgram(id: string): Promise<Program | null> {
     const programDocRef = doc(db, 'programs', id);
     const docSnap = await getDoc(programDocRef);
     if (docSnap.exists()) {
-        const data = docSnap.data();
-        return { 
-            id: docSnap.id, 
-            ...data,
-            startDate: data.startDate?.toDate().toISOString(),
-            endDate: data.endDate?.toDate().toISOString(),
-        } as Program;
+        return toProgram(docSnap);
     }
     return null;
 }
@@ -115,24 +97,25 @@ export async function createProgram(programData: ProgramFormData, attachmentFile
     const docRef = await addDoc(programsCollection, dataToCreate);
     
     // --- WhatsApp Bulk Notification ---
-    const template = await getWhatsappTemplate('new_program_announcement');
-    if (template.isActive) {
-        const usersSnapshot = await getFirestoreDocs(query(collection(db, 'users'), where('waVerified', '==', true)));
-        const phoneNumbers = usersSnapshot.docs
-            .map(doc => doc.data().waNumber)
-            .filter(Boolean); // Filter out any undefined/null numbers
+    if (programData.programType === 'aktif') {
+        const template = await getWhatsappTemplate('new_program_announcement');
+        if (template.isActive) {
+            const usersSnapshot = await getFirestoreDocs(query(collection(db, 'users'), where('waVerified', '==', true)));
+            const phoneNumbers = usersSnapshot.docs
+                .map(doc => doc.data().waNumber)
+                .filter(Boolean);
 
-        if (phoneNumbers.length > 0) {
-            const message = template.message
-                .replace('{namaProgram}', dataToCreate.title)
-                .replace('{batasWaktu}', new Date(programData.endDate).toLocaleDateString('id-ID'));
-            
-            try {
-                // Send all at once
-                await sendBulkWhatsAppMessage(phoneNumbers, message);
-                console.log(`Bulk notification sent for program: ${dataToCreate.title}`);
-            } catch (error) {
-                console.warn(`Failed to send bulk 'new_program' notification:`, error);
+            if (phoneNumbers.length > 0) {
+                const message = template.message
+                    .replace('{namaProgram}', dataToCreate.title)
+                    .replace('{batasWaktu}', new Date(programData.endDate).toLocaleDateString('id-ID'));
+                
+                try {
+                    await sendBulkWhatsAppMessage(phoneNumbers, message);
+                    console.log(`Bulk notification sent for program: ${dataToCreate.title}`);
+                } catch (error) {
+                    console.warn(`Failed to send bulk 'new_program' notification:`, error);
+                }
             }
         }
     }

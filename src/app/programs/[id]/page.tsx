@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { notFound } from 'next/navigation';
@@ -8,28 +9,22 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { Award, FileText, Globe, Info, Target, Landmark, Download, Loader2, ArrowLeft } from 'lucide-react';
+import { Award, FileText, Globe, Info, Target, Landmark, Download, Loader2, ArrowLeft, KanbanSquare } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { logAnalyticsEvent } from '@/lib/analytics';
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
-import { Timestamp } from 'firebase/firestore';
 
 interface ProgramDetailPageProps {
   params: { id: string };
 }
 
-// Helper to convert Firestore Timestamp-like objects to Date
-const toJsDate = (timestamp: any): Date => {
-    if (timestamp instanceof Timestamp) {
-        return timestamp.toDate();
-    }
-    if (timestamp && typeof timestamp.seconds === 'number' && typeof timestamp.nanoseconds === 'number') {
-        return new Timestamp(timestamp.seconds, timestamp.nanoseconds).toDate();
-    }
-    return new Date();
+const toJsDate = (dateString?: string): Date => {
+  if (!dateString) return new Date();
+  const date = new Date(dateString);
+  return isNaN(date.getTime()) ? new Date() : date;
 };
 
 
@@ -158,8 +153,8 @@ const ProgramDetailClient = ({ program }: { program: Program }) => {
                             <p className="font-semibold">{deadline}</p>
                         </div>
                         <div>
-                            <p className="text-xs text-muted-foreground">Jenis Pendaftaran</p>
-                            <p className="font-semibold">{submissionType === 'internal' ? 'Internal' : 'Eksternal'}</p>
+                            <p className="text-xs text-muted-foreground">Jenis Program</p>
+                            <p className="font-semibold">{program.programType === 'aktif' ? 'Aktif (Terbuka)' : 'Pasif (Internal)'}</p>
                         </div>
                         <div>
                             <p className="text-xs text-muted-foreground">Surat Rekomendasi</p>
@@ -189,7 +184,7 @@ const ProgramDetailClient = ({ program }: { program: Program }) => {
                     <InfoCard icon={<Target className="h-6 w-6" />} title="Informasi Pendaftaran">
                         <ul>
                             <li><strong>Batas Waktu:</strong> {deadline}</li>
-                            <li><strong>Jenis:</strong> {submissionType === 'internal' ? 'Formulir Internal' : 'Situs Eksternal'}</li>
+                            {program.programType === 'aktif' && <li><strong>Jenis:</strong> {submissionType === 'internal' ? 'Formulir Internal' : 'Situs Eksternal'}</li>}
                             {program.requiresRecommendation && (
                                 <li><strong>Surat Rekomendasi:</strong> Garda Lestari dapat menyediakan surat rekomendasi untuk program ini.</li>
                             )}
@@ -198,7 +193,11 @@ const ProgramDetailClient = ({ program }: { program: Program }) => {
                 </div>
 
                 <div className="pt-4">
-                    {isPast ? (
+                    {program.programType === 'pasif' ? (
+                        <Button size="lg" className="w-full" disabled>
+                           <KanbanSquare className="mr-2 h-4 w-4"/> Lihat Aktivitas Proyek (Segera)
+                        </Button>
+                    ) : isPast ? (
                         <Button size="lg" className="w-full" disabled>Program Telah Berakhir</Button>
                     ) : submissionType === 'external' ? (
                         <Button size="lg" asChild className="w-full" onClick={handleApplyClick}>

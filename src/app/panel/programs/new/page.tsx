@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -32,6 +33,7 @@ const formSchema = z.object({
   title: z.string().min(1, 'Judul wajib diisi'),
   description: z.string().min(1, 'Deskripsi wajib diisi'),
   category: z.enum(['flagship', 'ongoing'], { required_error: 'Kategori program wajib dipilih' }),
+  programType: z.enum(['aktif', 'pasif'], { required_error: 'Jenis program wajib dipilih' }),
   imageSource: imageSourceSchema.default('ai'),
   imageUrl: z.string().optional(),
   imageHint: z.string().optional(),
@@ -99,7 +101,7 @@ export default function NewProgramPage() {
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: '', description: '', category: 'ongoing', imageUrl: '', imageHint: '', imageSource: 'ai',
+      title: '', description: '', category: 'ongoing', programType: 'aktif', imageUrl: '', imageHint: '', imageSource: 'ai',
       tags: [],
       dateRange: { from: new Date(), to: addDays(new Date(), 7) },
       source: 'garda_lestari',
@@ -218,15 +220,27 @@ export default function NewProgramPage() {
                 <Textarea id="description" {...register('description')} />
                 {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
               </div>
-              <div className="space-y-2">
-                  <Label>Kategori Program</Label>
-                  <Controller name="category" control={control} render={({ field }) => (
-                      <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
-                          <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="flagship" /> Unggulan</Label>
-                          <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="ongoing" /> Berkelanjutan</Label>
-                      </RadioGroup>
-                  )} />
-                  {errors.category && <p className="text-sm text-destructive">{errors.category.message}</p>}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                      <Label>Kategori Program</Label>
+                      <Controller name="category" control={control} render={({ field }) => (
+                          <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
+                              <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="flagship" /> Unggulan</Label>
+                              <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="ongoing" /> Berkelanjutan</Label>
+                          </RadioGroup>
+                      )} />
+                      {errors.category && <p className="text-sm text-destructive">{errors.category.message}</p>}
+                  </div>
+                  <div className="space-y-2">
+                      <Label>Jenis Program</Label>
+                      <Controller name="programType" control={control} render={({ field }) => (
+                          <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
+                              <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="aktif" /> Aktif (Pendaftaran)</Label>
+                              <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="pasif" /> Pasif (Tim Internal)</Label>
+                          </RadioGroup>
+                      )} />
+                      {errors.programType && <p className="text-sm text-destructive">{errors.programType.message}</p>}
+                  </div>
               </div>
               <div className="space-y-2">
                   <Label>Tanggal Program</Label>

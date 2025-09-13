@@ -130,8 +130,8 @@ export interface DataBankEntry {
   content: string;
   category: 'Kebijakan' | 'Data Sektoral' | 'Riset' | 'Lainnya';
   source: string;
-  publishedDate: Timestamp;
-  createdAt: Timestamp;
+  publishedDate: string;
+  createdAt: string;
 }
 
 // --- Documents ---
@@ -210,7 +210,7 @@ export interface Idea {
   description: string;
   category: string;
   authorId: string;
-  createdAt: Timestamp;
+  createdAt: string;
   status: IdeaStatus;
   upvotes: string[];
   downvotes: string[];
@@ -226,9 +226,10 @@ export interface IdeaAuthor {
   type?: MemberType;
 }
 
-export interface IdeaWithAuthor extends Omit<Idea, 'authorId' | 'upvotes' | 'downvotes'> {
+export interface IdeaWithAuthor extends Omit<Idea, 'authorId' | 'upvotes' | 'downvotes' | 'createdAt'> {
   author: IdeaAuthor;
   userVote?: VoteType;
+  timestamp: string; // Formatted time ago string
 }
 
 export interface IdeaCategory {
@@ -361,12 +362,14 @@ export interface CommentWithAuthor {
 // --- Programs ---
 export type ProgramSource = 'garda_lestari' | 'mitra';
 export type SubmissionType = 'internal' | 'external';
+export type ProgramType = 'aktif' | 'pasif';
 
 export interface Program {
   id?: string;
   title: string;
   description: string;
   category: 'flagship' | 'ongoing';
+  programType: ProgramType;
   imageUrl: string;
   imageHint: string;
   tags: string[];
