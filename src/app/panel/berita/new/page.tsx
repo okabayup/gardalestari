@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -81,6 +82,7 @@ export default function NewBeritaPostPage() {
       content: '',
       category: '',
       isFeatured: false,
+      seoScore: 0,
     }
   });
 
@@ -115,6 +117,7 @@ export default function NewBeritaPostPage() {
       setValue('title', result.suggestedTitle);
       setValue('slug', generateSlug(result.suggestedTitle));
       setValue('content', result.improvedText);
+      setValue('seoScore', result.seoScore);
       toast({ title: 'Teks disempurnakan!', description: 'Konten, judul, dan analisis telah diperbarui oleh AI.' });
     } catch (error) {
       toast({ variant: 'destructive', title: 'Gagal', description: (error as Error).message });
@@ -162,6 +165,7 @@ export default function NewBeritaPostPage() {
         type: data.type,
         youtubeId: data.youtubeId,
         isFeatured: data.isFeatured,
+        seoScore: data.seoScore,
       };
       await createBeritaPost(newPost);
       toast({

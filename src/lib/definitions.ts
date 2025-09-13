@@ -1,4 +1,5 @@
 
+
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
 
@@ -121,6 +122,7 @@ export interface BeritaPost {
   category: string;
   youtubeId?: string;
   isFeatured?: boolean;
+  seoScore?: number;
 }
 
 // --- Data Bank ---

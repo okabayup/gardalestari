@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, MoreHorizontal, Loader2, Trash2, Sparkles, RefreshCw, Star, Newspaper } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Loader2, Trash2, Sparkles, RefreshCw, Star, Newspaper, Search } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +30,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Badge } from '@/components/ui/badge';
 import type { BeritaPost } from '@/lib/definitions';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 export default function AdminBeritaPage() {
   const router = useRouter();
@@ -64,6 +65,12 @@ export default function AdminBeritaPage() {
     };
     fetchPosts();
   }, [toast]);
+  
+  const getSeoBadgeColor = (score: number) => {
+    if (score >= 75) return 'bg-green-500 hover:bg-green-500/80';
+    if (score >= 50) return 'bg-yellow-500 hover:bg-yellow-500/80';
+    return 'bg-red-500 hover:bg-red-500/80';
+  };
 
   const handleDeleteClick = (post: BeritaPost) => {
     setPostToDelete(post);
@@ -80,6 +87,12 @@ export default function AdminBeritaPage() {
     } finally {
         setIsReindexing(null);
     }
+  }
+  
+  const handleCheckIndexStatus = (slug: string, type: 'artikel' | 'video' = 'artikel') => {
+    const siteUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/${type === 'video' ? 'video' : 'berita'}/${slug}`;
+    const searchConsoleUrl = `https://search.google.com/search-console/inspect?resource_id=${process.env.NEXT_PUBLIC_BASE_URL}&id=${encodeURIComponent(siteUrl)}`;
+    window.open(searchConsoleUrl, '_blank');
   }
 
   const handleDeleteConfirm = async () => {
@@ -146,7 +159,7 @@ export default function AdminBeritaPage() {
                 <TableRow>
                   <TableHead>Judul</TableHead>
                   <TableHead>Tipe</TableHead>
-                  <TableHead>Kategori</TableHead>
+                  <TableHead>Skor SEO</TableHead>
                   <TableHead className="hidden md:table-cell">Tanggal</TableHead>
                   <TableHead>
                     <span className="sr-only">Aksi</span>
@@ -165,10 +178,18 @@ export default function AdminBeritaPage() {
                     <TableRow key={post.id}>
                       <TableCell className="font-medium flex items-center gap-2">
                         {post.isFeatured && <Star className="h-4 w-4 text-yellow-500 fill-yellow-400" />}
-                        {post.title}
+                        <Link href={`/${post.type}/${post.slug}`} target="_blank" className="hover:underline">{post.title}</Link>
                       </TableCell>
                       <TableCell><Badge variant="outline">{post.type}</Badge></TableCell>
-                      <TableCell><Badge variant="secondary">{post.category}</Badge></TableCell>
+                      <TableCell>
+                        {post.seoScore ? (
+                          <Badge className={cn(getSeoBadgeColor(post.seoScore))}>
+                            {post.seoScore}
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">N/A</Badge>
+                        )}
+                      </TableCell>
                       <TableCell className="hidden md:table-cell">{new Date(post.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -183,6 +204,10 @@ export default function AdminBeritaPage() {
                                 <>
                                 <DropdownMenuItem onClick={() => router.push(`/panel/berita/edit/${post.slug}`)}>
                                 Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleCheckIndexStatus(post.slug, post.type)}>
+                                    <Search className="mr-2 h-4 w-4" />
+                                    Cek Status Indeks
                                 </DropdownMenuItem>
                                  <DropdownMenuItem onClick={() => handleReindexClick(post.slug, post.type)} disabled={isReindexing === post.slug}>
                                     {isReindexing === post.slug ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
