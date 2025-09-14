@@ -1,17 +1,20 @@
 
-
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, getDocs as getFirestoreDocs, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, query, orderBy, limit } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import { getWhatsappTemplate } from './whatsapp';
 import { sendBulkWhatsAppMessage } from '@/services/whatsapp';
 import type { Program, ProgramFormData, ProgramTag } from '@/lib/definitions';
+import { generateImage } from '@/ai/flows/image-generate-flow';
+import { sendNotification } from './notifications';
 
 const programsCollection = collection(db, 'programs');
 const tagsCollection = collection(db, 'programTags');
+const usersCollection = collection(db, 'users');
+
 
 const toProgram = (doc: any): Program => {
     const data = doc.data();
@@ -68,10 +71,10 @@ export async function getPrograms(): Promise<Program[]> {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => {
         const data = doc.data();
+        // Safely convert Timestamps to ISO strings, handle undefined dates
         return {
             id: doc.id,
             ...data,
-            // Safely convert Timestamps to ISO strings
             startDate: data.startDate?.toDate ? data.startDate.toDate().toISOString() : undefined,
             endDate: data.endDate?.toDate ? data.endDate.toDate().toISOString() : undefined,
         } as Program;
@@ -99,37 +102,48 @@ export async function getProgram(id: string): Promise<Program | null> {
 
 
 // Create a new program
-export async function createProgram(programData: ProgramFormData, attachmentFile?: File, imageFile?: File) {
+export async function createProgram(programData: ProgramFormData, imageFile?: File, attachmentFile?: File): Promise<string> {
   try {
     const { startDate, endDate, ...restData } = programData;
-    const dataToCreate: Omit<Program, 'id' | 'startDate' | 'endDate'> & { startDate: Timestamp, endDate: Timestamp } = {
+    
+    // Convert dates to Firestore Timestamps
+    const dataToCreate: Omit<Program, 'id'> & { startDate: Timestamp, endDate: Timestamp } = {
         ...restData,
         startDate: Timestamp.fromDate(new Date(startDate)),
         endDate: Timestamp.fromDate(new Date(endDate)),
     };
 
     if (imageFile) {
-        const imageRef = ref(storage, `program-images/${Date.now()}_${imageFile.name}`);
-        await uploadBytes(imageRef, imageFile);
-        (dataToCreate as any).imageUrl = await getDownloadURL(imageRef);
+      const imageRef = ref(storage, `program-images/${Date.now()}_${imageFile.name}`);
+      await uploadBytes(imageRef, imageFile);
+      dataToCreate.imageUrl = await getDownloadURL(imageRef);
     }
-
+    
     if (attachmentFile) {
-        const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachmentFile.name}`);
-        await uploadBytes(attachmentRef, attachmentFile);
-        (dataToCreate as any).attachmentUrl = await getDownloadURL(attachmentRef);
-        (dataToCreate as any).attachmentName = attachmentFile.name;
+      const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachmentFile.name}`);
+      await uploadBytes(attachmentRef, attachmentFile);
+      dataToCreate.attachmentUrl = await getDownloadURL(attachmentRef);
+      dataToCreate.attachmentName = attachmentFile.name;
     }
+    
     const docRef = await addDoc(programsCollection, dataToCreate);
     
-    // --- WhatsApp Bulk Notification ---
     if (programData.programType === 'aktif') {
+        const notificationPayload = {
+            title: `Program Baru: ${dataToCreate.title}`,
+            body: `Pendaftaran untuk program "${dataToCreate.title}" telah dibuka. Cek sekarang!`,
+            link: `/programs/${docRef.id}`
+        };
+        try {
+            await sendNotification(notificationPayload, { type: 'all' });
+        } catch (e) {
+            console.warn("Gagal mengirim notifikasi push untuk program baru:", e);
+        }
+
         const template = await getWhatsappTemplate('new_program_announcement');
         if (template.isActive) {
-            const usersSnapshot = await getFirestoreDocs(query(collection(db, 'users'), where('waVerified', '==', true)));
-            const phoneNumbers = usersSnapshot.docs
-                .map(doc => doc.data().waNumber)
-                .filter(Boolean);
+            const usersSnapshot = await getDocs(query(usersCollection, where('waVerified', '==', true)));
+            const phoneNumbers = usersSnapshot.docs.map(doc => doc.data().waNumber).filter(Boolean);
 
             if (phoneNumbers.length > 0) {
                 const message = template.message
@@ -138,17 +152,17 @@ export async function createProgram(programData: ProgramFormData, attachmentFile
                 
                 try {
                     await sendBulkWhatsAppMessage(phoneNumbers, message);
-                    console.log(`Bulk notification sent for program: ${dataToCreate.title}`);
                 } catch (error) {
-                    console.warn(`Failed to send bulk 'new_program' notification:`, error);
+                    console.warn(`Gagal mengirim notifikasi WhatsApp massal:`, error);
                 }
             }
         }
     }
-    // --- End WhatsApp Notification ---
     
     revalidatePath('/panel/programs');
     revalidatePath('/programs');
+    revalidatePath(`/programs/${docRef.id}`);
+    
     return docRef.id;
 
   } catch (error) {
@@ -158,7 +172,7 @@ export async function createProgram(programData: ProgramFormData, attachmentFile
 }
 
 // Update an existing program
-export async function updateProgram(id: string, program: Partial<ProgramFormData>, attachmentFile?: File, imageFile?: File) {
+export async function updateProgram(id: string, program: Partial<ProgramFormData>, imageFile?: File, attachmentFile?: File) {
   try {
     const programDoc = doc(db, 'programs', id);
     
@@ -195,6 +209,7 @@ export async function updateProgram(id: string, program: Partial<ProgramFormData
     }
 
     await updateDoc(programDoc, dataToUpdate);
+    
     revalidatePath('/panel/programs');
     revalidatePath(`/panel/programs/edit/${id}`);
     revalidatePath('/programs');
@@ -250,12 +265,8 @@ export async function deleteProgram(id: string) {
 // Get all tags
 export async function getProgramTags(): Promise<ProgramTag[]> {
   try {
-    const snapshot = await getDocs(tagsCollection);
-    const tags: ProgramTag[] = [];
-    snapshot.forEach(doc => {
-        tags.push({ id: doc.id, name: doc.data().name });
-    });
-    return tags.sort((a, b) => a.name.localeCompare(b.name));
+    const snapshot = await getDocs(query(tagsCollection, orderBy('name')));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProgramTag));
   } catch (error) {
       console.error("Error getting tags:", error);
       throw new Error("Gagal mengambil data tag.");
@@ -284,3 +295,5 @@ export async function deleteProgramTag(id: string) {
         throw new Error("Gagal menghapus tag.");
     }
 }
+
+    

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Calendar as CalendarIcon, Wand2, Paperclip, Upload, Link as LinkIcon, Sparkles } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, Sparkles, Paperclip, Upload, Link as LinkIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -113,7 +112,7 @@ export default function NewProgramPage() {
   const watchSource = watch('source');
   const watchSubmissionType = watch('submissionType');
   const watchImageSource = watch('imageSource');
-  const watchTags = watch('tags');
+  const watchTags = watch('tags', []);
   const attachmentFile = watch("attachment");
   const attachmentFileName = attachmentFile?.[0]?.name;
 
@@ -139,43 +138,44 @@ export default function NewProgramPage() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
 
-    let finalImageUrl = data.imageUrl || '';
+    let imageUrl = data.imageUrl || '';
+    let imageFile: File | undefined = data.imageFile?.[0];
+
     if (data.imageSource === 'ai' && data.imageHint) {
         toast({ title: 'AI sedang membuat gambar sampul...' });
         setLoadingImage(true);
         try {
             const result = await generateImage({ prompt: data.imageHint });
             if (!result.imageUrl) throw new Error("AI gagal membuat gambar.");
-            finalImageUrl = result.imageUrl;
+            const response = await fetch(result.imageUrl);
+            const blob = await response.blob();
+            imageFile = new File([blob], "ai-generated-image.png", { type: "image/png" });
+            imageUrl = ''; // Clear URL if AI image is used
         } catch (error) {
-            console.error("AI image generation error:", error);
             toast({ variant: 'destructive', title: 'Gagal membuat gambar AI', description: (error as Error).message });
-            setLoading(false);
-            setLoadingImage(false);
-            return;
+            setLoading(false); setLoadingImage(false); return;
         }
         setLoadingImage(false);
+    } else if (data.imageSource === 'url') {
+      imageFile = undefined;
+    } else {
+      imageUrl = '';
     }
 
-
     try {
-      const { dateRange, attachment, imageFile, imageSource, ...rest } = data;
+      const { dateRange, attachment, ...rest } = data;
       const programPayload: ProgramFormData = {
         ...rest,
         startDate: dateRange.from,
         endDate: dateRange.to,
-        imageUrl: finalImageUrl || `https://picsum.photos/seed/${data.title.replace(/\s+/g, '-')}/600/400`,
-        imageHint: data.imageHint || ''
+        imageUrl,
       };
       
-      const imageFileToUpload = imageSource === 'upload' ? imageFile?.[0] : undefined;
-      
-      await createProgram(programPayload, attachment?.[0], imageFileToUpload);
+      await createProgram(programPayload, imageFile, attachment?.[0]);
 
       toast({ title: 'Program berhasil dibuat!' });
       router.push('/panel/programs');
     } catch (error) {
-      console.error("Error creating program:", error);
       toast({ variant: 'destructive', title: 'Gagal membuat program', description: (error as Error).message });
       setLoading(false);
     }
@@ -236,7 +236,7 @@ export default function NewProgramPage() {
                       <Controller name="programType" control={control} render={({ field }) => (
                           <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
                               <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="aktif" /> Aktif (Pendaftaran)</Label>
-                              <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="pasif" /> Pasif (Tim Internal)</Label>
+                              <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="pasif" /> Pasif (Internal)</Label>
                           </RadioGroup>
                       )} />
                       {errors.programType && <p className="text-sm text-destructive">{errors.programType.message}</p>}
@@ -349,7 +349,7 @@ export default function NewProgramPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Sumber Gambar Sampul</Label>
-                <Controller
+                 <Controller
                     name="imageSource"
                     control={control}
                     render={({ field }) => (
@@ -378,7 +378,7 @@ export default function NewProgramPage() {
                  <div className="space-y-2">
                     <Label htmlFor="imageHint">Petunjuk Gambar (AI)</Label>
                     <Input id="imageHint" {...register('imageHint')} placeholder="Contoh: pemuda menanam pohon di hutan"/>
-                    {errors.imageHint && <p className="text-sm text-destructive">{errors.imageHint.message}</p>}
+                     {errors.imageHint && <p className="text-sm text-destructive">{errors.imageHint.message}</p>}
                  </div>
                )}
                 {watchImageSource === 'url' && (
@@ -395,7 +395,7 @@ export default function NewProgramPage() {
                         {errors.imageFile && <p className="text-sm text-destructive">{(errors.imageFile as any).message}</p>}
                     </div>
                 )}
-
+              
               <div className="space-y-2 pt-4">
                   <Label>Tag Program</Label>
                   <div className="flex flex-wrap gap-2">
@@ -435,3 +435,5 @@ export default function NewProgramPage() {
     </form>
   );
 }
+
+    
