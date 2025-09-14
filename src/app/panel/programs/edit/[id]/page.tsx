@@ -184,8 +184,8 @@ export default function EditProgramPage() {
       const { dateRange, attachment, ...rest } = data;
       const programPayload: Partial<ProgramFormData> = {
         ...rest,
-        startDate: dateRange.from,
-        endDate: dateRange.to,
+        startDate: dateRange.from.toISOString(),
+        endDate: dateRange.to.toISOString(),
         imageUrl: imageUrl,
       };
       
