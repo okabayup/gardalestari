@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { notFound } from 'next/navigation';
@@ -21,10 +20,9 @@ interface ProgramDetailPageProps {
   params: { id: string };
 }
 
-const toJsDate = (dateString?: string): Date => {
-  if (!dateString) return new Date();
-  const date = new Date(dateString);
-  return isNaN(date.getTime()) ? new Date() : date;
+const toJsDate = (date?: Date): Date => {
+  if (!date) return new Date();
+  return date;
 };
 
 

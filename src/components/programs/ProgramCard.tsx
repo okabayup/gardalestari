@@ -17,15 +17,9 @@ interface ProgramCardProps extends Program {
   isPast?: boolean;
 }
 
-const toJsDateSafe = (dateString?: string): Date | null => {
-  if (!dateString) return null;
-  const date = new Date(dateString);
-  return isNaN(date.getTime()) ? null : date;
-};
-
 export default function ProgramCard({ id, title, description, imageUrl, imageHint, tags, startDate, endDate, isPast }: ProgramCardProps) {
-  const startDateObj = toJsDateSafe(startDate);
-  const endDateObj = toJsDateSafe(endDate);
+  const startDateObj = startDate ? new Date(startDate) : null;
+  const endDateObj = endDate ? new Date(endDate) : null;
 
   const formattedStartDate = startDateObj ? format(startDateObj, "d MMM yyyy", { locale: id }) : 'N/A';
   const formattedEndDate = endDateObj ? format(endDateObj, "d MMM yyyy", { locale: id }) : 'N/A';
@@ -71,3 +65,5 @@ export default function ProgramCard({ id, title, description, imageUrl, imageHin
     </Card>
   );
 }
+
+    

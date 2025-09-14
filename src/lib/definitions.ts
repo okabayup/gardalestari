@@ -166,7 +166,7 @@ export interface Event {
   id?: string;
   title: string;
   description: string;
-  date: string; // ISO string
+  date: Date;
   location: string;
   imageUrl: string;
   imageHint: string;
@@ -365,7 +365,7 @@ export type SubmissionType = 'internal' | 'external';
 export type ProgramType = 'aktif' | 'pasif';
 
 export interface Program {
-  id?: string;
+  id: string;
   title: string;
   description: string;
   category: 'flagship' | 'ongoing';
@@ -373,8 +373,8 @@ export interface Program {
   imageUrl: string;
   imageHint: string;
   tags: string[];
-  startDate: string; // ISO string
-  endDate: string; // ISO string
+  startDate: Date;
+  endDate: Date;
   source: ProgramSource;
   partnerId?: string; 
   benefits: string;
@@ -387,9 +387,26 @@ export interface Program {
   attachmentName?: string;
 }
 
-export interface ProgramFormData extends Omit<Program, 'id' | 'startDate' | 'endDate' > {
-    startDate: string; // ISO string for form
-    endDate: string; // ISO string for form
+export interface ProgramFormData {
+  title: string;
+  description: string;
+  category: 'flagship' | 'ongoing';
+  programType: ProgramType;
+  imageSource: 'ai' | 'url' | 'upload';
+  imageUrl?: string;
+  imageHint?: string;
+  imageFile?: FileList;
+  tags: string[];
+  dateRange: { from: Date; to: Date };
+  source: ProgramSource;
+  partnerId?: string;
+  benefits: string;
+  requiredDocuments: string;
+  submissionType: SubmissionType;
+  applicationUrl?: string;
+  formId?: string;
+  requiresRecommendation: boolean;
+  attachment?: FileList;
 }
 
 export interface ProgramTag {

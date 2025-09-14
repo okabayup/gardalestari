@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Calendar as CalendarIcon, Sparkles, Paperclip, Upload, Link as LinkIcon } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, Paperclip, Upload, Link as LinkIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -129,7 +129,7 @@ export default function EditProgramPage() {
                   from: programData.startDate ? new Date(programData.startDate) : new Date(), 
                   to: programData.endDate ? new Date(programData.endDate) : new Date() 
                 },
-                imageSource: programData.imageUrl?.includes('firebasestorage') ? 'url' : 'ai'
+                imageSource: programData.imageUrl?.includes('firebasestorage') ? 'upload' : 'url'
             });
             if (programData.attachmentUrl && programData.attachmentName) {
                 setCurrentAttachment({name: programData.attachmentName, url: programData.attachmentUrl});
@@ -151,19 +151,13 @@ export default function EditProgramPage() {
     setLoading(true);
     
     try {
-      const { dateRange, attachment, imageFile, ...rest } = data;
-      const programPayload: Partial<ProgramFormData> = {
-        ...rest,
-        startDate: dateRange.from.toISOString(),
-        endDate: dateRange.to.toISOString(),
-      };
+      const { attachment, imageFile, ...rest } = data;
       
-      await updateProgram(programId, programPayload, imageFile?.[0], attachment?.[0]);
+      await updateProgram(programId, rest, imageFile?.[0], attachment?.[0]);
       toast({ title: 'Program berhasil diperbarui!' });
       router.push('/panel/programs');
     } catch (error) {
       toast({ variant: 'destructive', title: 'Gagal memperbarui program', description: (error as Error).message });
-    } finally {
       setLoading(false);
     }
   };
@@ -345,7 +339,6 @@ export default function EditProgramPage() {
                     render={({ field }) => (
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-3 gap-2">
                              <Label className="flex flex-col items-center justify-center gap-2 cursor-pointer rounded-md border p-2 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
-                                <Sparkles className="h-5 w-5" />
                                 <span className="text-xs">AI</span>
                                 <RadioGroupItem value="ai" className="sr-only" />
                              </Label>

@@ -21,8 +21,8 @@ const toProgram = (doc: any): Program => {
     return {
         id: doc.id,
         ...data,
-        startDate: data.startDate?.toDate().toISOString(),
-        endDate: data.endDate?.toDate().toISOString(),
+        startDate: data.startDate?.toDate(),
+        endDate: data.endDate?.toDate(),
     } as Program;
 }
 
@@ -68,8 +68,8 @@ export async function getPrograms(): Promise<Program[]> {
         return {
             id: doc.id,
             ...data,
-            startDate: data.startDate?.toDate()?.toISOString(),
-            endDate: data.endDate?.toDate()?.toISOString(),
+            startDate: data.startDate?.toDate(),
+            endDate: data.endDate?.toDate(),
         } as Program;
     });
   } catch (error) {
@@ -98,10 +98,11 @@ export async function getProgram(id: string): Promise<Program | null> {
 export async function createProgram(programData: ProgramFormData, imageFile?: File, attachmentFile?: File): Promise<string> {
     // 1. Prepare data and handle dates
     const { imageFile: unusedImageFile, attachment: unusedAttachment, dateRange, ...restData } = programData;
-    const dataToCreate: Omit<Program, 'id'> = {
+    
+    const dataToCreate: Omit<Program, 'id' | 'startDate' | 'endDate'> & { startDate: Timestamp, endDate: Timestamp } = {
         ...restData,
-        startDate: new Date(programData.startDate).toISOString(),
-        endDate: new Date(programData.endDate).toISOString(),
+        startDate: Timestamp.fromDate(dateRange.from),
+        endDate: Timestamp.fromDate(dateRange.to),
         imageUrl: programData.imageUrl || '',
     };
     
@@ -147,12 +148,7 @@ export async function createProgram(programData: ProgramFormData, imageFile?: Fi
     // 4. Save to Firestore
     let docRef;
     try {
-        const firestorePayload = {
-            ...dataToCreate,
-            startDate: Timestamp.fromDate(new Date(dataToCreate.startDate)),
-            endDate: Timestamp.fromDate(new Date(dataToCreate.endDate)),
-        };
-        docRef = await addDoc(programsCollection, firestorePayload);
+        docRef = await addDoc(programsCollection, dataToCreate);
     } catch(error) {
         console.error("Error creating program in Firestore:", error);
         throw new Error(`Gagal menyimpan program ke database: ${(error as Error).message}`);
@@ -182,7 +178,7 @@ export async function createProgram(programData: ProgramFormData, imageFile?: Fi
                 if (phoneNumbers.length > 0) {
                     const message = template.message
                         .replace('{namaProgram}', dataToCreate.title)
-                        .replace('{batasWaktu}', new Date(programData.endDate).toLocaleDateString('id-ID'));
+                        .replace('{batasWaktu}', dateRange.to.toLocaleDateString('id-ID'));
                     
                     await sendBulkWhatsAppMessage(phoneNumbers, message);
                 }
@@ -201,61 +197,53 @@ export async function createProgram(programData: ProgramFormData, imageFile?: Fi
 
 // Update an existing program
 export async function updateProgram(id: string, program: Partial<ProgramFormData>, imageFile?: File, attachmentFile?: File) {
-  try {
-    const programDoc = doc(db, 'programs', id);
-    
     const dataToUpdate: { [key: string]: any } = { ...program };
-    if (program.startDate) {
-        dataToUpdate.startDate = Timestamp.fromDate(new Date(program.startDate));
-    }
-    if (program.endDate) {
-        dataToUpdate.endDate = Timestamp.fromDate(new Date(program.endDate));
-    }
-    
-    if (imageFile) {
-      try {
-        const imageRef = ref(storage, `program-images/${Date.now()}_${imageFile.name}`);
-        await uploadBytes(imageRef, imageFile);
-        dataToUpdate.imageUrl = await getDownloadURL(imageRef);
-      } catch (uploadError) {
-        console.error("Error uploading new program image:", uploadError);
-        throw new Error("Gagal mengunggah gambar baru.");
-      }
-    }
 
-    if (attachmentFile) {
-      try {
-        const currentProgram = await getProgram(id);
-        if (currentProgram?.attachmentUrl) {
-            try {
-                const oldAttachmentRef = ref(storage, currentProgram.attachmentUrl);
-                await deleteObject(oldAttachmentRef);
-            } catch (storageError: any) {
-                if (storageError.code !== 'storage/object-not-found') {
-                    console.warn("Could not delete old attachment, it might not exist.", storageError);
+    try {
+        const programDoc = doc(db, 'programs', id);
+        
+        if (program.dateRange?.from) {
+            dataToUpdate.startDate = Timestamp.fromDate(new Date(program.dateRange.from));
+        }
+        if (program.dateRange?.to) {
+            dataToUpdate.endDate = Timestamp.fromDate(new Date(program.dateRange.to));
+        }
+        delete dataToUpdate.dateRange;
+        
+        if (imageFile) {
+            const imageRef = ref(storage, `program-images/${Date.now()}_${imageFile.name}`);
+            await uploadBytes(imageRef, imageFile);
+            dataToUpdate.imageUrl = await getDownloadURL(imageRef);
+        }
+
+        if (attachmentFile) {
+            const currentProgram = await getProgram(id);
+            if (currentProgram?.attachmentUrl) {
+                try {
+                    const oldAttachmentRef = ref(storage, currentProgram.attachmentUrl);
+                    await deleteObject(oldAttachmentRef);
+                } catch (storageError: any) {
+                    if (storageError.code !== 'storage/object-not-found') {
+                        console.warn("Could not delete old attachment, it might not exist.", storageError);
+                    }
                 }
             }
+            const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachmentFile.name}`);
+            await uploadBytes(attachmentRef, attachmentFile);
+            dataToUpdate.attachmentUrl = await getDownloadURL(attachmentRef);
+            dataToUpdate.attachmentName = attachmentFile.name;
         }
-        const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachmentFile.name}`);
-        await uploadBytes(attachmentRef, attachmentFile);
-        dataToUpdate.attachmentUrl = await getDownloadURL(attachmentRef);
-        dataToUpdate.attachmentName = attachmentFile.name;
-      } catch (uploadError) {
-        console.error("Error uploading new attachment:", uploadError);
-        throw new Error("Gagal mengunggah lampiran baru.");
-      }
-    }
 
-    await updateDoc(programDoc, dataToUpdate);
-    
-    revalidatePath('/panel/programs');
-    revalidatePath(`/panel/programs/edit/${id}`);
-    revalidatePath('/programs');
-    revalidatePath(`/programs/${id}`);
-  } catch (error) {
-    console.error("Error updating program:", error);
-    throw new Error("Gagal memperbarui program. " + (error as Error).message);
-  }
+        await updateDoc(programDoc, dataToUpdate);
+        
+        revalidatePath('/panel/programs');
+        revalidatePath(`/panel/programs/edit/${id}`);
+        revalidatePath('/programs');
+        revalidatePath(`/programs/${id}`);
+    } catch (error) {
+        console.error("Error updating program:", error);
+        throw new Error("Gagal memperbarui program. " + (error as Error).message);
+    }
 }
 
 // Delete a program

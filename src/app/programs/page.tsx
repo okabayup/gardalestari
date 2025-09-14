@@ -13,12 +13,6 @@ import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 
-const toJsDateSafe = (dateString: string): Date => {
-  const date = new Date(dateString);
-  return isNaN(date.getTime()) ? new Date() : date;
-};
-
-
 export default function ProgramsPage() {
   const [allPrograms, setAllPrograms] = useState<Program[]>([]);
   const [tags, setTags] = useState<string[]>([]);
@@ -54,8 +48,8 @@ export default function ProgramsPage() {
 
   const { ongoingPrograms, pastPrograms } = useMemo(() => {
     const now = new Date();
-    const ongoing = filteredPrograms.filter(p => toJsDateSafe(p.endDate) > now);
-    const past = filteredPrograms.filter(p => toJsDateSafe(p.endDate) <= now);
+    const ongoing = filteredPrograms.filter(p => new Date(p.endDate) > now);
+    const past = filteredPrograms.filter(p => new Date(p.endDate) <= now);
     return { ongoingPrograms: ongoing, pastPrograms: past };
   }, [filteredPrograms]);
 
@@ -134,3 +128,5 @@ export default function ProgramsPage() {
     </MainLayout>
   );
 }
+
+    

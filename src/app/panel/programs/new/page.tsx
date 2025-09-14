@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Calendar as CalendarIcon, Sparkles, Paperclip, Upload, Link as LinkIcon } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, Paperclip, Upload, Link as LinkIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -22,7 +22,6 @@ import { addDays, format } from 'date-fns';
 import { createProgram, getProgramTags, ProgramTag } from '@/app/actions/programs';
 import { getPartners, Partner } from '@/app/actions/partners';
 import { getForms, ProgramForm } from '@/app/actions/forms';
-import { generateImage } from '@/ai/flows/image-generate-flow';
 import { cn } from '@/lib/utils';
 import type { ProgramFormData } from '@/lib/definitions';
 
@@ -84,7 +83,6 @@ export default function NewProgramPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [loadingImage, setLoadingImage] = useState(false);
   const [allTags, setAllTags] = useState<ProgramTag[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
   const [forms, setForms] = useState<ProgramForm[]>([]);
@@ -137,20 +135,12 @@ export default function NewProgramPage() {
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
-    setLoadingImage(false);
 
     try {
-      // Convert date objects to ISO strings before sending to server action
-      const programPayload: ProgramFormData = {
-        ...data,
-        startDate: data.dateRange.from.toISOString(),
-        endDate: data.dateRange.to.toISOString(),
-      };
-      
       const imageFile = data.imageFile?.[0];
       const attachment = data.attachment?.[0];
 
-      await createProgram(programPayload, imageFile, attachment);
+      await createProgram(data, imageFile, attachment);
 
       toast({ title: 'Program berhasil dibuat!' });
       router.push('/panel/programs');
@@ -158,7 +148,7 @@ export default function NewProgramPage() {
       toast({ 
         variant: 'destructive', 
         title: 'Gagal Membuat Program', 
-        description: (error as Error).message, // Display the raw error message
+        description: (error as Error).message,
         duration: 9000
       });
       setLoading(false);
@@ -182,8 +172,8 @@ export default function NewProgramPage() {
         </div>
         <div className="flex gap-2">
             <Button variant="outline" type="button" onClick={() => router.push('/panel/programs')}>Batal</Button>
-            <Button type="submit" disabled={loading || loadingImage}>
-              {(loading || loadingImage) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Simpan Program
             </Button>
         </div>
@@ -339,7 +329,6 @@ export default function NewProgramPage() {
                     render={({ field }) => (
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-3 gap-2">
                              <Label className="flex flex-col items-center justify-center gap-2 cursor-pointer rounded-md border p-2 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
-                                <Sparkles className="h-5 w-5" />
                                 <span className="text-xs">AI</span>
                                 <RadioGroupItem value="ai" className="sr-only" />
                              </Label>
@@ -419,3 +408,5 @@ export default function NewProgramPage() {
     </form>
   );
 }
+
+    
