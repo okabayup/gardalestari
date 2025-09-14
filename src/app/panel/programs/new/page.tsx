@@ -19,12 +19,12 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { addDays, format } from 'date-fns';
-import { createProgram, getProgramTags, ProgramTag, ProgramFormData } from '@/app/actions/programs';
+import { createProgram, getProgramTags, ProgramTag } from '@/app/actions/programs';
 import { getPartners, Partner } from '@/app/actions/partners';
 import { getForms, ProgramForm } from '@/app/actions/forms';
 import { generateImage } from '@/ai/flows/image-generate-flow';
 import { cn } from '@/lib/utils';
-import { DateRange } from "react-day-picker";
+import type { ProgramFormData } from '@/lib/definitions';
 
 const imageSourceSchema = z.enum(['ai', 'url', 'upload']);
 
@@ -137,46 +137,30 @@ export default function NewProgramPage() {
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
-
-    let imageUrl = data.imageUrl || '';
-    let imageFile: File | undefined = data.imageFile?.[0];
-
-    if (data.imageSource === 'ai' && data.imageHint) {
-        toast({ title: 'AI sedang membuat gambar sampul...' });
-        setLoadingImage(true);
-        try {
-            const result = await generateImage({ prompt: data.imageHint });
-            if (!result.imageUrl) throw new Error("AI gagal membuat gambar.");
-            const response = await fetch(result.imageUrl);
-            const blob = await response.blob();
-            imageFile = new File([blob], "ai-generated-image.png", { type: "image/png" });
-            imageUrl = ''; // Clear URL if AI image is used
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Gagal membuat gambar AI', description: (error as Error).message });
-            setLoading(false); setLoadingImage(false); return;
-        }
-        setLoadingImage(false);
-    } else if (data.imageSource === 'url') {
-      imageFile = undefined;
-    } else {
-      imageUrl = '';
-    }
+    setLoadingImage(false);
 
     try {
-      const { dateRange, attachment, ...rest } = data;
+      // Convert date objects to ISO strings before sending to server action
       const programPayload: ProgramFormData = {
-        ...rest,
-        startDate: dateRange.from,
-        endDate: dateRange.to,
-        imageUrl,
+        ...data,
+        startDate: data.dateRange.from.toISOString(),
+        endDate: data.dateRange.to.toISOString(),
       };
       
-      await createProgram(programPayload, imageFile, attachment?.[0]);
+      const imageFile = data.imageFile?.[0];
+      const attachment = data.attachment?.[0];
+
+      await createProgram(programPayload, imageFile, attachment);
 
       toast({ title: 'Program berhasil dibuat!' });
       router.push('/panel/programs');
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Gagal membuat program', description: (error as Error).message });
+      toast({ 
+        variant: 'destructive', 
+        title: 'Gagal Membuat Program', 
+        description: (error as Error).message, // Display the raw error message
+        duration: 9000
+      });
       setLoading(false);
     }
   };
@@ -435,5 +419,3 @@ export default function NewProgramPage() {
     </form>
   );
 }
-
-    

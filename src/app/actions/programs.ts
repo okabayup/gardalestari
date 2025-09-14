@@ -96,26 +96,42 @@ export async function getProgram(id: string): Promise<Program | null> {
 
 // Create a new program
 export async function createProgram(programData: ProgramFormData, imageFile?: File, attachmentFile?: File): Promise<string> {
-  try {
-    const { startDate, endDate, ...restData } = programData;
-    
-    const dataToCreate: Omit<Program, 'id'> & { startDate: Timestamp, endDate: Timestamp } = {
+    // 1. Prepare data and handle dates
+    const { imageFile: unusedImageFile, attachment: unusedAttachment, dateRange, ...restData } = programData;
+    const dataToCreate: Omit<Program, 'id'> = {
         ...restData,
-        startDate: Timestamp.fromDate(new Date(startDate)),
-        endDate: Timestamp.fromDate(new Date(endDate)),
+        startDate: new Date(programData.startDate).toISOString(),
+        endDate: new Date(programData.endDate).toISOString(),
+        imageUrl: programData.imageUrl || '',
     };
-
-    if (imageFile) {
-      try {
-        const imageRef = ref(storage, `program-images/${Date.now()}_${imageFile.name}`);
-        await uploadBytes(imageRef, imageFile);
-        dataToCreate.imageUrl = await getDownloadURL(imageRef);
-      } catch (uploadError) {
-        console.error("Error uploading program image:", uploadError);
-        throw new Error("Gagal mengunggah gambar program.");
-      }
-    }
     
+    // 2. Handle image upload/generation
+    try {
+        if (programData.imageSource === 'ai' && programData.imageHint) {
+            const result = await generateImage({ prompt: programData.imageHint });
+            if (!result.imageUrl) throw new Error("AI gagal membuat URL gambar.");
+            const response = await fetch(result.imageUrl);
+            const blob = await response.blob();
+            const aiImageFile = new File([blob], "ai-generated-image.png", { type: "image/png" });
+            
+            const imageRef = ref(storage, `program-images/${Date.now()}_ai_generated.png`);
+            await uploadBytes(imageRef, aiImageFile);
+            dataToCreate.imageUrl = await getDownloadURL(imageRef);
+        } else if (programData.imageSource === 'upload' && imageFile) {
+            const imageRef = ref(storage, `program-images/${Date.now()}_${imageFile.name}`);
+            await uploadBytes(imageRef, imageFile);
+            dataToCreate.imageUrl = await getDownloadURL(imageRef);
+        } else if (programData.imageSource === 'url' && programData.imageUrl) {
+             dataToCreate.imageUrl = programData.imageUrl;
+        } else {
+             dataToCreate.imageUrl = `https://picsum.photos/seed/${programData.title.replace(/\s+/g, '-')}/600/400`;
+        }
+    } catch (error) {
+        console.error("Error handling program image:", error);
+        throw new Error(`Gagal memproses gambar program: ${(error as Error).message}`);
+    }
+
+    // 3. Handle attachment upload
     if (attachmentFile) {
       try {
         const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachmentFile.name}`);
@@ -128,8 +144,21 @@ export async function createProgram(programData: ProgramFormData, imageFile?: Fi
       }
     }
     
-    const docRef = await addDoc(programsCollection, dataToCreate);
-    
+    // 4. Save to Firestore
+    let docRef;
+    try {
+        const firestorePayload = {
+            ...dataToCreate,
+            startDate: Timestamp.fromDate(new Date(dataToCreate.startDate)),
+            endDate: Timestamp.fromDate(new Date(dataToCreate.endDate)),
+        };
+        docRef = await addDoc(programsCollection, firestorePayload);
+    } catch(error) {
+        console.error("Error creating program in Firestore:", error);
+        throw new Error(`Gagal menyimpan program ke database: ${(error as Error).message}`);
+    }
+
+    // 5. Post-save actions (notifications) - Do not let these fail the whole process
     if (programData.programType === 'aktif') {
         try {
             await sendNotification(
@@ -168,11 +197,6 @@ export async function createProgram(programData: ProgramFormData, imageFile?: Fi
     revalidatePath(`/programs/${docRef.id}`);
     
     return docRef.id;
-
-  } catch (error) {
-    console.error("Error creating program:", error);
-    throw new Error("Gagal membuat program. " + (error as Error).message);
-  }
 }
 
 // Update an existing program
