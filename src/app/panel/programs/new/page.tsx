@@ -149,8 +149,8 @@ export default function NewProgramPage() {
     // Append react-hook-form controlled values
     const formValues = getValues();
     formData.set('tags', formValues.tags.join(','));
-    formData.set('dateRange.from', formValues.dateRange.from.toISOString());
-    formData.set('dateRange.to', formValues.dateRange.to.toISOString());
+    formData.set('startDate', formValues.dateRange.from.toISOString());
+    formData.set('endDate', formValues.dateRange.to.toISOString());
     formData.set('requiresRecommendation', String(formValues.requiresRecommendation));
 
     try {
@@ -324,7 +324,11 @@ export default function NewProgramPage() {
 
                  <div className="flex items-center space-x-2 pt-2">
                     <Controller name="requiresRecommendation" control={control} render={({ field }) => (
-                      <Switch id="requiresRecommendation" name="requiresRecommendation" checked={field.value} onCheckedChange={field.onChange} />
+                      <Switch 
+                        id="requiresRecommendation"
+                        checked={field.value}
+                        onCheckedChange={(checked) => field.onChange(checked)}
+                      />
                     )} />
                     <Label htmlFor="requiresRecommendation">Garda Lestari menyediakan surat rekomendasi untuk program ini</Label>
                 </div>
