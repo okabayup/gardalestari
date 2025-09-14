@@ -25,6 +25,7 @@ import { getForms, ProgramForm } from '@/app/actions/forms';
 import { cn } from '@/lib/utils';
 import type { ProgramFormData } from '@/lib/definitions';
 
+// Simplified schema for better client-side UX. Stricter validation will be on the server.
 const formSchema = z.object({
   title: z.string().min(1, 'Judul wajib diisi'),
   description: z.string().min(1, 'Deskripsi wajib diisi'),
@@ -48,31 +49,8 @@ const formSchema = z.object({
   formId: z.string().optional(),
   requiresRecommendation: z.boolean().default(false),
   attachment: z.any().optional(),
-})
-.refine(data => data.source !== 'mitra' || !!data.partnerId, {
-    message: "Mitra harus dipilih jika sumbernya adalah mitra",
-    path: ["partnerId"],
-})
-.refine(data => data.submissionType !== 'external' || (!!data.applicationUrl && z.string().url().safeParse(data.applicationUrl).success), {
-    message: "URL pendaftaran eksternal harus valid",
-    path: ["applicationUrl"],
-})
-.refine(data => data.submissionType !== 'internal' || !!data.formId, {
-    message: "Formulir internal harus dipilih",
-    path: ["formId"],
-})
-.refine(data => {
-    if (data.imageSource === 'url') return !!data.imageUrl && z.string().url().safeParse(data.imageUrl).success;
-    return true;
-}, { message: "URL Gambar tidak valid", path: ["imageUrl"]})
-.refine(data => {
-    if (data.imageSource === 'ai') return !!data.imageHint;
-    return true;
-}, { message: "Petunjuk AI wajib diisi", path: ["imageHint"]})
-.refine(data => {
-    if (data.imageSource === 'upload') return !!data.imageFile && data.imageFile.length > 0;
-    return true;
-}, { message: "File gambar wajib diunggah", path: ["imageFile"]});
+});
+
 
 type FormSchemaType = z.infer<typeof formSchema>;
 
@@ -134,24 +112,40 @@ export default function NewProgramPage() {
   const processForm = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    // Manually trigger validation
-    const isValid = await handleSubmit(() => {})()
-    if (!isValid) {
-        toast({ variant: "destructive", title: "Form tidak valid", description: "Mohon periksa kembali isian Anda."});
-        return;
-    }
+    // Manually trigger validation and check errors
+    await handleSubmit(() => {}, (validationErrors) => {
+      console.error("Validation errors:", validationErrors);
+      const errorMessages = Object.values(validationErrors).map(err => err.message).join('\n');
+      toast({ 
+          variant: "destructive", 
+          title: "Formulir tidak valid", 
+          description: `Mohon periksa kembali isian Anda. Error: ${errorMessages || 'Beberapa field wajib belum terisi.'}`
+      });
+    })();
 
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
+    
     setLoading(true);
 
     if (!formRef.current) return;
     const formData = new FormData(formRef.current);
     
-    // Append react-hook-form controlled values
     const formValues = getValues();
     formData.set('tags', formValues.tags.join(','));
     formData.set('startDate', formValues.dateRange.from.toISOString());
     formData.set('endDate', formValues.dateRange.to.toISOString());
     formData.set('requiresRecommendation', String(formValues.requiresRecommendation));
+
+    // Append other controlled fields
+    formData.set('category', formValues.category);
+    formData.set('programType', formValues.programType);
+    formData.set('imageSource', formValues.imageSource);
+    formData.set('source', formValues.source);
+    formData.set('submissionType', formValues.submissionType);
+    if(formValues.partnerId) formData.set('partnerId', formValues.partnerId);
+    if(formValues.formId) formData.set('formId', formValues.formId);
 
     try {
         await createProgram(formData);

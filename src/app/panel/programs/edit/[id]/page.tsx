@@ -19,23 +19,20 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { format } from 'date-fns';
-import { getProgram, updateProgram, getProgramTags, ProgramTag, ProgramFormData } from '@/app/actions/programs';
+import { getProgram, updateProgram, getProgramTags, ProgramTag } from '@/app/actions/programs';
 import { getPartners, Partner } from '@/app/actions/partners';
 import { getForms, ProgramForm } from '@/app/actions/forms';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-
-const imageSourceSchema = z.enum(['ai', 'url', 'upload']);
 
 const formSchema = z.object({
   title: z.string().min(1, 'Judul wajib diisi'),
   description: z.string().min(1, 'Deskripsi wajib diisi'),
   category: z.enum(['flagship', 'ongoing'], { required_error: 'Kategori program wajib dipilih' }),
   programType: z.enum(['aktif', 'pasif'], { required_error: 'Jenis program wajib dipilih' }),
-  imageSource: imageSourceSchema.default('url'),
+  imageSource: z.enum(['ai', 'url', 'upload']).default('url'),
   imageUrl: z.string().optional(),
   imageHint: z.string().optional(),
-  imageFile: z.any().optional(),
   tags: z.array(z.string()).min(1, 'Minimal satu tag harus dipilih'),
   dateRange: z.object({
     from: z.date({ required_error: 'Tanggal mulai wajib diisi' }),
@@ -49,28 +46,7 @@ const formSchema = z.object({
   applicationUrl: z.string().optional(),
   formId: z.string().optional(),
   requiresRecommendation: z.boolean().default(false),
-  attachment: z.any().optional(),
-})
-.refine(data => data.source !== 'mitra' || !!data.partnerId, {
-    message: "Mitra harus dipilih jika sumbernya adalah mitra",
-    path: ["partnerId"],
-})
-.refine(data => data.submissionType !== 'external' || (!!data.applicationUrl && z.string().url().safeParse(data.applicationUrl).success), {
-    message: "URL pendaftaran eksternal harus valid",
-    path: ["applicationUrl"],
-})
-.refine(data => data.submissionType !== 'internal' || !!data.formId, {
-    message: "Formulir internal harus dipilih",
-    path: ["formId"],
-})
-.refine(data => {
-    if (data.imageSource === 'url') return !!data.imageUrl && z.string().url().safeParse(data.imageUrl).success;
-    return true;
-}, { message: "URL Gambar tidak valid", path: ["imageUrl"]})
-.refine(data => {
-    if (data.imageSource === 'ai') return !!data.imageHint;
-    return true;
-}, { message: "Petunjuk AI wajib diisi", path: ["imageHint"]});
+});
 
 
 type FormData = z.infer<typeof formSchema>;
@@ -147,19 +123,37 @@ export default function EditProgramPage() {
     fetchData();
   }, [programId, reset, router, toast]);
 
-  const onSubmit = async (data: FormData) => {
-    setLoading(true);
-    
-    try {
-      const { attachment, imageFile, ...rest } = data;
-      
-      await updateProgram(programId, rest, imageFile?.[0], attachment?.[0]);
-      toast({ title: 'Program berhasil diperbarui!' });
-      router.push('/panel/programs');
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Gagal memperbarui program', description: (error as Error).message });
-      setLoading(false);
-    }
+  const processForm = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    await handleSubmit(async (data) => {
+        setLoading(true);
+        try {
+            const formData = new FormData(e.currentTarget);
+            // Append controlled values
+            formData.set('tags', data.tags.join(','));
+            formData.set('startDate', data.dateRange.from.toISOString());
+            formData.set('endDate', data.dateRange.to.toISOString());
+            formData.set('requiresRecommendation', String(data.requiresRecommendation));
+            formData.set('category', data.category);
+            formData.set('programType', data.programType);
+            formData.set('imageSource', data.imageSource);
+            formData.set('source', data.source);
+            formData.set('submissionType', data.submissionType);
+            if(data.partnerId) formData.set('partnerId', data.partnerId);
+            if(data.formId) formData.set('formId', data.formId);
+
+            await updateProgram(programId, formData);
+            toast({ title: 'Program berhasil diperbarui!' });
+            router.push('/panel/programs');
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Gagal memperbarui program', description: (error as Error).message });
+        } finally {
+            setLoading(false);
+        }
+    }, (validationErrors) => {
+        console.error("Validation errors on edit:", validationErrors);
+        toast({ variant: 'destructive', title: 'Formulir tidak valid', description: 'Mohon periksa kembali semua isian Anda.' });
+    })();
   };
 
   const handleTagToggle = (tagName: string) => {
@@ -175,7 +169,7 @@ export default function EditProgramPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={processForm} className="space-y-6">
        <div className="flex items-center justify-between">
         <div>
           <h1 className="font-headline text-2xl font-bold">Edit Program</h1>
@@ -373,7 +367,7 @@ export default function EditProgramPage() {
                 )}
                 {watchImageSource === 'upload' && (
                     <div className="space-y-2">
-                        <Label htmlFor="imageFile">Unggah File Gambar Baru</Label>
+                        <Label htmlFor="imageFile">Unggah File Gambar Baru (Kosongkan jika tidak ingin mengubah)</Label>
                         <Input id="imageFile" type="file" {...register('imageFile')} accept="image/*" />
                         {errors.imageFile && <p className="text-sm text-destructive">{(errors.imageFile as any).message}</p>}
                     </div>
@@ -406,7 +400,7 @@ export default function EditProgramPage() {
                     {errors.requiredDocuments && <p className="text-sm text-destructive">{errors.requiredDocuments.message}</p>}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="attachment">Berkas Lampiran (Opsional)</Label>
+                    <Label htmlFor="attachment">Berkas Lampiran (Opsional, kosongkan jika tidak ingin mengubah)</Label>
                     <Input id="attachment" type="file" {...register('attachment')} />
                      {attachmentFileName ? (
                         <p className="text-sm text-muted-foreground flex items-center gap-2"><Paperclip className="h-4 w-4"/> {attachmentFileName}</p>
@@ -425,5 +419,3 @@ export default function EditProgramPage() {
     </form>
   );
 }
-
-    
