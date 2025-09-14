@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Image from 'next/image';
@@ -16,14 +17,18 @@ interface ProgramCardProps extends Program {
   isPast?: boolean;
 }
 
-const toJsDateSafe = (dateString: string): Date => {
+const toJsDateSafe = (dateString?: string): Date | null => {
+  if (!dateString) return null;
   const date = new Date(dateString);
-  return isNaN(date.getTime()) ? new Date() : date;
+  return isNaN(date.getTime()) ? null : date;
 };
 
 export default function ProgramCard({ id, title, description, imageUrl, imageHint, tags, startDate, endDate, isPast }: ProgramCardProps) {
-  const formattedStartDate = format(toJsDateSafe(startDate), "d MMM yyyy", { locale: id });
-  const formattedEndDate = format(toJsDateSafe(endDate), "d MMM yyyy", { locale: id });
+  const startDateObj = toJsDateSafe(startDate);
+  const endDateObj = toJsDateSafe(endDate);
+
+  const formattedStartDate = startDateObj ? format(startDateObj, "d MMM yyyy", { locale: id }) : 'N/A';
+  const formattedEndDate = endDateObj ? format(endDateObj, "d MMM yyyy", { locale: id }) : 'N/A';
 
   return (
     <Card className={cn("overflow-hidden transition-all hover:shadow-lg flex flex-col", isPast && "opacity-70")}>

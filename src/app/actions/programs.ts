@@ -32,6 +32,7 @@ const toProgram = (doc: any): Program => {
  * @returns A list of relevant programs.
  */
 export async function searchPrograms(searchQuery: string): Promise<Partial<Program>[]> {
+  try {
     const q = query(
         programsCollection,
         orderBy('endDate', 'desc'),
@@ -53,24 +54,49 @@ export async function searchPrograms(searchQuery: string): Promise<Partial<Progr
         endDate: entry.endDate,
         category: entry.category,
     }));
+  } catch (error) {
+    console.error("Error searching programs:", error);
+    throw new Error("Gagal mencari data program.");
+  }
 }
 
 
 // Get all programs
 export async function getPrograms(): Promise<Program[]> {
-  const q = query(programsCollection, orderBy('endDate', 'desc'));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(toProgram);
+  try {
+    const q = query(programsCollection, orderBy('endDate', 'desc'));
+    const snapshot = await getDocs(q);
+    const programs: Program[] = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      programs.push({
+        id: doc.id,
+        ...data,
+        // Safely convert Timestamps to ISO strings
+        startDate: data.startDate instanceof Timestamp ? data.startDate.toDate().toISOString() : undefined,
+        endDate: data.endDate instanceof Timestamp ? data.endDate.toDate().toISOString() : undefined,
+      } as Program);
+    });
+    return programs;
+  } catch (error) {
+    console.error("Error getting programs:", error);
+    throw new Error("Gagal mengambil data program.");
+  }
 }
 
 // Get a single program by ID
 export async function getProgram(id: string): Promise<Program | null> {
-    const programDocRef = doc(db, 'programs', id);
-    const docSnap = await getDoc(programDocRef);
-    if (docSnap.exists()) {
-        return toProgram(docSnap);
+    try {
+        const programDocRef = doc(db, 'programs', id);
+        const docSnap = await getDoc(programDocRef);
+        if (docSnap.exists()) {
+            return toProgram(docSnap);
+        }
+        return null;
+    } catch (error) {
+        console.error("Error getting single program:", error);
+        throw new Error("Gagal mengambil data program.");
     }
-    return null;
 }
 
 
@@ -78,7 +104,7 @@ export async function getProgram(id: string): Promise<Program | null> {
 export async function createProgram(programData: ProgramFormData, attachmentFile?: File, imageFile?: File) {
   try {
     const { startDate, endDate, ...restData } = programData;
-    const dataToCreate: Omit<Program, 'id'> & { startDate: Timestamp, endDate: Timestamp } = {
+    const dataToCreate: Omit<Program, 'id' | 'startDate' | 'endDate'> & { startDate: Timestamp, endDate: Timestamp } = {
         ...restData,
         startDate: Timestamp.fromDate(new Date(startDate)),
         endDate: Timestamp.fromDate(new Date(endDate)),
@@ -129,7 +155,7 @@ export async function createProgram(programData: ProgramFormData, attachmentFile
 
   } catch (error) {
     console.error("Error creating program:", error);
-    throw new Error("Gagal membuat program.");
+    throw new Error("Gagal membuat program. Pastikan semua data terisi dengan benar.");
   }
 }
 
@@ -138,7 +164,6 @@ export async function updateProgram(id: string, program: Partial<ProgramFormData
   try {
     const programDoc = doc(db, 'programs', id);
     
-    // Convert dates to Timestamps before updating
     const dataToUpdate: { [key: string]: any } = { ...program };
     if (program.startDate) {
         dataToUpdate.startDate = Timestamp.fromDate(new Date(program.startDate));
@@ -178,7 +203,7 @@ export async function updateProgram(id: string, program: Partial<ProgramFormData
     revalidatePath(`/programs/${id}`);
   } catch (error) {
     console.error("Error updating program:", error);
-    throw new Error("Gagal memperbarui program.");
+    throw new Error("Gagal memperbarui program. Pastikan semua data terisi dengan benar.");
   }
 }
 
@@ -202,7 +227,6 @@ export async function deleteProgram(id: string) {
 
     if (programToDelete?.imageUrl) {
         try {
-            // Only delete if it's a firebase storage URL
             if (programToDelete.imageUrl.includes('firebasestorage.googleapis.com')) {
                 const imageRef = ref(storage, programToDelete.imageUrl);
                 await deleteObject(imageRef);
@@ -213,7 +237,6 @@ export async function deleteProgram(id: string) {
              }
         }
     }
-
 
     revalidatePath('/panel/programs');
     revalidatePath('/programs');
@@ -228,12 +251,17 @@ export async function deleteProgram(id: string) {
 
 // Get all tags
 export async function getProgramTags(): Promise<ProgramTag[]> {
+  try {
     const snapshot = await getDocs(tagsCollection);
     const tags: ProgramTag[] = [];
     snapshot.forEach(doc => {
         tags.push({ id: doc.id, name: doc.data().name });
     });
     return tags.sort((a, b) => a.name.localeCompare(b.name));
+  } catch (error) {
+      console.error("Error getting tags:", error);
+      throw new Error("Gagal mengambil data tag.");
+  }
 }
 
 // Add a new tag
