@@ -82,9 +82,8 @@ export async function createBeritaPost(post: Omit<BeritaPost, 'id'>) {
 
   } catch (error) {
     console.error("Error creating berita post:", error);
-    // Include the original error message for better debugging
     const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Gagal membuat konten. Pastikan semua data terisi dengan benar. Error: ${errorMessage}`);
+    throw new Error(`Gagal membuat konten: ${errorMessage}`);
   }
 }
 

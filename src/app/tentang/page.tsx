@@ -5,9 +5,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Sprout, Ship, TreePine, Eye, Shield, Scale, Search, ZoomIn, ZoomOut, Move } from 'lucide-react';
+import { Sprout, Ship, TreePine, Eye, Shield, Scale, Search, ZoomIn, ZoomOut, Move, Loader2 } from 'lucide-react';
 import LandingHeader from '@/components/layout/LandingHeader';
-import { getAppSettings } from '../actions/settings';
+import { getAppSettings, AppSettings } from '../actions/settings';
 import { Separator } from '@/components/ui/separator';
 import { getMembers, MemberWithStatus } from '../actions/members';
 import { MemberCard } from '@/components/members/MemberCard';
@@ -90,7 +90,7 @@ const OrgChartImage = ({ src, alt }: { src: string; alt: string }) => {
 
 
 export default function AboutPage() {
-    const [settings, setSettings] = useState<any>({});
+    const [settings, setSettings] = useState<AppSettings | null>(null);
     const [allMembers, setAllMembers] = useState<MemberWithStatus[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -134,14 +134,14 @@ export default function AboutPage() {
     const dpc = sortMembers(allMembers.filter(m => m.type === 'cabang'));
 
 
-    if (loading) {
-        return <div>Loading...</div>; // Or a proper skeleton loader
+    if (loading || !settings) {
+        return <div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-10 w-10 animate-spin"/></div>; 
     }
 
 
     return (
         <div className="flex min-h-screen flex-col bg-background text-foreground">
-            <LandingHeader />
+            <LandingHeader isRegistrationOpen={settings.isRegistrationOpen} />
             <main className="flex-1">
                 <section className="relative w-full pt-20 pb-12 md:pt-28 md:pb-20">
                      <div className="absolute inset-0 -z-10">

@@ -95,16 +95,21 @@ export async function getWhatsappTemplate(id: NotificationType): Promise<WhatsAp
 }
 
 export async function updateWhatsappTemplates(templates: Record<string, Partial<WhatsAppTemplate>>) {
-    const docData: { [key: string]: any } = {};
-    for (const key in templates) {
-        // Ensure we only save the fields that can be modified by the user
-        docData[key] = {
-            message: templates[key].message,
-            isActive: templates[key].isActive,
-        };
+    try {
+        const docData: { [key: string]: any } = {};
+        for (const key in templates) {
+            // Ensure we only save the fields that can be modified by the user
+            docData[key] = {
+                message: templates[key].message,
+                isActive: templates[key].isActive,
+            };
+        }
+        await setDoc(settingsDocRef, docData, { merge: true });
+        revalidatePath('/panel/whatsapp/templates');
+    } catch (error) {
+        console.error("Error updating WhatsApp templates:", error);
+        throw new Error("Gagal memperbarui template.");
     }
-    await setDoc(settingsDocRef, docData, { merge: true });
-    revalidatePath('/panel/whatsapp/templates');
 }
 
 
@@ -141,7 +146,7 @@ export async function sendBulkTestMessage(phoneNumbers: string, message: string)
 export async function getLatestProgramsText(): Promise<string> {
     const programs = await getPrograms();
     const activePrograms = programs
-        .filter(p => p.endDate.toDate() > new Date())
+        .filter(p => new Date(p.endDate) > new Date())
         .slice(0, 3);
 
     if (activePrograms.length === 0) {
@@ -150,7 +155,7 @@ export async function getLatestProgramsText(): Promise<string> {
 
     let message = "Berikut adalah program yang sedang dibuka:\n\n";
     activePrograms.forEach(p => {
-        message += `*${p.title}*\nBatas Pendaftaran: ${p.endDate.toDate().toLocaleDateString('id-ID')}\nInfo: ${process.env.NEXT_PUBLIC_BASE_URL}/programs/${p.id}\n\n`;
+        message += `*${p.title}*\nBatas Pendaftaran: ${new Date(p.endDate).toLocaleDateString('id-ID')}\nInfo: ${process.env.NEXT_PUBLIC_BASE_URL}/programs/${p.id}\n\n`;
     });
 
     return message;

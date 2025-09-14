@@ -10,23 +10,33 @@ const mapDataCollection = collection(db, 'mapData');
 
 // Get all map data points
 export async function getMapData(): Promise<MapData[]> {
-  const q = query(mapDataCollection, orderBy('createdAt', 'desc'));
-  const snapshot = await getDocs(q);
-  const data: MapData[] = [];
-  snapshot.forEach(doc => {
-    data.push({ id: doc.id, ...doc.data() } as MapData);
-  });
-  return data;
+  try {
+    const q = query(mapDataCollection, orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    const data: MapData[] = [];
+    snapshot.forEach(doc => {
+      data.push({ id: doc.id, ...doc.data() } as MapData);
+    });
+    return data;
+  } catch (error) {
+    console.error("Error getting map data:", error);
+    throw new Error("Gagal memuat data peta.");
+  }
 }
 
 // Get a single map data point by ID
 export async function getMapDataItem(id: string): Promise<MapData | null> {
-    const docRef = doc(db, 'mapData', id);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() } as MapData;
+    try {
+        const docRef = doc(db, 'mapData', id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            return { id: docSnap.id, ...docSnap.data() } as MapData;
+        }
+        return null;
+    } catch (error) {
+        console.error("Error getting map data item:", error);
+        throw new Error("Gagal mengambil item data peta.");
     }
-    return null;
 }
 
 // Create a new map data point

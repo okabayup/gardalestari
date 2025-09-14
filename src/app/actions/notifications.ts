@@ -150,29 +150,39 @@ export async function sendNotification(payload: NotificationPayload, target: Not
 
 // Get notifications for a specific user
 export async function getNotificationsForUser(userId: string): Promise<Notification[]> {
-    const q = query(
-        notificationsCollection, 
-        where('userId', '==', userId),
-        orderBy('createdAt', 'desc'),
-        limit(20)
-    );
-    const snapshot = await getDocs(q);
-    const notifications: Notification[] = [];
-    snapshot.forEach(doc => {
-        notifications.push({ id: doc.id, ...doc.data() } as Notification);
-    });
-    return notifications;
+    try {
+        const q = query(
+            notificationsCollection, 
+            where('userId', '==', userId),
+            orderBy('createdAt', 'desc'),
+            limit(20)
+        );
+        const snapshot = await getDocs(q);
+        const notifications: Notification[] = [];
+        snapshot.forEach(doc => {
+            notifications.push({ id: doc.id, ...doc.data() } as Notification);
+        });
+        return notifications;
+    } catch (error) {
+        console.error("Error getting notifications for user:", error);
+        throw new Error("Gagal mengambil notifikasi.");
+    }
 }
 
 // Mark notifications as read for a user
 export async function markNotificationsAsRead(userId: string, notificationIds: string[]) {
-    if (notificationIds.length === 0) return;
-    const batch = writeBatch(db);
-    notificationIds.forEach(id => {
-        const notifRef = doc(db, 'notifications', id);
-        batch.update(notifRef, { read: true });
-    });
-    await batch.commit();
+    try {
+        if (notificationIds.length === 0) return;
+        const batch = writeBatch(db);
+        notificationIds.forEach(id => {
+            const notifRef = doc(db, 'notifications', id);
+            batch.update(notifRef, { read: true });
+        });
+        await batch.commit();
+    } catch (error) {
+        console.error("Error marking notifications as read:", error);
+        throw new Error("Gagal menandai notifikasi sebagai telah dibaca.");
+    }
 }
 
 export async function getUnreadNotificationsCount(userId: string): Promise<number> {

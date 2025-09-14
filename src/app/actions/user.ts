@@ -1,9 +1,8 @@
 
-
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, DocumentData, limit, getDoc, doc, setDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, DocumentData, limit, getDoc, doc, setDoc, Timestamp } from 'firebase/firestore';
 import type { MemberWithStatus } from '@/lib/definitions';
 import type { Position, PermissionId, PublicUser, PublicProfile } from '@/lib/definitions';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
@@ -34,17 +33,22 @@ export async function checkUsernameExists(username: string): Promise<boolean> {
  * @returns {Promise<string>} A unique username.
  */
 export async function generateUniqueUsername(fullName: string): Promise<string> {
-    const baseUsername = fullName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15) || 'user';
-    let username = baseUsername;
-    
-    while (true) {
-        const q = query(collection(db, 'users'), where("username", "==", username));
-        const querySnapshot = await getDocs(q);
-        if (querySnapshot.empty) {
-            return username;
+    try {
+        const baseUsername = fullName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15) || 'user';
+        let username = baseUsername;
+        
+        while (true) {
+            const q = query(collection(db, 'users'), where("username", "==", username));
+            const querySnapshot = await getDocs(q);
+            if (querySnapshot.empty) {
+                return username;
+            }
+            // If username exists, append a random number
+            username = `${baseUsername}${Math.floor(Math.random() * 1000)}`;
         }
-        // If username exists, append a random number
-        username = `${baseUsername}${Math.floor(Math.random() * 1000)}`;
+    } catch (error) {
+        console.error("Error generating unique username:", error);
+        throw new Error("Gagal membuat nama pengguna unik.");
     }
 }
 
@@ -72,15 +76,6 @@ export async function getUserByUid(uid: string): Promise<(MemberWithStatus & { w
             }
          }
 
-        let joinDate: string | undefined;
-        if (data.createdAt && typeof data.createdAt.toDate === 'function') {
-            joinDate = data.createdAt.toDate().toLocaleDateString('id-ID', {
-                day: '2-digit',
-                month: 'long',
-                year: 'numeric'
-            });
-        }
-
         return {
             id: userDoc.id,
             name: data.fullName || data.displayName || 'Nama Tidak Diketahui',
@@ -93,7 +88,7 @@ export async function getUserByUid(uid: string): Promise<(MemberWithStatus & { w
             type: data.type,
             region: data.region,
             isSpecialMember: data.isSpecialMember,
-            joinDate: joinDate,
+            joinDate: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
             permissions: permissions,
             waNumber: data.waNumber,
             waVerified: data.waVerified || false,
@@ -132,15 +127,6 @@ export async function getUserByUsername(username: string): Promise<PublicProfile
             }
          }
 
-        let joinDate: string | undefined;
-        if (data.createdAt && typeof data.createdAt.toDate === 'function') {
-            joinDate = data.createdAt.toDate().toLocaleDateString('id-ID', {
-                day: '2-digit',
-                month: 'long',
-                year: 'numeric'
-            });
-        }
-
         return {
             id: userDoc.id,
             name: data.fullName || data.displayName || 'Nama Tidak Diketahui',
@@ -153,7 +139,7 @@ export async function getUserByUsername(username: string): Promise<PublicProfile
             positionId: data.positionId,
             type: data.type,
             region: data.region,
-            joinDate: joinDate,
+            joinDate: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
             permissions: [], // Permissions are not needed for public profile
         };
 
@@ -253,40 +239,43 @@ export async function searchUsers(searchQuery: string, limitCount: number = 5): 
 
 
 export async function saveWaNumber(userId: string, waNumber: string) {
-    const userDocRef = doc(db, 'users', userId);
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    await setDoc(userDocRef, {
-        waNumber: waNumber,
-        waOtp: otp,
-        waVerified: false,
-    }, { merge: true });
-
     try {
+        const userDocRef = doc(db, 'users', userId);
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        await setDoc(userDocRef, {
+            waNumber: waNumber,
+            waOtp: otp,
+            waVerified: false,
+        }, { merge: true });
+
         const result = await sendWhatsAppMessage(waNumber, `Kode verifikasi Garda Lestari Anda adalah: ${otp}`);
-        // This logic is now handled robustly inside sendWhatsAppMessage
+        
         if (!result.success) {
-            // Throw the specific error message from the service
             throw new Error(result.error || 'Gagal mengirim OTP dari layanan WhatsApp.');
         }
         return result;
     } catch (error) {
         console.error(`Error in saveWaNumber action for ${waNumber}:`, error);
-        // Re-throw the error so the client can catch the specific message
-        throw error;
+        throw new Error((error as Error).message);
     }
 }
 
 export async function verifyWaNumber(userId: string, otp: string): Promise<boolean> {
-    const userDocRef = doc(db, 'users', userId);
-    const userDoc = await getDoc(userDocRef);
+    try {
+        const userDocRef = doc(db, 'users', userId);
+        const userDoc = await getDoc(userDocRef);
 
-    if (userDoc.exists() && userDoc.data().waOtp === otp) {
-        await setDoc(userDocRef, {
-            waVerified: true,
-            waOtp: null, // Clear OTP after verification
-        }, { merge: true });
-        return true;
+        if (userDoc.exists() && userDoc.data().waOtp === otp) {
+            await setDoc(userDocRef, {
+                waVerified: true,
+                waOtp: null, // Clear OTP after verification
+            }, { merge: true });
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error("Error verifying WA number:", error);
+        throw new Error("Gagal memverifikasi nomor WhatsApp.");
     }
-    return false;
 }

@@ -18,55 +18,70 @@ const eventsCollection = collection(db, 'events');
  * @returns A list of relevant events.
  */
 export async function searchEvents(searchQuery: string): Promise<Partial<Event>[]> {
-    const q = query(
-        eventsCollection,
-        orderBy('date', 'desc'),
-        limit(10)
-    );
+    try {
+        const q = query(
+            eventsCollection,
+            orderBy('date', 'desc'),
+            limit(10)
+        );
 
-    const snapshot = await getDocs(q);
-    const allEntries: Event[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
+        const snapshot = await getDocs(q);
+        const allEntries: Event[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
 
-    const searchTerms = searchQuery.toLowerCase().split(' ');
-    const results = allEntries.filter(entry => {
-        const searchableText = `${entry.title} ${entry.description} ${entry.location}`.toLowerCase();
-        return searchTerms.some(term => searchableText.includes(term));
-    }).slice(0, 5);
+        const searchTerms = searchQuery.toLowerCase().split(' ');
+        const results = allEntries.filter(entry => {
+            const searchableText = `${entry.title} ${entry.description} ${entry.location}`.toLowerCase();
+            return searchTerms.some(term => searchableText.includes(term));
+        }).slice(0, 5);
 
-    return results.map(entry => ({
-        id: entry.id,
-        title: entry.title,
-        date: entry.date,
-        location: entry.location,
-    }));
+        return results.map(entry => ({
+            id: entry.id,
+            title: entry.title,
+            date: entry.date,
+            location: entry.location,
+        }));
+    } catch (error) {
+        console.error("Error searching events:", error);
+        throw new Error("Gagal mencari acara.");
+    }
 }
 
 
 // Get all events, ordered by date
 export async function getEvents(): Promise<Event[]> {
-  const q = query(eventsCollection, orderBy('date', 'asc'));
-  const snapshot = await getDocs(q);
-  const events: Event[] = [];
-  snapshot.forEach(doc => {
-    events.push({ id: doc.id, ...doc.data() } as Event);
-  });
-  return events;
+  try {
+    const q = query(eventsCollection, orderBy('date', 'asc'));
+    const snapshot = await getDocs(q);
+    const events: Event[] = [];
+    snapshot.forEach(doc => {
+      events.push({ id: doc.id, ...doc.data() } as Event);
+    });
+    return events;
+  } catch (error) {
+      console.error("Error getting events:", error);
+      throw new Error("Gagal mengambil data acara.");
+  }
 }
 
 // Get a single event by ID
 export async function getEvent(id: string): Promise<Event | null> {
-    const eventDoc = doc(db, 'events', id);
-    const docSnap = await getDoc(eventDoc);
-    if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() } as Event;
+    try {
+        const eventDoc = doc(db, 'events', id);
+        const docSnap = await getDoc(eventDoc);
+        if (docSnap.exists()) {
+            return { id: docSnap.id, ...docSnap.data() } as Event;
+        }
+        return null;
+    } catch (error) {
+        console.error("Error getting single event:", error);
+        throw new Error("Gagal mengambil data acara.");
     }
-    return null;
 }
 
 // Create a new event
 export async function createEvent(event: Omit<Event, 'id'>, attachmentFile?: File) {
   try {
-    const eventData = { ...event };
+    const eventData: { [key: string]: any } = { ...event };
     if (attachmentFile) {
         const attachmentRef = ref(storage, `event_attachments/${Date.now()}_${attachmentFile.name}`);
         await uploadBytes(attachmentRef, attachmentFile);
@@ -86,7 +101,7 @@ export async function createEvent(event: Omit<Event, 'id'>, attachmentFile?: Fil
 export async function updateEvent(id: string, event: Partial<Event>, attachmentFile?: File) {
   try {
     const eventDoc = doc(db, 'events', id);
-    const eventData: Partial<Event> = { ...event };
+    const eventData: { [key: string]: any } = { ...event };
 
     if (attachmentFile) {
         const currentEvent = await getEvent(id);

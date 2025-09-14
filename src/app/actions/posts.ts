@@ -87,14 +87,14 @@ const buildPostWithAuthor = async (postDoc: any, currentUserId?: string): Promis
 
 // Create a new post with multiple files
 export async function createPost(caption: string, mediaPayload: {file: File, mentions: Mention[]}[], authorId: string) {
-  if (!authorId) {
-    throw new Error('Pengguna tidak terautentikasi.');
-  }
-  if (mediaPayload.length === 0) {
-    throw new Error('Setidaknya satu file harus diunggah.');
-  }
-
   try {
+    if (!authorId) {
+      throw new Error('Pengguna tidak terautentikasi.');
+    }
+    if (mediaPayload.length === 0) {
+      throw new Error('Setidaknya satu file harus diunggah.');
+    }
+
     const mediaItems: MediaItem[] = [];
     const mentionedUserIds = new Set<string>();
 
@@ -132,7 +132,6 @@ export async function createPost(caption: string, mediaPayload: {file: File, men
     
     revalidatePath('/feed');
     revalidatePath('/profile/me');
-
   } catch (error) {
     console.error("Error creating post:", error);
     throw new Error("Gagal membuat postingan baru.");
@@ -141,103 +140,127 @@ export async function createPost(caption: string, mediaPayload: {file: File, men
 
 // Get all posts with pagination
 export async function getPosts(currentUserId: string, lastVisibleId?: string) {
-  
-  let q;
-  if (lastVisibleId) {
-      const lastVisibleDoc = await getDoc(doc(db, 'posts', lastVisibleId));
-       q = query(
-        postsCollection, 
-        where('status', '==', 'published'),
-        orderBy('createdAt', 'desc'),
-        startAfter(lastVisibleDoc),
-        limit(5)
-      );
-  } else {
-       q = query(
-        postsCollection, 
-        where('status', '==', 'published'),
-        orderBy('createdAt', 'desc'),
-        limit(5)
-      );
-  }
- 
-  const postsSnapshot = await getDocs(q);
-  
-  const postPromises = postsSnapshot.docs.map(doc => 
-    buildPostWithAuthor(doc as any, currentUserId)
-  );
+  try {
+    let q;
+    if (lastVisibleId) {
+        const lastVisibleDoc = await getDoc(doc(db, 'posts', lastVisibleId));
+         q = query(
+          postsCollection, 
+          where('status', '==', 'published'),
+          orderBy('createdAt', 'desc'),
+          startAfter(lastVisibleDoc),
+          limit(5)
+        );
+    } else {
+         q = query(
+          postsCollection, 
+          where('status', '==', 'published'),
+          orderBy('createdAt', 'desc'),
+          limit(5)
+        );
+    }
+   
+    const postsSnapshot = await getDocs(q);
+    
+    const postPromises = postsSnapshot.docs.map(doc => 
+      buildPostWithAuthor(doc as any, currentUserId)
+    );
 
-  const posts = (await Promise.all(postPromises)).filter((p): p is PostWithAuthor => p !== null);
-  
-  // Get the ID of the last document
-  const lastDoc = postsSnapshot.docs[postsSnapshot.docs.length - 1];
-  const newLastVisibleId = lastDoc ? lastDoc.id : null;
-  
-  return {
-    posts,
-    lastVisibleId: newLastVisibleId
-  };
+    const posts = (await Promise.all(postPromises)).filter((p): p is PostWithAuthor => p !== null);
+    
+    // Get the ID of the last document
+    const lastDoc = postsSnapshot.docs[postsSnapshot.docs.length - 1];
+    const newLastVisibleId = lastDoc ? lastDoc.id : null;
+    
+    return {
+      posts,
+      lastVisibleId: newLastVisibleId
+    };
+  } catch (error) {
+    console.error("Error getting posts:", error);
+    throw new Error("Gagal memuat postingan.");
+  }
 }
 
 
 // Get a single post by ID
 export async function getPostById(postId: string, currentUserId?: string): Promise<PostWithAuthor | null> {
-    const postRef = doc(db, 'posts', postId);
-    const postDoc = await getDoc(postRef);
+    try {
+        const postRef = doc(db, 'posts', postId);
+        const postDoc = await getDoc(postRef);
 
-    if (!postDoc.exists()) { // Allow fetching archived posts by their ID
-        return null;
+        if (!postDoc.exists()) { // Allow fetching archived posts by their ID
+            return null;
+        }
+
+        const post = await buildPostWithAuthor(postDoc as any, currentUserId);
+        return post;
+    } catch (error) {
+        console.error("Error getting post by ID:", error);
+        throw new Error("Gagal mengambil detail postingan.");
     }
-
-    const post = await buildPostWithAuthor(postDoc as any, currentUserId);
-    return post;
 }
 
 
 // Get all posts by a specific user ID for their profile
 export async function getPostsByUserId(userId: string): Promise<PostWithAuthor[]> {
-  const q = query(
-    postsCollection, 
-    where('authorId', '==', userId), 
-    where('status', '==', 'published'), 
-    orderBy('createdAt', 'desc')
-  );
-  const postsSnapshot = await getDocs(q);
+  try {
+    const q = query(
+      postsCollection, 
+      where('authorId', '==', userId), 
+      where('status', '==', 'published'), 
+      orderBy('createdAt', 'desc')
+    );
+    const postsSnapshot = await getDocs(q);
 
-  const postPromises = postsSnapshot.docs.map(doc => buildPostWithAuthor(doc as any));
-  const posts = (await Promise.all(postPromises)).filter((p): p is PostWithAuthor => p !== null);
-  return posts;
+    const postPromises = postsSnapshot.docs.map(doc => buildPostWithAuthor(doc as any));
+    const posts = (await Promise.all(postPromises)).filter((p): p is PostWithAuthor => p !== null);
+    return posts;
+  } catch (error) {
+    console.error("Error getting posts by user ID:", error);
+    throw new Error("Gagal memuat postingan pengguna.");
+  }
 }
 
 
 // Get archived posts for the current user
 export async function getArchivedPosts(userId: string): Promise<PostWithAuthor[]> {
-    const q = query(
-        postsCollection,
-        where('authorId', '==', userId),
-        where('status', '==', 'archived'),
-        orderBy('createdAt', 'desc')
-    );
-    const postsSnapshot = await getDocs(q);
+    try {
+        const q = query(
+            postsCollection,
+            where('authorId', '==', userId),
+            where('status', '==', 'archived'),
+            orderBy('createdAt', 'desc')
+        );
+        const postsSnapshot = await getDocs(q);
 
-    const postPromises = postsSnapshot.docs.map(doc => buildPostWithAuthor(doc as any, userId));
-    const posts = (await Promise.all(postPromises)).filter((p): p is PostWithAuthor => p !== null);
-    return posts;
+        const postPromises = postsSnapshot.docs.map(doc => buildPostWithAuthor(doc as any, userId));
+        const posts = (await Promise.all(postPromises)).filter((p): p is PostWithAuthor => p !== null);
+        return posts;
+    } catch (error) {
+        console.error("Error getting archived posts:", error);
+        throw new Error("Gagal memuat arsip.");
+    }
 }
 
 // Get posts where a user is mentioned/tagged
 export async function getTaggedPosts(userId: string): Promise<PostWithAuthor[]> {
-    const q = query(
-        postsCollection,
-        where('mentionedUserIds', 'array-contains', userId),
-        where('status', '==', 'published'),
-        orderBy('createdAt', 'desc')
-    );
-    const postsSnapshot = await getDocs(q);
-    
-    const postPromises = postsSnapshot.docs.map(doc => buildPostWithAuthor(doc as any, userId));
-    const posts = (await Promise.all(postPromises)).filter((p): p is PostWithAuthor => p !== null);
-    return posts;
+    try {
+        const q = query(
+            postsCollection,
+            where('mentionedUserIds', 'array-contains', userId),
+            where('status', '==', 'published'),
+            orderBy('createdAt', 'desc')
+        );
+        const postsSnapshot = await getDocs(q);
+        
+        const postPromises = postsSnapshot.docs.map(doc => buildPostWithAuthor(doc as any, userId));
+        const posts = (await Promise.all(postPromises)).filter((p): p is PostWithAuthor => p !== null);
+        return posts;
+    } catch (error) {
+        console.error("Error getting tagged posts:", error);
+        throw new Error("Gagal memuat postingan yang ditandai.");
+    }
 }
 
 
@@ -276,13 +299,13 @@ export async function togglePostLike(postId: string, userId: string) {
 
 
 export async function addComment(postId: string, userId: string, text: string) {
-    if (!userId) throw new Error("Pengguna tidak terautentikasi.");
-    if (!text.trim()) throw new Error("Komentar tidak boleh kosong.");
-
-    const postRef = doc(db, 'posts', postId);
-    const commentCollection = collection(postRef, 'comments');
-
     try {
+        if (!userId) throw new Error("Pengguna tidak terautentikasi.");
+        if (!text.trim()) throw new Error("Komentar tidak boleh kosong.");
+
+        const postRef = doc(db, 'posts', postId);
+        const commentCollection = collection(postRef, 'comments');
+
         const batch = writeBatch(db);
 
         // Add new comment
@@ -309,38 +332,43 @@ export async function addComment(postId: string, userId: string, text: string) {
 
 // Get comments for a post
 export async function getComments(postId: string): Promise<CommentWithAuthor[]> {
-    const postRef = doc(db, 'posts', postId);
-    const commentsCollection = collection(postRef, 'comments');
-    const q = query(commentsCollection, orderBy('createdAt', 'desc'));
+    try {
+        const postRef = doc(db, 'posts', postId);
+        const commentsCollection = collection(postRef, 'comments');
+        const q = query(commentsCollection, orderBy('createdAt', 'desc'));
 
-    const commentsSnapshot = await getDocs(q);
-    const comments: CommentWithAuthor[] = [];
+        const commentsSnapshot = await getDocs(q);
+        const comments: CommentWithAuthor[] = [];
 
-    for (const commentDoc of commentsSnapshot.docs) {
-        const commentData = { id: commentDoc.id, ...commentDoc.data() } as Comment;
+        for (const commentDoc of commentsSnapshot.docs) {
+            const commentData = { id: commentDoc.id, ...commentDoc.data() } as Comment;
 
-        const authorDoc = await getDoc(doc(usersCollection, commentData.authorId));
-        if (authorDoc.exists()) {
-            const authorData = authorDoc.data();
-            comments.push({
-                id: commentData.id,
-                author: {
-                    name: authorData.fullName || 'User',
-                    username: authorData.username || 'user',
-                    avatarUrl: authorData.avatarUrl || ''
-                },
-                text: commentData.text,
-                timestamp: formatTimestamp(commentData.createdAt)
-            });
+            const authorDoc = await getDoc(doc(usersCollection, commentData.authorId));
+            if (authorDoc.exists()) {
+                const authorData = authorDoc.data();
+                comments.push({
+                    id: commentData.id,
+                    author: {
+                        name: authorData.fullName || 'User',
+                        username: authorData.username || 'user',
+                        avatarUrl: authorData.avatarUrl || ''
+                    },
+                    text: commentData.text,
+                    timestamp: formatTimestamp(commentData.createdAt)
+                });
+            }
         }
+        return comments;
+    } catch (error) {
+        console.error("Error getting comments:", error);
+        throw new Error("Gagal memuat komentar.");
     }
-    return comments;
 }
 
 // Archive a post
 export async function archivePost(postId: string) {
-    const postRef = doc(db, 'posts', postId);
     try {
+        const postRef = doc(db, 'posts', postId);
         await updateDoc(postRef, { status: 'archived' });
         revalidatePath('/feed');
         revalidatePath('/profile/me');
@@ -352,8 +380,8 @@ export async function archivePost(postId: string) {
 
 // Unarchive a post
 export async function unarchivePost(postId: string) {
-    const postRef = doc(db, 'posts', postId);
     try {
+        const postRef = doc(db, 'posts', postId);
         await updateDoc(postRef, { status: 'published' });
         revalidatePath('/feed');
         revalidatePath('/profile/me');

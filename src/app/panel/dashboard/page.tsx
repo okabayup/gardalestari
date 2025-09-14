@@ -39,11 +39,14 @@ import { getEvents } from "@/app/actions/events"
 import { getMapData } from "@/app/actions/map-data"
 
 export default async function Dashboard() {
-    const members = await getMembers();
-    const programs = await getPrograms();
-    const news = await getBeritaPosts();
-    const events = await getEvents();
-    const mapData = await getMapData();
+    // Fetch all data in parallel
+    const [members, programs, news, events, mapData] = await Promise.all([
+        getMembers(),
+        getPrograms(),
+        getBeritaPosts(),
+        getEvents(),
+        getMapData()
+    ]);
 
     const verifiedMembers = members.filter(m => m.verificationStatus === 'permanent' || m.verificationStatus === 'temporary').length;
     const pendingVerification = members.filter(m => m.verificationStatus === 'temporary');

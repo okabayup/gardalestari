@@ -83,23 +83,28 @@ const buildIdeaWithAuthor = async (ideaDoc: any, currentUserId?: string): Promis
 
 // Create a new idea
 export async function createIdea(authorId: string, title: string, description: string, category: string): Promise<string> {
-    if (!authorId) throw new Error('Pengguna tidak terautentikasi.');
+    try {
+        if (!authorId) throw new Error('Pengguna tidak terautentikasi.');
 
-    const newIdea: Omit<Idea, 'id'> = {
-        title,
-        description,
-        category,
-        authorId,
-        status: 'diajukan',
-        createdAt: Timestamp.now(),
-        upvotes: [],
-        downvotes: [],
-        voteScore: 0,
-        commentCount: 0,
-    };
-    const docRef = await addDoc(ideasCollection, newIdea);
-    revalidatePath('/ideas');
-    return docRef.id;
+        const newIdea: Omit<Idea, 'id'> = {
+            title,
+            description,
+            category,
+            authorId,
+            status: 'diajukan',
+            createdAt: Timestamp.now(),
+            upvotes: [],
+            downvotes: [],
+            voteScore: 0,
+            commentCount: 0,
+        };
+        const docRef = await addDoc(ideasCollection, newIdea);
+        revalidatePath('/ideas');
+        return docRef.id;
+    } catch (error) {
+        console.error("Error creating idea:", error);
+        throw new Error("Gagal membuat ide baru.");
+    }
 }
 
 
@@ -110,31 +115,32 @@ export async function getIdeas(
     categoryFilter?: string, 
     searchQuery?: string
 ): Promise<IdeaWithAuthor[]> {
+    try {
+        const orderField = sortBy === 'top' ? 'voteScore' : 'createdAt';
+        let q = query(ideasCollection, orderBy(orderField, 'desc'));
 
-    const orderField = sortBy === 'top' ? 'voteScore' : 'createdAt';
-    let q = query(ideasCollection, orderBy(orderField, 'desc'));
+        if (categoryFilter && categoryFilter !== 'Semua') {
+            q = query(q, where('category', '==', categoryFilter));
+        }
+        
+        const ideasSnapshot = await getDocs(q);
 
-    if (categoryFilter && categoryFilter !== 'Semua') {
-        q = query(q, where('category', '==', categoryFilter));
+        let ideasPromises = ideasSnapshot.docs.map(doc => buildIdeaWithAuthor(doc, userId));
+        let ideas = (await Promise.all(ideasPromises)).filter((p): p is IdeaWithAuthor => p !== null);
+
+        if (searchQuery) {
+            const lowercasedQuery = searchQuery.toLowerCase();
+            ideas = ideas.filter(idea => 
+                idea.title.toLowerCase().includes(lowercasedQuery) ||
+                idea.description.toLowerCase().includes(lowercasedQuery)
+            );
+        }
+
+        return ideas;
+    } catch (error) {
+        console.error("Error getting ideas:", error);
+        throw new Error("Gagal memuat ide.");
     }
-    
-    // Note: Firestore doesn't support text search on multiple fields with range/inequality filters easily.
-    // A more scalable solution would use a third-party search service like Algolia or Typesense.
-    // For now, we fetch then filter in memory for the search query.
-    const ideasSnapshot = await getDocs(q);
-
-    let ideasPromises = ideasSnapshot.docs.map(doc => buildIdeaWithAuthor(doc, userId));
-    let ideas = (await Promise.all(ideasPromises)).filter((p): p is IdeaWithAuthor => p !== null);
-
-    if (searchQuery) {
-        const lowercasedQuery = searchQuery.toLowerCase();
-        ideas = ideas.filter(idea => 
-            idea.title.toLowerCase().includes(lowercasedQuery) ||
-            idea.description.toLowerCase().includes(lowercasedQuery)
-        );
-    }
-
-    return ideas;
 }
 
 /**
@@ -144,47 +150,53 @@ export async function getIdeas(
  * @returns A list of relevant ideas.
  */
 export async function searchIdeaBank(searchQuery: string): Promise<Partial<Idea>[]> {
-    // This is an improved version that is more scalable.
-    // For true scalability, a third-party service like Algolia/Typesense is recommended.
-    const q = query(
-        ideasCollection,
-        orderBy('voteScore', 'desc'),
-        limit(50)
-    );
-    const snapshot = await getDocs(q);
-    if (snapshot.empty) return [];
+    try {
+        const q = query(
+            ideasCollection,
+            orderBy('voteScore', 'desc'),
+            limit(50)
+        );
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) return [];
 
-    const allEntries: Idea[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Idea));
+        const allEntries: Idea[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Idea));
 
-    // Perform in-memory filtering
-    const searchTerms = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
-    const results = allEntries.filter(entry => {
-        const searchableText = `${entry.title} ${entry.description} ${entry.category}`.toLowerCase();
-        return searchTerms.some(term => searchableText.includes(term));
-    }).slice(0, 5); // Return top 5 matches
+        const searchTerms = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
+        const results = allEntries.filter(entry => {
+            const searchableText = `${entry.title} ${entry.description} ${entry.category}`.toLowerCase();
+            return searchTerms.some(term => searchableText.includes(term));
+        }).slice(0, 5); // Return top 5 matches
 
-    // Return a partial object to keep the payload for the AI small
-    return results.map(idea => ({
-        id: idea.id,
-        title: idea.title,
-        description: idea.description,
-        category: idea.category,
-        voteScore: idea.voteScore,
-        commentCount: idea.commentCount,
-    }));
+        return results.map(idea => ({
+            id: idea.id,
+            title: idea.title,
+            description: idea.description,
+            category: idea.category,
+            voteScore: idea.voteScore,
+            commentCount: idea.commentCount,
+        }));
+    } catch (error) {
+        console.error("Error searching idea bank:", error);
+        throw new Error("Gagal mencari di bank ide.");
+    }
 }
 
 
 // Get a single idea by ID
 export async function getIdeaById(ideaId: string, currentUserId?: string): Promise<IdeaWithAuthor | null> {
-    const ideaRef = doc(db, 'ideas', ideaId);
-    const ideaDoc = await getDoc(ideaRef);
+    try {
+        const ideaRef = doc(db, 'ideas', ideaId);
+        const ideaDoc = await getDoc(ideaRef);
 
-    if (!ideaDoc.exists()) {
-        return null;
+        if (!ideaDoc.exists()) {
+            return null;
+        }
+
+        return buildIdeaWithAuthor(ideaDoc, currentUserId);
+    } catch (error) {
+        console.error("Error getting idea by ID:", error);
+        throw new Error("Gagal mengambil detail ide.");
     }
-
-    return buildIdeaWithAuthor(ideaDoc, currentUserId);
 }
 
 // Update idea status
@@ -203,10 +215,9 @@ export async function updateIdeaStatus(ideaId: string, status: IdeaStatus) {
 
 // Toggle vote on an idea
 export async function toggleVote(ideaId: string, userId: string, voteType: VoteType) {
-  const ideaRef = doc(db, 'ideas', ideaId);
-
   try {
     await runTransaction(db, async (transaction) => {
+      const ideaRef = doc(db, 'ideas', ideaId);
       const ideaDoc = await transaction.get(ideaRef);
       if (!ideaDoc.exists()) {
         throw "Ide tidak ditemukan!";
@@ -243,13 +254,13 @@ export async function toggleVote(ideaId: string, userId: string, voteType: VoteT
 
 // Add a comment to an idea
 export async function addIdeaComment(ideaId: string, userId: string, text: string) {
-    if (!userId) throw new Error("Pengguna tidak terautentikasi.");
-    if (!text.trim()) throw new Error("Komentar tidak boleh kosong.");
-
-    const ideaRef = doc(db, 'ideas', ideaId);
-    const commentCollection = collection(ideaRef, 'comments');
-
     try {
+        if (!userId) throw new Error("Pengguna tidak terautentikasi.");
+        if (!text.trim()) throw new Error("Komentar tidak boleh kosong.");
+
+        const ideaRef = doc(db, 'ideas', ideaId);
+        const commentCollection = collection(ideaRef, 'comments');
+
         const batch = writeBatch(db);
 
         const newCommentRef = doc(commentCollection);
@@ -272,42 +283,52 @@ export async function addIdeaComment(ideaId: string, userId: string, text: strin
 
 // Get comments for an idea
 export async function getIdeaComments(ideaId: string): Promise<any[]> {
-    const commentsCollection = collection(db, 'ideas', ideaId, 'comments');
-    const q = query(commentsCollection, orderBy('createdAt', 'desc'));
+    try {
+        const commentsCollection = collection(db, 'ideas', ideaId, 'comments');
+        const q = query(commentsCollection, orderBy('createdAt', 'desc'));
 
-    const commentsSnapshot = await getDocs(q);
-    const comments = [];
+        const commentsSnapshot = await getDocs(q);
+        const comments = [];
 
-    for (const commentDoc of commentsSnapshot.docs) {
-        const commentData = { id: commentDoc.id, ...commentDoc.data() };
-        const authorDoc = await getDoc(doc(usersCollection, commentData.authorId));
-        if (authorDoc.exists()) {
-            const authorData = authorDoc.data();
-            comments.push({
-                ...commentData,
-                author: {
-                    name: authorData.fullName || 'User',
-                    username: authorData.username || 'user',
-                    avatarUrl: authorData.avatarUrl || ''
-                },
-                timestamp: formatTimestamp(commentData.createdAt)
-            });
+        for (const commentDoc of commentsSnapshot.docs) {
+            const commentData = { id: commentDoc.id, ...commentDoc.data() };
+            const authorDoc = await getDoc(doc(usersCollection, commentData.authorId));
+            if (authorDoc.exists()) {
+                const authorData = authorDoc.data();
+                comments.push({
+                    ...commentData,
+                    author: {
+                        name: authorData.fullName || 'User',
+                        username: authorData.username || 'user',
+                        avatarUrl: authorData.avatarUrl || ''
+                    },
+                    timestamp: formatTimestamp(commentData.createdAt)
+                });
+            }
         }
+        return comments;
+    } catch (error) {
+        console.error("Error getting comments:", error);
+        throw new Error("Gagal memuat komentar.");
     }
-    return comments;
 }
 
 // --- Category Management ---
 
 // Get all idea categories
 export async function getIdeaCategories(): Promise<IdeaCategory[]> {
-    const q = query(ideaCategoriesCollection, orderBy('name', 'asc'));
-    const snapshot = await getDocs(q);
-    const categories: IdeaCategory[] = [];
-    snapshot.forEach(doc => {
-        categories.push({ id: doc.id, ...doc.data() } as IdeaCategory);
-    });
-    return categories;
+    try {
+        const q = query(ideaCategoriesCollection, orderBy('name', 'asc'));
+        const snapshot = await getDocs(q);
+        const categories: IdeaCategory[] = [];
+        snapshot.forEach(doc => {
+            categories.push({ id: doc.id, ...doc.data() } as IdeaCategory);
+        });
+        return categories;
+    } catch (error) {
+        console.error("Error getting idea categories:", error);
+        throw new Error("Gagal memuat kategori ide.");
+    }
 }
 
 // Add a new idea category

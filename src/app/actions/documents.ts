@@ -128,128 +128,137 @@ export async function deleteDocument(id: string) {
 
 
 export async function submitForApproval(documentId: string, authorId: string, approverId: string) {
-  const docRef = doc(db, 'importantDocuments', documentId);
-  const document = await getDocument(documentId);
-  if (!document || document.authorId !== authorId) {
-    throw new Error("Hanya pembuat dokumen yang bisa mengajukan persetujuan.");
+  try {
+    const docRef = doc(db, 'importantDocuments', documentId);
+    const document = await getDocument(documentId);
+    if (!document || document.authorId !== authorId) {
+      throw new Error("Hanya pembuat dokumen yang bisa mengajukan persetujuan.");
+    }
+
+    await updateDoc(docRef, {
+      status: 'Menunggu Persetujuan',
+      approverId: approverId,
+    });
+    
+    // Send notifications
+    const approver = await getUserByUid(approverId);
+    const template = await getWhatsappTemplate('document_submission');
+    if (template.isActive && approver?.waNumber) {
+      const message = template.message
+        .replace('{namaPenerima}', approver.name)
+        .replace('{judulDokumen}', document.title)
+        .replace('{namaPengirim}', document.authorName);
+      await sendWhatsAppMessage(approver.waNumber, message);
+    }
+
+    await sendNotification(
+      {
+        title: 'Permintaan Persetujuan Dokumen',
+        body: `Dokumen "${document.title}" dari ${document.authorName} memerlukan persetujuan Anda.`,
+        link: `/panel/documents`
+      },
+      { type: 'users', userIds: [approverId] }
+    );
+
+    revalidatePath('/panel/documents');
+  } catch (error) {
+    console.error("Error submitting for approval:", error);
+    throw new Error("Gagal mengajukan persetujuan.");
   }
-
-  await updateDoc(docRef, {
-    status: 'Menunggu Persetujuan',
-    approverId: approverId,
-  });
-  
-  // Send notifications
-  const approver = await getUserByUid(approverId);
-  const template = await getWhatsappTemplate('document_submission');
-  if (template.isActive && approver?.waNumber) {
-    const message = template.message
-      .replace('{namaPenerima}', approver.name)
-      .replace('{judulDokumen}', document.title)
-      .replace('{namaPengirim}', document.authorName);
-    await sendWhatsAppMessage(approver.waNumber, message);
-  }
-
-  await sendNotification(
-    {
-      title: 'Permintaan Persetujuan Dokumen',
-      body: `Dokumen "${document.title}" dari ${document.authorName} memerlukan persetujuan Anda.`,
-      link: `/panel/documents`
-    },
-    { type: 'users', userIds: [approverId] }
-  );
-
-  revalidatePath('/panel/documents');
 }
 
 export async function approveDocument(documentId: string, approverId: string) {
-  const docRef = doc(db, 'importantDocuments', documentId);
-  const docSnap = await getDoc(docRef);
+  try {
+    const docRef = doc(db, 'importantDocuments', documentId);
+    const docSnap = await getDoc(docRef);
 
-  if (!docSnap.exists()) throw new Error("Dokumen tidak ditemukan.");
+    if (!docSnap.exists()) throw new Error("Dokumen tidak ditemukan.");
 
-  const document = docSnap.data() as ImportantDocument;
-  if (document.approverId !== approverId) throw new Error("Anda tidak memiliki izin untuk menyetujui dokumen ini.");
-  if (document.status !== 'Menunggu Persetujuan') throw new Error("Dokumen ini tidak sedang dalam status menunggu persetujuan.");
+    const document = docSnap.data() as ImportantDocument;
+    if (document.approverId !== approverId) throw new Error("Anda tidak memiliki izin untuk menyetujui dokumen ini.");
+    if (document.status !== 'Menunggu Persetujuan') throw new Error("Dokumen ini tidak sedang dalam status menunggu persetujuan.");
 
-  // Get approver's name
-  const approver = await getUserByUid(approverId);
+    const approver = await getUserByUid(approverId);
 
-  // Run transaction to stamp PDF and update status
-  await runTransaction(db, async (transaction) => {
-    // 1. Stamp the PDF with a QR code
-    await stampPdfWithQrCode(documentId);
-
-    // 2. Update document status in Firestore
-    transaction.update(docRef, {
-      status: 'Disetujui',
-      approvedById: approverId,
-      approvedByName: approver?.name || 'Admin',
-      approvedAt: Timestamp.now(),
+    await runTransaction(db, async (transaction) => {
+      await stampPdfWithQrCode(documentId);
+      transaction.update(docRef, {
+        status: 'Disetujui',
+        approvedById: approverId,
+        approvedByName: approver?.name || 'Admin',
+        approvedAt: Timestamp.now(),
+      });
     });
-  });
 
-  // 3. Send notification to the author
-  const author = await getUserByUid(document.authorId);
-  const template = await getWhatsappTemplate('document_approved');
-  if (template.isActive && author?.waNumber) {
-    const message = template.message
-        .replace('{namaPengguna}', author.name)
-        .replace('{judulDokumen}', document.title);
-    await sendWhatsAppMessage(author.waNumber, message);
+    const author = await getUserByUid(document.authorId);
+    const template = await getWhatsappTemplate('document_approved');
+    if (template.isActive && author?.waNumber) {
+      const message = template.message
+          .replace('{namaPengguna}', author.name)
+          .replace('{judulDokumen}', document.title);
+      await sendWhatsAppMessage(author.waNumber, message);
+    }
+    await sendNotification(
+      {
+        title: 'Dokumen Disetujui',
+        body: `Dokumen Anda "${document.title}" telah disetujui dan disahkan.`,
+        link: `/panel/documents`
+      },
+      { type: 'users', userIds: [document.authorId] }
+    );
+
+    revalidatePath('/panel/documents');
+  } catch (error) {
+    console.error("Error approving document:", error);
+    throw new Error("Gagal menyetujui dokumen.");
   }
-  await sendNotification(
-    {
-      title: 'Dokumen Disetujui',
-      body: `Dokumen Anda "${document.title}" telah disetujui dan disahkan.`,
-      link: `/panel/documents`
-    },
-    { type: 'users', userIds: [document.authorId] }
-  );
-
-  revalidatePath('/panel/documents');
 }
 
 export async function rejectDocument(documentId: string, rejectorId: string, reason: string) {
-  const docRef = doc(db, 'importantDocuments', documentId);
-  const docSnap = await getDoc(docRef);
+  try {
+    const docRef = doc(db, 'importantDocuments', documentId);
+    const docSnap = await getDoc(docRef);
 
-  if (!docSnap.exists()) throw new Error("Dokumen tidak ditemukan.");
+    if (!docSnap.exists()) throw new Error("Dokumen tidak ditemukan.");
 
-  const document = docSnap.data() as ImportantDocument;
-  if (document.approverId !== rejectorId) throw new Error("Anda tidak memiliki izin untuk menolak dokumen ini.");
-  if (document.status !== 'Menunggu Persetujuan') throw new Error("Dokumen ini tidak bisa ditolak.");
+    const document = docSnap.data() as ImportantDocument;
+    if (document.approverId !== rejectorId) throw new Error("Anda tidak memiliki izin untuk menolak dokumen ini.");
+    if (document.status !== 'Menunggu Persetujuan') throw new Error("Dokumen ini tidak bisa ditolak.");
 
-  const rejector = await getUserByUid(rejectorId);
+    const rejector = await getUserByUid(rejectorId);
 
-  await updateDoc(docRef, {
-    status: 'Ditolak',
-    rejectionReason: reason,
-    rejectedById: rejectorId,
-    rejectedByName: rejector?.name || 'Admin',
-  });
+    await updateDoc(docRef, {
+      status: 'Ditolak',
+      rejectionReason: reason,
+      rejectedById: rejectorId,
+      rejectedByName: rejector?.name || 'Admin',
+    });
 
-  const author = await getUserByUid(document.authorId);
-  const template = await getWhatsappTemplate('document_rejected');
-  if (template.isActive && author?.waNumber) {
-    const message = template.message
-      .replace('{namaPengguna}', author.name)
-      .replace('{judulDokumen}', document.title)
-      .replace('{namaPenolak}', rejector?.name || 'Admin')
-      .replace('{alasanPenolakan}', reason);
-    await sendWhatsAppMessage(author.waNumber, message);
+    const author = await getUserByUid(document.authorId);
+    const template = await getWhatsappTemplate('document_rejected');
+    if (template.isActive && author?.waNumber) {
+      const message = template.message
+        .replace('{namaPengguna}', author.name)
+        .replace('{judulDokumen}', document.title)
+        .replace('{namaPenolak}', rejector?.name || 'Admin')
+        .replace('{alasanPenolakan}', reason);
+      await sendWhatsAppMessage(author.waNumber, message);
+    }
+
+    await sendNotification(
+      {
+        title: 'Dokumen Ditolak',
+        body: `Dokumen Anda "${document.title}" telah ditolak.`,
+        link: `/panel/documents`
+      },
+      { type: 'users', userIds: [document.authorId] }
+    );
+
+    revalidatePath('/panel/documents');
+  } catch (error) {
+    console.error("Error rejecting document:", error);
+    throw new Error("Gagal menolak dokumen.");
   }
-
-  await sendNotification(
-    {
-      title: 'Dokumen Ditolak',
-      body: `Dokumen Anda "${document.title}" telah ditolak.`,
-      link: `/panel/documents`
-    },
-    { type: 'users', userIds: [document.authorId] }
-  );
-
-  revalidatePath('/panel/documents');
 }
 
 
@@ -267,13 +276,23 @@ export async function getDocumentCategories(): Promise<DocumentCategory[]> {
 }
 
 export async function addDocumentCategory(name: string) {
-    await addDoc(categoriesCollection, { name });
-    revalidatePath('/panel/documents');
+    try {
+        await addDoc(categoriesCollection, { name });
+        revalidatePath('/panel/documents');
+    } catch (error) {
+        console.error("Error adding document category:", error);
+        throw new Error("Gagal menambahkan kategori.");
+    }
 }
 
 export async function deleteDocumentCategory(id: string) {
-    await deleteDoc(doc(db, 'documentCategories', id));
-    revalidatePath('/panel/documents');
+    try {
+        await deleteDoc(doc(db, 'documentCategories', id));
+        revalidatePath('/panel/documents');
+    } catch (error) {
+        console.error("Error deleting document category:", error);
+        throw new Error("Gagal menghapus kategori.");
+    }
 }
 
 export async function generateDocumentNumber(category: string): Promise<string> {

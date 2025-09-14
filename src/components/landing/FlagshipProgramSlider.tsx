@@ -14,16 +14,11 @@ import { Button } from '../ui/button';
 import { ArrowRight, Globe } from 'lucide-react';
 import Autoplay from "embla-carousel-autoplay"
 
-type SerializableProgram = Omit<Program, 'startDate' | 'endDate'> & {
-  startDate: string;
-  endDate: string;
-};
-
 interface FlagshipProgramSliderProps {
-  programs: SerializableProgram[];
+  programs: Program[];
 }
 
-const ProgramSliderCard = ({ program }: { program: SerializableProgram }) => {
+const ProgramSliderCard = ({ program }: { program: Program }) => {
     const isExternalSubmission = program.submissionType === 'external' && program.applicationUrl;
     const [formattedDate, setFormattedDate] = useState<string | null>(null);
 

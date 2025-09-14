@@ -50,62 +50,58 @@ export async function getPendingVerificationCount(): Promise<number> {
 
 // Get all members, sorted by creation time
 export async function getMembers(): Promise<MemberWithStatus[]> {
-  const q = query(usersCollection); 
-  const snapshot = await getDocs(q);
-  const members: MemberWithStatus[] = [];
+  try {
+    const q = query(usersCollection); 
+    const snapshot = await getDocs(q);
+    const members: MemberWithStatus[] = [];
 
-  for (const docSnap of snapshot.docs) {
-    const data = docSnap.data();
+    for (const docSnap of snapshot.docs) {
+      const data = docSnap.data();
 
-    // Exclude the official account from the members list
-    if (data.phoneNumber === OFFICIAL_ACCOUNT_PHONE) {
-        continue;
+      // Exclude the official account from the members list
+      if (data.phoneNumber === OFFICIAL_ACCOUNT_PHONE) {
+          continue;
+      }
+      
+      // Denormalize position name and get permissions
+      const { name: positionName, permissions } = await getPositionDetails(data.positionId);
+
+      members.push({
+        id: docSnap.id,
+        name: data.fullName || data.displayName || 'Nama Tidak Diketahui',
+        username: data.username || `user_${docSnap.id.substring(0, 5)}`,
+        titlePrefix: data.titlePrefix || '',
+        titlePostfix: data.titlePostfix || '',
+        phoneNumber: data.phoneNumber || 'N/A',
+        waNumber: data.waNumber,
+        waVerified: data.waVerified || false,
+        verificationStatus: data.verificationStatus,
+        avatarUrl: data.avatarUrl,
+        position: positionName,
+        positionId: data.positionId,
+        type: data.type || undefined,
+        isSpecialMember: data.isSpecialMember || false,
+        joinDate: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
+        ktpImageUrl: data.ktpImageUrl,
+        selfieImageUrl: data.selfieImageUrl,
+        nik: data.nik,
+        createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : new Date().toISOString(), // Convert Timestamp to ISO String
+        permissions: permissions,
+      });
     }
 
-    let joinDate: string | undefined;
-    if (data.createdAt && typeof data.createdAt.toDate === 'function') {
-        joinDate = data.createdAt.toDate().toLocaleDateString('id-ID', {
-            day: '2-digit',
-            month: 'long',
-            year: 'numeric'
-        });
-    }
-    
-    // Denormalize position name and get permissions
-    const { name: positionName, permissions } = await getPositionDetails(data.positionId);
-
-    members.push({
-      id: docSnap.id,
-      name: data.fullName || data.displayName || 'Nama Tidak Diketahui',
-      username: data.username || `user_${docSnap.id.substring(0, 5)}`,
-      titlePrefix: data.titlePrefix || '',
-      titlePostfix: data.titlePostfix || '',
-      phoneNumber: data.phoneNumber || 'N/A',
-      waNumber: data.waNumber,
-      waVerified: data.waVerified || false,
-      verificationStatus: data.verificationStatus,
-      avatarUrl: data.avatarUrl,
-      position: positionName,
-      positionId: data.positionId,
-      type: data.type || undefined,
-      isSpecialMember: data.isSpecialMember || false,
-      joinDate: joinDate,
-      ktpImageUrl: data.ktpImageUrl,
-      selfieImageUrl: data.selfieImageUrl,
-      nik: data.nik,
-      createdAt: data.createdAt?.toDate().toISOString() || new Date().toISOString(), // Convert Timestamp to ISO String
-      permissions: permissions,
+    // Sort members by creation date in descending order (newest first)
+    members.sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+      const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+      return dateB.getTime() - dateA.getTime();
     });
+    
+    return members;
+  } catch (error) {
+    console.error("Error getting members:", error);
+    throw new Error("Gagal mengambil data anggota.");
   }
-
-  // Sort members by creation date in descending order (newest first)
-  members.sort((a, b) => {
-    const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
-    const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
-    return dateB.getTime() - dateA.getTime();
-  });
-  
-  return members;
 }
 
 // Update member details (position, type, region, verification status)

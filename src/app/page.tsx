@@ -1,5 +1,4 @@
 
-
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -41,11 +40,11 @@ const corePrograms = [
 
 export default async function LandingPage() {
   const settings = await getAppSettings();
-  const events = await getEvents();
   const allPrograms = await getPrograms();
   const members = await getMembers();
   const partners = await getPartners();
   const allPosts = await getBeritaPosts();
+  const events = await getEvents();
   
   const flagshipPrograms = allPrograms.filter(p => p.category === 'flagship');
   const featuredArticles = allPosts.filter(p => p.type === 'artikel' && p.isFeatured).slice(0,3);

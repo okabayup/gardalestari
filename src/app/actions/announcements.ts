@@ -9,30 +9,31 @@ import type { Announcement } from '@/lib/definitions';
 
 const announcementsCollection = collection(db, 'announcements');
 
-const toAnnouncement = (doc: any): Announcement => {
-    const data = doc.data();
-    return {
-        id: doc.id,
-        ...data,
-        createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
-    } as Announcement;
-}
-
 // Get all announcements, ordered by creation date
 export async function getAnnouncements(): Promise<Announcement[]> {
-  const q = query(announcementsCollection, orderBy('createdAt', 'desc'));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(toAnnouncement);
+  try {
+    const q = query(announcementsCollection, orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Announcement));
+  } catch (error) {
+    console.error("Error getting announcements:", error);
+    throw new Error("Gagal mengambil data pengumuman.");
+  }
 }
 
 // Get a single announcement by ID
 export async function getAnnouncement(id: string): Promise<Announcement | null> {
-    const docRef = doc(db, 'announcements', id);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        return toAnnouncement(docSnap);
+    try {
+        const docRef = doc(db, 'announcements', id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            return { id: docSnap.id, ...docSnap.data() } as Announcement;
+        }
+        return null;
+    } catch (error) {
+        console.error("Error getting single announcement:", error);
+        throw new Error("Gagal mengambil data pengumuman.");
     }
-    return null;
 }
 
 // Create a new announcement

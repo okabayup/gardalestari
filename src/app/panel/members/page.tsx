@@ -33,6 +33,7 @@ import EditMemberDialog from '@/components/admin/EditMemberDialog';
 import ViewVerificationDialog from '@/components/admin/ViewVerificationDialog';
 import { useRouter } from 'next/navigation';
 import { formatFullName } from '@/lib/utils';
+import { format } from 'date-fns';
 
 export default function AdminMembersPage() {
   const { toast } = useToast();
@@ -143,7 +144,7 @@ export default function AdminMembersPage() {
                       <TableCell className="hidden md:table-cell">{member.phoneNumber}</TableCell>
                       <TableCell>{getStatusBadge(member.verificationStatus)}</TableCell>
                       <TableCell className="hidden md:table-cell">{member.position}</TableCell>
-                      <TableCell className="hidden sm:table-cell">{member.joinDate || '-'}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{member.joinDate ? format(new Date(member.joinDate), 'dd MMM yyyy') : '-'}</TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
