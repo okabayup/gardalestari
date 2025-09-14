@@ -34,7 +34,7 @@ export default function MembersPage() {
     const fetchMembers = async () => {
       setLoading(true);
       try {
-        const members = await getMembers();
+        const members = await getMembers(true); // Fetch only verified members for public page
         setAllMembers(members);
       } catch (error) {
         toast({

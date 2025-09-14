@@ -53,7 +53,7 @@ export default function AdminMembersPage() {
   const fetchMembers = async () => {
     setLoading(true);
     try {
-      const fetchedMembers = await getMembers();
+      const fetchedMembers = await getMembers(false); // Fetch all members for admin
       setMembers(fetchedMembers);
     } catch (error) {
       toast({
@@ -94,6 +94,8 @@ export default function AdminMembersPage() {
         return <Badge variant="secondary">Menunggu</Badge>;
       case 'rejected':
         return <Badge variant="destructive">Ditolak</Badge>;
+      case 'manual':
+        return <Badge className="bg-blue-500 text-white">Manual</Badge>;
       case 'unverified':
       default:
         return <Badge variant="outline">Belum Terverifikasi</Badge>;

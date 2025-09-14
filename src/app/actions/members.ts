@@ -43,17 +43,17 @@ export async function getPendingVerificationCount(): Promise<number> {
         return snapshot.data().count;
     } catch (error) {
         console.error("Error getting pending verification count:", error);
-        return 0;
+        throw new Error("Gagal mengambil jumlah verifikasi tertunda.");
     }
 }
 
 
 // Get all members, sorted by creation time
-export async function getMembers(): Promise<MemberWithStatus[]> {
+export async function getMembers(onlyVerified: boolean = false): Promise<MemberWithStatus[]> {
   try {
     const q = query(usersCollection); 
     const snapshot = await getDocs(q);
-    const members: MemberWithStatus[] = [];
+    let members: MemberWithStatus[] = [];
 
     for (const docSnap of snapshot.docs) {
       const data = docSnap.data();
@@ -63,7 +63,11 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
           continue;
       }
       
-      // Denormalize position name and get permissions
+      // Filter for only verified members if requested
+      if (onlyVerified && !['permanent', 'manual'].includes(data.verificationStatus)) {
+          continue;
+      }
+
       const { name: positionName, permissions } = await getPositionDetails(data.positionId);
 
       members.push({
@@ -81,11 +85,11 @@ export async function getMembers(): Promise<MemberWithStatus[]> {
         positionId: data.positionId,
         type: data.type || undefined,
         isSpecialMember: data.isSpecialMember || false,
-        joinDate: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
+        joinDate: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
         ktpImageUrl: data.ktpImageUrl,
         selfieImageUrl: data.selfieImageUrl,
         nik: data.nik,
-        createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : new Date().toISOString(), // Convert Timestamp to ISO String
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
         permissions: permissions,
       });
     }
