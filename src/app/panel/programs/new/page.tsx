@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Calendar as CalendarIcon, Paperclip, Upload, Link as LinkIcon } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, Paperclip, Upload, Link as LinkIcon, Wand2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -25,14 +25,12 @@ import { getForms, ProgramForm } from '@/app/actions/forms';
 import { cn } from '@/lib/utils';
 import type { ProgramFormData } from '@/lib/definitions';
 
-const imageSourceSchema = z.enum(['ai', 'url', 'upload']);
-
 const formSchema = z.object({
   title: z.string().min(1, 'Judul wajib diisi'),
   description: z.string().min(1, 'Deskripsi wajib diisi'),
   category: z.enum(['flagship', 'ongoing'], { required_error: 'Kategori program wajib dipilih' }),
   programType: z.enum(['aktif', 'pasif'], { required_error: 'Jenis program wajib dipilih' }),
-  imageSource: imageSourceSchema.default('ai'),
+  imageSource: z.enum(['ai', 'url', 'upload']).default('ai'),
   imageUrl: z.string().optional(),
   imageHint: z.string().optional(),
   imageFile: z.any().optional(),
@@ -76,12 +74,12 @@ const formSchema = z.object({
     return true;
 }, { message: "File gambar wajib diunggah", path: ["imageFile"]});
 
-
-type FormData = z.infer<typeof formSchema>;
+type FormSchemaType = z.infer<typeof formSchema>;
 
 export default function NewProgramPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const formRef = useRef<HTMLFormElement>(null);
   const [loading, setLoading] = useState(false);
   const [allTags, setAllTags] = useState<ProgramTag[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -95,7 +93,7 @@ export default function NewProgramPage() {
     getValues,
     watch,
     formState: { errors },
-  } = useForm<FormData>({
+  } = useForm<FormSchemaType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '', description: '', category: 'ongoing', programType: 'aktif', imageUrl: '', imageHint: '', imageSource: 'ai',
@@ -132,28 +130,46 @@ export default function NewProgramPage() {
     }
     fetchData();
   }, [toast]);
+  
+  const processForm = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    // Manually trigger validation
+    const isValid = await handleSubmit(() => {})()
+    if (!isValid) {
+        toast({ variant: "destructive", title: "Form tidak valid", description: "Mohon periksa kembali isian Anda."});
+        return;
+    }
 
-  const onSubmit = async (data: FormData) => {
     setLoading(true);
 
+    if (!formRef.current) return;
+    const formData = new FormData(formRef.current);
+    
+    // Append react-hook-form controlled values
+    const formValues = getValues();
+    formData.set('tags', formValues.tags.join(','));
+    formData.set('dateRange.from', formValues.dateRange.from.toISOString());
+    formData.set('dateRange.to', formValues.dateRange.to.toISOString());
+    formData.set('requiresRecommendation', String(formValues.requiresRecommendation));
+
     try {
-      const imageFile = data.imageFile?.[0];
-      const attachment = data.attachment?.[0];
-
-      await createProgram(data, imageFile, attachment);
-
-      toast({ title: 'Program berhasil dibuat!' });
-      router.push('/panel/programs');
+        await createProgram(formData);
+        toast({ title: 'Program berhasil dibuat!' });
+        router.push('/panel/programs');
     } catch (error) {
-      toast({ 
-        variant: 'destructive', 
-        title: 'Gagal Membuat Program', 
-        description: (error as Error).message,
-        duration: 9000
-      });
-      setLoading(false);
+        console.error("Error on form submission:", error);
+        toast({ 
+            variant: 'destructive', 
+            title: 'Gagal Membuat Program', 
+            description: (error as Error).message,
+            duration: 9000
+        });
+    } finally {
+        setLoading(false);
     }
   };
+
 
   const handleTagToggle = (tagName: string) => {
     const currentTags = getValues('tags') || [];
@@ -164,7 +180,7 @@ export default function NewProgramPage() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form ref={formRef} onSubmit={processForm} className="space-y-6">
        <div className="flex items-center justify-between">
         <div>
           <h1 className="font-headline text-2xl font-bold">Buat Program Baru</h1>
@@ -198,7 +214,7 @@ export default function NewProgramPage() {
                   <div className="space-y-2">
                       <Label>Kategori Program</Label>
                       <Controller name="category" control={control} render={({ field }) => (
-                          <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
+                          <RadioGroup onValueChange={field.onChange} value={field.value} className="flex gap-4">
                               <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="flagship" /> Unggulan</Label>
                               <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="ongoing" /> Berkelanjutan</Label>
                           </RadioGroup>
@@ -208,7 +224,7 @@ export default function NewProgramPage() {
                   <div className="space-y-2">
                       <Label>Jenis Program</Label>
                       <Controller name="programType" control={control} render={({ field }) => (
-                          <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
+                          <RadioGroup onValueChange={field.onChange} value={field.value} className="flex gap-4">
                               <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="aktif" /> Aktif (Pendaftaran)</Label>
                               <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="pasif" /> Pasif (Internal)</Label>
                           </RadioGroup>
@@ -234,7 +250,7 @@ export default function NewProgramPage() {
                               initialFocus
                               mode="range"
                               defaultMonth={field.value.from}
-                              selected={{ from: field.value.from, to: field.value.to }}
+                              selected={field.value}
                               onSelect={(range) => field.onChange(range || { from: undefined, to: undefined })}
                               numberOfMonths={1}
                           />
@@ -252,7 +268,7 @@ export default function NewProgramPage() {
                 <div className="space-y-2">
                   <Label>Sumber Program</Label>
                    <Controller name="source" control={control} render={({ field }) => (
-                      <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
+                      <RadioGroup onValueChange={field.onChange} value={field.value} className="flex gap-4">
                           <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="garda_lestari" /> Garda Lestari</Label>
                           <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="mitra" /> Mitra</Label>
                       </RadioGroup>
@@ -263,7 +279,7 @@ export default function NewProgramPage() {
                   <div className="space-y-2">
                     <Label htmlFor="partnerId">Pilih Mitra</Label>
                     <Controller name="partnerId" control={control} render={({ field }) => (
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <SelectTrigger><SelectValue placeholder="Pilih mitra penyelenggara" /></SelectTrigger>
                         <SelectContent>
                           {partners.map(p => <SelectItem key={p.id} value={p.id!}>{p.name}</SelectItem>)}
@@ -277,7 +293,7 @@ export default function NewProgramPage() {
                 <div className="space-y-2">
                   <Label>Tipe Pendaftaran</Label>
                   <Controller name="submissionType" control={control} render={({ field }) => (
-                      <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
+                      <RadioGroup onValueChange={field.onChange} value={field.value} className="flex gap-4">
                           <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="internal" /> Internal (via form di aplikasi)</Label>
                           <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="external" /> Eksternal (via link)</Label>
                       </RadioGroup>
@@ -295,7 +311,7 @@ export default function NewProgramPage() {
                   <div className="space-y-2">
                     <Label htmlFor="formId">Pilih Formulir Internal</Label>
                     <Controller name="formId" control={control} render={({ field }) => (
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <SelectTrigger><SelectValue placeholder="Pilih formulir pendaftaran" /></SelectTrigger>
                         <SelectContent>
                           {forms.map(f => <SelectItem key={f.id} value={f.id!}>{f.title}</SelectItem>)}
@@ -308,7 +324,7 @@ export default function NewProgramPage() {
 
                  <div className="flex items-center space-x-2 pt-2">
                     <Controller name="requiresRecommendation" control={control} render={({ field }) => (
-                      <Switch id="requiresRecommendation" checked={field.value} onCheckedChange={field.onChange} />
+                      <Switch id="requiresRecommendation" name="requiresRecommendation" checked={field.value} onCheckedChange={field.onChange} />
                     )} />
                     <Label htmlFor="requiresRecommendation">Garda Lestari menyediakan surat rekomendasi untuk program ini</Label>
                 </div>
@@ -329,18 +345,19 @@ export default function NewProgramPage() {
                     render={({ field }) => (
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-3 gap-2">
                              <Label className="flex flex-col items-center justify-center gap-2 cursor-pointer rounded-md border p-2 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
+                                <Wand2 className="h-5 w-5" />
                                 <span className="text-xs">AI</span>
-                                <RadioGroupItem value="ai" className="sr-only" />
+                                <RadioGroupItem value="ai" {...register('imageSource')} className="sr-only" />
                              </Label>
                              <Label className="flex flex-col items-center justify-center gap-2 cursor-pointer rounded-md border p-2 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
                                 <LinkIcon className="h-5 w-5" />
                                 <span className="text-xs">URL</span>
-                                <RadioGroupItem value="url" className="sr-only" />
+                                <RadioGroupItem value="url" {...register('imageSource')} className="sr-only" />
                              </Label>
                              <Label className="flex flex-col items-center justify-center gap-2 cursor-pointer rounded-md border p-2 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
                                 <Upload className="h-5 w-5" />
                                 <span className="text-xs">Unggah</span>
-                                <RadioGroupItem value="upload" className="sr-only" />
+                                <RadioGroupItem value="upload" {...register('imageSource')} className="sr-only" />
                              </Label>
                         </RadioGroup>
                     )}
@@ -408,5 +425,3 @@ export default function NewProgramPage() {
     </form>
   );
 }
-
-    

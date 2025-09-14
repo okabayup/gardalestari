@@ -15,7 +15,6 @@ const programsCollection = collection(db, 'programs');
 const tagsCollection = collection(db, 'programTags');
 const usersCollection = collection(db, 'users');
 
-
 const toProgram = (doc: any): Program => {
     const data = doc.data();
     return {
@@ -93,113 +92,128 @@ export async function getProgram(id: string): Promise<Program | null> {
     }
 }
 
-
-// Create a new program
-export async function createProgram(programData: ProgramFormData, imageFile?: File, attachmentFile?: File): Promise<string> {
-    // 1. Prepare data and handle dates
-    const { imageFile: unusedImageFile, attachment: unusedAttachment, dateRange, ...restData } = programData;
-    
-    const dataToCreate: Omit<Program, 'id' | 'startDate' | 'endDate'> & { startDate: Timestamp, endDate: Timestamp } = {
-        ...restData,
-        startDate: Timestamp.fromDate(dateRange.from),
-        endDate: Timestamp.fromDate(dateRange.to),
-        imageUrl: programData.imageUrl || '',
-    };
-    
-    // 2. Handle image upload/generation
+export async function createProgram(formData: FormData): Promise<string> {
     try {
-        if (programData.imageSource === 'ai' && programData.imageHint) {
-            const result = await generateImage({ prompt: programData.imageHint });
-            if (!result.imageUrl) throw new Error("AI gagal membuat URL gambar.");
-            const response = await fetch(result.imageUrl);
-            const blob = await response.blob();
-            const aiImageFile = new File([blob], "ai-generated-image.png", { type: "image/png" });
-            
-            const imageRef = ref(storage, `program-images/${Date.now()}_ai_generated.png`);
-            await uploadBytes(imageRef, aiImageFile);
-            dataToCreate.imageUrl = await getDownloadURL(imageRef);
-        } else if (programData.imageSource === 'upload' && imageFile) {
-            const imageRef = ref(storage, `program-images/${Date.now()}_${imageFile.name}`);
-            await uploadBytes(imageRef, imageFile);
-            dataToCreate.imageUrl = await getDownloadURL(imageRef);
-        } else if (programData.imageSource === 'url' && programData.imageUrl) {
-             dataToCreate.imageUrl = programData.imageUrl;
-        } else {
-             dataToCreate.imageUrl = `https://picsum.photos/seed/${programData.title.replace(/\s+/g, '-')}/600/400`;
-        }
-    } catch (error) {
-        console.error("Error handling program image:", error);
-        throw new Error(`Gagal memproses gambar program: ${(error as Error).message}`);
-    }
+        // 1. Extract data from FormData
+        const programData = {
+            title: formData.get('title') as string,
+            description: formData.get('description') as string,
+            category: formData.get('category') as 'flagship' | 'ongoing',
+            programType: formData.get('programType') as 'aktif' | 'pasif',
+            imageSource: formData.get('imageSource') as 'ai' | 'url' | 'upload',
+            imageUrl: formData.get('imageUrl') as string | undefined,
+            imageHint: formData.get('imageHint') as string | undefined,
+            tags: (formData.get('tags') as string).split(','),
+            startDate: formData.get('startDate') as string,
+            endDate: formData.get('endDate') as string,
+            source: formData.get('source') as 'garda_lestari' | 'mitra',
+            partnerId: formData.get('partnerId') as string | undefined,
+            benefits: formData.get('benefits') as string,
+            requiredDocuments: formData.get('requiredDocuments') as string,
+            submissionType: formData.get('submissionType') as 'internal' | 'external',
+            applicationUrl: formData.get('applicationUrl') as string | undefined,
+            formId: formData.get('formId') as string | undefined,
+            requiresRecommendation: formData.get('requiresRecommendation') === 'true',
+        };
+        const imageFile = formData.get('imageFile') as File | null;
+        const attachmentFile = formData.get('attachment') as File | null;
 
-    // 3. Handle attachment upload
-    if (attachmentFile) {
-      try {
-        const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachmentFile.name}`);
-        await uploadBytes(attachmentRef, attachmentFile);
-        dataToCreate.attachmentUrl = await getDownloadURL(attachmentRef);
-        dataToCreate.attachmentName = attachmentFile.name;
-      } catch (uploadError) {
-        console.error("Error uploading attachment:", uploadError);
-        throw new Error("Gagal mengunggah lampiran.");
-      }
-    }
-    
-    // 4. Save to Firestore
-    let docRef;
-    try {
-        docRef = await addDoc(programsCollection, dataToCreate);
-    } catch(error) {
-        console.error("Error creating program in Firestore:", error);
-        throw new Error(`Gagal menyimpan program ke database: ${(error as Error).message}`);
-    }
+        // 2. Prepare data for Firestore
+        const dataToCreate: { [key: string]: any } = {
+            ...programData,
+            startDate: Timestamp.fromDate(new Date(programData.startDate)),
+            endDate: Timestamp.fromDate(new Date(programData.endDate)),
+        };
 
-    // 5. Post-save actions (notifications) - Do not let these fail the whole process
-    if (programData.programType === 'aktif') {
+        // 3. Handle image upload/generation
         try {
-            await sendNotification(
-                {
-                    title: `Program Baru: ${dataToCreate.title}`,
-                    body: `Pendaftaran untuk program "${dataToCreate.title}" telah dibuka. Cek sekarang!`,
-                    link: `/programs/${docRef.id}`
-                },
-                { type: 'all' }
-            );
-        } catch (e) {
-            console.warn("Gagal mengirim notifikasi push untuk program baru:", e);
-        }
-
-        try {
-            const template = await getWhatsappTemplate('new_program_announcement');
-            if (template.isActive) {
-                const usersSnapshot = await getDocs(query(usersCollection, where('waVerified', '==', true)));
-                const phoneNumbers = usersSnapshot.docs.map(doc => doc.data().waNumber).filter(Boolean);
-
-                if (phoneNumbers.length > 0) {
-                    const message = template.message
-                        .replace('{namaProgram}', dataToCreate.title)
-                        .replace('{batasWaktu}', dateRange.to.toLocaleDateString('id-ID'));
-                    
-                    await sendBulkWhatsAppMessage(phoneNumbers, message);
-                }
+            if (programData.imageSource === 'ai' && programData.imageHint) {
+                const result = await generateImage({ prompt: programData.imageHint });
+                if (!result.imageUrl) throw new Error("AI gagal membuat URL gambar.");
+                dataToCreate.imageUrl = result.imageUrl;
+            } else if (programData.imageSource === 'upload' && imageFile) {
+                const imageRef = ref(storage, `program-images/${Date.now()}_${imageFile.name}`);
+                await uploadBytes(imageRef, imageFile);
+                dataToCreate.imageUrl = await getDownloadURL(imageRef);
+            } else if (programData.imageSource === 'url' && programData.imageUrl) {
+                 dataToCreate.imageUrl = programData.imageUrl;
+            } else {
+                 dataToCreate.imageUrl = `https://picsum.photos/seed/${programData.title.replace(/\s+/g, '-')}/600/400`;
             }
         } catch (error) {
-            console.warn(`Gagal mengirim notifikasi WhatsApp massal:`, error);
+            console.error("Error handling program image:", error);
+            throw new Error(`Gagal memproses gambar program: ${(error as Error).message}`);
         }
+
+        // 4. Handle attachment upload
+        if (attachmentFile) {
+          try {
+            const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachmentFile.name}`);
+            await uploadBytes(attachmentRef, attachmentFile);
+            dataToCreate.attachmentUrl = await getDownloadURL(attachmentRef);
+            dataToCreate.attachmentName = attachmentFile.name;
+          } catch (uploadError) {
+            console.error("Error uploading attachment:", uploadError);
+            throw new Error("Gagal mengunggah lampiran.");
+          }
+        }
+        
+        // 5. Save to Firestore
+        let docRef;
+        try {
+            docRef = await addDoc(programsCollection, dataToCreate);
+        } catch(error) {
+            console.error("Error creating program in Firestore:", error);
+            throw new Error(`Gagal menyimpan program ke database: ${(error as Error).message}`);
+        }
+
+        // 6. Post-save actions (notifications)
+        if (programData.programType === 'aktif') {
+            try {
+                await sendNotification(
+                    {
+                        title: `Program Baru: ${dataToCreate.title}`,
+                        body: `Pendaftaran untuk program "${dataToCreate.title}" telah dibuka. Cek sekarang!`,
+                        link: `/programs/${docRef.id}`
+                    },
+                    { type: 'all' }
+                );
+            } catch (e) { console.warn("Gagal mengirim notifikasi push untuk program baru:", e); }
+
+            try {
+                const template = await getWhatsappTemplate('new_program_announcement');
+                if (template.isActive) {
+                    const usersSnapshot = await getDocs(query(usersCollection, where('waVerified', '==', true)));
+                    const phoneNumbers = usersSnapshot.docs.map(doc => doc.data().waNumber).filter(Boolean);
+
+                    if (phoneNumbers.length > 0) {
+                        const message = template.message
+                            .replace('{namaProgram}', dataToCreate.title)
+                            .replace('{batasWaktu}', new Date(programData.endDate).toLocaleDateString('id-ID'));
+                        
+                        await sendBulkWhatsAppMessage(phoneNumbers, message);
+                    }
+                }
+            } catch (error) { console.warn(`Gagal mengirim notifikasi WhatsApp massal:`, error); }
+        }
+        
+        revalidatePath('/panel/programs');
+        revalidatePath('/programs');
+        revalidatePath(`/programs/${docRef.id}`);
+        
+        return docRef.id;
+
+    } catch (error) {
+        console.error('Server Action Error in createProgram:', error);
+        throw new Error(`Gagal total membuat program: ${(error as Error).message}`);
     }
-    
-    revalidatePath('/panel/programs');
-    revalidatePath('/programs');
-    revalidatePath(`/programs/${docRef.id}`);
-    
-    return docRef.id;
 }
 
 // Update an existing program
 export async function updateProgram(id: string, program: Partial<ProgramFormData>, imageFile?: File, attachmentFile?: File) {
-    const dataToUpdate: { [key: string]: any } = { ...program };
-
     try {
+        const dataToUpdate: { [key: string]: any } = { ...program };
+
         const programDoc = doc(db, 'programs', id);
         
         if (program.dateRange?.from) {
@@ -321,5 +335,3 @@ export async function deleteProgramTag(id: string) {
         throw new Error("Gagal menghapus tag.");
     }
 }
-
-    
