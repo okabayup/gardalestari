@@ -26,7 +26,6 @@ import { useEffect, useState } from 'react';
 import { getRecruitments, deleteRecruitment, Recruitment } from '@/app/actions/recruitments';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from '@/components/ui/badge';
 import { Timestamp } from 'firebase/firestore';
@@ -129,7 +128,9 @@ export default function AdminRecruitmentsPage() {
                           </Badge>
                       </TableCell>
                        <TableCell>{item.type === 'internal' ? 'Garda Lestari' : item.partnerName}</TableCell>
-                      <TableCell>{format(new Date(item.deadline), 'dd MMM yyyy', { locale: id })}</TableCell>
+                      <TableCell>
+                          <ClientFormattedDate dateString={item.deadline} />
+                      </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -177,4 +178,16 @@ export default function AdminRecruitmentsPage() {
       </AlertDialog>
     </>
   );
+}
+
+function ClientFormattedDate({ dateString }: { dateString: string }) {
+    const [formattedDate, setFormattedDate] = useState('');
+    useEffect(() => {
+        const doFormat = async () => {
+            const { id } = await import('date-fns/locale/id');
+            setFormattedDate(format(new Date(dateString), 'dd MMM yyyy', { locale: id }));
+        };
+        doFormat();
+    }, [dateString]);
+    return <>{formattedDate || 'Memuat...'}</>;
 }

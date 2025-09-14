@@ -26,7 +26,6 @@ import { useEffect, useState } from 'react';
 import { getAchievements, deleteAchievement, Achievement } from '@/app/actions/achievements';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -80,6 +79,11 @@ export default function AdminAchievementsPage() {
     }
   };
 
+  const formatDate = async (date: string) => {
+    const { id } = await import('date-fns/locale/id');
+    return format(new Date(date), 'dd MMM yyyy', { locale: id });
+  }
+
   return (
     <>
       <div className="space-y-6">
@@ -128,7 +132,9 @@ export default function AdminAchievementsPage() {
                         {item.userName}
                       </TableCell>
                       <TableCell className="font-medium">{item.title}</TableCell>
-                      <TableCell>{format(new Date(item.date), 'dd MMM yyyy', { locale: id })}</TableCell>
+                      <TableCell>
+                          <ClientFormattedDate date={item.date} />
+                      </TableCell>
                       <TableCell className="text-right">
                         {canManage && (
                             <DropdownMenu>
@@ -178,4 +184,19 @@ export default function AdminAchievementsPage() {
       </AlertDialog>
     </>
   );
+}
+
+// Client-side component to handle date formatting
+function ClientFormattedDate({ date }: { date: string }) {
+  const [formattedDate, setFormattedDate] = useState('');
+
+  useEffect(() => {
+    const formatDate = async () => {
+      const { id } = await import('date-fns/locale/id');
+      setFormattedDate(format(new Date(date), 'dd MMM yyyy', { locale: id }));
+    };
+    formatDate();
+  }, [date]);
+
+  return <>{formattedDate || 'Memuat...'}</>;
 }

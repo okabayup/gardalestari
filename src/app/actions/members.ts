@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -11,6 +12,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { generateUniqueUsername } from './user';
 import { formatFullName } from '@/lib/utils';
 import { sendNotification } from './notifications';
+import { format } from 'date-fns';
 
 const usersCollection = collection(db, 'users');
 const positionsCollection = collection(db, 'positions');
@@ -37,14 +39,14 @@ async function getPositionDetails(positionId?: string): Promise<{ name: string, 
 
 // Get the count of members waiting for verification
 export async function getPendingVerificationCount(): Promise<number> {
-    try {
-        const q = query(usersCollection, where('verificationStatus', '==', 'temporary'));
-        const snapshot = await getCountFromServer(q);
-        return snapshot.data().count;
-    } catch (error) {
-        console.error("Error getting pending verification count:", error);
-        throw new Error("Gagal mengambil jumlah verifikasi tertunda.");
-    }
+  try {
+    const q = query(usersCollection, where('verificationStatus', '==', 'temporary'));
+    const snapshot = await getCountFromServer(q);
+    return snapshot.data().count;
+  } catch (error) {
+    console.error("Error getting pending verification count:", error);
+    throw new Error("Gagal mengambil jumlah verifikasi tertunda.");
+  }
 }
 
 

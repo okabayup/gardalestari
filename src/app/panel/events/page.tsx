@@ -26,7 +26,6 @@ import { useEffect, useState } from 'react';
 import { getEvents, deleteEvent, Event } from '@/app/actions/events';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
 import { useAuth } from '@/hooks/use-auth';
 
 export default function AdminEventsPage() {
@@ -129,7 +128,9 @@ export default function AdminEventsPage() {
                   events.map((event) => (
                     <TableRow key={event.id}>
                       <TableCell className="font-medium">{event.title}</TableCell>
-                      <TableCell>{format(event.date.toDate(), 'dd MMM yyyy', { locale: id })}</TableCell>
+                      <TableCell>
+                        <ClientFormattedDate date={event.date.toDate()} />
+                      </TableCell>
                       <TableCell className="hidden md:table-cell">{event.location}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
@@ -186,4 +187,16 @@ export default function AdminEventsPage() {
       </AlertDialog>
     </>
   );
+}
+
+function ClientFormattedDate({ date }: { date: Date }) {
+    const [formattedDate, setFormattedDate] = useState('');
+    useEffect(() => {
+        const doFormat = async () => {
+            const { id } = await import('date-fns/locale/id');
+            setFormattedDate(format(date, 'dd MMM yyyy', { locale: id }));
+        };
+        doFormat();
+    }, [date]);
+    return <>{formattedDate || 'Memuat...'}</>;
 }

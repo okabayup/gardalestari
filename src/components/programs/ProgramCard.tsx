@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Image from 'next/image';
@@ -11,18 +10,28 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Button } from '../ui/button';
 import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
+import { useEffect, useState } from 'react';
 
 interface ProgramCardProps extends Program {
   isPast?: boolean;
 }
 
 export default function ProgramCard({ id, title, description, imageUrl, imageHint, tags, startDate, endDate, isPast }: ProgramCardProps) {
-  const startDateObj = startDate ? new Date(startDate) : null;
-  const endDateObj = endDate ? new Date(endDate) : null;
-
-  const formattedStartDate = startDateObj ? format(startDateObj, "d MMM yyyy", { locale: id }) : 'N/A';
-  const formattedEndDate = endDateObj ? format(endDateObj, "d MMM yyyy", { locale: id }) : 'N/A';
+  const [formattedStartDate, setFormattedStartDate] = useState('');
+  const [formattedEndDate, setFormattedEndDate] = useState('');
+  
+  useEffect(() => {
+    const formatDate = async () => {
+      const { id } = await import('date-fns/locale/id');
+      if (startDate) {
+        setFormattedStartDate(format(new Date(startDate), "d MMM yyyy", { locale: id }));
+      }
+      if (endDate) {
+        setFormattedEndDate(format(new Date(endDate), "d MMM yyyy", { locale: id }));
+      }
+    };
+    formatDate();
+  }, [startDate, endDate]);
 
   return (
     <Card className={cn("overflow-hidden transition-all hover:shadow-lg flex flex-col", isPast && "opacity-70")}>
@@ -44,7 +53,7 @@ export default function ProgramCard({ id, title, description, imageUrl, imageHin
         <CardTitle>{title}</CardTitle>
         <div className="flex items-center text-sm text-muted-foreground pt-1">
           <CalendarIcon className="mr-2 h-4 w-4"/>
-          <span>{formattedStartDate} - {formattedEndDate}</span>
+          <span>{formattedStartDate || '...'} - {formattedEndDate || '...'}</span>
         </div>
       </CardHeader>
       <CardContent className="flex-grow flex flex-col">
@@ -65,5 +74,3 @@ export default function ProgramCard({ id, title, description, imageUrl, imageHin
     </Card>
   );
 }
-
-    

@@ -7,7 +7,6 @@ import { getEvent, Event } from '@/app/actions/events';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
 import { Award, FileText, Globe, Info, Target, Landmark, Download, Loader2, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -36,8 +35,21 @@ const InfoCard = ({ icon, title, children }: { icon: React.ReactNode, title: str
 const EventDetailClient = ({ event }: { event: Event }) => {
     const router = useRouter();
     const isPast = new Date() > event.date.toDate();
-    const formattedDate = format(event.date.toDate(), "dd MMMM yyyy, HH:mm", { locale: id });
-    
+    const [formattedFullDate, setFormattedFullDate] = useState('');
+    const [formattedDate, setFormattedDate] = useState('');
+    const [formattedTime, setFormattedTime] = useState('');
+
+    useEffect(() => {
+        const formatDate = async () => {
+            const { id } = await import('date-fns/locale/id');
+            const eventDate = event.date.toDate();
+            setFormattedFullDate(format(eventDate, "dd MMMM yyyy, HH:mm", { locale: id }));
+            setFormattedDate(format(eventDate, "eeee, dd MMMM yyyy", { locale: id }));
+            setFormattedTime(format(eventDate, "HH:mm", { locale: id }));
+        };
+        formatDate();
+    }, [event.date]);
+
     const jsonLd = {
       '@context': 'https://schema.org',
       '@type': 'Event',
@@ -83,7 +95,7 @@ const EventDetailClient = ({ event }: { event: Event }) => {
             <div className="p-6 -mt-16 relative z-10 space-y-6">
                 <div className="space-y-2">
                     <h1 className="font-headline text-3xl md:text-4xl font-bold">{event.title}</h1>
-                     <p className="text-muted-foreground">{formattedDate} WIB</p>
+                     <p className="text-muted-foreground">{formattedFullDate} WIB</p>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
@@ -92,8 +104,8 @@ const EventDetailClient = ({ event }: { event: Event }) => {
                     </InfoCard>
                     <InfoCard icon={<Landmark className="h-6 w-6" />} title="Lokasi & Waktu">
                        <ul>
-                           <li><strong>Tanggal:</strong> {format(event.date.toDate(), "eeee, dd MMMM yyyy", { locale: id })}</li>
-                           <li><strong>Waktu:</strong> {format(event.date.toDate(), "HH:mm", { locale: id })} WIB</li>
+                           <li><strong>Tanggal:</strong> {formattedDate}</li>
+                           <li><strong>Waktu:</strong> {formattedTime} WIB</li>
                            <li><strong>Lokasi:</strong> {event.location}</li>
                        </ul>
                     </InfoCard>
@@ -158,4 +170,3 @@ export default function EventDetailPage({ params }: EventDetailPageProps) {
     </MainLayout>
   );
 }
-

@@ -27,8 +27,6 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { getDocuments, deleteDocument, ImportantDocument, submitForApproval, approveDocument } from '@/app/actions/documents';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import QRCode from 'qrcode.react';

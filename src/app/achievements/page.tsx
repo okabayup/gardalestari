@@ -7,12 +7,21 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { getAchievements, Achievement } from '@/app/actions/achievements';
 import { Loader2, Award } from 'lucide-react';
 import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 
 const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
+  const [formattedDate, setFormattedDate] = useState('');
+
+  useEffect(() => {
+    const formatDate = async () => {
+      const { id } = await import('date-fns/locale/id');
+      setFormattedDate(format(new Date(achievement.date), 'dd MMMM yyyy', { locale: id }));
+    };
+    formatDate();
+  }, [achievement.date]);
+
   return (
     <Card className="overflow-hidden">
         {achievement.imageUrl && (
@@ -27,7 +36,7 @@ const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
         )}
         <CardHeader>
             <CardTitle>{achievement.title}</CardTitle>
-            <CardDescription>{format(new Date(achievement.date), 'dd MMMM yyyy', { locale: id })}</CardDescription>
+            <CardDescription>{formattedDate || 'Memuat tanggal...'}</CardDescription>
         </CardHeader>
         <CardContent>
             <div className="flex items-center gap-2 mb-4">
@@ -53,7 +62,7 @@ export default function AchievementsPage() {
       .finally(() => setLoading(false));
   }, []);
   
-  const years = [...new Set(achievements.map(a => new Date(a.date).getFullYear()))];
+  const years = [...new Set(achievements.map(a => new Date(a.date).getFullYear()))].sort((a, b) => b - a);
 
   return (
     <MainLayout>

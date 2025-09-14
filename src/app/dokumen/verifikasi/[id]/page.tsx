@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, Download, CheckCircle, XCircle, FileQuestion } from 'lucide-react';
 import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -39,15 +38,18 @@ export default function DocumentVerificationPage() {
   const params = useParams();
   const docId = params.id as string;
   const [document, setDocument] = useState<ImportantDocument | null>(null);
+  const [formattedDate, setFormattedDate] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (docId) {
       getDocument(docId)
-        .then((doc) => {
+        .then(async (doc) => {
           if (doc) {
             setDocument(doc);
+            const { id } = await import('date-fns/locale/id');
+            setFormattedDate(format(doc.createdAt.toDate(), 'dd MMMM yyyy, HH:mm', { locale: id }));
           } else {
             setError('Dokumen dengan ID ini tidak ditemukan.');
           }
@@ -99,7 +101,7 @@ export default function DocumentVerificationPage() {
                                 </div>
                                 <div>
                                     <p className="text-sm text-muted-foreground">Tanggal Pengesahan</p>
-                                    <p className="font-semibold">{format(document.createdAt.toDate(), 'dd MMMM yyyy, HH:mm', { locale: id })} WIB</p>
+                                    <p className="font-semibold">{formattedDate} WIB</p>
                                 </div>
                             </CardContent>
                         </Card>

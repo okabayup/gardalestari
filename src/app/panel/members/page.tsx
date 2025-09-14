@@ -146,7 +146,9 @@ export default function AdminMembersPage() {
                       <TableCell className="hidden md:table-cell">{member.phoneNumber}</TableCell>
                       <TableCell>{getStatusBadge(member.verificationStatus)}</TableCell>
                       <TableCell className="hidden md:table-cell">{member.position}</TableCell>
-                      <TableCell className="hidden sm:table-cell">{member.joinDate ? format(new Date(member.joinDate), 'dd MMM yyyy') : '-'}</TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <ClientFormattedDate dateString={member.joinDate} />
+                      </TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -202,4 +204,18 @@ export default function AdminMembersPage() {
       )}
     </>
   );
+}
+
+
+function ClientFormattedDate({ dateString }: { dateString?: string }) {
+    const [formattedDate, setFormattedDate] = useState('');
+    useEffect(() => {
+        if (!dateString) return;
+        const formatDate = async () => {
+            const { id } = await import('date-fns/locale/id');
+            setFormattedDate(format(new Date(dateString), 'dd MMM yyyy', { locale: id }));
+        };
+        formatDate();
+    }, [dateString]);
+    return <>{formattedDate || '-'}</>;
 }

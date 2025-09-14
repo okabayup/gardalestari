@@ -8,7 +8,6 @@ import { getRecruitments, Recruitment } from '@/app/actions/recruitments';
 import { Loader2, Briefcase, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -16,6 +15,15 @@ import { Timestamp } from 'firebase/firestore';
 
 const RecruitmentCard = ({ recruitment }: { recruitment: Recruitment }) => {
   const isPast = new Date() > recruitment.deadline.toDate();
+  const [formattedDate, setFormattedDate] = useState('');
+
+  useEffect(() => {
+    const formatDate = async () => {
+        const { id } = await import('date-fns/locale/id');
+        setFormattedDate(format(recruitment.deadline.toDate(), 'dd MMMM yyyy', { locale: id }));
+    };
+    formatDate();
+  }, [recruitment.deadline]);
   
   return (
     <Card className="flex flex-col">
@@ -43,7 +51,7 @@ const RecruitmentCard = ({ recruitment }: { recruitment: Recruitment }) => {
       </CardContent>
       <CardFooter className="flex-col items-start gap-3">
         <div className="text-xs text-muted-foreground">
-            Batas Waktu: {format(recruitment.deadline.toDate(), 'dd MMMM yyyy', { locale: id })}
+            Batas Waktu: {formattedDate || 'Memuat...'}
         </div>
         <Button asChild className="w-full" disabled={isPast}>
             <Link href={recruitment.applicationUrl} target="_blank">

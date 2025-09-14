@@ -22,7 +22,6 @@ import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { getNotificationsForUser, markNotificationsAsRead, Notification, getUnreadNotificationsCount } from '@/app/actions/notifications';
 import { formatDistanceToNow } from 'date-fns';
-import { id } from 'date-fns/locale';
 
 const NotificationItem = ({ title, body, time, read, link }: { title: string, body: string, time: string, read: boolean, link?: string }) => (
     <Link href={link || '#'} className="block p-3 hover:bg-muted/50 rounded-lg">
@@ -91,6 +90,11 @@ export default function Header() {
     await signOut();
     router.push('/login');
   };
+
+  const formatTimeAgo = async (date: Date) => {
+      const { id } = await import('date-fns/locale/id');
+      return formatDistanceToNow(date, { addSuffix: true, locale: id });
+  }
   
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -123,14 +127,7 @@ export default function Header() {
                           </div>
                       ) : notifications.length > 0 ? (
                           notifications.map(notif => (
-                             <NotificationItem 
-                                key={notif.id}
-                                title={notif.title}
-                                body={notif.body}
-                                time={formatDistanceToNow(notif.createdAt.toDate(), { addSuffix: true, locale: id })}
-                                read={notif.read}
-                                link={notif.link}
-                              />
+                             <NotificationItemWrapper key={notif.id} notification={notif} />
                           ))
                       ) : (
                           <div className="text-center text-muted-foreground p-10">
@@ -183,6 +180,24 @@ export default function Header() {
   );
 }
 
-    
+function NotificationItemWrapper({ notification }: { notification: Notification }) {
+    const [timeAgo, setTimeAgo] = useState('');
 
-    
+    useEffect(() => {
+        const formatTime = async () => {
+            const { id } = await import('date-fns/locale/id');
+            setTimeAgo(formatDistanceToNow(notification.createdAt.toDate(), { addSuffix: true, locale: id }));
+        };
+        formatTime();
+    }, [notification.createdAt]);
+
+    return (
+        <NotificationItem
+            title={notification.title}
+            body={notification.body}
+            time={timeAgo}
+            read={notification.read}
+            link={notification.link}
+        />
+    );
+}

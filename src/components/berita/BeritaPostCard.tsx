@@ -6,8 +6,8 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
 import { Badge } from '../ui/badge';
+import { useState, useEffect } from 'react';
 
 interface BeritaPostCardProps {
   slug: string;
@@ -21,7 +21,15 @@ interface BeritaPostCardProps {
 }
 
 export default function BeritaPostCard({ slug, title, excerpt, imageUrl, imageHint, date, category }: BeritaPostCardProps) {
-  const formattedDate = format(new Date(date), "dd MMMM yyyy", { locale: id });
+  const [formattedDate, setFormattedDate] = useState('');
+
+  useEffect(() => {
+      const formatDate = async () => {
+          const { id } = await import('date-fns/locale/id');
+          setFormattedDate(format(new Date(date), "dd MMMM yyyy", { locale: id }));
+      };
+      formatDate();
+  }, [date]);
   
   return (
     <Card className="overflow-hidden flex flex-col group">
@@ -40,7 +48,7 @@ export default function BeritaPostCard({ slug, title, excerpt, imageUrl, imageHi
         <CardHeader className="p-0">
           <div className="flex justify-between items-center mb-2">
             <Badge variant="secondary">{category}</Badge>
-            <p className="text-xs text-muted-foreground">{formattedDate}</p>
+            <p className="text-xs text-muted-foreground">{formattedDate || 'Memuat...'}</p>
           </div>
           <Link href={`/berita/${slug}`}>
             <CardTitle className="leading-tight text-lg line-clamp-2 hover:text-primary transition-colors">{title}</CardTitle>

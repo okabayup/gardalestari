@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -25,7 +26,6 @@ import { useEffect, useState } from 'react';
 import { getDataBankEntries, deleteDataBankEntry, DataBankEntry } from '@/app/actions/bank-data';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
 
 export default function AdminDataBankPage() {
   const router = useRouter();
@@ -115,7 +115,9 @@ export default function AdminDataBankPage() {
                       <TableCell className="font-medium">{item.title}</TableCell>
                       <TableCell>{item.category}</TableCell>
                       <TableCell>{item.source}</TableCell>
-                      <TableCell>{format(item.publishedDate.toDate(), 'dd MMM yyyy', { locale: id })}</TableCell>
+                      <TableCell>
+                         <ClientFormattedDate dateString={item.publishedDate} />
+                      </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -163,4 +165,16 @@ export default function AdminDataBankPage() {
       </AlertDialog>
     </>
   );
+}
+
+function ClientFormattedDate({ dateString }: { dateString: string }) {
+    const [formattedDate, setFormattedDate] = useState('');
+    useEffect(() => {
+        const formatDate = async () => {
+            const { id } = await import('date-fns/locale/id');
+            setFormattedDate(format(new Date(dateString), 'dd MMM yyyy', { locale: id }));
+        };
+        formatDate();
+    }, [dateString]);
+    return <>{formattedDate || 'Memuat...'}</>;
 }

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -22,7 +21,6 @@ import PostCard from '@/components/feed/PostCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { MemberLevelBadge } from '@/components/members/MemberLevelBadge';
 import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
 
 const ADMIN_PHONE_NUMBER = '+6285176752610';
 
@@ -141,7 +139,9 @@ const AchievementList = ({ achievements, isLoading }: { achievements: Achievemen
                     )}
                     <CardHeader>
                         <CardTitle className="text-base">{item.title}</CardTitle>
-                        <CardDescription>{format(item.date.toDate(), 'dd MMMM yyyy', { locale: id })}</CardDescription>
+                        <CardDescription>
+                            <ClientFormattedDate dateString={item.date} />
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <p className="text-sm text-muted-foreground">{item.description}</p>
@@ -347,4 +347,17 @@ export default function ProfileMePage() {
         )}
     </MainLayout>
   );
+}
+
+function ClientFormattedDate({ dateString }: { dateString: string }) {
+    const [formattedDate, setFormattedDate] = useState('');
+    useEffect(() => {
+        const doFormat = async () => {
+            const { id } = await import('date-fns/locale/id');
+            const date = new Date(dateString);
+            setFormattedDate(format(date, 'dd MMMM yyyy', { locale: id }));
+        };
+        doFormat();
+    }, [dateString]);
+    return <>{formattedDate || 'Memuat...'}</>;
 }
