@@ -66,18 +66,16 @@ export async function getPrograms(): Promise<Program[]> {
   try {
     const q = query(programsCollection, orderBy('endDate', 'desc'));
     const snapshot = await getDocs(q);
-    const programs: Program[] = [];
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      programs.push({
-        id: doc.id,
-        ...data,
-        // Safely convert Timestamps to ISO strings
-        startDate: data.startDate instanceof Timestamp ? data.startDate.toDate().toISOString() : undefined,
-        endDate: data.endDate instanceof Timestamp ? data.endDate.toDate().toISOString() : undefined,
-      } as Program);
+    return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            id: doc.id,
+            ...data,
+            // Safely convert Timestamps to ISO strings
+            startDate: data.startDate?.toDate ? data.startDate.toDate().toISOString() : undefined,
+            endDate: data.endDate?.toDate ? data.endDate.toDate().toISOString() : undefined,
+        } as Program;
     });
-    return programs;
   } catch (error) {
     console.error("Error getting programs:", error);
     throw new Error("Gagal mengambil data program.");
