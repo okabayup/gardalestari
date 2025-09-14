@@ -85,7 +85,7 @@ export interface Achievement {
   userAvatar: string;
   title: string;
   description: string;
-  date: string;
+  date: string; // ISO string
   imageUrl?: string;
 }
 
@@ -94,7 +94,7 @@ export interface Announcement {
   id?: string;
   title: string;
   content: string;
-  createdAt: string;
+  createdAt: string; // ISO string
   attachmentUrl?: string;
   attachmentName?: string;
 }
@@ -112,7 +112,7 @@ export interface BeritaPost {
   slug: string;
   content: string;
   author: string;
-  date: string; 
+  date: string; // ISO string
   imageUrl: string;
   imageHint: string;
   excerpt: string;
@@ -130,8 +130,8 @@ export interface DataBankEntry {
   content: string;
   category: 'Kebijakan' | 'Data Sektoral' | 'Riset' | 'Lainnya';
   source: string;
-  publishedDate: string;
-  createdAt: string;
+  publishedDate: string; // ISO string
+  createdAt: string; // ISO string
 }
 
 // --- Documents ---
@@ -141,7 +141,7 @@ export interface ImportantDocument {
   description?: string;
   documentNumber: string;
   category: string;
-  createdAt: string;
+  createdAt: string; // ISO string
   fileUrl: string;
   fileName: string;
   authorId: string;
@@ -150,7 +150,7 @@ export interface ImportantDocument {
   approverId?: string;
   approvedById?: string;
   approvedByName?: string;
-  approvedAt?: string;
+  approvedAt?: string; // ISO string
   rejectionReason?: string;
   rejectedById?: string;
   rejectedByName?: string;
@@ -166,7 +166,7 @@ export interface Event {
   id?: string;
   title: string;
   description: string;
-  date: string;
+  date: string; // ISO string
   location: string;
   imageUrl: string;
   imageHint: string;
@@ -210,7 +210,7 @@ export interface Idea {
   description: string;
   category: string;
   authorId: string;
-  createdAt: string;
+  createdAt: string; // ISO string
   status: IdeaStatus;
   upvotes: string[];
   downvotes: string[];
@@ -247,7 +247,7 @@ export interface MapData {
   category: MapDataCategory;
   latitude: number;
   longitude: number;
-  createdAt: string;
+  createdAt: string; // ISO string
   budget?: number;
   disbursed?: number;
 }
@@ -277,7 +277,7 @@ export interface MemberWithStatus extends Member {
     ktpImageUrl?: string;
     selfieImageUrl?: string;
     nik?: string;
-    createdAt?: string;
+    createdAt?: string; // ISO string
     position?: string; 
     permissions: PermissionId[];
 }
@@ -315,7 +315,7 @@ export interface Post {
   caption: string;
   likes: string[];
   commentsCount: number;
-  createdAt: string;
+  createdAt: string; // ISO string
   status: 'published' | 'archived';
   mentionedUserIds: string[];
 }
@@ -345,7 +345,7 @@ export interface Comment {
     id: string;
     authorId: string;
     text: string;
-    createdAt: string;
+    createdAt: string; // ISO string
 }
 
 export interface CommentWithAuthor {
@@ -373,8 +373,8 @@ export interface Program {
   imageUrl: string;
   imageHint: string;
   tags: string[];
-  startDate: string;
-  endDate: string;
+  startDate: string; // ISO string
+  endDate: string; // ISO string
   source: ProgramSource;
   partnerId?: string; 
   benefits: string;
@@ -388,8 +388,8 @@ export interface Program {
 }
 
 export interface ProgramFormData extends Omit<Program, 'id' | 'startDate' | 'endDate' > {
-    startDate: Date;
-    endDate: Date;
+    startDate: string; // ISO string for form
+    endDate: string; // ISO string for form
 }
 
 export interface ProgramTag {
@@ -404,7 +404,7 @@ export interface Project {
     description: string;
     managerId: string;
     teamIds: string[];
-    createdAt: string; 
+    createdAt: string; // ISO string
     taskCount: number;
     originIdeaId?: string;
 }
@@ -426,7 +426,7 @@ export interface ProjectTask {
     title: string;
     description?: string;
     assigneeIds?: string[];
-    dueDate?: string; 
+    dueDate?: string; // ISO string
     labels?: string[];
     commentCount: number;
     checklist?: ChecklistItem[];
@@ -436,7 +436,7 @@ export interface ProjectComment {
     id: string;
     authorId: string;
     text: string;
-    createdAt: string; 
+    createdAt: string; // ISO string
 }
 
 
@@ -453,8 +453,8 @@ export interface Recruitment {
   description: string;
   requirements: string;
   applicationUrl: string;
-  deadline: string;
-  createdAt: string;
+  deadline: string; // ISO string
+  createdAt: string; // ISO string
 }
 
 // --- Settings ---
@@ -500,9 +500,9 @@ export interface VotingTopic {
   title: string;
   description: string;
   options: VotingOption[];
-  startDate: Timestamp;
-  endDate: Timestamp;
-  createdAt: Timestamp;
+  startDate: string; // ISO string
+  endDate: string; // ISO string
+  createdAt: string; // ISO string
   totalVotes: number;
   voterIds: string[];
   coverImageUrl?: string;
@@ -522,9 +522,9 @@ export interface VotingTopicDTO {
   title: string;
   description: string;
   options: VotingOption[];
-  startDate: string;
-  endDate: string;
-  createdAt: string;
+  startDate: string; // ISO string
+  endDate: string; // ISO string
+  createdAt: string; // ISO string
   totalVotes: number;
   voterIds: string[];
   coverImageUrl?: string;

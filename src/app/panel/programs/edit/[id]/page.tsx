@@ -22,7 +22,6 @@ import { format } from 'date-fns';
 import { getProgram, updateProgram, getProgramTags, ProgramTag, ProgramFormData } from '@/app/actions/programs';
 import { getPartners, Partner } from '@/app/actions/partners';
 import { getForms, ProgramForm } from '@/app/actions/forms';
-import { generateImage } from '@/ai/flows/image-generate-flow';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -33,7 +32,7 @@ const formSchema = z.object({
   description: z.string().min(1, 'Deskripsi wajib diisi'),
   category: z.enum(['flagship', 'ongoing'], { required_error: 'Kategori program wajib dipilih' }),
   programType: z.enum(['aktif', 'pasif'], { required_error: 'Jenis program wajib dipilih' }),
-  imageSource: imageSourceSchema.default('ai'),
+  imageSource: imageSourceSchema.default('url'),
   imageUrl: z.string().optional(),
   imageHint: z.string().optional(),
   imageFile: z.any().optional(),
@@ -71,11 +70,7 @@ const formSchema = z.object({
 .refine(data => {
     if (data.imageSource === 'ai') return !!data.imageHint;
     return true;
-}, { message: "Petunjuk AI wajib diisi", path: ["imageHint"]})
-.refine(data => {
-    if (data.imageSource === 'upload') return true; // Optional on edit
-    return true;
-}, { message: "File gambar wajib diunggah", path: ["imageFile"]});
+}, { message: "Petunjuk AI wajib diisi", path: ["imageHint"]});
 
 
 type FormData = z.infer<typeof formSchema>;
@@ -88,7 +83,6 @@ export default function EditProgramPage() {
   
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
-  const [loadingImage, setLoadingImage] = useState(false);
 
   const [allTags, setAllTags] = useState<ProgramTag[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -129,13 +123,13 @@ export default function EditProgramPage() {
         setForms(formsData);
 
         if (programData) {
-            const startDate = programData.startDate ? new Date(programData.startDate) : new Date();
-            const endDate = programData.endDate ? new Date(programData.endDate) : new Date();
-
             reset({
                 ...programData,
-                dateRange: { from: startDate, to: endDate },
-                imageSource: 'url' // Default to URL for existing images
+                dateRange: { 
+                  from: programData.startDate ? new Date(programData.startDate) : new Date(), 
+                  to: programData.endDate ? new Date(programData.endDate) : new Date() 
+                },
+                imageSource: programData.imageUrl?.includes('firebasestorage') ? 'url' : 'ai'
             });
             if (programData.attachmentUrl && programData.attachmentName) {
                 setCurrentAttachment({name: programData.attachmentName, url: programData.attachmentUrl});
@@ -145,7 +139,7 @@ export default function EditProgramPage() {
              router.push('/panel/programs');
         }
       } catch (error) {
-        toast({ variant: 'destructive', title: 'Gagal memuat data pendukung' });
+        toast({ variant: 'destructive', title: 'Gagal memuat data pendukung', description: (error as Error).message });
       } finally {
         setPageLoading(false);
       }
@@ -155,45 +149,21 @@ export default function EditProgramPage() {
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
-
-    let imageUrl = data.imageUrl || '';
-    let imageFile: File | undefined = data.imageFile?.[0];
-
-    if (data.imageSource === 'ai' && data.imageHint) {
-        toast({ title: 'AI sedang membuat gambar sampul...' });
-        setLoadingImage(true);
-        try {
-            const result = await generateImage({ prompt: data.imageHint });
-            if (!result.imageUrl) throw new Error("AI gagal membuat gambar.");
-            const response = await fetch(result.imageUrl);
-            const blob = await response.blob();
-            imageFile = new File([blob], "ai-generated-image.png", { type: "image/png" });
-            imageUrl = ''; // Clear URL
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Gagal membuat gambar AI', description: (error as Error).message });
-            setLoading(false); setLoadingImage(false); return;
-        }
-        setLoadingImage(false);
-    } else if (data.imageSource === 'url') {
-      imageFile = undefined;
-    } else {
-      imageUrl = '';
-    }
     
     try {
-      const { dateRange, attachment, ...rest } = data;
+      const { dateRange, attachment, imageFile, ...rest } = data;
       const programPayload: Partial<ProgramFormData> = {
         ...rest,
         startDate: dateRange.from.toISOString(),
         endDate: dateRange.to.toISOString(),
-        imageUrl: imageUrl,
       };
       
-      await updateProgram(programId, programPayload, imageFile, attachment?.[0]);
+      await updateProgram(programId, programPayload, imageFile?.[0], attachment?.[0]);
       toast({ title: 'Program berhasil diperbarui!' });
       router.push('/panel/programs');
     } catch (error) {
       toast({ variant: 'destructive', title: 'Gagal memperbarui program', description: (error as Error).message });
+    } finally {
       setLoading(false);
     }
   };
@@ -218,8 +188,8 @@ export default function EditProgramPage() {
         </div>
         <div className="flex gap-2">
             <Button variant="outline" type="button" onClick={() => router.push('/panel/programs')}>Batal</Button>
-            <Button type="submit" disabled={loading || loadingImage}>
-              {(loading || loadingImage) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="submit" disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Simpan Perubahan
             </Button>
         </div>
