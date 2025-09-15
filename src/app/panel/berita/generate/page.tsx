@@ -158,19 +158,10 @@ export default function GenerateBeritaPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Konten</Label>
-                     <Controller
-                        name="content"
-                        control={{
-                          ...useForm().control,
-                          _defaultValues: { content: generatedContent.content },
-                        }}
-                        render={({ field }) => (
-                           <RichTextEditor 
-                            value={generatedContent.content} 
-                            onChange={(value) => setGeneratedContent(prev => prev ? {...prev, content: value} : null)}
-                          />
-                        )}
-                      />
+                    <RichTextEditor 
+                      value={generatedContent.content} 
+                      onChange={(value) => setGeneratedContent(prev => prev ? {...prev, content: value} : null)}
+                    />
                   </div>
                   <Button onClick={onSave} disabled={loading} className="w-full">
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
