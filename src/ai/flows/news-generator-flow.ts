@@ -32,6 +32,11 @@ const NewsGeneratorOutputSchema = z.object({
 });
 export type NewsGeneratorOutput = z.infer<typeof NewsGeneratorOutputSchema>;
 
+const NewsTopicSuggestionInputSchema = z.object({
+    description: z.string().optional().describe('An optional description or context to guide the topic suggestions.')
+});
+export type NewsTopicSuggestionInput = z.infer<typeof NewsTopicSuggestionInputSchema>;
+
 const NewsTopicSuggestionOutputSchema = z.object({
   topics: z.array(z.object({
     title: z.string().describe('The suggested news title.'),
@@ -46,12 +51,21 @@ export async function generateNewsArticle(input: NewsGeneratorInput): Promise<Ne
   return newsGeneratorFlow(input);
 }
 
-export async function suggestNewsTopics(): Promise<NewsTopicSuggestionOutput> {
+export async function suggestNewsTopics(input?: NewsTopicSuggestionInput): Promise<NewsTopicSuggestionOutput> {
     const topicSuggestionPrompt = ai.definePrompt({
         name: 'newsTopicSuggestionPrompt',
+        input: { schema: NewsTopicSuggestionInputSchema },
         output: { schema: NewsTopicSuggestionOutputSchema },
         prompt: `You are an expert SEO strategist and journalist for Garda Lestari, a youth-led environmental and agricultural organization in Indonesia.
-Your task is to brainstorm 5 highly relevant and SEO-friendly news article topics based on current trends and common search queries in Indonesia related to agriculture, maritime, forestry, conservation, and youth innovation.
+Your task is to brainstorm 5 highly relevant and SEO-friendly news article topics.
+
+Base your suggestions on current trends in Indonesia related to agriculture, maritime, forestry, conservation, and youth innovation.
+{{#if description}}
+Also, consider the following context or specific request from the user:
+---
+CONTEXT: {{{description}}}
+---
+{{/if}}
 
 For each topic, provide a catchy title, a short description, and a list of relevant SEO keywords.
 The topics should be engaging, informative, and aligned with Garda Lestari's mission.
@@ -66,7 +80,7 @@ Provide the output in the requested JSON format.
 `,
     });
 
-    const { output } = await topicSuggestionPrompt();
+    const { output } = await topicSuggestionPrompt(input || {});
     if (!output) {
       throw new Error('Gagal mendapatkan saran topik dari AI.');
     }
@@ -181,5 +195,3 @@ const newsGeneratorFlow = ai.defineFlow(
     };
   }
 );
-
-    

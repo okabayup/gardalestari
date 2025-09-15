@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Sparkles, ArrowRight } from 'lucide-react';
 import { suggestNewsTopics } from '@/ai/flows/news-generator-flow';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 interface TopicSuggestion {
   title: string;
@@ -23,12 +25,13 @@ export default function NewsroomPage() {
   
   const [suggestions, setSuggestions] = useState<TopicSuggestion[]>([]);
   const [generatingTopics, setGeneratingTopics] = useState(false);
+  const [description, setDescription] = useState('');
 
   const handleSuggestTopics = async () => {
     setGeneratingTopics(true);
     setSuggestions([]);
     try {
-      const result = await suggestNewsTopics();
+      const result = await suggestNewsTopics({ description });
       setSuggestions(result.topics);
       toast({ title: 'Ide Topik Dihasilkan!', description: 'Pilih salah satu untuk dikembangkan menjadi artikel.' });
     } catch (error) {
@@ -64,7 +67,16 @@ export default function NewsroomPage() {
           <CardTitle>Generator Ide Topik</CardTitle>
           <CardDescription>Minta AI untuk memberikan ide topik berita yang relevan dan memiliki potensi SEO yang baik berdasarkan tren saat ini.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+            <div className="space-y-2">
+                <Label htmlFor="description">Konteks atau Permintaan Spesifik (Opsional)</Label>
+                <Textarea 
+                    id="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Contoh: fokus pada dampak perubahan iklim di pesisir utara Jawa, atau cari topik yang cocok untuk Hari Tani Nasional."
+                />
+            </div>
           <Button onClick={handleSuggestTopics} disabled={generatingTopics}>
             {generatingTopics ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
             {generatingTopics ? 'Mencari Ide...' : 'Dapatkan 5 Ide Topik Baru'}
