@@ -82,15 +82,20 @@ const prompt = ai.definePrompt({
 
 Your task is to write a complete, high-quality news article based on the provided topic and description. The article must be well-researched, well-structured, and optimized for SEO.
 
+**CONTEXT & KEY POINTS:**
+Use the following description as the main source of information, key points, and context for the article. Expand on these points to create a comprehensive article.
+- Topic: {{{topic}}}
+- Key Points/Description: {{{description}}}
+
 **CRITICAL INSTRUCTIONS:**
 
 1.  **Topic and Title**:
-    -   If the provided topic is brief, expand upon it to create a compelling, SEO-friendly title that includes relevant keywords.
+    -   Based on the context, create a compelling, SEO-friendly title that includes relevant keywords.
     -   The final title must be engaging and accurately reflect the article's content.
 
 2.  **Content (HTML Format)**:
     -   The content MUST be in well-structured HTML, using tags like \`<h2>\`, \`<h3>\`, \`<p>\`, \`<ul>\`, \`<li>\`, and \`<strong>\`.
-    -   The article must be dense and informative. Provide details, data, or examples to support your points. Avoid fluffy or generic statements.
+    -   The article must be dense and informative, using the provided "Key Points/Description" as the foundation. Provide details, data, or examples to support the points. Avoid fluffy or generic statements.
     -   Incorporate relevant SEO keywords naturally throughout the article, especially in headings and the first paragraph. Keywords could include "pertanian berkelanjutan", "inovasi pemuda", "konservasi hutan", "ekonomi biru", "teknologi perikanan", etc., depending on the topic.
     -   The tone must be professional yet accessible (humanized). Address the reader and explain complex topics simply.
 
@@ -106,11 +111,7 @@ Your task is to write a complete, high-quality news article based on the provide
 5.  **Category**:
     -   Suggest a single, relevant category from this list: Pertanian, Perikanan, Kehutanan, Konservasi, Teknologi, Komunitas, Acara.
 
-**Input:**
--   Topic: {{{topic}}}
--   Description: {{{description}}}
-
-Now, generate the complete, high-quality article in the requested JSON format.
+Now, generate the complete, high-quality article in the requested JSON format based on the provided context.
 `,
 });
 
@@ -180,3 +181,5 @@ const newsGeneratorFlow = ai.defineFlow(
     };
   }
 );
+
+    
