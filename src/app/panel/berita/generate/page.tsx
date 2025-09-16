@@ -1,20 +1,21 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles } from 'lucide-react';
-import { useForm, Controller } from 'react-hook-form';
+import { Loader2, Sparkles, Upload, X } from 'lucide-react';
+import { useForm } from 'react-hook-form';
 import { createBeritaPost, BeritaPost } from '@/app/actions/berita';
 import { useAuth } from '@/hooks/use-auth';
 import { generateNewsArticle, NewsGeneratorOutput } from '@/ai/flows/news-generator-flow';
 import RichTextEditor from '@/components/panel/RichTextEditor';
+import Image from 'next/image';
 
 interface GenerateForm {
   topic: string;
@@ -23,25 +24,37 @@ interface GenerateForm {
 
 export default function GenerateBeritaPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<NewsGeneratorOutput | null>(null);
-
-  const { register, handleSubmit, setValue } = useForm<GenerateForm>();
-
-  useEffect(() => {
-    const topic = searchParams.get('topic');
-    const description = searchParams.get('description');
-    if (topic) setValue('topic', topic);
-    if (description) setValue('description', description);
-  }, [searchParams, setValue]);
+  const [userImages, setUserImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
+  const { register, handleSubmit } = useForm<GenerateForm>();
+
   const generateSlug = (title: string) => {
     if (!title) return '';
     return title.toLowerCase().replace(/[^a-z0-9 -]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-');
   };
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      const files = Array.from(event.target.files);
+      setUserImages(prev => [...prev, ...files]);
+      const newPreviews = files.map(file => URL.createObjectURL(file));
+      setImagePreviews(prev => [...prev, ...newPreviews]);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setUserImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => {
+        URL.revokeObjectURL(prev[index]);
+        return prev.filter((_, i) => i !== index);
+    });
+  }
 
   const onGenerate = async (data: GenerateForm) => {
     setLoading(true);
@@ -49,7 +62,14 @@ export default function GenerateBeritaPage() {
     toast({ title: 'AI sedang bekerja...', description: 'Mohon tunggu, ini mungkin memakan waktu hingga satu menit.' });
 
     try {
-      const articleResult = await generateNewsArticle(data);
+        const formData = new FormData();
+        formData.append('topic', data.topic);
+        formData.append('description', data.description);
+        userImages.forEach(file => {
+            formData.append('userImages', file);
+        });
+
+      const articleResult = await generateNewsArticle(formData);
       setGeneratedContent(articleResult);
       toast({ title: 'Berita dan gambar berhasil dibuat!', description: 'Silakan tinjau dan simpan.' });
     } catch (error) {
@@ -78,6 +98,7 @@ export default function GenerateBeritaPage() {
         content: generatedContent.content || '<p>Konten tidak dapat dibuat.</p>',
         excerpt: generatedContent.excerpt || 'Ringkasan singkat...',
         category: generatedContent.category || 'Umum',
+        status: 'published',
       };
       
       await createBeritaPost({ ...newPost, type: 'artikel' });
@@ -129,6 +150,25 @@ export default function GenerateBeritaPage() {
                 <div className="space-y-2">
                   <Label htmlFor="description">Deskripsi & Konteks Tambahan</Label>
                   <Textarea id="description" {...register('description', { required: true })} rows={6} placeholder="Jelaskan poin-poin utama, sudut pandang, atau detail spesifik yang harus ada di dalam berita." />
+                </div>
+                 <div className="space-y-2">
+                    <Label>Unggah Gambar (Opsional)</Label>
+                    <div className="p-4 border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-center">
+                        <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                            <Upload className="mr-2 h-4 w-4" /> Pilih Gambar
+                        </Button>
+                        <input type="file" ref={fileInputRef} onChange={handleFileChange} multiple accept="image/*" className="hidden" />
+                        <div className="flex flex-wrap gap-2 mt-4">
+                            {imagePreviews.map((src, index) => (
+                                <div key={index} className="relative">
+                                    <Image src={src} alt="preview" width={80} height={80} className="w-20 h-20 object-cover rounded-md" />
+                                    <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-5 w-5 rounded-full" onClick={() => removeImage(index)}>
+                                        <X className="h-3 w-3" />
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
                 <Button type="submit" disabled={loading} className="w-full">
                   {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}

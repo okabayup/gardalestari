@@ -19,6 +19,7 @@ import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 const NewsGeneratorInputSchema = z.object({
   topic: z.string().optional().describe('The topic of the news article. If empty, the AI will generate one.'),
   description: z.string().describe('A brief description or key points for the article.'),
+  userImageUrls: z.array(z.string()).optional().describe('An array of URLs for images provided by the user.'),
 });
 export type NewsGeneratorInput = z.infer<typeof NewsGeneratorInputSchema>;
 
@@ -47,8 +48,29 @@ const NewsTopicSuggestionOutputSchema = z.object({
 export type NewsTopicSuggestionOutput = z.infer<typeof NewsTopicSuggestionOutputSchema>;
 
 
-export async function generateNewsArticle(input: NewsGeneratorInput): Promise<NewsGeneratorOutput> {
-  return newsGeneratorFlow(input);
+export async function generateNewsArticle(formData: FormData): Promise<NewsGeneratorOutput> {
+    try {
+        const topic = formData.get('topic') as string;
+        const description = formData.get('description') as string;
+        const userImageFiles = formData.getAll('userImages') as File[];
+
+        let userImageUrls: string[] = [];
+        if (userImageFiles.length > 0) {
+            const uploadPromises = userImageFiles.map(async (file, index) => {
+                const storageRef = ref(storage, `user-uploads/${Date.now()}_${index}_${file.name}`);
+                await uploadString(storageRef, await file.arrayBuffer().then(b => new TextDecoder().decode(b)), 'data_url');
+                return getDownloadURL(storageRef);
+            });
+            userImageUrls = await Promise.all(uploadPromises);
+        }
+
+        const input: NewsGeneratorInput = { topic, description, userImageUrls };
+
+        return newsGeneratorFlow(input);
+    } catch (error: any) {
+        console.error("[generateNewsArticle Action Error]", error);
+        throw new Error(`Gagal memproses input formulir: ${error.message}`);
+    }
 }
 
 export async function suggestNewsTopics(input?: NewsTopicSuggestionInput): Promise<NewsTopicSuggestionOutput> {
@@ -101,6 +123,13 @@ Use the following description as the main source of information, key points, and
 - Topic: {{{topic}}}
 - Key Points/Description: {{{description}}}
 
+**USER-PROVIDED IMAGES:**
+{{#if userImageUrls}}
+The user has provided {{userImageUrls.length}} image(s). You MUST use these images in the article. You can refer to them as [GAMBAR PENGGUNA 1], [GAMBAR PENGGUNA 2], etc.
+- {{#each userImageUrls}} [GAMBAR PENGGUNA {{@index_1}}] {{/each}}
+Place these placeholders strategically in the content where they fit best.
+{{/if}}
+
 **CRITICAL INSTRUCTIONS:**
 
 1.  **Topic and Title**:
@@ -114,10 +143,11 @@ Use the following description as the main source of information, key points, and
     -   The tone must be professional yet accessible (humanized). Address the reader and explain complex topics simply.
 
 3.  **Image Placeholders (CRITICAL)**:
-    -   You MUST strategically embed AT LEAST TWO, but no more than three, image placeholders within the article's content.
-    -   An image placeholder MUST look exactly like this: \`<!-- IMAGE_HINT: a very descriptive and professional photo prompt for an image -->\`.
+    -   **If the user provided images**, you MUST use the [GAMBAR PENGGUNA X] placeholders.
+    -   **If the user DID NOT provide images OR you need MORE images**, you MUST strategically embed AT LEAST ONE, but no more than two, AI image placeholders.
+    -   An AI image placeholder MUST look exactly like this: \`<!-- IMAGE_HINT: a very descriptive and professional photo prompt for an image -->\`.
     -   Example: \`<!-- IMAGE_HINT: close-up shot of a young farmer smiling while holding freshly harvested organic vegetables in a lush green field during golden hour -->\`.
-    -   The FIRST image hint will be used for the article's cover image. Make it powerful and visually appealing.
+    -   The FIRST image hint (either user-provided or AI) will be used for the article's cover image. Make it powerful and visually appealing.
 
 4.  **Excerpt**:
     -   Write a short, engaging summary of the article (max 150 characters) for social media and search engine previews.
@@ -142,55 +172,59 @@ const newsGeneratorFlow = ai.defineFlow(
       throw new Error('AI Gagal mendapatkan draf artikel. Coba lagi.');
     }
 
-    // Extract image hints from the generated HTML content
-    const regex = /<!-- IMAGE_HINT: (.*?) -->/g;
-    const hints = Array.from(output.content.matchAll(regex), match => match[1]);
-
-    if (hints.length === 0) {
-      throw new Error('AI gagal membuat petunjuk gambar. Coba lagi dengan deskripsi yang lebih detail.');
-    }
-    
-    // Generate all images in parallel
-    const imageGenerationPromises = hints.map(hint => generateImage({ prompt: hint }));
-    const imageResults = await Promise.all(imageGenerationPromises);
-    
-    // Upload generated images to Firebase Storage and get URLs
-    const imageUrlPromises = imageResults.map(async (result, index) => {
-        if (!result.imageUrl) {
-            throw new Error(`Gambar untuk petunjuk "${hints[index]}" gagal dibuat.`);
-        }
-        const storageRef = ref(storage, `news-images/${Date.now()}_${index}.png`);
-        await uploadString(storageRef, result.imageUrl, 'data_url');
-        return getDownloadURL(storageRef);
-    });
-
-    const imageUrls = await Promise.all(imageUrlPromises);
-
-    if (imageUrls.some(url => !url)) {
-        throw new Error('Satu atau lebih gambar gagal diunggah ke penyimpanan.');
-    }
-
-    // Replace placeholders with actual image tags using the public URLs
     let finalContent = output.content;
-    const placeholders = Array.from(output.content.matchAll(regex), match => match[0]);
+    const allImageUrls: string[] = [...(input.userImageUrls || [])];
+    const allImageHints: string[] = [];
+    
+    // Process AI-generated image hints
+    const aiHintRegex = /<!-- IMAGE_HINT: (.*?) -->/g;
+    const aiHints = Array.from(output.content.matchAll(aiHintRegex), match => match[1]);
 
-    placeholders.forEach((placeholder, index) => {
-        const imageUrl = imageUrls[index];
-        const imageTag = `<img src="${imageUrl}" alt="${hints[index]}" style="width:100%;height:auto;border-radius:0.5rem;margin:1rem 0;" />`;
-        finalContent = finalContent.replace(placeholder, imageTag);
+    if (aiHints.length > 0) {
+        allImageHints.push(...aiHints);
+        const imageGenerationPromises = aiHints.map(hint => generateImage({ prompt: hint }));
+        const imageResults = await Promise.all(imageGenerationPromises);
+        
+        const generatedImageUrls: string[] = [];
+        for (const result of imageResults) {
+            if (!result.imageUrl) throw new Error('Gagal membuat salah satu gambar AI.');
+            const storageRef = ref(storage, `news-images/${Date.now()}_${Math.random()}.png`);
+            await uploadString(storageRef, result.imageUrl, 'data_url');
+            generatedImageUrls.push(await getDownloadURL(storageRef));
+        }
+        allImageUrls.push(...generatedImageUrls);
+    }
+    
+    // Replace all placeholders (user and AI)
+    const userPlaceholderRegex = /\[GAMBAR PENGGUNA (\d+)\]/g;
+    finalContent = finalContent.replace(userPlaceholderRegex, (match, p1) => {
+        const index = parseInt(p1, 10) - 1;
+        const imageUrl = input.userImageUrls?.[index];
+        return imageUrl ? `<img src="${imageUrl}" alt="Gambar dari pengguna" style="width:100%;height:auto;border-radius:0.5rem;margin:1rem 0;" />` : '';
     });
 
-    const coverImageUrl = imageUrls[0];
-    if (!coverImageUrl) {
-      throw new Error('Gagal membuat gambar sampul. URL gambar sampul tidak tersedia.');
-    }
+    finalContent = finalContent.replace(aiHintRegex, (match, p1) => {
+        // Find the URL corresponding to this hint
+        const hintIndex = aiHints.indexOf(p1);
+        if (hintIndex === -1) return ''; // Should not happen
+        
+        // Find the correct URL from the generated ones
+        const aiImageStartIndex = input.userImageUrls?.length || 0;
+        const imageUrl = allImageUrls[aiImageStartIndex + hintIndex];
 
+        return imageUrl ? `<img src="${imageUrl}" alt="${p1}" style="width:100%;height:auto;border-radius:0.5rem;margin:1rem 0;" />` : '';
+    });
+
+    const coverImageUrl = allImageUrls[0];
+    if (!coverImageUrl) {
+      throw new Error('Gagal membuat gambar sampul. Tidak ada gambar yang tersedia.');
+    }
 
     // Return the final combined output
     return {
       ...output,
       content: finalContent,
-      imageHints: hints,
+      imageHints: allImageHints,
       coverImageUrl: coverImageUrl,
     };
   }

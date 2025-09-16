@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, MoreHorizontal, Loader2, Trash2, Sparkles, RefreshCw, Star, Newspaper, Search } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Loader2, Trash2, Sparkles, RefreshCw, Star, Newspaper, Search, CircleDashed } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,7 +23,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getBeritaPosts, deleteBeritaPost, requestReindexing } from '@/app/actions/berita';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
@@ -47,24 +47,25 @@ export default function AdminBeritaPage() {
   const canDelete = hasPermission('delete_news');
 
 
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const fetchedPosts = await getBeritaPosts();
-        setPosts(fetchedPosts);
-      } catch (error) {
-        console.error(error);
-        toast({
-            variant: "destructive",
-            title: "Gagal memuat berita",
-            description: "Terjadi kesalahan saat mengambil data dari server.",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPosts();
+  const fetchPosts = useCallback(async () => {
+    try {
+      const fetchedPosts = await getBeritaPosts();
+      setPosts(fetchedPosts);
+    } catch (error) {
+      console.error(error);
+      toast({
+          variant: "destructive",
+          title: "Gagal memuat berita",
+          description: "Terjadi kesalahan saat mengambil data dari server.",
+      });
+    } finally {
+      setLoading(false);
+    }
   }, [toast]);
+  
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
   
   const getSeoBadgeColor = (score: number) => {
     if (score >= 75) return 'bg-green-500 hover:bg-green-500/80';
@@ -145,7 +146,7 @@ export default function AdminBeritaPage() {
           <CardHeader className="flex flex-row items-center justify-between">
              <div>
                 <CardTitle>Daftar Konten</CardTitle>
-                <CardDescription>Total {posts.length} konten dipublikasikan.</CardDescription>
+                <CardDescription>Total {posts.length} konten ditemukan.</CardDescription>
              </div>
              {canManage && (
                 <Button variant="outline" size="sm" onClick={() => router.push('/panel/berita/kategori')}>
@@ -159,7 +160,7 @@ export default function AdminBeritaPage() {
                 <TableRow>
                   <TableHead>Judul</TableHead>
                   <TableHead>Tipe</TableHead>
-                  <TableHead>Skor SEO</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead className="hidden md:table-cell">Tanggal</TableHead>
                   <TableHead>
                     <span className="sr-only">Aksi</span>
@@ -175,20 +176,20 @@ export default function AdminBeritaPage() {
                     </TableRow>
                 ) : posts.length > 0 ? (
                   posts.map((post) => (
-                    <TableRow key={post.id}>
+                    <TableRow key={post.id} className={cn(post.status === 'draft' && 'bg-muted/30')}>
                       <TableCell className="font-medium flex items-center gap-2">
                         {post.isFeatured && <Star className="h-4 w-4 text-yellow-500 fill-yellow-400" />}
-                        <Link href={`/${post.type}/${post.slug}`} target="_blank" className="hover:underline">{post.title}</Link>
+                        {post.status === 'published' ? (
+                            <Link href={`/${post.type}/${post.slug}`} target="_blank" className="hover:underline">{post.title}</Link>
+                        ) : (
+                            <span>{post.title}</span>
+                        )}
                       </TableCell>
                       <TableCell><Badge variant="outline">{post.type}</Badge></TableCell>
                       <TableCell>
-                        {post.seoScore ? (
-                          <Badge className={cn(getSeoBadgeColor(post.seoScore))}>
-                            {post.seoScore}
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">N/A</Badge>
-                        )}
+                         <Badge variant={post.status === 'published' ? 'default' : 'secondary'}>
+                          {post.status === 'published' ? 'Diterbitkan' : 'Draf'}
+                        </Badge>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{new Date(post.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</TableCell>
                       <TableCell>
@@ -205,14 +206,18 @@ export default function AdminBeritaPage() {
                                 <DropdownMenuItem onClick={() => router.push(`/panel/berita/edit/${post.slug}`)}>
                                 Edit
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleCheckIndexStatus(post.slug, post.type)}>
-                                    <Search className="mr-2 h-4 w-4" />
-                                    Cek Status Indeks
-                                </DropdownMenuItem>
-                                 <DropdownMenuItem onClick={() => handleReindexClick(post.slug, post.type)} disabled={isReindexing === post.slug}>
-                                    {isReindexing === post.slug ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                                    Minta Indeks Ulang
-                                </DropdownMenuItem>
+                                {post.status === 'published' && (
+                                  <>
+                                    <DropdownMenuItem onClick={() => handleCheckIndexStatus(post.slug, post.type)}>
+                                        <Search className="mr-2 h-4 w-4" />
+                                        Cek Status Indeks
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleReindexClick(post.slug, post.type)} disabled={isReindexing === post.slug}>
+                                        {isReindexing === post.slug ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                                        Minta Indeks Ulang
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
                                 </>
                             )}
                             {canDelete && (

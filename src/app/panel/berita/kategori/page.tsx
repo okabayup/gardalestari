@@ -19,7 +19,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { useRouter } from 'next/navigation';
 
 interface FormData {
   name: string;
@@ -27,6 +28,7 @@ interface FormData {
 
 export default function KategoriBeritaPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm<FormData>();
   const [categories, setCategories] = useState<BeritaCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +49,8 @@ export default function KategoriBeritaPage() {
 
   useEffect(() => {
     fetchCategories();
-  }, [toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -82,12 +85,18 @@ export default function KategoriBeritaPage() {
 
   return (
     <>
+      <div className="flex items-center justify-between mb-6">
+          <div>
+              <h1 className="font-headline text-2xl font-bold">Kelola Kategori Konten</h1>
+              <p className="text-muted-foreground">Tambah, hapus, dan kelola semua kategori untuk berita dan video.</p>
+          </div>
+          <Button variant="outline" onClick={() => router.push('/panel/berita')}>Kembali ke Konten</Button>
+      </div>
     <div className="grid gap-6 md:grid-cols-2">
       <div>
         <Card>
           <CardHeader>
             <CardTitle>Tambah Kategori Baru</CardTitle>
-            <CardDescription>Buat kategori baru untuk berita Anda.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="flex gap-2">
@@ -104,7 +113,6 @@ export default function KategoriBeritaPage() {
         <Card>
           <CardHeader>
             <CardTitle>Daftar Kategori</CardTitle>
-            <CardDescription>Kelola kategori berita yang sudah ada.</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (

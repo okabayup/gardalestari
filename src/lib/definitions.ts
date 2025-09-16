@@ -5,8 +5,8 @@ import {z} from 'zod';
 
 export const ALL_PERMISSIONS = [
     { id: 'manage_users', label: 'Kelola Anggota & Verifikasi' },
-    { id: 'manage_news', label: 'Kelola Berita (Buat/Edit)' },
-    { id: 'delete_news', label: 'Hapus Berita' },
+    { id: 'manage_news', label: 'Kelola Konten (Buat/Edit)' },
+    { id: 'delete_news', label: 'Hapus Konten' },
     { id: 'manage_events', label: 'Kelola Acara (Buat/Edit)' },
     { id: 'delete_events', label: 'Hapus Acara' },
     { id: 'manage_programs', label: 'Kelola Program (Buat/Edit)' },
@@ -120,6 +120,7 @@ export interface BeritaPost {
   youtubeId?: string;
   isFeatured?: boolean;
   seoScore?: number;
+  status?: 'published' | 'draft';
 }
 
 // --- Data Bank ---
