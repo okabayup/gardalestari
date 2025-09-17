@@ -114,7 +114,7 @@ export async function getMembers(forPublic: boolean = false): Promise<MemberWith
 }
 
 // Update member details
-export async function updateMemberDetails(id: string, details: Partial<Omit<MemberWithStatus, 'id'>>) {
+export async function updateMemberDetails(id: string, details: Partial<Omit<MemberWithStatus, 'id' | 'avatarUrl'>>, photoFile?: File) {
     try {
         const memberDocRef = doc(db, 'users', id);
         const currentMemberDoc = await getDoc(memberDocRef);
@@ -133,6 +133,12 @@ export async function updateMemberDetails(id: string, details: Partial<Omit<Memb
 
         if (details.type !== 'daerah') {
             dataToUpdate.region = deleteField();
+        }
+
+        if (photoFile) {
+            const storageRef = ref(storage, `profile-pictures/${id}-${photoFile.name}`);
+            await uploadBytes(storageRef, photoFile);
+            dataToUpdate.avatarUrl = await getDownloadURL(storageRef);
         }
         
         await setDoc(memberDocRef, dataToUpdate, { merge: true });
@@ -172,7 +178,7 @@ export async function updateMemberDetails(id: string, details: Partial<Omit<Memb
         revalidatePath('/members');
     } catch (error) {
         console.error("[updateMemberDetails Error]", error);
-        throw new Error("Gagal memperbarui detail anggota.");
+        throw new Error(`Gagal memperbarui detail anggota: ${(error as Error).message}`);
     }
 }
 
@@ -184,9 +190,9 @@ export async function createManualMember(
         type: MemberType,
         isSpecialMember: boolean,
         isHidden: boolean,
-        titlePrefix?: string,
-        titlePostfix?: string,
         region?: string;
+        titlePrefix?: string;
+        titlePostfix?: string;
     },
     photoFile?: File
 ) {

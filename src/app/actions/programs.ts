@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -103,44 +104,28 @@ export async function createProgram(
         delete dataToCreate.imageFile;
         delete dataToCreate.attachment;
 
-        try {
-            if (programData.imageSource === 'ai' && programData.imageHint) {
-                const result = await generateImage({ prompt: programData.imageHint });
-                if (!result.imageUrl) throw new Error("AI gagal membuat URL gambar.");
-                dataToCreate.imageUrl = result.imageUrl;
-            } else if (programData.imageSource === 'upload' && imageFile) {
-                const imageRef = ref(storage, `program-images/${Date.now()}_${imageFile.name}`);
-                await uploadBytes(imageRef, imageFile);
-                dataToCreate.imageUrl = await getDownloadURL(imageRef);
-            } else if (programData.imageSource === 'url' && programData.imageUrl) {
-                 dataToCreate.imageUrl = programData.imageUrl;
-            } else {
-                 dataToCreate.imageUrl = `https://picsum.photos/seed/${programData.title.replace(/\s+/g, '-')}/600/400`;
-            }
-        } catch (error) {
-            console.error("[createProgram Error] Image handling failed:", error);
-            throw new Error(`Gagal memproses gambar program: ${(error as Error).message}`);
-        }
-
-        if (attachmentFile) {
-          try {
-            const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachmentFile.name}`);
-            await uploadBytes(attachmentRef, attachmentFile);
-            dataToCreate.attachmentUrl = await getDownloadURL(attachmentRef);
-            dataToCreate.attachmentName = attachmentFile.name;
-          } catch (uploadError) {
-            console.error("[createProgram Error] Attachment upload failed:", uploadError);
-            throw new Error("Gagal mengunggah lampiran.");
-          }
+        if (programData.imageSource === 'upload' && imageFile) {
+            const imageRef = ref(storage, `program-images/${Date.now()}_${imageFile.name}`);
+            await uploadBytes(imageRef, imageFile);
+            dataToCreate.imageUrl = await getDownloadURL(imageRef);
+        } else if (programData.imageSource === 'ai' && programData.imageHint) {
+            const result = await generateImage({ prompt: programData.imageHint });
+            if (!result.imageUrl) throw new Error("AI gagal membuat URL gambar.");
+            dataToCreate.imageUrl = result.imageUrl;
+        } else if (programData.imageSource === 'url' && programData.imageUrl) {
+             dataToCreate.imageUrl = programData.imageUrl;
+        } else {
+             dataToCreate.imageUrl = `https://picsum.photos/seed/${programData.title.replace(/\s+/g, '-')}/600/400`;
         }
         
-        let docRef;
-        try {
-            docRef = await addDoc(programsCollection, dataToCreate);
-        } catch(error) {
-            console.error("[createProgram Error] Firestore save failed:", error);
-            throw new Error(`Gagal menyimpan program ke database: ${(error as Error).message}`);
+        if (attachmentFile) {
+          const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachmentFile.name}`);
+          await uploadBytes(attachmentRef, attachmentFile);
+          dataToCreate.attachmentUrl = await getDownloadURL(attachmentRef);
+          dataToCreate.attachmentName = attachmentFile.name;
         }
+        
+        const docRef = await addDoc(programsCollection, dataToCreate);
 
         if (programData.programType === 'aktif') {
             try {

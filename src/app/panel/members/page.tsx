@@ -70,10 +70,10 @@ export default function AdminMembersPage() {
     if (dialog === 'verify') setIsVerificationDialogOpen(true);
   };
   
-  const handleSaveDetails = async (id: string, details: Partial<Omit<MemberWithStatus, 'id'>>) => {
+  const handleSaveDetails = async (id: string, details: Partial<Omit<MemberWithStatus, 'id' | 'avatarUrl'>>, photoFile?: File) => {
     setIsSavingDetails(true);
     try {
-        await updateMemberDetails(id, details);
+        await updateMemberDetails(id, details, photoFile);
         toast({ title: 'Detail anggota diperbarui!' });
         fetchMembers();
         setIsEditDialogOpen(false);

@@ -12,12 +12,13 @@ import { Loader2 } from 'lucide-react';
 import type { MemberWithStatus } from '@/app/actions/members';
 import { getPositions, Position } from '@/app/actions/positions';
 import type { MemberType, VerificationStatus } from '@/lib/definitions';
+import Image from 'next/image';
 
 interface EditMemberDialogProps {
   member: MemberWithStatus;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (id: string, details: Partial<Omit<MemberWithStatus, 'id'>>) => void;
+  onSave: (id: string, details: Partial<Omit<MemberWithStatus, 'id' | 'avatarUrl'>>, photoFile?: File) => void;
   isSaving: boolean;
 }
 
@@ -50,6 +51,8 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
   const [titlePrefix, setTitlePrefix] = useState(member.titlePrefix || '');
   const [titlePostfix, setTitlePostfix] = useState(member.titlePostfix || '');
   const [positions, setPositions] = useState<Position[]>([]);
+  const [photoFile, setPhotoFile] = useState<File | undefined>(undefined);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   useEffect(() => {
     getPositions().then(setPositions);
@@ -65,6 +68,8 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
         setIsHidden(member.isHidden || false);
         setTitlePrefix(member.titlePrefix || '');
         setTitlePostfix(member.titlePostfix || '');
+        setPhotoPreview(member.avatarUrl || null);
+        setPhotoFile(undefined);
     }
   }, [member, isOpen]);
   
@@ -74,8 +79,16 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
     }
   }, [type]);
 
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+        const file = e.target.files[0];
+        setPhotoFile(file);
+        setPhotoPreview(URL.createObjectURL(file));
+    }
+  }
+
   const handleSave = () => {
-    const detailsToSave: Partial<Omit<MemberWithStatus, 'id'>> = {
+    const detailsToSave: Partial<Omit<MemberWithStatus, 'id' | 'avatarUrl'>> = {
         positionId: positionId === NO_POSITION_VALUE ? '' : positionId,
         type: type === NO_TYPE_VALUE ? '' : (type as MemberType),
         region: region,
@@ -85,7 +98,7 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
         titlePrefix: titlePrefix,
         titlePostfix: titlePostfix,
     };
-    onSave(member.id, detailsToSave);
+    onSave(member.id, detailsToSave, photoFile);
   };
 
   return (
@@ -111,6 +124,11 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
                     <Label htmlFor="titlePostfix">Gelar Belakang</Label>
                     <Input id="titlePostfix" value={titlePostfix} onChange={e => setTitlePostfix(e.target.value)} />
                 </div>
+            </div>
+             <div className="space-y-2">
+                <Label htmlFor="photoFile">Foto Profil</Label>
+                {photoPreview && <Image src={photoPreview} alt="Pratinjau foto" width={80} height={80} className="rounded-full object-cover" />}
+                <Input id="photoFile" type="file" accept="image/*" onChange={handlePhotoChange} />
             </div>
           <div className="space-y-2">
             <Label htmlFor="position">Jabatan</Label>
