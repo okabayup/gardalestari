@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useRef, useEffect, ChangeEvent } from 'react';
@@ -19,9 +20,9 @@ import ImageCropper from '@/components/profile/ImageCropper';
 import Image from 'next/image';
 import { Progress } from '@/components/ui/progress';
 
-type Step = 'welcome' | 'data' | 'whatsapp' | 'ktp' | 'selfie' | 'confirm' | 'submitting';
+type Step = 'welcome' | 'data' | 'whatsapp' | 'ktp' | 'confirm' | 'submitting';
 
-const STEPS_COUNT = 6; // Total number of steps for the user
+const STEPS_COUNT = 5;
 
 export default function VerificationFlow() {
   const { user, submitForVerification, refreshUser, signOut } = useAuth();
@@ -44,28 +45,23 @@ export default function VerificationFlow() {
   const [countdown, setCountdown] = useState(0);
 
   const [ktpDataUrl, setKtpDataUrl] = useState<string | null>(null);
-  const [selfieDataUrl, setSelfieDataUrl] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
-  const [currentFacingMode, setCurrentFacingMode] = useState<'environment' | 'user'>('environment');
 
   const [cropperSrc, setCropperSrc] = useState<string | null>(null);
 
   useEffect(() => {
-    // Pre-fill WhatsApp number from auth if available
     if (user?.phoneNumber) {
         const rawNumber = user.phoneNumber.replace(/\D/g, '');
-        // Ensure it has country code, default to 62 if not present
         setWaNumber(rawNumber.startsWith('62') ? rawNumber : `62${rawNumber}`);
      }
   }, [user?.phoneNumber]);
 
   useEffect(() => {
-    // Stop camera when component unmounts
     return () => {
       stopCamera();
     };
@@ -76,9 +72,6 @@ export default function VerificationFlow() {
       if (step === 'ktp') {
         await startCamera('environment');
         setProgress((3 / STEPS_COUNT) * 100);
-      } else if (step === 'selfie') {
-        await startCamera('user');
-        setProgress((4 / STEPS_COUNT) * 100);
       } else {
         stopCamera();
       }
@@ -92,7 +85,7 @@ export default function VerificationFlow() {
       case 'welcome': setProgress(0); break;
       case 'data': setProgress((1 / STEPS_COUNT) * 100); break;
       case 'whatsapp': setProgress((2 / STEPS_COUNT) * 100); break;
-      case 'confirm': setProgress((5 / STEPS_COUNT) * 100); break;
+      case 'confirm': setProgress((4 / STEPS_COUNT) * 100); break;
       case 'submitting': setProgress(100); break;
     }
   }, [step]);
@@ -108,7 +101,6 @@ export default function VerificationFlow() {
 
   const startCamera = async (facingMode: 'environment' | 'user') => {
     stopCamera(); 
-    setCurrentFacingMode(facingMode);
     setIsCameraActive(false); 
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -148,6 +140,10 @@ export default function VerificationFlow() {
   const handlePhotoInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      if (file.size > 5 * 1024 * 1024) { // 5MB
+          toast({ variant: 'destructive', title: 'Ukuran file terlalu besar', description: 'Maksimal ukuran file adalah 5MB.' });
+          return;
+      }
       const reader = new FileReader();
       reader.onload = () => {
         setCropperSrc(reader.result as string);
@@ -236,14 +232,6 @@ export default function VerificationFlow() {
     const dataUrl = capturePhoto();
     if (dataUrl) {
       setKtpDataUrl(dataUrl);
-      setStep('selfie');
-    }
-  };
-
-  const handleCaptureSelfie = () => {
-    const dataUrl = capturePhoto();
-    if (dataUrl) {
-      setSelfieDataUrl(dataUrl);
       setStep('confirm');
     }
   };
@@ -263,7 +251,7 @@ export default function VerificationFlow() {
   }
 
   const handleSubmit = async () => {
-    if (!ktpDataUrl || !selfieDataUrl || !fullName || !nik) {
+    if (!ktpDataUrl || !fullName || !nik) {
       toast({ variant: 'destructive', title: 'Data Tidak Lengkap' });
       setStep('data'); 
       return;
@@ -301,7 +289,6 @@ export default function VerificationFlow() {
         fullName,
         nik,
         ktpFile: dataURLtoFile(ktpDataUrl, 'ktp.jpg'),
-        selfieFile: dataURLtoFile(selfieDataUrl, 'selfie.jpg'),
         ...(photoFile && { photoFile: photoFile }),
         waNumber: waNumber,
       };
@@ -325,7 +312,6 @@ export default function VerificationFlow() {
       });
       setStep('data'); 
       setKtpDataUrl(null);
-      setSelfieDataUrl(null);
     }
   };
 
@@ -353,12 +339,13 @@ export default function VerificationFlow() {
               <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
                 Pilih Foto Profil
               </Button>
+               <p className="text-xs text-muted-foreground">Ukuran file maksimal: 5MB. Jika gagal, coba gunakan format JPG &lt; 1MB.</p>
               <Input 
                 type="file" 
                 ref={fileInputRef} 
                 className="hidden" 
                 onChange={handlePhotoInputChange}
-                accept="image/png, image/jpeg"
+                accept="image/*"
               />
             </div>
             <div className="space-y-2">
@@ -431,16 +418,6 @@ export default function VerificationFlow() {
              </Button>
           </div>
         );
-      case 'selfie':
-        return (
-          <div className="space-y-4 text-center">
-             <p className="text-muted-foreground">Posisikan wajah Anda di dalam bingkai, pastikan pencahayaan cukup.</p>
-             {renderCameraView()}
-             <Button size="lg" className="w-full" onClick={handleCaptureSelfie} disabled={!isCameraActive}>
-                <Camera className="mr-2 h-4 w-4" /> Ambil Foto Selfie
-             </Button>
-          </div>
-        );
       case 'confirm':
         return (
             <div className="space-y-6">
@@ -466,10 +443,6 @@ export default function VerificationFlow() {
                         <div className="space-y-2">
                             <Label>Foto KTP</Label>
                              {ktpDataUrl && <Image src={ktpDataUrl} alt="Preview KTP" width={120} height={75} className="rounded-md border object-cover"/>}
-                        </div>
-                        <div className="space-y-2 col-span-2">
-                            <Label>Foto Selfie</Label>
-                            {selfieDataUrl && <Image src={selfieDataUrl} alt="Preview Selfie" width={120} height={75} className="rounded-md border object-cover"/>}
                         </div>
                     </div>
                 </div>
@@ -499,7 +472,7 @@ export default function VerificationFlow() {
             </Alert>
         )}
         <div className="w-full max-w-xs mx-auto aspect-video border-2 border-dashed rounded-lg flex items-center justify-center overflow-hidden bg-muted/50">
-            <video ref={videoRef} className={cn("w-full h-full object-cover", !isCameraActive && "hidden", currentFacingMode === 'user' && 'transform -scale-x-100')} autoPlay muted playsInline />
+            <video ref={videoRef} className={cn("w-full h-full object-cover", !isCameraActive && "hidden")} autoPlay muted playsInline />
             {!isCameraActive && hasCameraPermission !== false && <Loader2 className="h-16 w-16 animate-spin text-muted-foreground" />}
             {hasCameraPermission === false && <Camera className="h-16 w-16 text-muted-foreground" />}
         </div>
@@ -510,11 +483,10 @@ export default function VerificationFlow() {
   const getStepDescription = () => {
     switch (step) {
       case 'welcome': return "Selamat datang di proses verifikasi keanggotaan.";
-      case 'data': return "Langkah 1 dari 5: Isi data diri Anda.";
-      case 'whatsapp': return "Langkah 2 dari 5: Verifikasi nomor WhatsApp.";
-      case 'ktp': return "Langkah 3 dari 5: Ambil Foto KTP.";
-      case 'selfie': return "Langkah 4 dari 5: Ambil Foto Selfie.";
-      case 'confirm': return "Langkah 5 dari 5: Konfirmasi data Anda.";
+      case 'data': return "Langkah 1 dari 4: Isi data diri Anda.";
+      case 'whatsapp': return "Langkah 2 dari 4: Verifikasi nomor WhatsApp.";
+      case 'ktp': return "Langkah 3 dari 4: Ambil Foto KTP.";
+      case 'confirm': return "Langkah 4 dari 4: Konfirmasi data Anda.";
       case 'submitting': return "Sedang memproses pengajuan Anda.";
       default: return "Verifikasi Identitas";
     }

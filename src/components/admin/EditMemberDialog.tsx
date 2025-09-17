@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -14,12 +15,14 @@ import { getPositions, Position } from '@/app/actions/positions';
 import type { MemberType, VerificationStatus } from '@/lib/definitions';
 import Image from 'next/image';
 import { ScrollArea } from '../ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
+
 
 interface EditMemberDialogProps {
   member: MemberWithStatus;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (id: string, details: Partial<Omit<MemberWithStatus, 'id' | 'avatarUrl'>>, photoFile?: File) => void;
+  onSave: (id: string, formData: FormData) => void;
   isSaving: boolean;
 }
 
@@ -44,6 +47,7 @@ const NO_POSITION_VALUE = "no-position";
 const NO_TYPE_VALUE = "no-type";
 
 export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSaving }: EditMemberDialogProps) {
+  const { toast } = useToast();
   const [positionId, setPositionId] = useState(member.positionId || NO_POSITION_VALUE);
   const [type, setType] = useState<MemberType | '' | 'no-type'>(member.type || NO_TYPE_VALUE);
   const [region, setRegion] = useState(member.region || '');
@@ -84,23 +88,30 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
         const file = e.target.files[0];
+        if (file.size > 5 * 1024 * 1024) { // 5MB
+          toast({ variant: 'destructive', title: 'Ukuran file terlalu besar', description: 'Maksimal ukuran file adalah 5MB.' });
+          return;
+        }
         setPhotoFile(file);
         setPhotoPreview(URL.createObjectURL(file));
     }
   }
 
   const handleSave = () => {
-    const detailsToSave: Partial<Omit<MemberWithStatus, 'id' | 'avatarUrl'>> = {
-        positionId: positionId === NO_POSITION_VALUE ? '' : positionId,
-        type: type === NO_TYPE_VALUE ? '' : (type as MemberType),
-        region: region,
-        verificationStatus: verificationStatus,
-        isSpecialMember: isSpecialMember,
-        isHidden: isHidden,
-        titlePrefix: titlePrefix,
-        titlePostfix: titlePostfix,
-    };
-    onSave(member.id, detailsToSave, photoFile);
+    const formData = new FormData();
+    formData.append('positionId', positionId);
+    formData.append('type', type);
+    formData.append('region', region);
+    formData.append('verificationStatus', verificationStatus);
+    formData.append('isSpecialMember', String(isSpecialMember));
+    formData.append('isHidden', String(isHidden));
+    formData.append('titlePrefix', titlePrefix);
+    formData.append('titlePostfix', titlePostfix);
+    if (photoFile) {
+        formData.append('photoFile', photoFile);
+    }
+
+    onSave(member.id, formData);
   };
 
   return (
@@ -132,6 +143,7 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
                     <Label htmlFor="photoFile">Foto Profil (kosongkan jika tidak diubah)</Label>
                     {photoPreview && <Image src={photoPreview} alt="Pratinjau foto" width={80} height={80} className="rounded-full object-cover" />}
                     <Input id="photoFile" type="file" accept="image/*" onChange={handlePhotoChange} />
+                    <p className="text-xs text-muted-foreground">Ukuran file maksimal: 5MB. Jika gagal, coba gunakan format JPG &lt; 1MB.</p>
                 </div>
             <div className="space-y-2">
                 <Label htmlFor="position">Jabatan</Label>

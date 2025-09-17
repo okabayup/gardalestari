@@ -1,10 +1,12 @@
 
+
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   getMembers,
   updateMemberDetails,
+  resetVerificationData,
   MemberWithStatus,
 } from '@/app/actions/members';
 import type { MemberType, VerificationStatus } from '@/lib/definitions';
@@ -27,12 +29,14 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { Loader2, MoreHorizontal, Edit, ShieldCheck, PlusCircle } from 'lucide-react';
+import { Loader2, MoreHorizontal, Edit, ShieldCheck, PlusCircle, Trash, RotateCcw } from 'lucide-react';
 import EditMemberDialog from '@/components/admin/EditMemberDialog';
 import ViewVerificationDialog from '@/components/admin/ViewVerificationDialog';
 import { useRouter } from 'next/navigation';
 import { formatFullName } from '@/lib/utils';
 import { format } from 'date-fns';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
 
 export default function AdminMembersPage() {
   const { toast } = useToast();
@@ -43,13 +47,12 @@ export default function AdminMembersPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isVerificationDialogOpen, setIsVerificationDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<MemberWithStatus | null>(null);
+  
+  const [showResetAlert, setShowResetAlert] = useState(false);
+  const [resetConfirmationInput, setResetConfirmationInput] = useState("");
 
-  useEffect(() => {
-    fetchMembers();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
-  const fetchMembers = async () => {
+  const fetchMembers = useCallback(async () => {
     setLoading(true);
     try {
       const fetchedMembers = await getMembers(false); // Fetch all members for admin
@@ -62,7 +65,12 @@ export default function AdminMembersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchMembers();
+  }, [fetchMembers]);
+
 
   const handleOpenDialog = (member: MemberWithStatus, dialog: 'edit' | 'verify') => {
     setSelectedMember(member);
@@ -70,10 +78,10 @@ export default function AdminMembersPage() {
     if (dialog === 'verify') setIsVerificationDialogOpen(true);
   };
   
-  const handleSaveDetails = async (id: string, details: Partial<Omit<MemberWithStatus, 'id' | 'avatarUrl'>>, photoFile?: File) => {
+  const handleSaveDetails = async (id: string, formData: FormData) => {
     setIsSavingDetails(true);
     try {
-        await updateMemberDetails(id, details, photoFile);
+        await updateMemberDetails(id, formData);
         toast({ title: 'Detail anggota diperbarui!' });
         fetchMembers();
         setIsEditDialogOpen(false);
@@ -83,6 +91,30 @@ export default function AdminMembersPage() {
         setIsSavingDetails(false);
     }
   };
+
+  const handleOpenResetDialog = (member: MemberWithStatus) => {
+    setSelectedMember(member);
+    setShowResetAlert(true);
+  };
+
+  const handleResetVerification = async () => {
+    if (!selectedMember || resetConfirmationInput !== 'RESET') {
+        toast({variant: 'destructive', title: 'Konfirmasi salah', description: 'Anda harus mengetik "RESET" untuk melanjutkan.'});
+        return;
+    }
+    setIsSavingDetails(true);
+    try {
+        await resetVerificationData(selectedMember.id);
+        toast({title: 'Data Verifikasi Direset', description: `Data verifikasi untuk ${selectedMember.name} telah dihapus.`});
+        fetchMembers();
+        setShowResetAlert(false);
+    } catch (error) {
+        toast({variant: 'destructive', title: 'Gagal Mereset', description: (error as Error).message });
+    } finally {
+        setIsSavingDetails(false);
+        setResetConfirmationInput("");
+    }
+  }
 
 
   const getStatusBadge = (status: MemberWithStatus['verificationStatus']) => {
@@ -162,9 +194,12 @@ export default function AdminMembersPage() {
                              </DropdownMenuItem>
                              {member.ktpImageUrl && (
                                 <>
-                                <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => handleOpenDialog(member, 'verify')}>
                                     <ShieldCheck className="mr-2 h-4 w-4" /> Tinjau Verifikasi
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="text-destructive" onClick={() => handleOpenResetDialog(member)}>
+                                  <RotateCcw className="mr-2 h-4 w-4" /> Reset Verifikasi
                                 </DropdownMenuItem>
                                 </>
                              )}
@@ -201,6 +236,32 @@ export default function AdminMembersPage() {
             />
         </>
       )}
+       <AlertDialog open={showResetAlert} onOpenChange={setShowResetAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Anda Yakin Ingin Mereset Verifikasi?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini akan menghapus NIK dan foto KTP untuk anggota <span className="font-bold">{selectedMember?.name}</span>. Mereka harus melakukan verifikasi ulang. Untuk melanjutkan, ketik "RESET" di bawah ini.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input 
+            value={resetConfirmationInput}
+            onChange={(e) => setResetConfirmationInput(e.target.value)}
+            placeholder='Ketik "RESET" untuk konfirmasi'
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              disabled={resetConfirmationInput !== 'RESET' || isSavingDetails}
+              onClick={handleResetVerification}
+            >
+              {isSavingDetails && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+              Ya, Reset Data
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

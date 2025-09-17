@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -15,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Loader2, UserPlus } from 'lucide-react';
 import { createManualMember } from '@/app/actions/members';
-import type { MemberType, VerificationStatus } from '@/lib/definitions';
+import type { MemberType } from '@/lib/definitions';
 import { getPositions, Position } from '@/app/actions/positions';
 import Image from 'next/image';
 
@@ -66,7 +67,7 @@ export default function NewManualMemberPage() {
     }
   });
   
-  const photoFile = watch('photoFile');
+  const photoFileList = watch('photoFile');
   const memberType = watch('type');
 
   useEffect(() => {
@@ -74,29 +75,41 @@ export default function NewManualMemberPage() {
   }, []);
   
   useEffect(() => {
-    if (photoFile && photoFile.length > 0) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(photoFile[0]);
+    if (photoFileList && photoFileList.length > 0) {
+      const file = photoFileList[0];
+      if (file.size > 5 * 1024 * 1024) { // 5MB
+          toast({ variant: 'destructive', title: 'Ukuran file terlalu besar', description: 'Maksimal ukuran file adalah 5MB.' });
+          return;
+      }
+      setPhotoPreview(URL.createObjectURL(file));
     } else {
         setPhotoPreview(null);
     }
-  }, [photoFile]);
+  }, [photoFileList, toast]);
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
+    
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (key === 'photoFile' && value instanceof FileList && value.length > 0) {
+        formData.append(key, value[0]);
+      } else if (typeof value === 'boolean') {
+        formData.append(key, String(value));
+      } else if (value) {
+        formData.append(key, value as string);
+      }
+    });
+
     try {
-      const { photoFile: photoFileList, ...memberData } = data;
-      const fileToSend = photoFileList?.[0]; // Extract the single file
-      await createManualMember(memberData, fileToSend);
+      await createManualMember(formData);
       toast({ title: 'Anggota manual berhasil ditambahkan!' });
       router.push('/panel/members');
     } catch (error) {
       console.error("[onSubmit Error]", error);
       toast({ variant: 'destructive', title: 'Gagal menambahkan anggota', description: (error as Error).message });
-      setLoading(false);
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -178,6 +191,7 @@ export default function NewManualMemberPage() {
                 <Label htmlFor="photoFile">Foto Profil</Label>
                 <Input id="photoFile" type="file" accept="image/*" {...register('photoFile')} />
                 {photoPreview && <Image src={photoPreview} alt="Pratinjau foto" width={100} height={100} className="mt-2 rounded-full object-cover" />}
+                <p className="text-xs text-muted-foreground">Ukuran file maksimal: 5MB. Jika gagal, coba gunakan format JPG &lt; 1MB.</p>
             </div>
 
            <div className="flex items-center space-x-2 pt-2">

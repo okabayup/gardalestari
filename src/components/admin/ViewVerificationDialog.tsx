@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -17,7 +18,7 @@ interface ViewVerificationDialogProps {
 export default function ViewVerificationDialog({ member, isOpen, onClose }: ViewVerificationDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>Detail Verifikasi: {member.name}</DialogTitle>
           <DialogDescription>
@@ -46,14 +47,6 @@ export default function ViewVerificationDialog({ member, isOpen, onClose }: View
                         {member.ktpImageUrl ? (
                             <a href={member.ktpImageUrl} target="_blank" rel="noopener noreferrer">
                                 <Image src={member.ktpImageUrl} alt="Foto KTP" width={200} height={125} className="rounded-lg border object-cover hover:opacity-80 transition-opacity" />
-                            </a>
-                        ) : <p className="text-sm text-muted-foreground">Tidak tersedia</p>}
-                    </div>
-                    <div>
-                        <Label>Foto Selfie</Label>
-                        {member.selfieImageUrl ? (
-                            <a href={member.selfieImageUrl} target="_blank" rel="noopener noreferrer">
-                                <Image src={member.selfieImageUrl} alt="Foto Selfie" width={200} height={125} className="rounded-lg border object-cover hover:opacity-80 transition-opacity" />
                             </a>
                         ) : <p className="text-sm text-muted-foreground">Tidak tersedia</p>}
                     </div>
