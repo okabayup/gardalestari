@@ -14,7 +14,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Loader2, UserPlus } from 'lucide-react';
-import { createManualMember, MemberType } from '@/app/actions/members';
+import { createManualMember } from '@/app/actions/members';
+import type { MemberType } from '@/lib/definitions';
 import { getPositions, Position } from '@/app/actions/positions';
 import Image from 'next/image';
 
@@ -22,7 +23,7 @@ const formSchema = z.object({
   fullName: z.string().min(3, 'Nama lengkap minimal 3 karakter'),
   titlePrefix: z.string().optional(),
   titlePostfix: z.string().optional(),
-  positionId: z.string({ required_error: "Jabatan wajib dipilih" }),
+  positionId: z.string({ required_error: "Jabatan wajib dipilih" }).min(1, "Jabatan wajib dipilih"),
   type: z.enum(['pusat', 'daerah', 'cabang', 'pembina', 'pengawas', 'penasehat'], { required_error: "Tipe keanggotaan wajib dipilih" }),
   isSpecialMember: z.boolean().default(false),
   photoFile: z.any().optional(),
@@ -61,7 +62,7 @@ export default function NewManualMemberPage() {
   }, []);
   
   useEffect(() => {
-    if (photoFile && photoFile[0]) {
+    if (photoFile && photoFile.length > 0) {
       const reader = new FileReader();
       reader.onloadend = () => {
         setPhotoPreview(reader.result as string);
@@ -75,8 +76,9 @@ export default function NewManualMemberPage() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      const { photoFile, ...memberData } = data;
-      await createManualMember(memberData, photoFile?.[0]);
+      const { photoFile: photoFileList, ...memberData } = data;
+      const fileToSend = photoFileList?.[0]; // Extract the single file
+      await createManualMember(memberData, fileToSend);
       toast({ title: 'Anggota manual berhasil ditambahkan!' });
       router.push('/panel/members');
     } catch (error) {
