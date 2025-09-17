@@ -8,7 +8,7 @@ import { revalidatePath } from 'next/cache';
 import type { PermissionId, Position, MemberWithStatus, MemberType, VerificationStatus } from '@/lib/definitions';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getWhatsappTemplate } from './whatsapp';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { generateUniqueUsername } from './user';
 import { formatFullName } from '@/lib/utils';
 import { sendNotification } from './notifications';
@@ -123,6 +123,26 @@ export async function updateMemberDetails(id: string, details: Partial<Omit<Memb
         const currentMemberData = currentMemberDoc.data();
         const dataToUpdate: { [key: string]: any } = { ...details };
 
+        // Handle file upload first
+        if (photoFile) {
+            const storageRef = ref(storage, `profile-pictures/${id}-${photoFile.name}`);
+            await uploadBytes(storageRef, photoFile);
+            dataToUpdate.avatarUrl = await getDownloadURL(storageRef);
+            
+            // Optionally delete the old photo if it exists and is a firebase storage url
+            if (currentMemberData.avatarUrl && currentMemberData.avatarUrl.includes('firebasestorage.googleapis.com')) {
+                 try {
+                    const oldPhotoRef = ref(storage, currentMemberData.avatarUrl);
+                    await deleteObject(oldPhotoRef);
+                } catch (storageError: any) {
+                    if (storageError.code !== 'storage/object-not-found') {
+                        console.warn("[updateMemberDetails Warn] Old photo not found, skipping deletion.", storageError);
+                    }
+                }
+            }
+        }
+
+        // Handle empty fields to be deleted
         if (details.positionId === '') {
             dataToUpdate.positionId = deleteField();
         }
@@ -133,12 +153,6 @@ export async function updateMemberDetails(id: string, details: Partial<Omit<Memb
 
         if (details.type !== 'daerah') {
             dataToUpdate.region = deleteField();
-        }
-
-        if (photoFile) {
-            const storageRef = ref(storage, `profile-pictures/${id}-${photoFile.name}`);
-            await uploadBytes(storageRef, photoFile);
-            dataToUpdate.avatarUrl = await getDownloadURL(storageRef);
         }
         
         await setDoc(memberDocRef, dataToUpdate, { merge: true });
@@ -198,6 +212,7 @@ export async function createManualMember(
 ) {
     try {
         let avatarUrl = `https://picsum.photos/seed/${data.fullName.replace(/\s+/g, '-')}/200/200`;
+        
         if (photoFile) {
             const storageRef = ref(storage, `profile-pictures/${Date.now()}-${photoFile.name}`);
             await uploadBytes(storageRef, photoFile);

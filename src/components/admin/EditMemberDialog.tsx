@@ -37,6 +37,7 @@ const verificationStatuses: { value: VerificationStatus, label: string }[] = [
     { value: 'temporary', label: 'Menunggu Persetujuan'},
     { value: 'permanent', label: 'Permanen'},
     { value: 'rejected', label: 'Ditolak'},
+    { value: 'manual', label: 'Manual' },
 ];
 
 const NO_POSITION_VALUE = "no-position"; 
@@ -128,7 +129,7 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
                     </div>
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="photoFile">Foto Profil</Label>
+                    <Label htmlFor="photoFile">Foto Profil (kosongkan jika tidak diubah)</Label>
                     {photoPreview && <Image src={photoPreview} alt="Pratinjau foto" width={80} height={80} className="rounded-full object-cover" />}
                     <Input id="photoFile" type="file" accept="image/*" onChange={handlePhotoChange} />
                 </div>
