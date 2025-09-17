@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -24,6 +25,8 @@ import { getPartners, Partner } from '@/app/actions/partners';
 import { getForms, ProgramForm } from '@/app/actions/forms';
 import { cn } from '@/lib/utils';
 import type { ProgramFormData } from '@/lib/definitions';
+import { Checkbox } from '@/components/ui/checkbox';
+
 
 const formSchema = z.object({
   title: z.string().min(1, 'Judul wajib diisi'),
@@ -37,8 +40,9 @@ const formSchema = z.object({
   tags: z.array(z.string()).min(1, 'Minimal satu tag harus dipilih'),
   dateRange: z.object({
     from: z.date({ required_error: 'Tanggal mulai wajib diisi' }),
-    to: z.date({ required_error: 'Tanggal selesai wajib diisi' }),
+    to: z.date().optional(),
   }),
+  isUnlimited: z.boolean().default(false),
   source: z.enum(['garda_lestari', 'mitra'], { required_error: 'Sumber program wajib dipilih' }),
   partnerId: z.string().optional(),
   benefits: z.string().min(1, 'Benefit wajib diisi'),
@@ -48,6 +52,9 @@ const formSchema = z.object({
   formId: z.string().optional(),
   requiresRecommendation: z.boolean().default(false),
   attachment: z.any().optional(),
+}).refine(data => !data.isUnlimited ? !!data.dateRange.to : true, {
+    message: "Tanggal selesai wajib diisi jika waktu tidak tak terbatas.",
+    path: ["dateRange"],
 });
 
 
@@ -67,12 +74,13 @@ export default function NewProgramPage() {
     getValues,
     watch,
     formState: { errors },
-  } = useForm<ProgramFormData>({
+  } = useForm<Omit<ProgramFormData, 'isUnlimited'> & {isUnlimited: boolean}>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '', description: '', category: 'ongoing', programType: 'aktif', imageUrl: '', imageHint: '', imageSource: 'ai',
       tags: [],
       dateRange: { from: new Date(), to: addDays(new Date(), 7) },
+      isUnlimited: false,
       source: 'garda_lestari',
       benefits: '', requiredDocuments: '', submissionType: 'external',
       requiresRecommendation: false,
@@ -83,6 +91,7 @@ export default function NewProgramPage() {
   const watchSubmissionType = watch('submissionType');
   const watchImageSource = watch('imageSource');
   const watchTags = watch('tags', []);
+  const watchIsUnlimited = watch('isUnlimited');
   const attachmentFile = watch("attachment");
   const attachmentFileName = attachmentFile?.[0]?.name;
 
@@ -105,7 +114,7 @@ export default function NewProgramPage() {
     fetchData();
   }, [toast]);
   
-  const onSubmit = async (data: ProgramFormData) => {
+  const onSubmit = async (data: Omit<ProgramFormData, 'isUnlimited'> & {isUnlimited: boolean}) => {
     setLoading(true);
     const formData = new FormData();
     
@@ -113,7 +122,9 @@ export default function NewProgramPage() {
     Object.entries(data).forEach(([key, value]) => {
         if (key === 'dateRange') {
             formData.append('dateRangeFrom', (value as {from: Date}).from.toISOString());
-            formData.append('dateRangeTo', (value as {to: Date}).to.toISOString());
+            if ((value as {to?: Date}).to) {
+                formData.append('dateRangeTo', ((value as {to: Date}).to).toISOString());
+            }
         } else if (key === 'tags') {
             formData.append(key, (value as string[]).join(','));
         } else if (key === 'imageFile' || key === 'attachment') {
@@ -223,14 +234,29 @@ export default function NewProgramPage() {
                               initialFocus
                               mode="range"
                               defaultMonth={field.value.from}
-                              selected={field.value}
+                              selected={{from: field.value.from, to: watchIsUnlimited ? undefined : field.value.to}}
                               onSelect={(range) => field.onChange(range || { from: undefined, to: undefined })}
                               numberOfMonths={1}
+                              disabled={{ before: field.name === 'dateRange' && field.value.from ? field.value.from : undefined }}
                           />
                           </PopoverContent>
                       </Popover>
                   )} />
-                   {errors.dateRange && <p className="text-sm text-destructive">{errors.dateRange.from?.message || errors.dateRange.to?.message}</p>}
+                   <div className="flex items-center space-x-2 pt-2">
+                      <Controller
+                          name="isUnlimited"
+                          control={control}
+                          render={({ field }) => (
+                            <Checkbox
+                              id="isUnlimited"
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          )}
+                        />
+                      <Label htmlFor="isUnlimited">Waktu tak terbatas (tidak ada tanggal selesai)</Label>
+                  </div>
+                   {errors.dateRange && <p className="text-sm text-destructive">{errors.dateRange.root?.message || errors.dateRange.from?.message || errors.dateRange.to?.message}</p>}
               </div>
             </CardContent>
           </Card>

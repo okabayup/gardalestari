@@ -191,16 +191,15 @@ export default function AdminMembersPage() {
                              <DropdownMenuItem onClick={() => handleOpenDialog(member, 'edit')}>
                                 <Edit className="mr-2 h-4 w-4" /> Edit Detail & Status
                              </DropdownMenuItem>
-                             {member.ktpImageUrl && (
-                                <>
+                             {member.verificationStatus === 'temporary' && (
                                 <DropdownMenuItem onClick={() => handleOpenDialog(member, 'verify')}>
                                     <ShieldCheck className="mr-2 h-4 w-4" /> Tinjau Verifikasi
                                 </DropdownMenuItem>
-                                <DropdownMenuSeparator />
+                             )}
+                             {(member.verificationStatus === 'temporary' || member.verificationStatus === 'rejected') && (
                                 <DropdownMenuItem className="text-destructive" onClick={() => handleOpenResetDialog(member)}>
                                   <RotateCcw className="mr-2 h-4 w-4" /> Reset Verifikasi
                                 </DropdownMenuItem>
-                                </>
                              )}
                           </DropdownMenuContent>
                         </DropdownMenu>
