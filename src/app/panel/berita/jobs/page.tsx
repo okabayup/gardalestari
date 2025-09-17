@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, AlertCircle, CheckCircle, Clock, RefreshCw, XCircle, Eye } from 'lucide-react';
 import { getGenerationJobs, retryFailedTopics, GenerationJob } from '@/app/actions/berita';
@@ -110,6 +110,7 @@ export default function AIJobsHistoryPage() {
       const fetchedJobs = await getGenerationJobs();
       setJobs(fetchedJobs);
     } catch (error) {
+      console.error("[getGenerationJobs Page Error]", error);
       toast({ variant: 'destructive', title: 'Gagal memuat riwayat tugas' });
     } finally {
       setLoading(false);
