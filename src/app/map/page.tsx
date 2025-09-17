@@ -2,8 +2,9 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
-import type { MapDataCategory } from '@/app/actions/map-data';
+import type { MapDataCategory } from '@/lib/definitions';
 import { Sprout, Siren, ClipboardList, HelpingHand, HandCoins } from 'lucide-react';
 
 const Map = dynamic(() => import('@/components/map/Map'), { 
@@ -21,9 +22,11 @@ export const categoryConfig: Record<MapDataCategory, { label: string; icon: Reac
 };
 
 export default function MapPage() {
+    const mapComponent = useMemo(() => <Map />, []);
+
     return (
         <div className="h-screen w-full">
-            <Map />
+            {mapComponent}
         </div>
     );
 }

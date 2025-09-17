@@ -39,55 +39,6 @@ const createClusterCustomIcon = (cluster: any) => {
     });
 };
 
-// --- Map Rendering Component ---
-
-interface MapRendererProps {
-    data: MapData[];
-    setMap: React.Dispatch<React.SetStateAction<LeafletMap | null>>;
-}
-
-function MapRenderer({ data, setMap }: MapRendererProps) {
-    return (
-        <MapContainer 
-            center={[-2.548926, 118.014863]} 
-            zoom={5} 
-            scrollWheelZoom={true} 
-            className="h-full w-full z-10"
-            whenCreated={setMap}
-        >
-             <style jsx global>{`
-                .leaflet-container { height: 100%; width: 100%; z-index: 10; }
-                .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background-color: hsla(var(--primary) / 0.6) !important; }
-                .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div { background-color: hsla(var(--primary) / 0.8) !important; }
-                .marker-cluster div { color: hsl(var(--primary-foreground)); }
-            `}</style>
-            <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <MarkerClusterGroup iconCreateFunction={createClusterCustomIcon}>
-                {data.map(item => (
-                    <Marker key={item.id} position={[item.latitude, item.longitude]} icon={getMarkerIcon(item.category)}>
-                        <Popup>
-                            <div className="space-y-1">
-                                <h3 className="font-bold">{item.title}</h3>
-                                <p className="text-sm">{item.description}</p>
-                                {(item.category === 'program' || item.category === 'dana') && (
-                                    <>
-                                        <p className="text-xs">Anggaran: {item.budget?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p>
-                                        <p className="text-xs">Tersalurkan: {item.disbursed?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p>
-                                    </>
-                                )}
-                            </div>
-                        </Popup>
-                    </Marker>
-                ))}
-            </MarkerClusterGroup>
-        </MapContainer>
-    )
-}
-
-
 // --- Main Component with State Logic ---
 
 export default function Map() {
@@ -95,7 +46,6 @@ export default function Map() {
     const [allData, setAllData] = useState<MapData[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedCategories, setSelectedCategories] = useState<MapDataCategory[]>(['potensi', 'permasalahan', 'program', 'kegiatan', 'dana']);
-    const [map, setMap] = useState<LeafletMap | null>(null);
 
     useEffect(() => {
         getMapData()
@@ -151,7 +101,41 @@ export default function Map() {
                 </div>
             )}
             
-            {map ? <MapRenderer data={filteredData} setMap={setMap}/> : <MapRenderer data={filteredData} setMap={setMap}/>}
+            <MapContainer 
+                center={[-2.548926, 118.014863]} 
+                zoom={5} 
+                scrollWheelZoom={true} 
+                className="h-full w-full z-10"
+            >
+                <style jsx global>{`
+                    .leaflet-container { height: 100%; width: 100%; z-index: 10; }
+                    .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background-color: hsla(var(--primary) / 0.6) !important; }
+                    .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div { background-color: hsla(var(--primary) / 0.8) !important; }
+                    .marker-cluster div { color: hsl(var(--primary-foreground)); }
+                `}</style>
+                <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <MarkerClusterGroup iconCreateFunction={createClusterCustomIcon}>
+                    {filteredData.map(item => (
+                        <Marker key={item.id} position={[item.latitude, item.longitude]} icon={getMarkerIcon(item.category)}>
+                            <Popup>
+                                <div className="space-y-1">
+                                    <h3 className="font-bold">{item.title}</h3>
+                                    <p className="text-sm">{item.description}</p>
+                                    {(item.category === 'program' || item.category === 'dana') && (
+                                        <>
+                                            <p className="text-xs">Anggaran: {item.budget?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p>
+                                            <p className="text-xs">Tersalurkan: {item.disbursed?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p>
+                                        </>
+                                    )}
+                                </div>
+                            </Popup>
+                        </Marker>
+                    ))}
+                </MarkerClusterGroup>
+            </MapContainer>
         </div>
     );
 }
