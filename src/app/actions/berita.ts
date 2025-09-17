@@ -7,6 +7,7 @@ import { revalidatePath } from 'next/cache';
 import { notifyGoogleOfUpdate } from '@/services/indexing';
 import type { BeritaPost } from '@/lib/definitions';
 import { enhanceText } from '@/ai/flows/enhance-text-flow';
+import { bulkGenerateNewsDrafts } from '@/ai/flows/bulk-generate-flow';
 
 const beritaPostsCollection = collection(db, 'beritaPosts');
 const generationJobsCollection = collection(db, 'generationJobs');
@@ -35,11 +36,25 @@ export async function createGenerationJob(totalCount: number): Promise<string> {
     return docRef.id;
 }
 
+export async function retryFailedTopics(job: GenerationJob): Promise<string> {
+    if (!job.errors || job.errors.length === 0) {
+        throw new Error("Tidak ada topik yang gagal untuk dicoba lagi.");
+    }
+    const topicsToRetry = job.errors.map(err => ({ title: err.topic, description: 'Mencoba ulang dari kegagalan sebelumnya.' }));
+
+    const newJobId = await createGenerationJob(topicsToRetry.length);
+    
+    // Run in background, don't await
+    bulkGenerateNewsDrafts({ topics: topicsToRetry, jobId: newJobId });
+    
+    revalidatePath('/panel/berita/jobs');
+    return newJobId;
+}
+
+
 export async function updateJobProgress(jobId: string, completedIncrement: number, error?: { topic: string; error: string }) {
     const jobRef = doc(db, 'generationJobs', jobId);
     
-    // This part can remain since it only writes to the DB, not reads and sends to client.
-    // However, to be safe and consistent, we'll use a transaction with get.
     await db.runTransaction(async (transaction) => {
         const jobDoc = await transaction.get(jobRef);
         if (!jobDoc.exists()) throw new Error('Job not found');
@@ -49,10 +64,18 @@ export async function updateJobProgress(jobId: string, completedIncrement: numbe
         const newErrors = error ? [...(currentJob.errors || []), error] : (currentJob.errors || []);
 
         const isComplete = newCompletedCount >= currentJob.totalCount;
+        let finalStatus = currentJob.status;
+
+        if (isComplete) {
+            finalStatus = newErrors.length > 0 && newErrors.length === currentJob.totalCount ? 'failed' : 'completed';
+        } else {
+            finalStatus = 'in-progress';
+        }
+
 
         transaction.update(jobRef, {
             completedCount: newCompletedCount,
-            status: isComplete ? 'completed' : 'in-progress',
+            status: finalStatus,
             errors: newErrors,
             ...(isComplete && { completedAt: serverTimestamp() }),
         });
@@ -71,12 +94,29 @@ export async function getJobStatus(jobId: string): Promise<GenerationJob | null>
             totalCount: data.totalCount,
             completedCount: data.completedCount,
             errors: data.errors,
-            // Convert Timestamps to ISO strings before returning to the client
             createdAt: (data.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
             completedAt: (data.completedAt as Timestamp)?.toDate().toISOString(),
         } as GenerationJob;
     }
     return null;
+}
+
+export async function getGenerationJobs(): Promise<GenerationJob[]> {
+    const q = query(generationJobsCollection, orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    
+    return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            id: doc.id,
+            status: data.status,
+            totalCount: data.totalCount,
+            completedCount: data.completedCount,
+            errors: data.errors || [],
+            createdAt: (data.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
+            completedAt: (data.completedAt as Timestamp)?.toDate().toISOString(),
+        } as GenerationJob;
+    });
 }
 
 
