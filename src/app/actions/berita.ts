@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, where, orderBy, Timestamp, setDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, where, orderBy, Timestamp, setDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import { notifyGoogleOfUpdate } from '@/services/indexing';
 import type { BeritaPost } from '@/lib/definitions';
@@ -19,17 +19,17 @@ export interface GenerationJob {
     totalCount: number;
     completedCount: number;
     errors: { topic: string; error: string }[];
-    createdAt: Timestamp;
-    completedAt?: Timestamp;
+    createdAt: string; // ISO string
+    completedAt?: string; // ISO string
 }
 
 export async function createGenerationJob(totalCount: number): Promise<string> {
-    const newJob: Omit<GenerationJob, 'id'> = {
-        status: 'pending',
+    const newJob = {
+        status: 'pending' as const,
         totalCount,
         completedCount: 0,
         errors: [],
-        createdAt: Timestamp.now(),
+        createdAt: serverTimestamp(),
     };
     const docRef = await addDoc(generationJobsCollection, newJob);
     return docRef.id;
@@ -37,20 +37,25 @@ export async function createGenerationJob(totalCount: number): Promise<string> {
 
 export async function updateJobProgress(jobId: string, completedIncrement: number, error?: { topic: string; error: string }) {
     const jobRef = doc(db, 'generationJobs', jobId);
-    const jobDoc = await getDoc(jobRef);
-    if (!jobDoc.exists()) throw new Error('Job not found');
     
-    const currentJob = jobDoc.data() as GenerationJob;
-    const newCompletedCount = currentJob.completedCount + completedIncrement;
-    const newErrors = error ? [...currentJob.errors, error] : currentJob.errors;
+    // This part can remain since it only writes to the DB, not reads and sends to client.
+    // However, to be safe and consistent, we'll use a transaction with get.
+    await db.runTransaction(async (transaction) => {
+        const jobDoc = await transaction.get(jobRef);
+        if (!jobDoc.exists()) throw new Error('Job not found');
 
-    const isComplete = newCompletedCount >= currentJob.totalCount;
+        const currentJob = jobDoc.data();
+        const newCompletedCount = (currentJob.completedCount || 0) + completedIncrement;
+        const newErrors = error ? [...(currentJob.errors || []), error] : (currentJob.errors || []);
 
-    await updateDoc(jobRef, {
-        completedCount: newCompletedCount,
-        status: isComplete ? 'completed' : 'in-progress',
-        errors: newErrors,
-        ...(isComplete && { completedAt: Timestamp.now() }),
+        const isComplete = newCompletedCount >= currentJob.totalCount;
+
+        transaction.update(jobRef, {
+            completedCount: newCompletedCount,
+            status: isComplete ? 'completed' : 'in-progress',
+            errors: newErrors,
+            ...(isComplete && { completedAt: serverTimestamp() }),
+        });
     });
 }
 
@@ -59,7 +64,17 @@ export async function getJobStatus(jobId: string): Promise<GenerationJob | null>
     const docRef = doc(db, 'generationJobs', jobId);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() } as GenerationJob;
+        const data = docSnap.data();
+        return {
+            id: docSnap.id,
+            status: data.status,
+            totalCount: data.totalCount,
+            completedCount: data.completedCount,
+            errors: data.errors,
+            // Convert Timestamps to ISO strings before returning to the client
+            createdAt: (data.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
+            completedAt: (data.completedAt as Timestamp)?.toDate().toISOString(),
+        } as GenerationJob;
     }
     return null;
 }
@@ -71,7 +86,7 @@ export async function getJobStatus(jobId: string): Promise<GenerationJob | null>
 export async function getBeritaPosts(type?: 'artikel' | 'video') {
   let q;
   if (type) {
-      q = query(beritaPostsCollection, where('type', '==', type), where('status', '==', 'published'), orderBy('date', 'desc'));
+      q = query(beritaPostsCollection, where('type', '==', type), orderBy('date', 'desc'));
   } else {
       q = query(beritaPostsCollection, orderBy('date', 'desc'));
   }
