@@ -48,8 +48,8 @@ export default function ProgramsPage() {
 
   const { ongoingPrograms, pastPrograms } = useMemo(() => {
     const now = new Date();
-    const ongoing = filteredPrograms.filter(p => new Date(p.endDate) > now);
-    const past = filteredPrograms.filter(p => new Date(p.endDate) <= now);
+    const ongoing = filteredPrograms.filter(p => !p.endDate || new Date(p.endDate) >= now);
+    const past = filteredPrograms.filter(p => p.endDate && new Date(p.endDate) < now);
     return { ongoingPrograms: ongoing, pastPrograms: past };
   }, [filteredPrograms]);
 

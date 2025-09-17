@@ -16,7 +16,7 @@ interface ProgramCardProps extends Program {
   isPast?: boolean;
 }
 
-export default function ProgramCard({ id, title, description, imageUrl, imageHint, tags, startDate, endDate, isPast }: ProgramCardProps) {
+export default function ProgramCard({ id, title, description, imageUrl, imageHint, tags, startDate, endDate, isPast, programType }: ProgramCardProps) {
   const [formattedStartDate, setFormattedStartDate] = useState('');
   const [formattedEndDate, setFormattedEndDate] = useState('');
   
@@ -32,6 +32,12 @@ export default function ProgramCard({ id, title, description, imageUrl, imageHin
     };
     formatDate();
   }, [startDate, endDate]);
+
+  const buttonText = isPast 
+    ? 'Telah Berakhir' 
+    : programType === 'pasif' 
+    ? 'Lihat Detail' 
+    : 'Daftar Program';
 
   return (
     <Card className={cn("overflow-hidden transition-all hover:shadow-lg flex flex-col", isPast && "opacity-70")}>
@@ -53,7 +59,7 @@ export default function ProgramCard({ id, title, description, imageUrl, imageHin
         <CardTitle>{title}</CardTitle>
         <div className="flex items-center text-sm text-muted-foreground pt-1">
           <CalendarIcon className="mr-2 h-4 w-4"/>
-          <span>{formattedStartDate || '...'} - {formattedEndDate || '...'}</span>
+          <span>{formattedStartDate || '...'} - {endDate ? (formattedEndDate || '...') : 'Sekarang'}</span>
         </div>
       </CardHeader>
       <CardContent className="flex-grow flex flex-col">
@@ -65,9 +71,9 @@ export default function ProgramCard({ id, title, description, imageUrl, imageHin
         </div>
       </CardContent>
       <div className="p-4 pt-0">
-          <Button asChild className="w-full">
+          <Button asChild className="w-full" disabled={isPast}>
               <Link href={`/programs/${id}`}>
-                  Lihat Detail <ArrowRight className="ml-2 h-4 w-4" />
+                  {buttonText} <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
           </Button>
       </div>
