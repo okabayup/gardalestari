@@ -13,6 +13,7 @@ import type { MemberWithStatus } from '@/app/actions/members';
 import { getPositions, Position } from '@/app/actions/positions';
 import type { MemberType, VerificationStatus } from '@/lib/definitions';
 import Image from 'next/image';
+import { ScrollArea } from '../ui/scroll-area';
 
 interface EditMemberDialogProps {
   member: MemberWithStatus;
@@ -110,95 +111,97 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
             Atur jabatan, jenis keanggotaan, dan status untuk pengguna ini.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
-           <div className="grid grid-cols-5 gap-2">
-                <div className="space-y-2 col-span-1">
-                    <Label htmlFor="titlePrefix">Gelar Depan</Label>
-                    <Input id="titlePrefix" value={titlePrefix} onChange={e => setTitlePrefix(e.target.value)} />
+        <ScrollArea className="max-h-[60vh] pr-6">
+            <div className="space-y-4 py-4">
+            <div className="grid grid-cols-5 gap-2">
+                    <div className="space-y-2 col-span-1">
+                        <Label htmlFor="titlePrefix">Gelar Depan</Label>
+                        <Input id="titlePrefix" value={titlePrefix} onChange={e => setTitlePrefix(e.target.value)} />
+                    </div>
+                    <div className="space-y-2 col-span-3">
+                        <Label>Nama</Label>
+                        <Input value={member.name} disabled />
+                    </div>
+                    <div className="space-y-2 col-span-1">
+                        <Label htmlFor="titlePostfix">Gelar Belakang</Label>
+                        <Input id="titlePostfix" value={titlePostfix} onChange={e => setTitlePostfix(e.target.value)} />
+                    </div>
                 </div>
-                 <div className="space-y-2 col-span-3">
-                    <Label>Nama</Label>
-                    <Input value={member.name} disabled />
+                <div className="space-y-2">
+                    <Label htmlFor="photoFile">Foto Profil</Label>
+                    {photoPreview && <Image src={photoPreview} alt="Pratinjau foto" width={80} height={80} className="rounded-full object-cover" />}
+                    <Input id="photoFile" type="file" accept="image/*" onChange={handlePhotoChange} />
                 </div>
-                <div className="space-y-2 col-span-1">
-                    <Label htmlFor="titlePostfix">Gelar Belakang</Label>
-                    <Input id="titlePostfix" value={titlePostfix} onChange={e => setTitlePostfix(e.target.value)} />
-                </div>
+            <div className="space-y-2">
+                <Label htmlFor="position">Jabatan</Label>
+                <Select value={positionId} onValueChange={setPositionId}>
+                    <SelectTrigger id="position">
+                        <SelectValue placeholder="Pilih Jabatan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value={NO_POSITION_VALUE}>Anggota Biasa</SelectItem>
+                        {positions.map(p => (
+                            <SelectItem key={p.id} value={p.id!}>{p.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
-             <div className="space-y-2">
-                <Label htmlFor="photoFile">Foto Profil</Label>
-                {photoPreview && <Image src={photoPreview} alt="Pratinjau foto" width={80} height={80} className="rounded-full object-cover" />}
-                <Input id="photoFile" type="file" accept="image/*" onChange={handlePhotoChange} />
+            <div className="space-y-2">
+                <Label htmlFor="type">Jenis Keanggotaan</Label>
+                <Select value={type} onValueChange={(value) => setType(value as MemberType | 'no-type')}>
+                    <SelectTrigger id="type">
+                        <SelectValue placeholder="Pilih Jenis Keanggotaan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value={NO_TYPE_VALUE}>Anggota Biasa</SelectItem>
+                        {memberTypes.map(mt => (
+                            <SelectItem key={mt.value} value={mt.value}>{mt.label}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
-          <div className="space-y-2">
-            <Label htmlFor="position">Jabatan</Label>
-            <Select value={positionId} onValueChange={setPositionId}>
-                <SelectTrigger id="position">
-                    <SelectValue placeholder="Pilih Jabatan" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value={NO_POSITION_VALUE}>Anggota Biasa</SelectItem>
-                    {positions.map(p => (
-                        <SelectItem key={p.id} value={p.id!}>{p.name}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="type">Jenis Keanggotaan</Label>
-            <Select value={type} onValueChange={(value) => setType(value as MemberType | 'no-type')}>
-                <SelectTrigger id="type">
-                    <SelectValue placeholder="Pilih Jenis Keanggotaan" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value={NO_TYPE_VALUE}>Anggota Biasa</SelectItem>
-                    {memberTypes.map(mt => (
-                        <SelectItem key={mt.value} value={mt.value}>{mt.label}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-          </div>
-          {type === 'daerah' && (
-             <div className="space-y-2">
-                <Label htmlFor="region">Wilayah/Daerah</Label>
-                <Input
-                    id="region"
-                    value={region}
-                    onChange={(e) => setRegion(e.target.value)}
-                    placeholder="Contoh: Jawa Barat"
+            {type === 'daerah' && (
+                <div className="space-y-2">
+                    <Label htmlFor="region">Wilayah/Daerah</Label>
+                    <Input
+                        id="region"
+                        value={region}
+                        onChange={(e) => setRegion(e.target.value)}
+                        placeholder="Contoh: Jawa Barat"
+                    />
+                </div>
+            )}
+            <div className="space-y-2">
+                <Label htmlFor="verificationStatus">Status Verifikasi</Label>
+                <Select value={verificationStatus} onValueChange={(value) => setVerificationStatus(value as VerificationStatus)}>
+                    <SelectTrigger id="verificationStatus">
+                        <SelectValue placeholder="Pilih Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {verificationStatuses.map(vs => (
+                            <SelectItem key={vs.value} value={vs.value}>{vs.label}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="flex items-center space-x-2 pt-2">
+                <Switch
+                    id="special-member"
+                    checked={isSpecialMember}
+                    onCheckedChange={setIsSpecialMember}
                 />
+                <Label htmlFor="special-member">Jadikan Anggota Istimewa (Hak Suara Khusus)</Label>
+                </div>
+                <div className="flex items-center space-x-2 pt-2">
+                <Switch
+                    id="is-hidden"
+                    checked={isHidden}
+                    onCheckedChange={setIsHidden}
+                />
+                <Label htmlFor="is-hidden">Sembunyikan dari Direktori Publik</Label>
+                </div>
             </div>
-          )}
-           <div className="space-y-2">
-            <Label htmlFor="verificationStatus">Status Verifikasi</Label>
-            <Select value={verificationStatus} onValueChange={(value) => setVerificationStatus(value as VerificationStatus)}>
-                <SelectTrigger id="verificationStatus">
-                    <SelectValue placeholder="Pilih Status" />
-                </SelectTrigger>
-                <SelectContent>
-                    {verificationStatuses.map(vs => (
-                        <SelectItem key={vs.value} value={vs.value}>{vs.label}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-          </div>
-           <div className="flex items-center space-x-2 pt-2">
-              <Switch
-                id="special-member"
-                checked={isSpecialMember}
-                onCheckedChange={setIsSpecialMember}
-              />
-              <Label htmlFor="special-member">Jadikan Anggota Istimewa (Hak Suara Khusus)</Label>
-            </div>
-             <div className="flex items-center space-x-2 pt-2">
-              <Switch
-                id="is-hidden"
-                checked={isHidden}
-                onCheckedChange={setIsHidden}
-              />
-              <Label htmlFor="is-hidden">Sembunyikan dari Direktori Publik</Label>
-            </div>
-        </div>
+        </ScrollArea>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose} disabled={isSaving}>Batal</Button>
           <Button onClick={handleSave} disabled={isSaving}>

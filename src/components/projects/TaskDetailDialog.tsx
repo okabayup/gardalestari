@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -189,30 +188,30 @@ export default function TaskDetailDialog({ isOpen, onClose, task, teamMembers, p
     
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-3xl h-[90vh] flex flex-col">
+            <DialogContent className="max-w-3xl h-[90vh] flex flex-col p-0">
                 <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
-                     <DialogHeader>
-                        <Input {...register('title')} className="text-lg font-bold border-none shadow-none -ml-3" />
+                     <DialogHeader className="p-6 pb-0">
+                        <Input {...register('title')} className="text-lg font-bold border-none shadow-none -ml-3 p-0 h-auto focus-visible:ring-0" />
                     </DialogHeader>
-                    <div className="py-4 grid grid-cols-1 md:grid-cols-3 gap-6 flex-1 min-h-0">
-                        <div className="md:col-span-2 space-y-4 flex flex-col">
-                             <div>
-                                <Label>Deskripsi</Label>
-                                <Textarea {...register('description')} rows={5} />
-                            </div>
-                             <div>
-                                <Controller
-                                    name="checklist"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <ChecklistComponent items={field.value || []} onUpdate={field.onChange} />
-                                    )}
-                                />
-                            </div>
-                            <div className="flex-1 flex flex-col min-h-0">
-                                <Label>Diskusi</Label>
-                                 <ScrollArea className="flex-1 my-2 pr-4 -mr-4">
-                                     <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1 min-h-0 p-6">
+                        <ScrollArea className="md:col-span-2 pr-6 -mr-6">
+                            <div className="space-y-6">
+                                <div>
+                                    <Label>Deskripsi</Label>
+                                    <Textarea {...register('description')} rows={5} />
+                                </div>
+                                <div>
+                                    <Controller
+                                        name="checklist"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <ChecklistComponent items={field.value || []} onUpdate={field.onChange} />
+                                        )}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Diskusi</Label>
+                                    <div className="space-y-4">
                                         {loadingComments ? <Loader2 className="animate-spin" /> :
                                             comments.map(comment => (
                                                 <div key={comment.id} className="flex items-start gap-2">
@@ -224,16 +223,16 @@ export default function TaskDetailDialog({ isOpen, onClose, task, teamMembers, p
                                                 </div>
                                             ))
                                         }
-                                     </div>
-                                 </ScrollArea>
-                                 <div className="flex items-center gap-2 pt-2">
-                                     <Input value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Tulis komentar..."/>
-                                     <Button type="button" size="icon" onClick={handlePostComment} disabled={isPostingComment || !newComment.trim()}>
-                                        {isPostingComment ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4"/>}
-                                     </Button>
-                                 </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 pt-2">
+                                        <Input value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Tulis komentar..."/>
+                                        <Button type="button" size="icon" onClick={handlePostComment} disabled={isPostingComment || !newComment.trim()}>
+                                            {isPostingComment ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4"/>}
+                                        </Button>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        </ScrollArea>
                         <div className="md:col-span-1 space-y-4">
                             <div>
                                 <Label>Label</Label>
@@ -337,7 +336,7 @@ export default function TaskDetailDialog({ isOpen, onClose, task, teamMembers, p
                             </div>
                         </div>
                     </div>
-                    <div className="mt-auto pt-4">
+                    <div className="mt-auto p-6 pt-0">
                       <Button type="submit" disabled={loading} className="w-full">
                           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
                           Simpan Perubahan
