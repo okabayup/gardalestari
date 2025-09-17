@@ -54,7 +54,7 @@ export async function createAnnouncement(data: Omit<Announcement, 'id' | 'create
     revalidatePath('/announcements'); // Assuming a public page might exist
   } catch (error) {
     console.error("Error creating announcement:", error);
-    throw new Error("Gagal membuat pengumuman.");
+    throw new Error(`Gagal membuat pengumuman: ${(error as Error).message}`);
   }
 }
 
@@ -88,7 +88,7 @@ export async function updateAnnouncement(id: string, data: Partial<Omit<Announce
     revalidatePath(`/panel/announcements/edit/${id}`);
   } catch (error) {
     console.error("Error updating announcement:", error);
-    throw new Error("Gagal memperbarui pengumuman.");
+    throw new Error(`Gagal memperbarui pengumuman: ${(error as Error).message}`);
   }
 }
 

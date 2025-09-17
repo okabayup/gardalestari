@@ -126,7 +126,8 @@ export default function NewMyAchievementPage() {
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="imageFile">Gambar Bukti (Opsional)</Label>
-                    <Input id="imageFile" type="file" {...register('imageFile')} />
+                    <Input id="imageFile" type="file" {...register('imageFile')} accept="image/*" />
+                     <p className="text-xs text-muted-foreground">Ukuran file maksimal: 5MB. Jika gagal, coba gunakan format JPG &lt; 1MB.</p>
                 </div>
             </div>
             </CardContent>

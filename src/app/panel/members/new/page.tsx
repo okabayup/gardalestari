@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -81,7 +80,10 @@ export default function NewManualMemberPage() {
           toast({ variant: 'destructive', title: 'Ukuran file terlalu besar', description: 'Maksimal ukuran file adalah 5MB.' });
           return;
       }
-      setPhotoPreview(URL.createObjectURL(file));
+      const previewUrl = URL.createObjectURL(file);
+      setPhotoPreview(previewUrl);
+
+      return () => URL.revokeObjectURL(previewUrl);
     } else {
         setPhotoPreview(null);
     }

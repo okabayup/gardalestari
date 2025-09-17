@@ -53,7 +53,7 @@ export async function createPartner(data: Omit<Partner, 'id' | 'logoUrl'>, logoF
     revalidatePath('/');
   } catch (error) {
     console.error("[createPartner Error]", error);
-    throw new Error("Gagal membuat data mitra.");
+    throw new Error(`Gagal membuat data mitra: ${(error as Error).message}`);
   }
 }
 
@@ -89,7 +89,7 @@ export async function updatePartner(id: string, data: Partial<Omit<Partner, 'id'
             }
         }
         const newLogoRef = ref(storage, `partner-logos/${Date.now()}_${logoFile.name}`);
-        await uploadBytes(newLogoRef, logoFile);
+        await uploadBytes(newLogoRef, newLogoRef);
         dataToUpdate.logoUrl = await getDownloadURL(newLogoRef);
     }
     
@@ -100,7 +100,7 @@ export async function updatePartner(id: string, data: Partial<Omit<Partner, 'id'
     revalidatePath('/');
   } catch (error) {
     console.error("[updatePartner Error]", error);
-    throw new Error("Gagal memperbarui data mitra.");
+    throw new Error(`Gagal memperbarui data mitra: ${(error as Error).message}`);
   }
 }
 

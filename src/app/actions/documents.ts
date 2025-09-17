@@ -87,7 +87,7 @@ export async function createDocument(
     revalidatePath('/panel/documents');
   } catch (error) {
     console.error("[createDocument Error]", error);
-    throw new Error("Gagal membuat dokumen.");
+    throw new Error(`Gagal membuat dokumen: ${(error as Error).message}`);
   }
 }
 
@@ -118,7 +118,7 @@ export async function updateDocument(id: string, data: Partial<Omit<ImportantDoc
     revalidatePath(`/panel/e-office/edit/${id}`);
   } catch (error) {
     console.error("[updateDocument Error]", error);
-    throw new Error("Gagal memperbarui dokumen.");
+    throw new Error(`Gagal memperbarui dokumen: ${(error as Error).message}`);
   }
 }
 

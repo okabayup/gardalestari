@@ -54,39 +54,40 @@ export async function getAppSettings(): Promise<AppSettings> {
 }
 
 
-export async function updateAppSettings(settings: Partial<Omit<AppSettings, 'heroImageUrl' | 'aboutImageUrl' | 'orgChartImageUrl'>> & { heroImageFile?: File, aboutImageFile?: File, orgChartImageFile?: File }) {
+export async function updateAppSettings(formData: FormData) {
   try {
-    const dataToUpdate: { [key: string]: any } = { ...settings };
-
-    // Convert dummy numbers to actual numbers before saving
-    dataToUpdate.dummyMembers = Number(settings.dummyMembers) || 0;
-    dataToUpdate.dummyPrograms = Number(settings.dummyPrograms) || 0;
-    dataToUpdate.dummyEvents = Number(settings.dummyEvents) || 0;
-    dataToUpdate.dummyNews = Number(settings.dummyNews) || 0;
+    const dataToUpdate: { [key: string]: any } = {};
     
-    if (settings.heroImageFile) {
-        const heroImageRef = ref(storage, 'landing/hero-image.jpg');
-        await uploadBytes(heroImageRef, settings.heroImageFile);
-        dataToUpdate.heroImageUrl = await getDownloadURL(heroImageRef);
+    // Handle simple string and boolean fields
+    for (const [key, value] of formData.entries()) {
+        if (typeof value === 'string' && !key.endsWith('File')) {
+            if(key === 'isRegistrationOpen' || key === 'isWhatsappNotificationsEnabled') {
+                 dataToUpdate[key] = value === 'true';
+            } else if (key.startsWith('dummy')) {
+                dataToUpdate[key] = Number(value) || 0;
+            }
+             else {
+                dataToUpdate[key] = value;
+            }
+        }
     }
-    delete dataToUpdate.heroImageFile;
 
-
-    if (settings.aboutImageFile) {
-        const aboutImageRef = ref(storage, 'landing/about-image.jpg');
-        await uploadBytes(aboutImageRef, settings.aboutImageFile);
-        dataToUpdate.aboutImageUrl = await getDownloadURL(aboutImageRef);
-    }
-    delete dataToUpdate.aboutImageFile;
+    const imageFields: ('heroImageFile' | 'aboutImageFile' | 'orgChartImageFile')[] = ['heroImageFile', 'aboutImageFile', 'orgChartImageFile'];
     
-    if (settings.orgChartImageFile) {
-        const orgChartImageRef = ref(storage, 'landing/org-chart-image.jpg');
-        await uploadBytes(orgChartImageRef, settings.orgChartImageFile);
-        dataToUpdate.orgChartImageUrl = await getDownloadURL(orgChartImageRef);
+    for(const fieldName of imageFields) {
+        const file = formData.get(fieldName) as File | null;
+        if (file && file.size > 0) {
+            const correspondingUrlField = fieldName.replace('File', 'Url');
+            const storagePath = `landing/${fieldName.replace('ImageFile', '-image.jpg')}`;
+            const imageRef = ref(storage, storagePath);
+            
+            console.log(`[updateAppSettings] Uploading ${fieldName} to ${storagePath}`);
+            await uploadBytes(imageRef, file);
+            dataToUpdate[correspondingUrlField] = await getDownloadURL(imageRef);
+            console.log(`[updateAppSettings] Upload successful for ${fieldName}:`, dataToUpdate[correspondingUrlField]);
+        }
     }
-    delete dataToUpdate.orgChartImageFile;
-
-
+    
     await setDoc(settingsDocRef, dataToUpdate, { merge: true });
     
     // Revalidate relevant pages
@@ -97,6 +98,6 @@ export async function updateAppSettings(settings: Partial<Omit<AppSettings, 'her
 
   } catch (error) {
     console.error("[updateAppSettings Error]", error);
-    throw new Error("Gagal memperbarui pengaturan aplikasi.");
+    throw new Error(`Gagal memperbarui pengaturan aplikasi: ${(error as Error).message}`);
   }
 }

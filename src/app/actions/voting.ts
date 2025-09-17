@@ -70,7 +70,7 @@ export async function createVotingTopic(
     revalidatePath('/evoting');
   } catch (error) {
     console.error('Error creating voting topic:', error);
-    throw new Error('Gagal membuat topik E-Voting.');
+    throw new Error(`Gagal membuat topik E-Voting: ${(error as Error).message}`);
   }
 }
 
@@ -120,7 +120,7 @@ export async function updateVotingTopic(
         revalidatePath(`/evoting/${id}`);
     } catch (error) {
         console.error('Error updating voting topic:', error);
-        throw new Error('Gagal memperbarui topik E-Voting.');
+        throw new Error(`Gagal memperbarui topik E-Voting: ${(error as Error).message}`);
     }
 }
 

@@ -106,7 +106,7 @@ export async function createAchievement(data: Omit<Achievement, 'id' | 'date'> &
     revalidatePath('/achievements');
   } catch (error) {
     console.error("[createAchievement Error]", error);
-    throw new Error("Gagal membuat data prestasi.");
+    throw new Error(`Gagal membuat data prestasi: ${(error as Error).message}`);
   }
 }
 
@@ -146,7 +146,7 @@ export async function createMyAchievement(
         revalidatePath('/profile/me');
     } catch (error) {
         console.error("[createMyAchievement Error]", error);
-        throw new Error("Gagal menambahkan prestasi Anda.");
+        throw new Error(`Gagal menambahkan prestasi Anda: ${(error as Error).message}`);
     }
 }
 
@@ -181,7 +181,7 @@ export async function updateAchievement(id: string, data: Partial<Omit<Achieveme
     revalidatePath('/profile/me');
   } catch (error) {
     console.error("[updateAchievement Error]", error);
-    throw new Error("Gagal memperbarui prestasi.");
+    throw new Error(`Gagal memperbarui prestasi: ${(error as Error).message}`);
   }
 }
 

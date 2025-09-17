@@ -2,7 +2,7 @@
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, query, where, getDocs, DocumentData, limit, getDoc, doc, setDoc, Timestamp, updateProfile } from 'firebase/firestore';
+import { collection, query, where, getDocs, DocumentData, limit, getDoc, doc, setDoc, Timestamp, updateProfile, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import type { MemberWithStatus } from '@/lib/definitions';
 import type { Position, PermissionId, PublicUser, PublicProfile } from '@/lib/definitions';

@@ -22,6 +22,7 @@ import { searchUsers, PublicUser } from '@/app/actions/user';
 import { cn } from '@/lib/utils';
 import { useDebounce } from 'use-debounce';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import Image from 'next/image';
 
 const formSchema = z.object({
   user: z.object({
@@ -102,6 +103,7 @@ export default function NewAchievementPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const {
     control,
@@ -113,6 +115,15 @@ export default function NewAchievementPage() {
   } = useForm<FormData>({ resolver: zodResolver(formSchema) });
 
   const selectedUser = watch("user");
+  const imageFile = watch("imageFile");
+  
+  useEffect(() => {
+    if (imageFile && imageFile.length > 0) {
+        const url = URL.createObjectURL(imageFile[0]);
+        setImagePreview(url);
+        return () => URL.revokeObjectURL(url);
+    }
+  }, [imageFile]);
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
@@ -199,7 +210,9 @@ export default function NewAchievementPage() {
             </div>
             <div className="space-y-2">
                 <Label htmlFor="imageFile">Gambar Bukti (Opsional)</Label>
-                <Input id="imageFile" type="file" {...register('imageFile')} />
+                <Input id="imageFile" type="file" {...register('imageFile')} accept="image/*" />
+                {imagePreview && <Image src={imagePreview} alt="Pratinjau bukti" width={100} height={100} className="mt-2 rounded-md object-cover" />}
+                <p className="text-xs text-muted-foreground">Ukuran file maksimal: 5MB. Jika gagal, coba gunakan format JPG &lt; 1MB.</p>
             </div>
           </div>
 

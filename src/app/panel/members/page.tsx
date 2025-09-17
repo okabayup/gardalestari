@@ -9,7 +9,6 @@ import {
   resetVerificationData,
   MemberWithStatus,
 } from '@/app/actions/members';
-import type { MemberType, VerificationStatus } from '@/lib/definitions';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -29,7 +28,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { Loader2, MoreHorizontal, Edit, ShieldCheck, PlusCircle, Trash, RotateCcw } from 'lucide-react';
+import { Loader2, MoreHorizontal, Edit, ShieldCheck, PlusCircle, RotateCcw } from 'lucide-react';
 import EditMemberDialog from '@/components/admin/EditMemberDialog';
 import ViewVerificationDialog from '@/components/admin/ViewVerificationDialog';
 import { useRouter } from 'next/navigation';

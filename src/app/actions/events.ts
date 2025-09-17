@@ -100,7 +100,7 @@ export async function createEvent(event: Omit<Event, 'id'>, attachmentFile?: Fil
     revalidatePath('/events');
   } catch (error) {
     console.error("[createEvent Error]", error);
-    throw new Error("Gagal membuat acara.");
+    throw new Error(`Gagal membuat acara: ${(error as Error).message}`);
   }
 }
 
@@ -134,7 +134,7 @@ export async function updateEvent(id: string, event: Partial<Event>, attachmentF
     revalidatePath('/events');
   } catch (error) {
     console.error("[updateEvent Error]", error);
-    throw new Error("Gagal memperbarui acara.");
+    throw new Error(`Gagal memperbarui acara: ${(error as Error).message}`);
   }
 }
 

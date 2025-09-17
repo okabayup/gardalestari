@@ -103,7 +103,7 @@ export async function createPost(formData: FormData) {
     const mediaItems: MediaItem[] = [];
     const mentionedUserIds = new Set<string>();
 
-    await Promise.all(files.map(async (file, index) => {
+    for (const [index, file] of files.entries()) {
         const storageRef = ref(storage, `posts/${Date.now()}_${file.name}`);
         await uploadBytes(storageRef, file);
         const url = await getDownloadURL(storageRef);
@@ -118,7 +118,7 @@ export async function createPost(formData: FormData) {
             hint: 'user uploaded content',
             mentions: mentions
         });
-    }));
+    }
 
     const newPost = {
       authorId,
@@ -137,7 +137,7 @@ export async function createPost(formData: FormData) {
     revalidatePath('/profile/me');
   } catch (error) {
     console.error("[createPost Error]", error);
-    throw new Error("Gagal membuat postingan baru.");
+    throw new Error(`Gagal membuat postingan baru: ${(error as Error).message}`);
   }
 }
 

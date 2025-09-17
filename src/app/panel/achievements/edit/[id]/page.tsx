@@ -41,6 +41,7 @@ export default function EditAchievementPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const {
     control,
@@ -50,13 +51,25 @@ export default function EditAchievementPage() {
     reset,
   } = useForm<FormData>({ resolver: zodResolver(formSchema) });
 
-  const currentImageUrl = watch("imageUrl");
+  const imageFile = watch("imageFile");
+
+  useEffect(() => {
+    if (imageFile && imageFile.length > 0) {
+        const url = URL.createObjectURL(imageFile[0]);
+        setImagePreview(url);
+        return () => URL.revokeObjectURL(url);
+    }
+  }, [imageFile]);
+
 
   useEffect(() => {
     if (id) {
         getAchievement(id).then(data => {
             if (data) {
                 reset({ ...data, date: new Date(data.date) });
+                if (data.imageUrl) {
+                    setImagePreview(data.imageUrl);
+                }
             } else {
                  toast({ variant: 'destructive', title: 'Prestasi tidak ditemukan' });
                  router.push('/panel/achievements');
@@ -139,8 +152,9 @@ export default function EditAchievementPage() {
             </div>
             <div className="space-y-2">
                 <Label htmlFor="imageFile">Gambar Bukti (Opsional)</Label>
-                <Input id="imageFile" type="file" {...register('imageFile')} />
-                {currentImageUrl && <Image src={currentImageUrl} alt="Bukti prestasi" width={100} height={100} className="mt-2 rounded-md object-cover" />}
+                <Input id="imageFile" type="file" {...register('imageFile')} accept="image/*" />
+                {imagePreview && <Image src={imagePreview} alt="Bukti prestasi" width={100} height={100} className="mt-2 rounded-md object-cover" />}
+                <p className="text-xs text-muted-foreground">Ukuran file maksimal: 5MB. Jika gagal, coba gunakan format JPG &lt; 1MB.</p>
             </div>
           </div>
 

@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { getAppSettings, updateAppSettings, AppSettings } from '@/app/actions/settings';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -24,9 +24,8 @@ export default function LandingPageSettings() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentSettings, setCurrentSettings] = useState<AppSettings | null>(null);
   
-  const { register, control, handleSubmit, reset, watch } = useForm<FormData>();
+  const { register, handleSubmit, reset, watch } = useForm<FormData>();
 
   const heroImageFile = watch("heroImageFile");
   const aboutImageFile = watch("aboutImageFile");
@@ -41,7 +40,6 @@ export default function LandingPageSettings() {
       setLoading(true);
       try {
         const settings = await getAppSettings();
-        setCurrentSettings(settings);
         reset(settings);
         setHeroPreview(settings.heroImageUrl);
         setAboutPreview(settings.aboutImageUrl);
@@ -58,47 +56,46 @@ export default function LandingPageSettings() {
   useEffect(() => {
     if (heroImageFile && heroImageFile.length > 0) {
       const file = heroImageFile[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setHeroPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      setHeroPreview(URL.createObjectURL(file));
+      return () => URL.revokeObjectURL(heroPreview!);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [heroImageFile]);
 
   useEffect(() => {
     if (aboutImageFile && aboutImageFile.length > 0) {
       const file = aboutImageFile[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAboutPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      setAboutPreview(URL.createObjectURL(file));
+       return () => URL.revokeObjectURL(aboutPreview!);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aboutImageFile]);
   
   useEffect(() => {
     if (orgChartImageFile && orgChartImageFile.length > 0) {
       const file = orgChartImageFile[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setOrgChartPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+       setOrgChartPreview(URL.createObjectURL(file));
+       return () => URL.revokeObjectURL(orgChartPreview!);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orgChartImageFile]);
 
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
+    const formData = new FormData();
+    
+    // Append all form data to the FormData object
+    Object.entries(data).forEach(([key, value]) => {
+        if (key.endsWith('File') && value instanceof FileList && value.length > 0) {
+            formData.append(key, value[0]);
+        } else if (value !== undefined && value !== null && !key.endsWith('File')) {
+             formData.append(key, String(value));
+        }
+    });
+
     try {
-        const updatePayload = {
-            ...data,
-            heroImageFile: data.heroImageFile?.[0],
-            aboutImageFile: data.aboutImageFile?.[0],
-            orgChartImageFile: data.orgChartImageFile?.[0],
-        };
-      await updateAppSettings(updatePayload);
+      await updateAppSettings(formData);
       toast({ title: 'Halaman Utama diperbarui!' });
     } catch (error) {
       toast({ variant: 'destructive', title: 'Gagal menyimpan', description: (error as Error).message });
@@ -133,11 +130,13 @@ export default function LandingPageSettings() {
                   <Label htmlFor="heroImageFile">Gambar Hero</Label>
                   {heroPreview && <Image src={heroPreview} alt="Hero preview" width={400} height={200} className="rounded-md aspect-video object-cover" />}
                   <Input id="heroImageFile" type="file" {...register("heroImageFile")} accept="image/*" />
+                  <p className="text-xs text-muted-foreground">Ukuran file maksimal: 5MB. Jika gagal, coba gunakan format JPG &lt; 1MB.</p>
               </div>
                <div className="space-y-2">
                   <Label htmlFor="aboutImageFile">Gambar Tentang Kami</Label>
                   {aboutPreview && <Image src={aboutPreview} alt="About preview" width={400} height={300} className="rounded-md aspect-[4/3] object-cover" />}
                   <Input id="aboutImageFile" type="file" {...register("aboutImageFile")} accept="image/*" />
+                  <p className="text-xs text-muted-foreground">Ukuran file maksimal: 5MB. Jika gagal, coba gunakan format JPG &lt; 1MB.</p>
               </div>
             </div>
              <Separator />
@@ -145,6 +144,7 @@ export default function LandingPageSettings() {
                   <Label htmlFor="orgChartImageFile">Gambar Struktur Organisasi</Label>
                   {orgChartPreview && <Image src={orgChartPreview} alt="Org chart preview" width={400} height={500} className="rounded-md aspect-[4/5] object-cover border" />}
                   <Input id="orgChartImageFile" type="file" {...register("orgChartImageFile")} accept="image/*" />
+                  <p className="text-xs text-muted-foreground">Ukuran file maksimal: 5MB. Jika gagal, coba gunakan format JPG &lt; 1MB.</p>
               </div>
           </CardContent>
         </Card>
