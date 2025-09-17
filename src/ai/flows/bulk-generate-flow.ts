@@ -83,7 +83,7 @@ export const bulkGenerateNewsDrafts = ai.defineFlow(
             {
                 title: 'Pembuatan Artikel Massal Selesai',
                 body: `Proses pembuatan ${topics.length} draf artikel telah selesai. Silakan tinjau di panel berita.`,
-                link: `/panel/berita`
+                link: `/panel/berita/jobs/${jobId}`
             },
             { type: 'users', userIds: adminIds }
         );

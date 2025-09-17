@@ -3,7 +3,7 @@
 
 import { db } from '@/lib/firebase';
 import { getMessaging } from 'firebase-admin/messaging';
-import { collection, addDoc, query, where, getDocs, serverTimestamp, updateDoc, documentId, FieldPath, orderBy, limit, writeBatch, getCountFromServer } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, serverTimestamp, updateDoc, doc, FieldPath, orderBy, limit, writeBatch, getCountFromServer } from 'firebase/firestore';
 import { initializeAdminApp } from '@/lib/firebase-admin';
 import type { MemberType, Notification } from '@/lib/definitions';
 
@@ -35,9 +35,9 @@ export async function saveSubscription(userId: string, token: string) {
         createdAt: serverTimestamp(),
       });
     } else {
-      const doc = querySnapshot.docs[0];
-      if (doc.data().userId !== userId) {
-        await updateDoc(doc.ref, {
+      const docSnap = querySnapshot.docs[0];
+      if (docSnap.data().userId !== userId) {
+        await updateDoc(docSnap.ref, {
           userId,
           updatedAt: serverTimestamp(),
         });
@@ -101,12 +101,18 @@ export async function sendNotification(payload: NotificationPayload, target: Not
 
         // Fetch tokens for push notification
         const tokens: string[] = [];
-        for (let i = 0; i < targetUserIds.length; i += 30) {
-            const chunk = targetUserIds.slice(i, i + 30);
-            const tokensQuery = query(subscriptionsCollection, where('userId', 'in', chunk));
-            const subscriptionsSnapshot = await getDocs(tokensQuery);
-            subscriptionsSnapshot.forEach(doc => tokens.push(doc.data().token));
+        if (targetUserIds.length > 0) {
+          const chunks = [];
+          for (let i = 0; i < targetUserIds.length; i += 30) {
+              chunks.push(targetUserIds.slice(i, i + 30));
+          }
+          for (const chunk of chunks) {
+              const tokensQuery = query(subscriptionsCollection, where('userId', 'in', chunk));
+              const subscriptionsSnapshot = await getDocs(tokensQuery);
+              subscriptionsSnapshot.forEach(doc => tokens.push(doc.data().token));
+          }
         }
+
 
         let pushSuccessCount = 0;
         let pushFailureCount = 0;
