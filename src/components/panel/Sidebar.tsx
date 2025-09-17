@@ -28,6 +28,7 @@ import {
   MessageCircle,
   Video,
   Database,
+  Layers,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
@@ -94,6 +95,7 @@ const navGroups: {
       { href: '/panel/positions', icon: UserCheck, label: 'Jabatan', permission: 'manage_positions' },
       { href: '/panel/forms', icon: FileText, label: 'Formulir', permission: 'manage_forms' },
       { href: '/panel/map-data', icon: Map, label: 'Data Peta', permission: 'manage_map_data' },
+      { href: '/panel/map-datasets', icon: Layers, label: 'Dataset Peta', permission: 'manage_map_datasets' },
       { href: '/panel/data-bank', icon: Database, label: 'Bank Data', permission: 'manage_data_bank'},
     ],
   },

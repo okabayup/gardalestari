@@ -24,6 +24,7 @@ export const ALL_PERMISSIONS = [
     { id: 'manage_recruitments', label: 'Kelola Rekrutmen' },
     { id: 'manage_achievements', label: 'Kelola Prestasi' },
     { id: 'manage_map_data', label: 'Kelola Data Peta' },
+    { id: 'manage_map_datasets', label: 'Kelola Dataset Peta' },
     { id: 'manage_evoting', label: 'Kelola E-Voting' },
     { id: 'manage_projects', label: 'Kelola Proyek' },
     { id: 'manage_whatsapp', label: 'Kelola WhatsApp Bot' },
@@ -247,6 +248,14 @@ export interface MapData {
   disbursed?: number;
 }
 
+export interface MapDataset {
+  id?: string;
+  name: string;
+  url: string; // URL to the GeoJSON file
+  isVisible: boolean;
+  createdAt: Timestamp;
+}
+
 // --- Members ---
 export type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected' | 'manual';
 
@@ -370,7 +379,7 @@ export interface Program {
   imageHint: string;
   tags: string[];
   startDate: Date;
-  endDate: Date;
+  endDate?: Date;
   source: ProgramSource;
   partnerId?: string; 
   benefits: string;
@@ -393,7 +402,8 @@ export interface ProgramFormData {
   imageHint?: string;
   imageFile?: FileList;
   tags: string[];
-  dateRange: { from: Date; to: Date };
+  dateRange: { from: Date; to?: Date };
+  isUnlimited: boolean;
   source: ProgramSource;
   partnerId?: string;
   benefits: string;

@@ -6,20 +6,21 @@ import { Map, AdvancedMarker, Pin, InfoWindow, useMap } from '@vis.gl/react-goog
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import { useToast } from '@/hooks/use-toast';
 import { getMapData } from '@/app/actions/map-data';
+import { getMapDatasets, MapDataset } from '@/app/actions/map-datasets'; // Updated import
 import type { MapData, MapDataCategory } from '@/lib/definitions';
 import { categoryConfig } from '@/app/map/page';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Layers, Loader2 } from 'lucide-react';
-import React from 'react';
+import { Separator } from '../ui/separator';
 
 const MapMarkers = ({ items }: { items: MapData[] }) => {
     const map = useMap();
-    const [markers, setMarkers] = useState<{ [key: string]: google.maps.marker.AdvancedMarkerElement }>({});
-    const clusterer = useRef<MarkerClusterer | null>(null);
     const [selectedMarker, setSelectedMarker] = useState<MapData | null>(null);
+    const [markers, setMarkers] = useState<{ [key: string]: google.maps.Marker }>({});
+    const clusterer = useRef<MarkerClusterer | null>(null);
 
     useEffect(() => {
         if (!map) return;
@@ -27,30 +28,26 @@ const MapMarkers = ({ items }: { items: MapData[] }) => {
             clusterer.current = new MarkerClusterer({ map });
         }
     }, [map]);
-    
+
     useEffect(() => {
         clusterer.current?.clearMarkers();
         clusterer.current?.addMarkers(Object.values(markers));
     }, [markers]);
 
-    const setMarkerRef = (marker: google.maps.marker.AdvancedMarkerElement | null, item: MapData) => {
-        if (marker && markers[item.id!] !== marker) {
-            setMarkers(prev => ({ ...prev, [item.id!]: marker }));
-            
-            // Add click listener
-            marker.addListener('click', () => {
-                setSelectedMarker(item);
-            });
+    const setMarkerRef = (marker: google.maps.Marker | null, key: string) => {
+        if (marker && markers[key] !== marker) {
+            setMarkers((prev) => ({ ...prev, [key]: marker }));
         }
     };
     
     return (
         <>
-            {items.map(item => (
+            {items.map((item) => (
                  <AdvancedMarker
                     position={{lat: item.latitude, lng: item.longitude}}
                     key={item.id}
-                    ref={marker => setMarkerRef(marker, item)}
+                    ref={marker => setMarkerRef(marker, item.id!)}
+                    onClick={() => setSelectedMarker(item)}
                  >
                     <Pin background={categoryConfig[item.category].color} borderColor={categoryConfig[item.category].color} glyphColor={"#fff"}/>
                  </AdvancedMarker>
@@ -77,17 +74,66 @@ const MapMarkers = ({ items }: { items: MapData[] }) => {
     )
 }
 
-export default function MapComponent() {
-    const { toast } = useToast();
-    const [allData, setAllData] = useState<MapData[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [selectedCategories, setSelectedCategories] = useState<MapDataCategory[]>(['potensi', 'permasalahan', 'program', 'kegiatan', 'dana']);
+const ExternalDataLayers = ({ datasets }: { datasets: MapDataset[] }) => {
+    const map = useMap();
 
     useEffect(() => {
-        getMapData()
-            .then(setAllData)
-            .catch(() => toast({ variant: 'destructive', title: 'Gagal memuat data peta' }))
-            .finally(() => setLoading(false));
+        if (!map) return;
+
+        const dataLayers: google.maps.Data[] = [];
+
+        datasets.forEach((dataset, index) => {
+            const layer = new google.maps.Data({ map: map });
+            
+            // Simple hashing to get a color for the dataset
+            let hash = 0;
+            for (let i = 0; i < dataset.name.length; i++) {
+                hash = dataset.name.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const color = `hsl(${hash % 360}, 90%, 30%)`;
+
+            layer.setStyle({
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 5,
+                    fillColor: color,
+                    fillOpacity: 0.7,
+                    strokeWeight: 0,
+                }
+            });
+            layer.loadGeoJson(dataset.url);
+            dataLayers.push(layer);
+        });
+
+        // Cleanup function
+        return () => {
+            dataLayers.forEach(layer => {
+                layer.setMap(null);
+            });
+        };
+
+    }, [map, datasets]);
+
+    return null; // This component does not render anything itself
+}
+
+export default function MapComponent() {
+    const { toast } = useToast();
+    const [internalData, setInternalData] = useState<MapData[]>([]);
+    const [externalDatasets, setExternalDatasets] = useState<MapDataset[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [selectedCategories, setSelectedCategories] = useState<MapDataCategory[]>(Object.keys(categoryConfig) as MapDataCategory[]);
+    const [selectedDatasetIds, setSelectedDatasetIds] = useState<string[]>([]);
+
+    useEffect(() => {
+        Promise.all([
+            getMapData(),
+            getMapDatasets()
+        ]).then(([internal, external]) => {
+            setInternalData(internal);
+            setExternalDatasets(external.filter(d => d.isVisible));
+        }).catch(() => toast({ variant: 'destructive', title: 'Gagal memuat data peta' }))
+        .finally(() => setLoading(false));
     }, [toast]);
     
     const handleCategoryChange = (category: MapDataCategory, checked: boolean) => {
@@ -96,9 +142,19 @@ export default function MapComponent() {
         );
     };
 
-    const filteredData = useMemo(() => {
-        return allData.filter(item => selectedCategories.includes(item.category));
-    }, [allData, selectedCategories]);
+     const handleDatasetChange = (datasetId: string, checked: boolean) => {
+        setSelectedDatasetIds(prev => 
+            checked ? [...prev, datasetId] : prev.filter(id => id !== datasetId)
+        );
+    };
+
+    const filteredInternalData = useMemo(() => {
+        return internalData.filter(item => selectedCategories.includes(item.category));
+    }, [internalData, selectedCategories]);
+
+    const activeExternalDatasets = useMemo(() => {
+        return externalDatasets.filter(d => selectedDatasetIds.includes(d.id!));
+    }, [externalDatasets, selectedDatasetIds]);
 
     return (
         <div className="h-full w-full relative">
@@ -113,18 +169,39 @@ export default function MapComponent() {
                     <SheetContent>
                         <SheetHeader>
                             <SheetTitle>Filter Lapisan Peta</SheetTitle>
+                            <SheetDescription>Pilih data yang ingin Anda tampilkan di peta.</SheetDescription>
                         </SheetHeader>
-                        <div className="space-y-4 py-4">
-                            {Object.entries(categoryConfig).map(([key, { label }]) => (
-                                <div key={key} className="flex items-center space-x-2">
-                                    <Checkbox
-                                        id={key}
-                                        checked={selectedCategories.includes(key as MapDataCategory)}
-                                        onCheckedChange={(checked) => handleCategoryChange(key as MapDataCategory, !!checked)}
-                                    />
-                                    <Label htmlFor={key} className="flex-1 cursor-pointer">{label}</Label>
-                                </div>
-                            ))}
+                        <div className="py-4">
+                            <Label className="font-semibold">Lapisan Internal</Label>
+                            <div className="space-y-2 mt-2">
+                                {Object.entries(categoryConfig).map(([key, { label }]) => (
+                                    <div key={key} className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id={key}
+                                            checked={selectedCategories.includes(key as MapDataCategory)}
+                                            onCheckedChange={(checked) => handleCategoryChange(key as MapDataCategory, !!checked)}
+                                        />
+                                        <Label htmlFor={key} className="flex-1 cursor-pointer">{label}</Label>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <Separator />
+                        <div className="py-4">
+                             <Label className="font-semibold">Lapisan Eksternal (Datasets)</Label>
+                            <div className="space-y-2 mt-2">
+                                {externalDatasets.map(dataset => (
+                                     <div key={dataset.id} className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id={dataset.id!}
+                                            checked={selectedDatasetIds.includes(dataset.id!)}
+                                            onCheckedChange={(checked) => handleDatasetChange(dataset.id!, !!checked)}
+                                        />
+                                        <Label htmlFor={dataset.id!} className="flex-1 cursor-pointer">{dataset.name}</Label>
+                                    </div>
+                                ))}
+                                 {externalDatasets.length === 0 && <p className="text-xs text-muted-foreground">Tidak ada dataset eksternal yang tersedia.</p>}
+                            </div>
                         </div>
                     </SheetContent>
                 </Sheet>
@@ -142,7 +219,8 @@ export default function MapComponent() {
                 disableDefaultUI={true}
                 className="h-full w-full"
             >
-                <MapMarkers items={filteredData} />
+                <MapMarkers items={filteredInternalData} />
+                <ExternalDataLayers datasets={activeExternalDatasets} />
             </Map>
         </div>
     )
