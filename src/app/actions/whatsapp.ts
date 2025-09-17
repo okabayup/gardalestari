@@ -70,23 +70,26 @@ const defaultTemplates: Record<NotificationType, WhatsAppTemplate> = {
 const settingsDocRef = doc(db, 'settings', 'whatsappTemplates');
 
 export async function getWhatsappTemplates(): Promise<Record<NotificationType, WhatsAppTemplate>> {
-    const docSnap = await getDoc(settingsDocRef);
-    if (docSnap.exists()) {
-        // Merge with defaults to ensure all templates are present, even if new ones are added to code
-        const firestoreData = docSnap.data();
-        const mergedTemplates: any = {};
-        for (const key in defaultTemplates) {
-            const templateKey = key as NotificationType;
-            mergedTemplates[templateKey] = {
-                ...defaultTemplates[templateKey],
-                ...(firestoreData[templateKey] || {}),
-            };
+    try {
+        const docSnap = await getDoc(settingsDocRef);
+        if (docSnap.exists()) {
+            const firestoreData = docSnap.data();
+            const mergedTemplates: any = {};
+            for (const key in defaultTemplates) {
+                const templateKey = key as NotificationType;
+                mergedTemplates[templateKey] = {
+                    ...defaultTemplates[templateKey],
+                    ...(firestoreData[templateKey] || {}),
+                };
+            }
+            return mergedTemplates;
         }
-        return mergedTemplates;
+        await setDoc(settingsDocRef, defaultTemplates);
+        return defaultTemplates;
+    } catch (error) {
+        console.error("[getWhatsappTemplates Error]", error);
+        throw new Error("Gagal mengambil template WhatsApp.");
     }
-    // If no settings exist in firestore, initialize with defaults
-    await setDoc(settingsDocRef, defaultTemplates);
-    return defaultTemplates;
 }
 
 export async function getWhatsappTemplate(id: NotificationType): Promise<WhatsAppTemplate> {
@@ -98,7 +101,6 @@ export async function updateWhatsappTemplates(templates: Record<string, Partial<
     try {
         const docData: { [key: string]: any } = {};
         for (const key in templates) {
-            // Ensure we only save the fields that can be modified by the user
             docData[key] = {
                 message: templates[key].message,
                 isActive: templates[key].isActive,
@@ -107,7 +109,7 @@ export async function updateWhatsappTemplates(templates: Record<string, Partial<
         await setDoc(settingsDocRef, docData, { merge: true });
         revalidatePath('/panel/whatsapp/templates');
     } catch (error) {
-        console.error("Error updating WhatsApp templates:", error);
+        console.error("[updateWhatsappTemplates Error]", error);
         throw new Error("Gagal memperbarui template.");
     }
 }
@@ -122,7 +124,7 @@ export async function sendTestMessage(phoneNumber: string, message: string) {
         return { success: true };
     } catch (error) {
         const errorMessage = (error instanceof Error) ? error.message : 'Unknown error occurred';
-        console.error("Error in sendTestMessage action:", errorMessage);
+        console.error("[sendTestMessage Error]", errorMessage);
         throw new Error(errorMessage);
     }
 }
@@ -137,26 +139,31 @@ export async function sendBulkTestMessage(phoneNumbers: string, message: string)
         return { success: true, count: numbersArray.length };
     } catch (error) {
         const errorMessage = (error instanceof Error) ? error.message : 'Unknown error occurred';
-        console.error("Error in sendBulkTestMessage action:", errorMessage);
+        console.error("[sendBulkTestMessage Error]", errorMessage);
         throw new Error(errorMessage);
     }
 }
 
 
 export async function getLatestProgramsText(): Promise<string> {
-    const programs = await getPrograms();
-    const activePrograms = programs
-        .filter(p => new Date(p.endDate) > new Date())
-        .slice(0, 3);
+    try {
+        const programs = await getPrograms();
+        const activePrograms = programs
+            .filter(p => new Date(p.endDate) > new Date())
+            .slice(0, 3);
 
-    if (activePrograms.length === 0) {
-        return "Saat ini belum ada program yang sedang dibuka. Pantau terus aplikasi kami untuk informasi terbaru!";
+        if (activePrograms.length === 0) {
+            return "Saat ini belum ada program yang sedang dibuka. Pantau terus aplikasi kami untuk informasi terbaru!";
+        }
+
+        let message = "Berikut adalah program yang sedang dibuka:\n\n";
+        activePrograms.forEach(p => {
+            message += `*${p.title}*\nBatas Pendaftaran: ${new Date(p.endDate).toLocaleDateString('id-ID')}\nInfo: ${process.env.NEXT_PUBLIC_BASE_URL}/programs/${p.id}\n\n`;
+        });
+
+        return message;
+    } catch (error) {
+        console.error("[getLatestProgramsText Error]", error);
+        return "Mohon maaf, terjadi kesalahan saat mengambil data program terbaru.";
     }
-
-    let message = "Berikut adalah program yang sedang dibuka:\n\n";
-    activePrograms.forEach(p => {
-        message += `*${p.title}*\nBatas Pendaftaran: ${new Date(p.endDate).toLocaleDateString('id-ID')}\nInfo: ${process.env.NEXT_PUBLIC_BASE_URL}/programs/${p.id}\n\n`;
-    });
-
-    return message;
 }

@@ -32,7 +32,8 @@ async function getPositionDetails(positionId?: string): Promise<{ name: string, 
             };
         }
         return { name: 'Anggota', permissions: [] };
-    } catch {
+    } catch (error) {
+        console.error("[getPositionDetails Error]", error);
         return { name: 'Anggota', permissions: [] };
     }
 }
@@ -44,7 +45,7 @@ export async function getPendingVerificationCount(): Promise<number> {
     const snapshot = await getCountFromServer(q);
     return snapshot.data().count;
   } catch (error) {
-    console.error("Error getting pending verification count:", error);
+    console.error("[getPendingVerificationCount Error]", error);
     throw new Error("Gagal mengambil jumlah verifikasi tertunda.");
   }
 }
@@ -68,6 +69,11 @@ export async function getMembers(forPublic: boolean = false): Promise<MemberWith
 
       // Exclude the official account from the members list
       if (data.phoneNumber === OFFICIAL_ACCOUNT_PHONE) {
+          continue;
+      }
+      
+      // For public view, also exclude hidden members
+      if (forPublic && data.isHidden) {
           continue;
       }
 
@@ -107,7 +113,7 @@ export async function getMembers(forPublic: boolean = false): Promise<MemberWith
     
     return members;
   } catch (error) {
-    console.error("Error getting members:", error);
+    console.error("[getMembers Error]", error);
     throw new Error("Gagal mengambil data anggota.");
   }
 }
@@ -170,7 +176,7 @@ export async function updateMemberDetails(id: string, details: Partial<Omit<Memb
         revalidatePath('/panel/members');
         revalidatePath('/members');
     } catch (error) {
-        console.error("Error updating member details:", error);
+        console.error("[updateMemberDetails Error]", error);
         throw new Error("Gagal memperbarui detail anggota.");
     }
 }
@@ -214,7 +220,7 @@ export async function createManualMember(
         revalidatePath('/members');
 
     } catch (error) {
-        console.error("Error creating manual member:", error);
+        console.error("[createManualMember Error]", error);
         throw new Error("Gagal membuat anggota manual.");
     }
 }

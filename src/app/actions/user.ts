@@ -21,7 +21,7 @@ export async function checkUsernameExists(username: string): Promise<boolean> {
     const querySnapshot = await getDocs(q);
     return !querySnapshot.empty;
   } catch (error) {
-    console.error("Error checking username existence:", error);
+    console.error("[checkUsernameExists Error]", error);
     // In case of error, assume it might exist to be safe, or handle as needed
     return true; 
   }
@@ -47,7 +47,7 @@ export async function generateUniqueUsername(fullName: string): Promise<string> 
             username = `${baseUsername}${Math.floor(Math.random() * 1000)}`;
         }
     } catch (error) {
-        console.error("Error generating unique username:", error);
+        console.error("[generateUniqueUsername Error]", error);
         throw new Error("Gagal membuat nama pengguna unik.");
     }
 }
@@ -95,7 +95,7 @@ export async function getUserByUid(uid: string): Promise<(MemberWithStatus & { w
         };
 
     } catch (error) {
-        console.error("Error fetching user by UID:", error);
+        console.error("[getUserByUid Error]", error);
         return null;
     }
 }
@@ -144,7 +144,7 @@ export async function getUserByUsername(username: string): Promise<PublicProfile
         };
 
     } catch (error) {
-        console.error("Error fetching user by username:", error);
+        console.error("[getUserByUsername Error]", error);
         return null;
     }
 }
@@ -172,7 +172,7 @@ export async function getUserByWaNumber(waNumber: string): Promise<PublicUser | 
         };
 
     } catch (error) {
-        console.error("Error fetching user by WhatsApp number:", error);
+        console.error("[getUserByWaNumber Error]", error);
         return null;
     }
 }
@@ -232,7 +232,7 @@ export async function searchUsers(searchQuery: string, limitCount: number = 5): 
     return Array.from(usersMap.values()).slice(0, limitCount);
 
   } catch (error) {
-    console.error("Error searching users:", error);
+    console.error("[searchUsers Error]", error);
     return [];
   }
 }
@@ -256,7 +256,7 @@ export async function saveWaNumber(userId: string, waNumber: string) {
         }
         return result;
     } catch (error) {
-        console.error(`Error in saveWaNumber action for ${waNumber}:`, error);
+        console.error(`[saveWaNumber Error] for ${waNumber}:`, error);
         throw new Error((error as Error).message);
     }
 }
@@ -275,7 +275,7 @@ export async function verifyWaNumber(userId: string, otp: string): Promise<boole
         }
         return false;
     } catch (error) {
-        console.error("Error verifying WA number:", error);
+        console.error("[verifyWaNumber Error]", error);
         throw new Error("Gagal memverifikasi nomor WhatsApp.");
     }
 }

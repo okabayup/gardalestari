@@ -25,30 +25,40 @@ export interface GenerationJob {
 }
 
 export async function createGenerationJob(totalCount: number): Promise<string> {
-    const newJob = {
-        status: 'pending' as const,
-        totalCount,
-        completedCount: 0,
-        errors: [],
-        createdAt: serverTimestamp(),
-    };
-    const docRef = await addDoc(generationJobsCollection, newJob);
-    return docRef.id;
+    try {
+        const newJob = {
+            status: 'pending' as const,
+            totalCount,
+            completedCount: 0,
+            errors: [],
+            createdAt: serverTimestamp(),
+        };
+        const docRef = await addDoc(generationJobsCollection, newJob);
+        return docRef.id;
+    } catch (error) {
+        console.error("[createGenerationJob Error]", error);
+        throw new Error("Gagal membuat job baru di Firestore.");
+    }
 }
 
 export async function retryFailedTopics(job: GenerationJob): Promise<string> {
-    if (!job.errors || job.errors.length === 0) {
-        throw new Error("Tidak ada topik yang gagal untuk dicoba lagi.");
-    }
-    const topicsToRetry = job.errors.map(err => ({ title: err.topic, description: 'Mencoba ulang dari kegagalan sebelumnya.' }));
+    try {
+        if (!job.errors || job.errors.length === 0) {
+            throw new Error("Tidak ada topik yang gagal untuk dicoba lagi.");
+        }
+        const topicsToRetry = job.errors.map(err => ({ title: err.topic, description: 'Mencoba ulang dari kegagalan sebelumnya.' }));
 
-    const newJobId = await createGenerationJob(topicsToRetry.length);
-    
-    // Run in background, don't await
-    bulkGenerateNewsDrafts({ topics: topicsToRetry, jobId: newJobId });
-    
-    revalidatePath('/panel/berita/jobs');
-    return newJobId;
+        const newJobId = await createGenerationJob(topicsToRetry.length);
+        
+        // Run in background, don't await
+        bulkGenerateNewsDrafts({ topics: topicsToRetry, jobId: newJobId });
+        
+        revalidatePath('/panel/berita/jobs');
+        return newJobId;
+    } catch (error) {
+        console.error("[retryFailedTopics Error]", error);
+        throw new Error("Gagal memulai ulang topik yang gagal.");
+    }
 }
 
 
@@ -84,42 +94,52 @@ export async function updateJobProgress(jobId: string, completedIncrement: numbe
 
 
 export async function getJobStatus(jobId: string): Promise<GenerationJob | null> {
-    const docRef = doc(db, 'generationJobs', jobId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        const data = docSnap.data();
-        return {
-            id: docSnap.id,
-            status: data.status,
-            totalCount: data.totalCount,
-            completedCount: data.completedCount,
-            errors: data.errors,
-            createdAt: (data.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
-            completedAt: (data.completedAt as Timestamp)?.toDate().toISOString(),
-        } as GenerationJob;
+    try {
+        const docRef = doc(db, 'generationJobs', jobId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            return {
+                id: docSnap.id,
+                status: data.status,
+                totalCount: data.totalCount,
+                completedCount: data.completedCount,
+                errors: data.errors,
+                createdAt: (data.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
+                completedAt: (data.completedAt as Timestamp)?.toDate().toISOString(),
+            } as GenerationJob;
+        }
+        return null;
+    } catch (error) {
+        console.error(`[getJobStatus Error] Failed to get job ${jobId}:`, error);
+        return null;
     }
-    return null;
 }
 
 export async function getGenerationJobs(): Promise<GenerationJob[]> {
-    const q = query(generationJobsCollection, orderBy('createdAt', 'desc'));
-    const snapshot = await getDocs(q);
-    
-    return snapshot.docs.map(doc => {
-        const data = doc.data();
-        const createdAt = data.createdAt as Timestamp | null;
-        const completedAt = data.completedAt as Timestamp | null;
+    try {
+        const q = query(generationJobsCollection, orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(q);
+        
+        return snapshot.docs.map(doc => {
+            const data = doc.data();
+            const createdAt = data.createdAt as Timestamp | null;
+            const completedAt = data.completedAt as Timestamp | null;
 
-        return {
-            id: doc.id,
-            status: data.status,
-            totalCount: data.totalCount,
-            completedCount: data.completedCount,
-            errors: data.errors || [],
-            createdAt: createdAt ? createdAt.toDate().toISOString() : new Date().toISOString(),
-            completedAt: completedAt ? completedAt.toDate().toISOString() : undefined,
-        } as GenerationJob;
-    });
+            return {
+                id: doc.id,
+                status: data.status,
+                totalCount: data.totalCount,
+                completedCount: data.completedCount,
+                errors: data.errors || [],
+                createdAt: createdAt ? createdAt.toDate().toISOString() : new Date().toISOString(),
+                completedAt: completedAt ? completedAt.toDate().toISOString() : undefined,
+            } as GenerationJob;
+        });
+    } catch (error) {
+        console.error("[getGenerationJobs Error]", error);
+        throw new Error("Gagal mengambil daftar pekerjaan generasi.");
+    }
 }
 
 
@@ -127,31 +147,41 @@ export async function getGenerationJobs(): Promise<GenerationJob[]> {
 
 // Get all berita posts (articles and videos)
 export async function getBeritaPosts(type?: 'artikel' | 'video') {
-  let q;
-  if (type) {
-      q = query(beritaPostsCollection, where('type', '==', type), orderBy('date', 'desc'));
-  } else {
-      q = query(beritaPostsCollection, orderBy('date', 'desc'));
+  try {
+    let q;
+    if (type) {
+        q = query(beritaPostsCollection, where('type', '==', type), orderBy('date', 'desc'));
+    } else {
+        q = query(beritaPostsCollection, orderBy('date', 'desc'));
+    }
+    const snapshot = await getDocs(q);
+    const posts: BeritaPost[] = [];
+    snapshot.forEach(doc => {
+      posts.push({ id: doc.id, ...doc.data() } as BeritaPost);
+    });
+    return posts;
+  } catch (error) {
+    console.error("[getBeritaPosts Error]", error);
+    throw new Error("Gagal mengambil data konten.");
   }
-  const snapshot = await getDocs(q);
-  const posts: BeritaPost[] = [];
-  snapshot.forEach(doc => {
-    posts.push({ id: doc.id, ...doc.data() } as BeritaPost);
-  });
-  return posts;
 }
 
 // Get a single berita post by slug
 export async function getBeritaPost(slug: string) {
-  const q = query(beritaPostsCollection, where("slug", "==", slug));
-  const snapshot = await getDocs(q);
+  try {
+    const q = query(beritaPostsCollection, where("slug", "==", slug));
+    const snapshot = await getDocs(q);
 
-  if (snapshot.empty) {
-    return null;
+    if (snapshot.empty) {
+      return null;
+    }
+    
+    const doc = snapshot.docs[0];
+    return { id: doc.id, ...doc.data() } as BeritaPost;
+  } catch (error) {
+    console.error(`[getBeritaPost Error] Failed to get post with slug ${slug}:`, error);
+    throw new Error("Gagal mengambil detail konten.");
   }
-  
-  const doc = snapshot.docs[0];
-  return { id: doc.id, ...doc.data() } as BeritaPost;
 }
 
 
@@ -175,8 +205,6 @@ export async function createBeritaPost(post: Omit<BeritaPost, 'id'>) {
       status: post.status || 'published',
     };
     
-    // For drafts, we can use setDoc with a specific ID if we want, or just addDoc.
-    // Let's use addDoc for simplicity.
     const docRef = await addDoc(beritaPostsCollection, { ...postData });
     
     if (postData.status !== 'draft') {
@@ -192,7 +220,7 @@ export async function createBeritaPost(post: Omit<BeritaPost, 'id'>) {
     return { id: docRef.id, ...postData };
 
   } catch (error) {
-    console.error("Error creating berita post:", error);
+    console.error("[createBeritaPost Error]", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     throw new Error(`Gagal membuat konten: ${errorMessage}`);
   }
@@ -221,7 +249,7 @@ export async function updateBeritaPost(id: string, post: Partial<BeritaPost>) {
     }
 
   } catch (error) {
-    console.error("Error updating berita post:", error);
+    console.error("[updateBeritaPost Error]", error);
     throw new Error("Gagal memperbarui konten.");
   }
 }
@@ -252,7 +280,7 @@ export async function deleteBeritaPost(id: string) {
     revalidatePath('/');
 
   } catch (error) {
-    console.error("Error deleting berita post:", error);
+    console.error("[deleteBeritaPost Error]", error);
     throw new Error("Gagal menghapus konten.");
   }
 }
@@ -269,7 +297,7 @@ export async function requestReindexing(slug: string, type: 'artikel' | 'video' 
             throw new Error(result.error || 'Unknown error');
         }
     } catch (error) {
-        console.error("Error requesting re-indexing:", error);
+        console.error("[requestReindexing Error]", error);
         throw new Error("Gagal meminta indeksasi ulang.");
     }
 }
