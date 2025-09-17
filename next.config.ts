@@ -30,6 +30,14 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  webpack: (config, { isServer }) => {
+    // This is to suppress the 'require.extensions' warning from handlebars
+    // which is a dependency of dotprompt, used by Genkit.
+    config.externals.push({
+      'handlebars': 'commonjs handlebars'
+    });
+    return config;
+  },
   images: {
     remotePatterns: [
       {

@@ -20,8 +20,6 @@ const toProgram = (doc: any): Program => {
     return {
         id: doc.id,
         ...data,
-        startDate: data.startDate?.toDate(),
-        endDate: data.endDate?.toDate(),
     } as Program;
 }
 
@@ -67,8 +65,6 @@ export async function getPrograms(): Promise<Program[]> {
         return {
             id: doc.id,
             ...data,
-            startDate: data.startDate?.toDate(),
-            endDate: data.endDate?.toDate(),
         } as Program;
     });
   } catch (error) {
