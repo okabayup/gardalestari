@@ -21,19 +21,29 @@ const toRecruitment = (doc: any): Recruitment => {
 
 // Get all recruitments
 export async function getRecruitments(): Promise<Recruitment[]> {
-  const q = query(recruitmentsCollection, orderBy('deadline', 'asc'));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(toRecruitment);
+  try {
+    const q = query(recruitmentsCollection, orderBy('deadline', 'asc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(toRecruitment);
+  } catch(error) {
+    console.error("[getRecruitments Error]", error);
+    throw new Error("Gagal memuat daftar rekrutmen.");
+  }
 }
 
 // Get a single recruitment by ID
 export async function getRecruitment(id: string): Promise<Recruitment | null> {
-    const docRef = doc(db, 'recruitments', id);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        return toRecruitment(docSnap);
+    try {
+        const docRef = doc(db, 'recruitments', id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            return toRecruitment(docSnap);
+        }
+        return null;
+    } catch (error) {
+        console.error("[getRecruitment Error]", error);
+        throw new Error("Gagal mengambil detail rekrutmen.");
     }
-    return null;
 }
 
 // Create a new recruitment
@@ -58,7 +68,7 @@ export async function createRecruitment(data: Omit<Recruitment, 'id' | 'createdA
     revalidatePath('/panel/recruitments');
     revalidatePath('/recruitments');
   } catch (error) {
-    console.error("Error creating recruitment:", error);
+    console.error("[createRecruitment Error]", error);
     throw new Error("Gagal membuat data rekrutmen.");
   }
 }
@@ -91,7 +101,7 @@ export async function updateRecruitment(id: string, data: Partial<Omit<Recruitme
     revalidatePath(`/panel/recruitments/edit/${id}`);
     revalidatePath('/recruitments');
   } catch (error) {
-    console.error("Error updating recruitment:", error);
+    console.error("[updateRecruitment Error]", error);
     throw new Error("Gagal memperbarui rekrutmen.");
   }
 }
@@ -103,7 +113,7 @@ export async function deleteRecruitment(id: string) {
     revalidatePath('/panel/recruitments');
     revalidatePath('/recruitments');
   } catch (error) {
-    console.error("Error deleting recruitment:", error);
+    console.error("[deleteRecruitment Error]", error);
     throw new Error("Gagal menghapus rekrutmen.");
   }
 }

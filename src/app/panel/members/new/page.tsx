@@ -82,6 +82,7 @@ export default function NewManualMemberPage() {
       toast({ title: 'Anggota manual berhasil ditambahkan!' });
       router.push('/panel/members');
     } catch (error) {
+      console.error("[onSubmit Error]", error);
       toast({ variant: 'destructive', title: 'Gagal menambahkan anggota', description: (error as Error).message });
       setLoading(false);
     }

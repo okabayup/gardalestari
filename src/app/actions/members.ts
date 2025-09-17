@@ -54,14 +54,8 @@ export async function getPendingVerificationCount(): Promise<number> {
 // Get all members, sorted by creation time
 export async function getMembers(forPublic: boolean = false): Promise<MemberWithStatus[]> {
   try {
-    let q = query(usersCollection); 
+    const snapshot = await getDocs(usersCollection); 
     
-    // For public views, only fetch verified members
-    if (forPublic) {
-        q = query(q, where('verificationStatus', 'in', ['permanent', 'manual']));
-    }
-    
-    const snapshot = await getDocs(q);
     let members: MemberWithStatus[] = [];
 
     for (const docSnap of snapshot.docs) {
@@ -72,11 +66,11 @@ export async function getMembers(forPublic: boolean = false): Promise<MemberWith
           continue;
       }
       
-      // For public view, also exclude hidden members
-      if (forPublic && data.isHidden === true) {
+      // For public view, also exclude hidden members and unverified
+      if (forPublic && (data.isHidden === true || data.verificationStatus === 'unverified' || data.verificationStatus === 'rejected')) {
           continue;
       }
-
+      
       const { name: positionName, permissions } = await getPositionDetails(data.positionId);
 
       members.push({
@@ -93,6 +87,7 @@ export async function getMembers(forPublic: boolean = false): Promise<MemberWith
         position: positionName,
         positionId: data.positionId,
         type: data.type || undefined,
+        region: data.region,
         isSpecialMember: data.isSpecialMember || false,
         isHidden: data.isHidden || false,
         joinDate: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
@@ -103,7 +98,7 @@ export async function getMembers(forPublic: boolean = false): Promise<MemberWith
         permissions: permissions,
       });
     }
-
+    
     // Sort members by creation date in descending order (newest first)
     members.sort((a, b) => {
       const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);

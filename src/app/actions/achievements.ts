@@ -44,7 +44,7 @@ export async function searchAchievements(searchQuery: string): Promise<Partial<A
         date: entry.date,
     }));
   } catch (error) {
-    console.error("Error searching achievements:", error);
+    console.error("[searchAchievements Error]", error);
     throw new Error("Gagal mencari data prestasi.");
   }
 }
@@ -57,7 +57,7 @@ export async function getAchievements(): Promise<Achievement[]> {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Achievement));
   } catch (error) {
-    console.error("Error getting achievements:", error);
+    console.error("[getAchievements Error]", error);
     throw new Error("Gagal mengambil data prestasi.");
   }
 }
@@ -69,7 +69,7 @@ export async function getAchievementsByUserId(userId: string): Promise<Achieveme
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Achievement));
   } catch (error) {
-    console.error("Error getting achievements by user ID:", error);
+    console.error("[getAchievementsByUserId Error]", error);
     throw new Error("Gagal mengambil data prestasi pengguna.");
   }
 }
@@ -85,7 +85,7 @@ export async function getAchievement(id: string): Promise<Achievement | null> {
         }
         return null;
     } catch (error) {
-        console.error("Error getting achievement:", error);
+        console.error("[getAchievement Error]", error);
         throw new Error("Gagal mengambil data prestasi tunggal.");
     }
 }
@@ -103,7 +103,7 @@ export async function createAchievement(data: Omit<Achievement, 'id' | 'date'> &
     revalidatePath('/panel/achievements');
     revalidatePath('/achievements');
   } catch (error) {
-    console.error("Error creating achievement:", error);
+    console.error("[createAchievement Error]", error);
     throw new Error("Gagal membuat data prestasi.");
   }
 }
@@ -139,7 +139,7 @@ export async function createMyAchievement(
         revalidatePath('/achievements');
         revalidatePath('/profile/me');
     } catch (error) {
-        console.error("Error creating user achievement:", error);
+        console.error("[createMyAchievement Error]", error);
         throw new Error("Gagal menambahkan prestasi Anda.");
     }
 }
@@ -158,7 +158,7 @@ export async function updateAchievement(id: string, data: Partial<Omit<Achieveme
                 await deleteObject(ref(storage, currentDoc.imageUrl));
             } catch (storageError: any) {
                  if (storageError.code !== 'storage/object-not-found') {
-                    console.warn("Could not delete old image", storageError);
+                    console.warn("[updateAchievement Warn] Could not delete old image", storageError);
                 }
             }
         }
@@ -172,7 +172,7 @@ export async function updateAchievement(id: string, data: Partial<Omit<Achieveme
     revalidatePath(`/achievements`);
     revalidatePath('/profile/me');
   } catch (error) {
-    console.error("Error updating achievement:", error);
+    console.error("[updateAchievement Error]", error);
     throw new Error("Gagal memperbarui prestasi.");
   }
 }
@@ -186,7 +186,7 @@ export async function deleteAchievement(id: string) {
             await deleteObject(ref(storage, docToDelete.imageUrl));
         } catch (storageError: any) {
             if (storageError.code !== 'storage/object-not-found') {
-                console.warn("Old image not found, skipping deletion.", storageError);
+                console.warn("[deleteAchievement Warn] Old image not found, skipping deletion.", storageError);
             }
         }
     }
@@ -195,7 +195,7 @@ export async function deleteAchievement(id: string) {
     revalidatePath('/achievements');
     revalidatePath('/profile/me');
   } catch (error) {
-    console.error("Error deleting achievement:", error);
+    console.error("[deleteAchievement Error]", error);
     throw new Error("Gagal menghapus prestasi.");
   }
 }

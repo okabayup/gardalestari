@@ -33,7 +33,7 @@ export async function getAppSettings(): Promise<AppSettings> {
       } as AppSettings;
     }
   } catch (error) {
-    console.error("Error fetching app settings:", error);
+    console.error("[getAppSettings Error]", error);
   }
   // Return default values if not set or on error
   return {
@@ -96,7 +96,7 @@ export async function updateAppSettings(settings: Partial<Omit<AppSettings, 'her
     revalidatePath('/panel/landing');
 
   } catch (error) {
-    console.error("Error updating app settings:", error);
+    console.error("[updateAppSettings Error]", error);
     throw new Error("Gagal memperbarui pengaturan aplikasi.");
   }
 }

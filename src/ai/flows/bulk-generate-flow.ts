@@ -33,6 +33,7 @@ export const bulkGenerateNewsDrafts = ai.defineFlow(
     
     for (const topic of topics) {
       try {
+        console.log(`[Bulk Generate Flow] Generating article for topic: "${topic.title}"`);
         // Step 1: Generate the article content and images
         const generatedArticle = await generateNewsArticle({
           topic: topic.title,
@@ -41,6 +42,7 @@ export const bulkGenerateNewsDrafts = ai.defineFlow(
         });
 
         // Step 2: Save the article as a DRAFT
+        console.log(`[Bulk Generate Flow] Saving draft for topic: "${topic.title}"`);
         const newPostDraft = await createBeritaPost({
           title: generatedArticle.title,
           slug: `draft-${Date.now()}-${generatedArticle.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 50)}`,
@@ -66,27 +68,32 @@ export const bulkGenerateNewsDrafts = ai.defineFlow(
         console.log(`[Bulk Generate Flow] Successfully generated draft for topic: "${topic.title}"`);
 
       } catch (error) {
-        console.error(`[Bulk Generate Flow] Failed to generate article for topic: "${topic.title}". Error:`, error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error during article generation.';
+        console.error(`[Bulk Generate Flow] Failed to generate article for topic: "${topic.title}". Error:`, errorMessage, error);
         // Update job progress with an error
-        await updateJobProgress(jobId, 1, { topic: topic.title, error: (error as Error).message });
+        await updateJobProgress(jobId, 1, { topic: topic.title, error: errorMessage });
       }
     }
     
     // Step 4: Notify admins that the job is complete
-    const allMembers = await getMembers();
-    const adminIds = allMembers
-        .filter(m => m.permissions.includes('manage_news'))
-        .map(m => m.id);
+    try {
+        const allMembers = await getMembers();
+        const adminIds = allMembers
+            .filter(m => m.permissions.includes('manage_news'))
+            .map(m => m.id);
 
-    if (adminIds.length > 0) {
-        await sendNotification(
-            {
-                title: 'Pembuatan Artikel Massal Selesai',
-                body: `Proses pembuatan ${topics.length} draf artikel telah selesai. Silakan tinjau di panel berita.`,
-                link: `/panel/berita/jobs/${jobId}`
-            },
-            { type: 'users', userIds: adminIds }
-        );
+        if (adminIds.length > 0) {
+            await sendNotification(
+                {
+                    title: 'Pembuatan Artikel Massal Selesai',
+                    body: `Proses pembuatan ${topics.length} draf artikel telah selesai. Silakan tinjau di panel berita.`,
+                    link: `/panel/berita/jobs/${jobId}`
+                },
+                { type: 'users', userIds: adminIds }
+            );
+        }
+    } catch (notificationError) {
+        console.error(`[Bulk Generate Flow] Failed to send completion notification for job ${jobId}:`, notificationError);
     }
      console.log(`[Bulk Generate Flow] Job ${jobId} completed.`);
   }

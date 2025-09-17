@@ -206,7 +206,7 @@ export async function searchUsers(searchQuery: string, limitCount: number = 5): 
 
     const [usernameSnapshot, fullNameSnapshot] = await Promise.all([
         getDocs(usernameQuery),
-        getDocs(fullNameSnapshot)
+        getDocs(fullNameQuery)
     ]);
     
     const usersMap = new Map<string, PublicUser>();

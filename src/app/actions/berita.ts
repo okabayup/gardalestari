@@ -122,7 +122,7 @@ export async function getJobStatus(jobId: string): Promise<GenerationJob | null>
         return null;
     } catch (error) {
         console.error(`[getJobStatus Error] Failed to get job ${jobId}:`, error);
-        return null;
+        throw new Error(`Gagal mengambil data pekerjaan: ${(error as Error).message}`);
     }
 }
 

@@ -93,8 +93,14 @@ export async function getWhatsappTemplates(): Promise<Record<NotificationType, W
 }
 
 export async function getWhatsappTemplate(id: NotificationType): Promise<WhatsAppTemplate> {
-    const templates = await getWhatsappTemplates();
-    return templates[id] || defaultTemplates[id];
+    try {
+        const templates = await getWhatsappTemplates();
+        return templates[id] || defaultTemplates[id];
+    } catch (error) {
+        console.error(`[getWhatsappTemplate Error] for ID ${id}:`, error);
+        // Fallback to default in case of error
+        return defaultTemplates[id];
+    }
 }
 
 export async function updateWhatsappTemplates(templates: Record<string, Partial<WhatsAppTemplate>>) {

@@ -39,22 +39,32 @@ const categoriesCollection = collection(db, 'documentCategories');
 // --- Document Management ---
 
 export async function getDocuments(): Promise<ImportantDocument[]> {
-  const q = query(documentsCollection, orderBy('createdAt', 'desc'));
-  const snapshot = await getDocs(q);
-  const documents: ImportantDocument[] = [];
-  snapshot.forEach(doc => {
-    documents.push({ id: doc.id, ...doc.data() } as ImportantDocument);
-  });
-  return documents;
+  try {
+    const q = query(documentsCollection, orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    const documents: ImportantDocument[] = [];
+    snapshot.forEach(doc => {
+      documents.push({ id: doc.id, ...doc.data() } as ImportantDocument);
+    });
+    return documents;
+  } catch(error) {
+    console.error("[getDocuments Error]", error);
+    throw new Error("Gagal mengambil daftar dokumen.");
+  }
 }
 
 export async function getDocument(id: string): Promise<ImportantDocument | null> {
-    const docRef = doc(db, 'importantDocuments', id);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() } as ImportantDocument;
+    try {
+        const docRef = doc(db, 'importantDocuments', id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            return { id: docSnap.id, ...docSnap.data() } as ImportantDocument;
+        }
+        return null;
+    } catch(error) {
+        console.error(`[getDocument Error] for ID ${id}:`, error);
+        throw new Error("Gagal mengambil detail dokumen.");
     }
-    return null;
 }
 
 export async function createDocument(
@@ -76,7 +86,7 @@ export async function createDocument(
     await addDoc(documentsCollection, docData);
     revalidatePath('/panel/documents');
   } catch (error) {
-    console.error("Error creating document:", error);
+    console.error("[createDocument Error]", error);
     throw new Error("Gagal membuat dokumen.");
   }
 }
@@ -93,7 +103,7 @@ export async function updateDocument(id: string, data: Partial<Omit<ImportantDoc
                 await deleteObject(ref(storage, currentDoc.fileUrl));
             } catch (storageError: any) {
                  if (storageError.code !== 'storage/object-not-found') {
-                    console.warn("Could not delete old file", storageError);
+                    console.warn("[updateDocument Warn] Could not delete old file", storageError);
                 }
             }
         }
@@ -107,7 +117,7 @@ export async function updateDocument(id: string, data: Partial<Omit<ImportantDoc
     revalidatePath('/panel/documents');
     revalidatePath(`/panel/e-office/edit/${id}`);
   } catch (error) {
-    console.error("Error updating document:", error);
+    console.error("[updateDocument Error]", error);
     throw new Error("Gagal memperbarui dokumen.");
   }
 }
@@ -121,7 +131,7 @@ export async function deleteDocument(id: string) {
     await deleteDoc(doc(db, 'importantDocuments', id));
     revalidatePath('/panel/documents');
   } catch (error) {
-    console.error("Error deleting document:", error);
+    console.error("[deleteDocument Error]", error);
     throw new Error("Gagal menghapus dokumen.");
   }
 }
@@ -162,7 +172,7 @@ export async function submitForApproval(documentId: string, authorId: string, ap
 
     revalidatePath('/panel/documents');
   } catch (error) {
-    console.error("Error submitting for approval:", error);
+    console.error("[submitForApproval Error]", error);
     throw new Error("Gagal mengajukan persetujuan.");
   }
 }
@@ -209,7 +219,7 @@ export async function approveDocument(documentId: string, approverId: string) {
 
     revalidatePath('/panel/documents');
   } catch (error) {
-    console.error("Error approving document:", error);
+    console.error("[approveDocument Error]", error);
     throw new Error("Gagal menyetujui dokumen.");
   }
 }
@@ -256,7 +266,7 @@ export async function rejectDocument(documentId: string, rejectorId: string, rea
 
     revalidatePath('/panel/documents');
   } catch (error) {
-    console.error("Error rejecting document:", error);
+    console.error("[rejectDocument Error]", error);
     throw new Error("Gagal menolak dokumen.");
   }
 }
@@ -270,9 +280,14 @@ export interface DocumentCategory {
 }
 
 export async function getDocumentCategories(): Promise<DocumentCategory[]> {
-    const q = query(categoriesCollection, orderBy('name', 'asc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DocumentCategory));
+    try {
+        const q = query(categoriesCollection, orderBy('name', 'asc'));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DocumentCategory));
+    } catch (error) {
+        console.error("[getDocumentCategories Error]", error);
+        throw new Error("Gagal memuat kategori dokumen.");
+    }
 }
 
 export async function addDocumentCategory(name: string) {
@@ -280,7 +295,7 @@ export async function addDocumentCategory(name: string) {
         await addDoc(categoriesCollection, { name });
         revalidatePath('/panel/documents');
     } catch (error) {
-        console.error("Error adding document category:", error);
+        console.error("[addDocumentCategory Error]", error);
         throw new Error("Gagal menambahkan kategori.");
     }
 }
@@ -290,32 +305,37 @@ export async function deleteDocumentCategory(id: string) {
         await deleteDoc(doc(db, 'documentCategories', id));
         revalidatePath('/panel/documents');
     } catch (error) {
-        console.error("Error deleting document category:", error);
+        console.error("[deleteDocumentCategory Error]", error);
         throw new Error("Gagal menghapus kategori.");
     }
 }
 
 export async function generateDocumentNumber(category: string): Promise<string> {
-  const year = new Date().getFullYear();
-  const month = new Date().getMonth() + 1;
-  const romanMonth = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'][month - 1];
+  try {
+      const year = new Date().getFullYear();
+      const month = new Date().getMonth() + 1;
+      const romanMonth = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'][month - 1];
 
-  const prefix = `GL/S-${category.toUpperCase()}/${romanMonth}/${year}`;
+      const prefix = `GL/S-${category.toUpperCase()}/${romanMonth}/${year}`;
 
-  const q = query(documentsCollection, where('documentNumber', '>=', prefix), where('documentNumber', '<', `${prefix}-Z`));
-  const snapshot = await getDocs(q);
-  
-  let maxNumber = 0;
-  snapshot.forEach(doc => {
-    const num = doc.data().documentNumber;
-    const parts = num.split('/');
-    const lastPart = parts[0];
-    const numericPart = parseInt(lastPart.split('-')[0], 10);
-    if (!isNaN(numericPart) && numericPart > maxNumber) {
-      maxNumber = numericPart;
-    }
-  });
+      const q = query(documentsCollection, where('documentNumber', '>=', prefix), where('documentNumber', '<', `${prefix}-Z`));
+      const snapshot = await getDocs(q);
+      
+      let maxNumber = 0;
+      snapshot.forEach(doc => {
+        const num = doc.data().documentNumber;
+        const parts = num.split('/');
+        const lastPart = parts[0];
+        const numericPart = parseInt(lastPart.split('-')[0], 10);
+        if (!isNaN(numericPart) && numericPart > maxNumber) {
+          maxNumber = numericPart;
+        }
+      });
 
-  const nextNumber = (maxNumber + 1).toString().padStart(3, '0');
-  return `${nextNumber}/${prefix}`;
+      const nextNumber = (maxNumber + 1).toString().padStart(3, '0');
+      return `${nextNumber}/${prefix}`;
+  } catch (error) {
+      console.error("[generateDocumentNumber Error]", error);
+      throw new Error("Gagal membuat nomor dokumen.");
+  }
 }

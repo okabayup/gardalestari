@@ -11,22 +11,32 @@ const partnersCollection = collection(db, 'partners');
 
 // Get all partners
 export async function getPartners(): Promise<Partner[]> {
-  const snapshot = await getDocs(partnersCollection);
-  const partners: Partner[] = [];
-  snapshot.forEach(doc => {
-    partners.push({ id: doc.id, ...doc.data() } as Partner);
-  });
-  return partners.sort((a, b) => a.name.localeCompare(b.name));
+  try {
+    const snapshot = await getDocs(partnersCollection);
+    const partners: Partner[] = [];
+    snapshot.forEach(doc => {
+      partners.push({ id: doc.id, ...doc.data() } as Partner);
+    });
+    return partners.sort((a, b) => a.name.localeCompare(b.name));
+  } catch (error) {
+    console.error("[getPartners Error]", error);
+    throw new Error("Gagal mengambil data mitra.");
+  }
 }
 
 // Get a single partner by ID
 export async function getPartner(id: string): Promise<Partner | null> {
-    const partnerDocRef = doc(db, 'partners', id);
-    const docSnap = await getDoc(partnerDocRef);
-    if (docSnap.exists()) {
-        return { id: docSnap.id, ...docSnap.data() } as Partner;
+    try {
+        const partnerDocRef = doc(db, 'partners', id);
+        const docSnap = await getDoc(partnerDocRef);
+        if (docSnap.exists()) {
+            return { id: docSnap.id, ...docSnap.data() } as Partner;
+        }
+        return null;
+    } catch (error) {
+        console.error("[getPartner Error]", error);
+        throw new Error("Gagal mengambil detail mitra.");
     }
-    return null;
 }
 
 // Create a new partner
@@ -47,7 +57,7 @@ export async function createPartner(data: Omit<Partner, 'id' | 'logoUrl'>, logoF
     revalidatePath('/panel/partners');
     revalidatePath('/');
   } catch (error) {
-    console.error("Error creating partner:", error);
+    console.error("[createPartner Error]", error);
     throw new Error("Gagal membuat data mitra.");
   }
 }
@@ -59,7 +69,7 @@ export async function createPartnerWithUrl(data: Omit<Partner, 'id'>) {
         revalidatePath('/panel/partners');
         revalidatePath('/');
     } catch (error) {
-        console.error("Error creating partner with URL:", error);
+        console.error("[createPartnerWithUrl Error]", error);
         throw new Error("Gagal membuat data mitra dengan URL.");
     }
 }
@@ -79,7 +89,7 @@ export async function updatePartner(id: string, data: Partial<Omit<Partner, 'id'
                 await deleteObject(oldLogoRef);
             } catch (storageError: any) {
                 if (storageError.code !== 'storage/object-not-found') {
-                    console.warn("Could not delete old logo, it might not exist.", storageError);
+                    console.warn("[updatePartner Warn] Could not delete old logo, it might not exist.", storageError);
                 }
             }
         }
@@ -94,7 +104,7 @@ export async function updatePartner(id: string, data: Partial<Omit<Partner, 'id'
     revalidatePath(`/panel/partners/edit/${id}`);
     revalidatePath('/');
   } catch (error) {
-    console.error("Error updating partner:", error);
+    console.error("[updatePartner Error]", error);
     throw new Error("Gagal memperbarui data mitra.");
   }
 }
@@ -108,7 +118,7 @@ export async function updatePartnerWithUrl(id: string, data: Partial<Omit<Partne
         revalidatePath(`/panel/partners/edit/${id}`);
         revalidatePath('/');
     } catch (error) {
-        console.error("Error updating partner with URL:", error);
+        console.error("[updatePartnerWithUrl Error]", error);
         throw new Error("Gagal memperbarui data mitra dengan URL.");
     }
 }
@@ -129,9 +139,8 @@ export async function deletePartner(id: string) {
             const logoRef = ref(storage, partner.logoUrl);
             await deleteObject(logoRef);
         } catch (storageError) {
-            // Ignore if file doesn't exist
             if ((storageError as any).code !== 'storage/object-not-found') {
-                 console.error("Error deleting partner logo:", storageError);
+                 console.error("[deletePartner Error] Deleting logo failed:", storageError);
             }
         }
     }
@@ -139,7 +148,7 @@ export async function deletePartner(id: string) {
     revalidatePath('/panel/partners');
     revalidatePath('/');
   } catch (error) {
-    console.error("Error deleting partner:", error);
+    console.error("[deletePartner Error]", error);
     throw new Error("Gagal menghapus data mitra.");
   }
 }

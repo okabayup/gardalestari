@@ -41,7 +41,7 @@ export async function searchEvents(searchQuery: string): Promise<Partial<Event>[
             location: entry.location,
         }));
     } catch (error) {
-        console.error("Error searching events:", error);
+        console.error("[searchEvents Error]", error);
         throw new Error("Gagal mencari acara.");
     }
 }
@@ -58,7 +58,7 @@ export async function getEvents(): Promise<Event[]> {
     });
     return events;
   } catch (error) {
-      console.error("Error getting events:", error);
+      console.error("[getEvents Error]", error);
       throw new Error("Gagal mengambil data acara.");
   }
 }
@@ -73,7 +73,7 @@ export async function getEvent(id: string): Promise<Event | null> {
         }
         return null;
     } catch (error) {
-        console.error("Error getting single event:", error);
+        console.error("[getEvent Error]", error);
         throw new Error("Gagal mengambil data acara.");
     }
 }
@@ -92,7 +92,7 @@ export async function createEvent(event: Omit<Event, 'id'>, attachmentFile?: Fil
     revalidatePath('/panel/events');
     revalidatePath('/events');
   } catch (error) {
-    console.error("Error creating event:", error);
+    console.error("[createEvent Error]", error);
     throw new Error("Gagal membuat acara.");
   }
 }
@@ -111,7 +111,7 @@ export async function updateEvent(id: string, event: Partial<Event>, attachmentF
                 await deleteObject(oldAttachmentRef);
             } catch (storageError: any) {
                 if (storageError.code !== 'storage/object-not-found') {
-                     console.warn("Could not delete old attachment, it might not exist.", storageError);
+                     console.warn("[updateEvent Warn] Could not delete old attachment, it might not exist.", storageError);
                 }
             }
         }
@@ -126,7 +126,7 @@ export async function updateEvent(id: string, event: Partial<Event>, attachmentF
     revalidatePath(`/panel/events/edit/${id}`);
     revalidatePath('/events');
   } catch (error) {
-    console.error("Error updating event:", error);
+    console.error("[updateEvent Error]", error);
     throw new Error("Gagal memperbarui acara.");
   }
 }
@@ -143,14 +143,14 @@ export async function deleteEvent(id: string) {
             await deleteObject(attachmentRef);
         } catch (storageError: any) {
              if (storageError.code !== 'storage/object-not-found') {
-                console.error("Could not delete attachment:", storageError);
+                console.error("[deleteEvent Error] Could not delete attachment:", storageError);
              }
         }
     }
     revalidatePath('/panel/events');
     revalidatePath('/events');
   } catch (error) {
-    console.error("Error deleting event:", error);
+    console.error("[deleteEvent Error]", error);
     throw new Error("Gagal menghapus acara.");
   }
 }

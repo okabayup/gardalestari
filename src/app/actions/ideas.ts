@@ -48,7 +48,7 @@ const buildIdeaWithAuthor = async (ideaDoc: any, currentUserId?: string): Promis
         const authorDoc = await getDoc(authorRef);
         
         if (!authorDoc.exists()) {
-            console.warn(`Author with ID ${ideaData.authorId} not found for idea ${ideaData.id}.`);
+            console.warn(`[buildIdeaWithAuthor Warn] Author with ID ${ideaData.authorId} not found for idea ${ideaData.id}.`);
             return null;
         }
         
@@ -75,7 +75,7 @@ const buildIdeaWithAuthor = async (ideaDoc: any, currentUserId?: string): Promis
           userVote: userVote,
         };
     } catch (error) {
-        console.error(`Error building idea ${ideaDoc.id}:`, error);
+        console.error(`[buildIdeaWithAuthor Error] for idea ${ideaDoc.id}:`, error);
         return null;
     }
 }
@@ -102,7 +102,7 @@ export async function createIdea(authorId: string, title: string, description: s
         revalidatePath('/ideas');
         return docRef.id;
     } catch (error) {
-        console.error("Error creating idea:", error);
+        console.error("[createIdea Error]", error);
         throw new Error("Gagal membuat ide baru.");
     }
 }
@@ -138,7 +138,7 @@ export async function getIdeas(
 
         return ideas;
     } catch (error) {
-        console.error("Error getting ideas:", error);
+        console.error("[getIdeas Error]", error);
         throw new Error("Gagal memuat ide.");
     }
 }
@@ -176,7 +176,7 @@ export async function searchIdeaBank(searchQuery: string): Promise<Partial<Idea>
             commentCount: idea.commentCount,
         }));
     } catch (error) {
-        console.error("Error searching idea bank:", error);
+        console.error("[searchIdeaBank Error]", error);
         throw new Error("Gagal mencari di bank ide.");
     }
 }
@@ -194,7 +194,7 @@ export async function getIdeaById(ideaId: string, currentUserId?: string): Promi
 
         return buildIdeaWithAuthor(ideaDoc, currentUserId);
     } catch (error) {
-        console.error("Error getting idea by ID:", error);
+        console.error("[getIdeaById Error]", error);
         throw new Error("Gagal mengambil detail ide.");
     }
 }
@@ -207,7 +207,7 @@ export async function updateIdeaStatus(ideaId: string, status: IdeaStatus) {
         revalidatePath('/ideas');
         revalidatePath(`/ideas/${ideaId}`);
     } catch (error) {
-        console.error("Error updating idea status:", error);
+        console.error("[updateIdeaStatus Error]", error);
         throw new Error("Gagal memperbarui status ide.");
     }
 }
@@ -247,7 +247,7 @@ export async function toggleVote(ideaId: string, userId: string, voteType: VoteT
     revalidatePath(`/ideas/${ideaId}`);
 
   } catch (e) {
-    console.error("Transaction failed: ", e);
+    console.error("[toggleVote Error]", e);
     throw new Error("Gagal memberikan suara.");
   }
 }
@@ -276,7 +276,7 @@ export async function addIdeaComment(ideaId: string, userId: string, text: strin
         revalidatePath(`/ideas/${ideaId}`);
 
     } catch (error) {
-        console.error("Error adding comment: ", error);
+        console.error("[addIdeaComment Error]", error);
         throw new Error("Gagal menambahkan komentar.");
     }
 }
@@ -308,7 +308,7 @@ export async function getIdeaComments(ideaId: string): Promise<any[]> {
         }
         return comments;
     } catch (error) {
-        console.error("Error getting comments:", error);
+        console.error("[getIdeaComments Error]", error);
         throw new Error("Gagal memuat komentar.");
     }
 }
@@ -326,7 +326,7 @@ export async function getIdeaCategories(): Promise<IdeaCategory[]> {
         });
         return categories;
     } catch (error) {
-        console.error("Error getting idea categories:", error);
+        console.error("[getIdeaCategories Error]", error);
         throw new Error("Gagal memuat kategori ide.");
     }
 }
@@ -337,7 +337,7 @@ export async function addIdeaCategory(name: string) {
         await addDoc(ideaCategoriesCollection, { name });
         revalidatePath('/panel/ideas/kategori');
     } catch (error) {
-        console.error("Error adding idea category:", error);
+        console.error("[addIdeaCategory Error]", error);
         throw new Error("Gagal menambahkan kategori ide.");
     }
 }
@@ -349,7 +349,7 @@ export async function deleteIdeaCategory(id: string) {
         await deleteDoc(categoryDoc);
         revalidatePath('/panel/ideas/kategori');
     } catch (error) {
-        console.error("Error deleting idea category:", error);
+        console.error("[deleteIdeaCategory Error]", error);
         throw new Error("Gagal menghapus kategori ide.");
     }
 }

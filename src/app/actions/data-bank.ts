@@ -59,7 +59,7 @@ export async function searchDataBank(searchQuery: string): Promise<Partial<DataB
             publishedDate: entry.publishedDate,
         }));
     } catch (error) {
-        console.error("Error searching data bank:", error);
+        console.error("[searchDataBank Error]", error);
         throw new Error("Gagal mencari di bank data.");
     }
 }
@@ -73,7 +73,7 @@ export async function getDataBankEntries(): Promise<DataBankEntry[]> {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DataBankEntry));
   } catch (error) {
-    console.error("Error getting data bank entries:", error);
+    console.error("[getDataBankEntries Error]", error);
     throw new Error("Gagal mengambil entri bank data.");
   }
 }
@@ -84,7 +84,7 @@ export async function getDataBankEntry(id: string): Promise<DataBankEntry | null
         const docSnap = await getDoc(docRef);
         return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as DataBankEntry : null;
     } catch (error) {
-        console.error("Error getting data bank entry:", error);
+        console.error("[getDataBankEntry Error]", error);
         throw new Error("Gagal mengambil entri bank data.");
     }
 }
@@ -97,7 +97,7 @@ export async function createDataBankEntry(data: Omit<DataBankEntry, 'id' | 'crea
         });
         revalidatePath('/panel/data-bank');
     } catch (error) {
-        console.error("Error creating data bank entry:", error);
+        console.error("[createDataBankEntry Error]", error);
         throw new Error("Gagal membuat entri bank data.");
     }
 }
@@ -109,7 +109,7 @@ export async function updateDataBankEntry(id: string, data: Partial<Omit<DataBan
         revalidatePath('/panel/data-bank');
         revalidatePath(`/panel/data-bank/edit/${id}`);
     } catch (error) {
-        console.error("Error updating data bank entry:", error);
+        console.error("[updateDataBankEntry Error]", error);
         throw new Error("Gagal memperbarui entri bank data.");
     }
 }
@@ -120,7 +120,7 @@ export async function deleteDataBankEntry(id: string) {
         await deleteDoc(docRef);
         revalidatePath('/panel/data-bank');
     } catch (error) {
-        console.error("Error deleting data bank entry:", error);
+        console.error("[deleteDataBankEntry Error]", error);
         throw new Error("Gagal menghapus entri bank data.");
     }
 }

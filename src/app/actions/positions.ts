@@ -10,9 +10,14 @@ const positionsCollection = collection(db, 'positions');
 
 // Get all positions, ordered by name
 export async function getPositions(): Promise<Position[]> {
-    const q = query(positionsCollection, orderBy('name', 'asc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Position));
+    try {
+        const q = query(positionsCollection, orderBy('name', 'asc'));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Position));
+    } catch (error) {
+        console.error("[getPositions Error]", error);
+        throw new Error("Gagal memuat data jabatan.");
+    }
 }
 
 // Add a new position
@@ -21,7 +26,7 @@ export async function createPosition(data: Omit<Position, 'id'>) {
         await addDoc(positionsCollection, data);
         revalidatePath('/panel/positions');
     } catch (error) {
-        console.error("Error adding position:", error);
+        console.error("[createPosition Error]", error);
         throw new Error("Gagal menambahkan jabatan baru.");
     }
 }
@@ -33,7 +38,7 @@ export async function updatePosition(id: string, data: Partial<Position>) {
         await updateDoc(positionDoc, data);
         revalidatePath('/panel/positions');
     } catch (error) {
-        console.error("Error updating position:", error);
+        console.error("[updatePosition Error]", error);
         throw new Error("Gagal memperbarui jabatan.");
     }
 }
@@ -47,7 +52,7 @@ export async function deletePosition(id: string) {
         await deleteDoc(positionDoc);
         revalidatePath('/panel/positions');
     } catch (error) {
-        console.error("Error deleting position:", error);
+        console.error("[deletePosition Error]", error);
         throw new Error("Gagal menghapus jabatan.");
     }
 }

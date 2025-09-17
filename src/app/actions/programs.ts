@@ -10,6 +10,7 @@ import { sendBulkWhatsAppMessage } from '@/services/whatsapp';
 import type { Program, ProgramFormData, ProgramTag } from '@/lib/definitions';
 import { generateImage } from '@/ai/flows/image-generate-flow';
 import { sendNotification } from './notifications';
+import { getMembers } from './members';
 
 const programsCollection = collection(db, 'programs');
 const tagsCollection = collection(db, 'programTags');
@@ -49,7 +50,7 @@ export async function searchPrograms(searchQuery: string): Promise<Partial<Progr
         category: entry.category,
     }));
   } catch (error) {
-    console.error("Error searching programs:", error);
+    console.error("[searchPrograms Error]", error);
     throw new Error("Gagal mencari data program.");
   }
 }
@@ -68,7 +69,7 @@ export async function getPrograms(): Promise<Program[]> {
         } as Program;
     });
   } catch (error) {
-    console.error("Error getting programs:", error);
+    console.error("[getPrograms Error]", error);
     throw new Error("Gagal mengambil data program.");
   }
 }
@@ -83,7 +84,7 @@ export async function getProgram(id: string): Promise<Program | null> {
         }
         return null;
     } catch (error) {
-        console.error("Error getting single program:", error);
+        console.error("[getProgram Error]", error);
         throw new Error("Gagal mengambil data program.");
     }
 }
@@ -137,7 +138,7 @@ export async function createProgram(formData: FormData): Promise<string> {
                  dataToCreate.imageUrl = `https://picsum.photos/seed/${programData.title.replace(/\s+/g, '-')}/600/400`;
             }
         } catch (error) {
-            console.error("Error handling program image:", error);
+            console.error("[createProgram Error] Image handling failed:", error);
             throw new Error(`Gagal memproses gambar program: ${(error as Error).message}`);
         }
 
@@ -149,7 +150,7 @@ export async function createProgram(formData: FormData): Promise<string> {
             dataToCreate.attachmentUrl = await getDownloadURL(attachmentRef);
             dataToCreate.attachmentName = attachmentFile.name;
           } catch (uploadError) {
-            console.error("Error uploading attachment:", uploadError);
+            console.error("[createProgram Error] Attachment upload failed:", uploadError);
             throw new Error("Gagal mengunggah lampiran.");
           }
         }
@@ -159,7 +160,7 @@ export async function createProgram(formData: FormData): Promise<string> {
         try {
             docRef = await addDoc(programsCollection, dataToCreate);
         } catch(error) {
-            console.error("Error creating program in Firestore:", error);
+            console.error("[createProgram Error] Firestore save failed:", error);
             throw new Error(`Gagal menyimpan program ke database: ${(error as Error).message}`);
         }
 
@@ -174,13 +175,13 @@ export async function createProgram(formData: FormData): Promise<string> {
                     },
                     { type: 'all' }
                 );
-            } catch (e) { console.warn("Gagal mengirim notifikasi push untuk program baru:", e); }
+            } catch (e) { console.warn("[createProgram Warn] Gagal mengirim notifikasi push untuk program baru:", e); }
 
             try {
                 const template = await getWhatsappTemplate('new_program_announcement');
                 if (template.isActive) {
-                    const usersSnapshot = await getDocs(query(usersCollection, where('waVerified', '==', true)));
-                    const phoneNumbers = usersSnapshot.docs.map(doc => doc.data().waNumber).filter(Boolean);
+                    const members = await getMembers();
+                    const phoneNumbers = members.map(doc => doc.waNumber).filter(Boolean) as string[];
 
                     if (phoneNumbers.length > 0) {
                         const message = template.message
@@ -190,7 +191,7 @@ export async function createProgram(formData: FormData): Promise<string> {
                         await sendBulkWhatsAppMessage(phoneNumbers, message);
                     }
                 }
-            } catch (error) { console.warn(`Gagal mengirim notifikasi WhatsApp massal:`, error); }
+            } catch (error) { console.warn(`[createProgram Warn] Gagal mengirim notifikasi WhatsApp massal:`, error); }
         }
         
         revalidatePath('/panel/programs');
@@ -200,7 +201,7 @@ export async function createProgram(formData: FormData): Promise<string> {
         return docRef.id;
 
     } catch (error) {
-        console.error('Server Action Error in createProgram:', error);
+        console.error('[createProgram Error] Server Action Error:', error);
         throw new Error(`Gagal total membuat program: ${(error as Error).message}`);
     }
 }
@@ -234,7 +235,7 @@ export async function updateProgram(id: string, program: Partial<ProgramFormData
                     await deleteObject(oldAttachmentRef);
                 } catch (storageError: any) {
                     if (storageError.code !== 'storage/object-not-found') {
-                        console.warn("Could not delete old attachment, it might not exist.", storageError);
+                        console.warn("[updateProgram Warn] Could not delete old attachment, it might not exist.", storageError);
                     }
                 }
             }
@@ -251,7 +252,7 @@ export async function updateProgram(id: string, program: Partial<ProgramFormData
         revalidatePath('/programs');
         revalidatePath(`/programs/${id}`);
     } catch (error) {
-        console.error("Error updating program:", error);
+        console.error("[updateProgram Error]", error);
         throw new Error("Gagal memperbarui program. " + (error as Error).message);
     }
 }
@@ -269,7 +270,7 @@ export async function deleteProgram(id: string) {
             await deleteObject(attachmentRef);
         } catch (storageError: any) {
              if (storageError.code !== 'storage/object-not-found') {
-                console.error("Could not delete attachment:", storageError);
+                console.error("[deleteProgram Error] Could not delete attachment:", storageError);
              }
         }
     }
@@ -282,7 +283,7 @@ export async function deleteProgram(id: string) {
             }
         } catch (storageError: any) {
              if (storageError.code !== 'storage/object-not-found') {
-                console.error("Could not delete program image:", storageError);
+                console.error("[deleteProgram Error] Could not delete program image:", storageError);
              }
         }
     }
@@ -290,7 +291,7 @@ export async function deleteProgram(id: string) {
     revalidatePath('/panel/programs');
     revalidatePath('/programs');
   } catch (error) {
-    console.error("Error deleting program:", error);
+    console.error("[deleteProgram Error]", error);
     throw new Error("Gagal menghapus program.");
   }
 }
@@ -304,7 +305,7 @@ export async function getProgramTags(): Promise<ProgramTag[]> {
     const snapshot = await getDocs(query(tagsCollection, orderBy('name')));
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProgramTag));
   } catch (error) {
-      console.error("Error getting tags:", error);
+      console.error("[getProgramTags Error]", error);
       throw new Error("Gagal mengambil data tag.");
   }
 }
@@ -315,7 +316,7 @@ export async function addProgramTag(name: string) {
         await addDoc(tagsCollection, { name });
         revalidatePath('/panel/programs/tags');
     } catch (error) {
-        console.error("Error adding tag:", error);
+        console.error("[addProgramTag Error]", error);
         throw new Error("Gagal menambahkan tag baru.");
     }
 }
@@ -327,7 +328,7 @@ export async function deleteProgramTag(id: string) {
         await deleteDoc(tagDoc);
         revalidatePath('/panel/programs/tags');
     } catch (error) {
-        console.error("Error deleting tag:", error);
+        console.error("[deleteProgramTag Error]", error);
         throw new Error("Gagal menghapus tag.");
     }
 }
