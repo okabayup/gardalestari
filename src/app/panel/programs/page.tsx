@@ -146,7 +146,7 @@ export default function AdminProgramsPage() {
                           </Badge>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
-                        {program.endDate ? format(program.endDate.toDate(), 'dd MMM yyyy', { locale: id }) : '-'}
+                        {program.endDate ? format(program.endDate, 'dd MMM yyyy', { locale: id }) : '-'}
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>

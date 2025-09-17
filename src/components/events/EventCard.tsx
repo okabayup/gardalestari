@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Image from 'next/image';
@@ -15,7 +16,6 @@ interface EventCardProps {
 }
 
 export default function EventCard({ event }: EventCardProps) {
-  const eventDate = event.date.toDate();
   const [day, setDay] = useState('');
   const [month, setMonth] = useState('');
   const [year, setYear] = useState('');
@@ -23,18 +23,18 @@ export default function EventCard({ event }: EventCardProps) {
   useEffect(() => {
     const formatDate = async () => {
       const { id } = await import('date-fns/locale/id');
-      setDay(format(eventDate, 'dd', { locale: id }));
-      setMonth(format(eventDate, 'MMM', { locale: id }));
-      setYear(format(eventDate, 'yyyy', { locale: id }));
+      setDay(format(new Date(event.date), 'dd', { locale: id }));
+      setMonth(format(new Date(event.date), 'MMM', { locale: id }));
+      setYear(format(new Date(event.date), 'yyyy', { locale: id }));
     };
     formatDate();
-  }, [eventDate]);
+  }, [event.date]);
 
   return (
     <Card className="overflow-hidden">
         <div className="relative h-32 w-full">
             <Image
-            src={event.imageUrl}
+            src={event.imageUrl || 'https://picsum.photos/seed/event/600/400'}
             alt={event.title}
             data-ai-hint={event.imageHint}
             fill

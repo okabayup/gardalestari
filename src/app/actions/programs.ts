@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -21,6 +22,8 @@ const toProgram = (doc: any): Program => {
     return {
         id: doc.id,
         ...data,
+        startDate: (data.startDate as Timestamp).toDate(),
+        endDate: (data.endDate as Timestamp).toDate(),
     } as Program;
 }
 
@@ -61,13 +64,7 @@ export async function getPrograms(): Promise<Program[]> {
   try {
     const q = query(programsCollection, orderBy('endDate', 'desc'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-            id: doc.id,
-            ...data,
-        } as Program;
-    });
+    return snapshot.docs.map(toProgram);
   } catch (error) {
     console.error("[getPrograms Error]", error);
     throw new Error("Gagal mengambil data program.");
@@ -90,39 +87,41 @@ export async function getProgram(id: string): Promise<Program | null> {
 }
 
 export async function createProgram(
-    programData: ProgramFormData,
-    imageFile?: File,
-    attachmentFile?: File
+    formData: FormData,
 ): Promise<string> {
     try {
-        const dataToCreate: { [key: string]: any } = {
-            ...programData,
-            startDate: Timestamp.fromDate(new Date(programData.dateRange.from)),
-            endDate: Timestamp.fromDate(new Date(programData.dateRange.to)),
-        };
-        delete dataToCreate.dateRange;
-        delete dataToCreate.imageFile;
-        delete dataToCreate.attachment;
+        const programData = Object.fromEntries(formData.entries());
+        const { 
+            imageFile, attachment, dateRangeFrom, dateRangeTo, tags, 
+            ...rest 
+        } = programData;
 
-        if (programData.imageSource === 'upload' && imageFile) {
+        const dataToCreate: { [key: string]: any } = {
+            ...rest,
+            tags: Array.isArray(tags) ? tags : (tags as string).split(','),
+            startDate: Timestamp.fromDate(new Date(dateRangeFrom as string)),
+            endDate: Timestamp.fromDate(new Date(dateRangeTo as string)),
+        };
+
+        if (programData.imageSource === 'upload' && imageFile instanceof File) {
             const imageRef = ref(storage, `program-images/${Date.now()}_${imageFile.name}`);
             await uploadBytes(imageRef, imageFile);
             dataToCreate.imageUrl = await getDownloadURL(imageRef);
-        } else if (programData.imageSource === 'ai' && programData.imageHint) {
+        } else if (programData.imageSource === 'ai' && typeof programData.imageHint === 'string' && programData.imageHint) {
             const result = await generateImage({ prompt: programData.imageHint });
             if (!result.imageUrl) throw new Error("AI gagal membuat URL gambar.");
             dataToCreate.imageUrl = result.imageUrl;
-        } else if (programData.imageSource === 'url' && programData.imageUrl) {
+        } else if (programData.imageSource === 'url' && typeof programData.imageUrl === 'string' && programData.imageUrl) {
              dataToCreate.imageUrl = programData.imageUrl;
         } else {
-             dataToCreate.imageUrl = `https://picsum.photos/seed/${programData.title.replace(/\s+/g, '-')}/600/400`;
+             dataToCreate.imageUrl = `https://picsum.photos/seed/${programData.title}/600/400`;
         }
         
-        if (attachmentFile) {
-          const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachmentFile.name}`);
-          await uploadBytes(attachmentRef, attachmentFile);
+        if (attachment instanceof File) {
+          const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachment.name}`);
+          await uploadBytes(attachmentRef, attachment);
           dataToCreate.attachmentUrl = await getDownloadURL(attachmentRef);
-          dataToCreate.attachmentName = attachmentFile.name;
+          dataToCreate.attachmentName = attachment.name;
         }
         
         const docRef = await addDoc(programsCollection, dataToCreate);
@@ -148,7 +147,7 @@ export async function createProgram(
                     if (phoneNumbers.length > 0) {
                         const message = template.message
                             .replace('{namaProgram}', dataToCreate.title)
-                            .replace('{batasWaktu}', new Date(programData.dateRange.to).toLocaleDateString('id-ID'));
+                            .replace('{batasWaktu}', new Date(dateRangeTo as string).toLocaleDateString('id-ID'));
                         
                         await sendBulkWhatsAppMessage(phoneNumbers, message);
                     }
@@ -169,27 +168,29 @@ export async function createProgram(
 }
 
 // Update an existing program
-export async function updateProgram(id: string, program: Partial<ProgramFormData>, imageFile?: File, attachmentFile?: File) {
+export async function updateProgram(id: string, formData: FormData) {
     try {
-        const dataToUpdate: { [key: string]: any } = { ...program };
+        const programData = Object.fromEntries(formData.entries());
+        const { 
+            imageFile, attachment, dateRangeFrom, dateRangeTo, tags, 
+            ...rest 
+        } = programData;
 
-        const programDoc = doc(db, 'programs', id);
+        const dataToUpdate: { [key: string]: any } = {
+            ...rest,
+            tags: Array.isArray(tags) ? tags : (tags as string).split(','),
+        };
         
-        if (program.dateRange?.from) {
-            dataToUpdate.startDate = Timestamp.fromDate(new Date(program.dateRange.from));
-        }
-        if (program.dateRange?.to) {
-            dataToUpdate.endDate = Timestamp.fromDate(new Date(program.dateRange.to));
-        }
-        delete dataToUpdate.dateRange;
+        if (dateRangeFrom) dataToUpdate.startDate = Timestamp.fromDate(new Date(dateRangeFrom as string));
+        if (dateRangeTo) dataToUpdate.endDate = Timestamp.fromDate(new Date(dateRangeTo as string));
         
-        if (imageFile) {
+        if (imageFile instanceof File) {
             const imageRef = ref(storage, `program-images/${Date.now()}_${imageFile.name}`);
             await uploadBytes(imageRef, imageFile);
             dataToUpdate.imageUrl = await getDownloadURL(imageRef);
         }
 
-        if (attachmentFile) {
+        if (attachment instanceof File) {
             const currentProgram = await getProgram(id);
             if (currentProgram?.attachmentUrl) {
                 try {
@@ -201,12 +202,13 @@ export async function updateProgram(id: string, program: Partial<ProgramFormData
                     }
                 }
             }
-            const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachmentFile.name}`);
-            await uploadBytes(attachmentRef, attachmentFile);
+            const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachment.name}`);
+            await uploadBytes(attachmentRef, attachment);
             dataToUpdate.attachmentUrl = await getDownloadURL(attachmentRef);
-            dataToUpdate.attachmentName = attachmentFile.name;
+            dataToUpdate.attachmentName = attachment.name;
         }
 
+        const programDoc = doc(db, 'programs', id);
         await updateDoc(programDoc, dataToUpdate);
         
         revalidatePath('/panel/programs');

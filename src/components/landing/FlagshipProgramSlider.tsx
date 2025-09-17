@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -49,7 +50,7 @@ const ProgramSliderCard = ({ program }: { program: Program }) => {
             <Card className="overflow-hidden group">
                 <CardContent className="relative aspect-video p-0">
                     <Image
-                        src={program.imageUrl}
+                        src={program.imageUrl || 'https://picsum.photos/seed/placeholder/600/400'}
                         alt={program.title}
                         fill
                         className="object-cover transition-transform duration-300 group-hover:scale-105"

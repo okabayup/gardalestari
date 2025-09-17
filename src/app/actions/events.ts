@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -8,6 +9,16 @@ import { revalidatePath } from 'next/cache';
 import type { Event } from '@/lib/definitions';
 
 const eventsCollection = collection(db, 'events');
+
+const toEvent = (doc: any): Event => {
+    const data = doc.data();
+    return {
+        id: doc.id,
+        ...data,
+        date: (data.date as Timestamp).toDate(),
+    } as Event;
+};
+
 
 // === Public Functions for AI Tool ===
 
@@ -26,7 +37,7 @@ export async function searchEvents(searchQuery: string): Promise<Partial<Event>[
         );
 
         const snapshot = await getDocs(q);
-        const allEntries: Event[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
+        const allEntries: Event[] = snapshot.docs.map(toEvent);
 
         const searchTerms = searchQuery.toLowerCase().split(' ');
         const results = allEntries.filter(entry => {
@@ -52,11 +63,7 @@ export async function getEvents(): Promise<Event[]> {
   try {
     const q = query(eventsCollection, orderBy('date', 'asc'));
     const snapshot = await getDocs(q);
-    const events: Event[] = [];
-    snapshot.forEach(doc => {
-      events.push({ id: doc.id, ...doc.data() } as Event);
-    });
-    return events;
+    return snapshot.docs.map(toEvent);
   } catch (error) {
       console.error("[getEvents Error]", error);
       throw new Error("Gagal mengambil data acara.");
@@ -69,7 +76,7 @@ export async function getEvent(id: string): Promise<Event | null> {
         const eventDoc = doc(db, 'events', id);
         const docSnap = await getDoc(eventDoc);
         if (docSnap.exists()) {
-            return { id: docSnap.id, ...docSnap.data() } as Event;
+            return toEvent(docSnap);
         }
         return null;
     } catch (error) {

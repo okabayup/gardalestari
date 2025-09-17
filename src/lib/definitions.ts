@@ -1,4 +1,5 @@
 
+
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
 
@@ -166,7 +167,7 @@ export interface Event {
   id?: string;
   title: string;
   description: string;
-  date: Timestamp;
+  date: Date;
   location: string;
   imageUrl: string;
   imageHint: string;
@@ -368,8 +369,8 @@ export interface Program {
   imageUrl: string;
   imageHint: string;
   tags: string[];
-  startDate: Timestamp;
-  endDate: Timestamp;
+  startDate: Date;
+  endDate: Date;
   source: ProgramSource;
   partnerId?: string; 
   benefits: string;

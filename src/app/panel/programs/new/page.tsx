@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -106,10 +107,27 @@ export default function NewProgramPage() {
   
   const onSubmit = async (data: ProgramFormData) => {
     setLoading(true);
+    const formData = new FormData();
+    
+    // Append all form data to the FormData object
+    Object.entries(data).forEach(([key, value]) => {
+        if (key === 'dateRange') {
+            formData.append('dateRangeFrom', (value as {from: Date}).from.toISOString());
+            formData.append('dateRangeTo', (value as {to: Date}).to.toISOString());
+        } else if (key === 'tags') {
+            formData.append(key, (value as string[]).join(','));
+        } else if (key === 'imageFile' || key === 'attachment') {
+            if (value && (value as FileList).length > 0) {
+                formData.append(key, (value as FileList)[0]);
+            }
+        }
+        else if (value !== null && value !== undefined) {
+            formData.append(key, String(value));
+        }
+    });
+
     try {
-        const imageFile = data.imageFile?.[0];
-        const attachmentFile = data.attachment?.[0];
-        await createProgram(data, imageFile, attachmentFile);
+        await createProgram(formData);
         toast({ title: 'Program berhasil dibuat!' });
         router.push('/panel/programs');
     } catch (error) {
@@ -341,6 +359,7 @@ export default function NewProgramPage() {
                     <div className="space-y-2">
                         <Label htmlFor="imageFile">Unggah File Gambar</Label>
                         <Input id="imageFile" type="file" {...register('imageFile')} accept="image/*" />
+                        <p className="text-xs text-muted-foreground">Ukuran file maksimal: 5MB. Jika gagal, coba gunakan format JPG &lt; 1MB.</p>
                         {errors.imageFile && <p className="text-sm text-destructive">{(errors.imageFile as any).message}</p>}
                     </div>
                 )}
@@ -374,6 +393,7 @@ export default function NewProgramPage() {
                   <div className="space-y-2">
                     <Label htmlFor="attachment">Berkas Lampiran (Opsional)</Label>
                     <Input id="attachment" type="file" {...register('attachment')} />
+                    <p className="text-xs text-muted-foreground">Ukuran file maksimal: 5MB.</p>
                     {attachmentFileName && <p className="text-sm text-muted-foreground flex items-center gap-2"><Paperclip className="h-4 w-4"/> {attachmentFileName}</p>}
                     {errors.attachment && <p className="text-sm text-destructive">{(errors.attachment as any).message}</p>}
                  </div>

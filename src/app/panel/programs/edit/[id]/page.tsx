@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -103,8 +104,8 @@ export default function EditProgramPage() {
             reset({
                 ...programData,
                 dateRange: { 
-                  from: programData.startDate ? new Date(programData.startDate) : new Date(), 
-                  to: programData.endDate ? new Date(programData.endDate) : new Date() 
+                  from: programData.startDate, 
+                  to: programData.endDate
                 },
                 imageSource: programData.imageUrl?.includes('firebasestorage') ? 'upload' : 'url'
             });
@@ -126,10 +127,26 @@ export default function EditProgramPage() {
 
   const onSubmit = async (data: ProgramFormData) => {
     setLoading(true);
+    const formData = new FormData();
+
+    Object.entries(data).forEach(([key, value]) => {
+        if (key === 'dateRange') {
+            formData.append('dateRangeFrom', (value as {from: Date}).from.toISOString());
+            formData.append('dateRangeTo', (value as {to: Date}).to.toISOString());
+        } else if (key === 'tags') {
+            formData.append(key, (value as string[]).join(','));
+        } else if (key === 'imageFile' || key === 'attachment') {
+            if (value && (value as FileList).length > 0) {
+                formData.append(key, (value as FileList)[0]);
+            }
+        }
+        else if (value !== null && value !== undefined) {
+            formData.append(key, String(value));
+        }
+    });
+
     try {
-        const imageFile = data.imageFile?.[0];
-        const attachmentFile = data.attachment?.[0];
-        await updateProgram(programId, data, imageFile, attachmentFile);
+        await updateProgram(programId, formData);
         toast({ title: 'Program berhasil diperbarui!' });
         router.push('/panel/programs');
     } catch (error) {
@@ -352,6 +369,7 @@ export default function EditProgramPage() {
                     <div className="space-y-2">
                         <Label htmlFor="imageFile">Unggah File Gambar Baru (Kosongkan jika tidak ingin mengubah)</Label>
                         <Input id="imageFile" type="file" {...register('imageFile')} accept="image/*" />
+                        <p className="text-xs text-muted-foreground">Ukuran file maksimal: 5MB. Jika gagal, coba gunakan format JPG &lt; 1MB.</p>
                         {errors.imageFile && <p className="text-sm text-destructive">{(errors.imageFile as any).message}</p>}
                     </div>
                 )}
@@ -385,6 +403,7 @@ export default function EditProgramPage() {
                   <div className="space-y-2">
                     <Label htmlFor="attachment">Berkas Lampiran (Opsional, kosongkan jika tidak ingin mengubah)</Label>
                     <Input id="attachment" type="file" {...register('attachment')} />
+                    <p className="text-xs text-muted-foreground">Ukuran file maksimal: 5MB.</p>
                      {attachmentFileName ? (
                         <p className="text-sm text-muted-foreground flex items-center gap-2"><Paperclip className="h-4 w-4"/> {attachmentFileName}</p>
                     ) : currentAttachment ? (
