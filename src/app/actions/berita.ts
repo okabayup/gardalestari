@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, where, orderBy, Timestamp, setDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, where, orderBy, Timestamp, setDoc, serverTimestamp, writeBatch, runTransaction } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import { notifyGoogleOfUpdate } from '@/services/indexing';
 import type { BeritaPost } from '@/lib/definitions';
@@ -55,7 +55,7 @@ export async function retryFailedTopics(job: GenerationJob): Promise<string> {
 export async function updateJobProgress(jobId: string, completedIncrement: number, error?: { topic: string; error: string }) {
     const jobRef = doc(db, 'generationJobs', jobId);
     
-    await db.runTransaction(async (transaction) => {
+    await runTransaction(db, async (transaction) => {
         const jobDoc = await transaction.get(jobRef);
         if (!jobDoc.exists()) throw new Error('Job not found');
 
