@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -24,6 +23,8 @@ import { getPartners, Partner } from '@/app/actions/partners';
 import { getForms, ProgramForm } from '@/app/actions/forms';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import type { ProgramFormData } from '@/lib/definitions';
+
 
 const formSchema = z.object({
   title: z.string().min(1, 'Judul wajib diisi'),
@@ -46,10 +47,10 @@ const formSchema = z.object({
   applicationUrl: z.string().optional(),
   formId: z.string().optional(),
   requiresRecommendation: z.boolean().default(false),
+  imageFile: z.any().optional(),
+  attachment: z.any().optional(),
 });
 
-
-type FormData = z.infer<typeof formSchema>;
 
 export default function EditProgramPage() {
   const router = useRouter();
@@ -75,7 +76,7 @@ export default function EditProgramPage() {
     watch,
     reset,
     formState: { errors },
-  } = useForm<FormData>({ resolver: zodResolver(formSchema) });
+  } = useForm<ProgramFormData>({ resolver: zodResolver(formSchema) });
 
   const watchSource = watch('source');
   const watchSubmissionType = watch('submissionType');
@@ -123,37 +124,19 @@ export default function EditProgramPage() {
     fetchData();
   }, [programId, reset, router, toast]);
 
-  const processForm = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    await handleSubmit(async (data) => {
-        setLoading(true);
-        try {
-            const formData = new FormData(e.currentTarget);
-            // Append controlled values
-            formData.set('tags', data.tags.join(','));
-            formData.set('startDate', data.dateRange.from.toISOString());
-            formData.set('endDate', data.dateRange.to.toISOString());
-            formData.set('requiresRecommendation', String(data.requiresRecommendation));
-            formData.set('category', data.category);
-            formData.set('programType', data.programType);
-            formData.set('imageSource', data.imageSource);
-            formData.set('source', data.source);
-            formData.set('submissionType', data.submissionType);
-            if(data.partnerId) formData.set('partnerId', data.partnerId);
-            if(data.formId) formData.set('formId', data.formId);
-
-            await updateProgram(programId, formData);
-            toast({ title: 'Program berhasil diperbarui!' });
-            router.push('/panel/programs');
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Gagal memperbarui program', description: (error as Error).message });
-        } finally {
-            setLoading(false);
-        }
-    }, (validationErrors) => {
-        console.error("Validation errors on edit:", validationErrors);
-        toast({ variant: 'destructive', title: 'Formulir tidak valid', description: 'Mohon periksa kembali semua isian Anda.' });
-    })();
+  const onSubmit = async (data: ProgramFormData) => {
+    setLoading(true);
+    try {
+        const imageFile = data.imageFile?.[0];
+        const attachmentFile = data.attachment?.[0];
+        await updateProgram(programId, data, imageFile, attachmentFile);
+        toast({ title: 'Program berhasil diperbarui!' });
+        router.push('/panel/programs');
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Gagal memperbarui program', description: (error as Error).message });
+    } finally {
+        setLoading(false);
+    }
   };
 
   const handleTagToggle = (tagName: string) => {
@@ -169,7 +152,7 @@ export default function EditProgramPage() {
   }
 
   return (
-    <form onSubmit={processForm} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
        <div className="flex items-center justify-between">
         <div>
           <h1 className="font-headline text-2xl font-bold">Edit Program</h1>

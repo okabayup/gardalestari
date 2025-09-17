@@ -1,4 +1,3 @@
-
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -89,40 +88,21 @@ export async function getProgram(id: string): Promise<Program | null> {
     }
 }
 
-export async function createProgram(formData: FormData): Promise<string> {
+export async function createProgram(
+    programData: ProgramFormData,
+    imageFile?: File,
+    attachmentFile?: File
+): Promise<string> {
     try {
-        // 1. Extract data from FormData
-        const programData = {
-            title: formData.get('title') as string,
-            description: formData.get('description') as string,
-            category: formData.get('category') as 'flagship' | 'ongoing',
-            programType: formData.get('programType') as 'aktif' | 'pasif',
-            imageSource: formData.get('imageSource') as 'ai' | 'url' | 'upload',
-            imageUrl: formData.get('imageUrl') as string | undefined,
-            imageHint: formData.get('imageHint') as string | undefined,
-            tags: (formData.get('tags') as string).split(','),
-            startDate: formData.get('startDate') as string,
-            endDate: formData.get('endDate') as string,
-            source: formData.get('source') as 'garda_lestari' | 'mitra',
-            partnerId: formData.get('partnerId') as string | undefined,
-            benefits: formData.get('benefits') as string,
-            requiredDocuments: formData.get('requiredDocuments') as string,
-            submissionType: formData.get('submissionType') as 'internal' | 'external',
-            applicationUrl: formData.get('applicationUrl') as string | undefined,
-            formId: formData.get('formId') as string | undefined,
-            requiresRecommendation: formData.get('requiresRecommendation') === 'true',
-        };
-        const imageFile = formData.get('imageFile') as File | null;
-        const attachmentFile = formData.get('attachment') as File | null;
-
-        // 2. Prepare data for Firestore
         const dataToCreate: { [key: string]: any } = {
             ...programData,
-            startDate: Timestamp.fromDate(new Date(programData.startDate)),
-            endDate: Timestamp.fromDate(new Date(programData.endDate)),
+            startDate: Timestamp.fromDate(new Date(programData.dateRange.from)),
+            endDate: Timestamp.fromDate(new Date(programData.dateRange.to)),
         };
+        delete dataToCreate.dateRange;
+        delete dataToCreate.imageFile;
+        delete dataToCreate.attachment;
 
-        // 3. Handle image upload/generation
         try {
             if (programData.imageSource === 'ai' && programData.imageHint) {
                 const result = await generateImage({ prompt: programData.imageHint });
@@ -142,7 +122,6 @@ export async function createProgram(formData: FormData): Promise<string> {
             throw new Error(`Gagal memproses gambar program: ${(error as Error).message}`);
         }
 
-        // 4. Handle attachment upload
         if (attachmentFile) {
           try {
             const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachmentFile.name}`);
@@ -155,7 +134,6 @@ export async function createProgram(formData: FormData): Promise<string> {
           }
         }
         
-        // 5. Save to Firestore
         let docRef;
         try {
             docRef = await addDoc(programsCollection, dataToCreate);
@@ -164,7 +142,6 @@ export async function createProgram(formData: FormData): Promise<string> {
             throw new Error(`Gagal menyimpan program ke database: ${(error as Error).message}`);
         }
 
-        // 6. Post-save actions (notifications)
         if (programData.programType === 'aktif') {
             try {
                 await sendNotification(
@@ -186,7 +163,7 @@ export async function createProgram(formData: FormData): Promise<string> {
                     if (phoneNumbers.length > 0) {
                         const message = template.message
                             .replace('{namaProgram}', dataToCreate.title)
-                            .replace('{batasWaktu}', new Date(programData.endDate).toLocaleDateString('id-ID'));
+                            .replace('{batasWaktu}', new Date(programData.dateRange.to).toLocaleDateString('id-ID'));
                         
                         await sendBulkWhatsAppMessage(phoneNumbers, message);
                     }

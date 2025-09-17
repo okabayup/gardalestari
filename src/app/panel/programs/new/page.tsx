@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,7 +24,6 @@ import { getForms, ProgramForm } from '@/app/actions/forms';
 import { cn } from '@/lib/utils';
 import type { ProgramFormData } from '@/lib/definitions';
 
-// Simplified schema for better client-side UX. Stricter validation will be on the server.
 const formSchema = z.object({
   title: z.string().min(1, 'Judul wajib diisi'),
   description: z.string().min(1, 'Deskripsi wajib diisi'),
@@ -52,12 +50,9 @@ const formSchema = z.object({
 });
 
 
-type FormSchemaType = z.infer<typeof formSchema>;
-
 export default function NewProgramPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const formRef = useRef<HTMLFormElement>(null);
   const [loading, setLoading] = useState(false);
   const [allTags, setAllTags] = useState<ProgramTag[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -71,7 +66,7 @@ export default function NewProgramPage() {
     getValues,
     watch,
     formState: { errors },
-  } = useForm<FormSchemaType>({
+  } = useForm<ProgramFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '', description: '', category: 'ongoing', programType: 'aktif', imageUrl: '', imageHint: '', imageSource: 'ai',
@@ -109,46 +104,12 @@ export default function NewProgramPage() {
     fetchData();
   }, [toast]);
   
-  const processForm = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    
-    // Manually trigger validation and check errors
-    await handleSubmit(() => {}, (validationErrors) => {
-      console.error("Validation errors:", validationErrors);
-      const errorMessages = Object.values(validationErrors).map(err => err.message).join('\n');
-      toast({ 
-          variant: "destructive", 
-          title: "Formulir tidak valid", 
-          description: `Mohon periksa kembali isian Anda. Error: ${errorMessages || 'Beberapa field wajib belum terisi.'}`
-      });
-    })();
-
-    if (Object.keys(errors).length > 0) {
-      return;
-    }
-    
+  const onSubmit = async (data: ProgramFormData) => {
     setLoading(true);
-
-    if (!formRef.current) return;
-    const formData = new FormData(formRef.current);
-    
-    const formValues = getValues();
-    formData.set('tags', formValues.tags.join(','));
-    formData.set('startDate', formValues.dateRange.from.toISOString());
-    formData.set('endDate', formValues.dateRange.to.toISOString());
-    formData.set('requiresRecommendation', String(formValues.requiresRecommendation));
-
-    // Append other controlled fields
-    formData.set('category', formValues.category);
-    formData.set('programType', formValues.programType);
-    formData.set('imageSource', formValues.imageSource);
-    formData.set('source', formValues.source);
-    formData.set('submissionType', formValues.submissionType);
-    if(formValues.partnerId) formData.set('partnerId', formValues.partnerId);
-    if(formValues.formId) formData.set('formId', formValues.formId);
-
     try {
-        await createProgram(formData);
+        const imageFile = data.imageFile?.[0];
+        const attachmentFile = data.attachment?.[0];
+        await createProgram(data, imageFile, attachmentFile);
         toast({ title: 'Program berhasil dibuat!' });
         router.push('/panel/programs');
     } catch (error) {
@@ -174,7 +135,7 @@ export default function NewProgramPage() {
   };
 
   return (
-    <form ref={formRef} onSubmit={processForm} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
        <div className="flex items-center justify-between">
         <div>
           <h1 className="font-headline text-2xl font-bold">Buat Program Baru</h1>
