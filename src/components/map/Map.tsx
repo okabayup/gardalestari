@@ -14,12 +14,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Layers, Loader2 } from 'lucide-react';
 import React from 'react';
-import { createRoot } from 'react-dom/client';
 
-const Clusters = ({ items }: { items: MapData[] }) => {
+const MapMarkers = ({ items }: { items: MapData[] }) => {
     const map = useMap();
+    const [markers, setMarkers] = useState<{ [key: string]: google.maps.marker.AdvancedMarkerElement }>({});
     const clusterer = useRef<MarkerClusterer | null>(null);
-    const markers = useRef<{ [key: string]: google.maps.marker.AdvancedMarkerElement }>({});
     const [selectedMarker, setSelectedMarker] = useState<MapData | null>(null);
 
     useEffect(() => {
@@ -28,65 +27,55 @@ const Clusters = ({ items }: { items: MapData[] }) => {
             clusterer.current = new MarkerClusterer({ map });
         }
     }, [map]);
-
+    
     useEffect(() => {
         clusterer.current?.clearMarkers();
-        
-        const newMarkers: { [key: string]: google.maps.marker.AdvancedMarkerElement } = {};
-        
-        for (const item of items) {
-            if (markers.current[item.id!]) {
-                newMarkers[item.id!] = markers.current[item.id!];
-            } else {
-                 const config = categoryConfig[item.category];
-                const pin = new Pin({
-                    background: config.color,
-                    borderColor: config.color,
-                    glyph: config.icon,
-                });
-                const marker = new google.maps.marker.AdvancedMarkerElement({
-                    position: { lat: item.latitude, lng: item.longitude },
-                    content: pin.element,
-                    title: item.title,
-                });
-                marker.addListener('click', () => {
-                    setSelectedMarker(item);
-                });
-                newMarkers[item.id!] = marker;
-            }
+        clusterer.current?.addMarkers(Object.values(markers));
+    }, [markers]);
+
+    const setMarkerRef = (marker: google.maps.marker.AdvancedMarkerElement | null, item: MapData) => {
+        if (marker && markers[item.id!] !== marker) {
+            setMarkers(prev => ({ ...prev, [item.id!]: marker }));
+            
+            // Add click listener
+            marker.addListener('click', () => {
+                setSelectedMarker(item);
+            });
         }
-        
-        markers.current = newMarkers;
-        clusterer.current?.addMarkers(Object.values(newMarkers));
-
-    }, [items, map]);
+    };
     
-    const handleCloseInfoWindow = () => {
-        setSelectedMarker(null);
-    }
-
-    if (!selectedMarker) return null;
-
     return (
-        <InfoWindow
-            position={{ lat: selectedMarker.latitude, lng: selectedMarker.longitude }}
-            onCloseClick={handleCloseInfoWindow}
-            minWidth={200}
-        >
-            <div className="space-y-1 p-1">
-                <h3 className="font-bold">{selectedMarker.title}</h3>
-                <p className="text-sm">{selectedMarker.description}</p>
-                {(selectedMarker.category === 'program' || selectedMarker.category === 'dana') && (
-                    <>
-                        {selectedMarker.budget ? <p className="text-xs">Anggaran: {selectedMarker.budget?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p> : null}
-                        {selectedMarker.disbursed ? <p className="text-xs">Tersalurkan: {selectedMarker.disbursed?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p> : null}
-                    </>
-                )}
-            </div>
-        </InfoWindow>
-    );
-};
-
+        <>
+            {items.map(item => (
+                 <AdvancedMarker
+                    position={{lat: item.latitude, lng: item.longitude}}
+                    key={item.id}
+                    ref={marker => setMarkerRef(marker, item)}
+                 >
+                    <Pin background={categoryConfig[item.category].color} borderColor={categoryConfig[item.category].color} glyphColor={"#fff"}/>
+                 </AdvancedMarker>
+            ))}
+            {selectedMarker && (
+                 <InfoWindow
+                    position={{ lat: selectedMarker.latitude, lng: selectedMarker.longitude }}
+                    onCloseClick={() => setSelectedMarker(null)}
+                    minWidth={200}
+                >
+                    <div className="space-y-1 p-1">
+                        <h3 className="font-bold">{selectedMarker.title}</h3>
+                        <p className="text-sm">{selectedMarker.description}</p>
+                        {(selectedMarker.category === 'program' || selectedMarker.category === 'dana') && (
+                            <>
+                                {selectedMarker.budget ? <p className="text-xs">Anggaran: {selectedMarker.budget?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p> : null}
+                                {selectedMarker.disbursed ? <p className="text-xs">Tersalurkan: {selectedMarker.disbursed?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p> : null}
+                            </>
+                        )}
+                    </div>
+                </InfoWindow>
+            )}
+        </>
+    )
+}
 
 export default function MapComponent() {
     const { toast } = useToast();
@@ -153,7 +142,7 @@ export default function MapComponent() {
                 disableDefaultUI={true}
                 className="h-full w-full"
             >
-                <Clusters items={filteredData} />
+                <MapMarkers items={filteredData} />
             </Map>
         </div>
     )
