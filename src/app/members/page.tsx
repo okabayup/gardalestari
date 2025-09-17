@@ -18,7 +18,7 @@ import { Loader2, Search } from 'lucide-react';
 import { getMembers, MemberWithStatus } from '@/app/actions/members';
 import { useToast } from '@/hooks/use-toast';
 import { formatFullName } from '@/lib/utils';
-import { format } from 'date-fns';
+import { initialPositions } from '@/lib/definitions';
 
 const ALL_TABS = ['Semua', 'DPP', 'DPD', 'DPC', 'Dewan Kehormatan', 'Anggota Istimewa'];
 
@@ -34,7 +34,7 @@ export default function MembersPage() {
     const fetchMembers = async () => {
       setLoading(true);
       try {
-        const members = await getMembers(true); // Fetch only verified members for public page
+        const members = await getMembers(true); // Fetch only verified members
         setAllMembers(members);
       } catch (error) {
         toast({
@@ -66,11 +66,24 @@ export default function MembersPage() {
       ...Array.from(new Set(allMembers.filter(m => m.type === 'daerah' && m.region).map(m => m.region as string)))
     ];
   }, [allMembers]);
+  
+  const sortMembers = (members: MemberWithStatus[]) => {
+      const positionOrder = initialPositions;
+      return members.sort((a, b) => {
+          const indexA = positionOrder.indexOf(a.position || '');
+          const indexB = positionOrder.indexOf(b.position || '');
+
+          if (indexA === -1 && indexB === -1) return a.name.localeCompare(b.name);
+          if (indexA === -1) return 1;
+          if (indexB === -1) return -1;
+          return indexA - indexB;
+      });
+  }
 
   const filteredMembers = useMemo(() => {
     let members = allMembers;
 
-    // Filter berdasarkan tab
+    // Filter by tab
     if (activeTab === 'DPP') {
       members = members.filter((member) => member.type === 'pusat');
     } else if (activeTab === 'DPD') {
@@ -83,19 +96,20 @@ export default function MembersPage() {
       members = members.filter((member) => member.isSpecialMember);
     }
 
-    // Filter berdasarkan pencarian nama
+    // Filter by search term
     if (searchTerm) {
       members = members.filter((member) =>
         formatFullName(member.name, member.titlePrefix, member.titlePostfix).toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    // Filter berdasarkan wilayah (hanya jika tab adalah 'Semua' atau 'DPD')
+    // Filter by region (only if 'All' or 'DPD' tab is active)
     if ((activeTab === 'Semua' || activeTab === 'DPD') && selectedRegion !== 'Semua Wilayah') {
         members = members.filter((member) => member.region === selectedRegion);
     }
-
-    return members;
+    
+    // Sort the final list
+    return sortMembers(members);
   }, [allMembers, activeTab, searchTerm, selectedRegion]);
   
   const handleTabClick = (tab: string) => {
