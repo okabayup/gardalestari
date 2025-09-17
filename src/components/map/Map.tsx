@@ -14,89 +14,78 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Layers, Loader2 } from 'lucide-react';
 import React from 'react';
+import { createRoot } from 'react-dom/client';
 
-const MapMarker = ({ item }: { item: MapData }) => {
-    const [infoWindowShown, setInfoWindowShown] = useState(false);
-    const config = categoryConfig[item.category];
-
-    const glyph = <config.icon className="h-5 w-5 text-white" />;
-
-    return (
-        <>
-            <AdvancedMarker
-                position={{ lat: item.latitude, lng: item.longitude }}
-                onClick={() => setInfoWindowShown(true)}
-            >
-                <Pin background={config.color} borderColor={config.color} glyph={glyph} />
-            </AdvancedMarker>
-            {infoWindowShown && (
-                <InfoWindow
-                    position={{ lat: item.latitude, lng: item.longitude }}
-                    onCloseClick={() => setInfoWindowShown(false)}
-                    minWidth={200}
-                >
-                    <div className="space-y-1 p-1">
-                        <h3 className="font-bold">{item.title}</h3>
-                        <p className="text-sm">{item.description}</p>
-                        {(item.category === 'program' || item.category === 'dana') && (
-                            <>
-                                {item.budget ? <p className="text-xs">Anggaran: {item.budget?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p> : null}
-                                {item.disbursed ? <p className="text-xs">Tersalurkan: {item.disbursed?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p> : null}
-                            </>
-                        )}
-                    </div>
-                </InfoWindow>
-            )}
-        </>
-    );
-};
-
-const Clusters = ({items}: {items: MapData[]}) => {
+const Clusters = ({ items }: { items: MapData[] }) => {
     const map = useMap();
-    const markers = useRef<{[key: string]: google.maps.marker.AdvancedMarkerElement}>({});
     const clusterer = useRef<MarkerClusterer | null>(null);
+    const markers = useRef<{ [key: string]: google.maps.marker.AdvancedMarkerElement }>({});
+    const [selectedMarker, setSelectedMarker] = useState<MapData | null>(null);
 
     useEffect(() => {
         if (!map) return;
         if (!clusterer.current) {
-            clusterer.current = new MarkerClusterer({map});
+            clusterer.current = new MarkerClusterer({ map });
         }
     }, [map]);
 
     useEffect(() => {
         clusterer.current?.clearMarkers();
-        clusterer.current?.addMarkers(Object.values(markers.current));
-    }, [markers]);
-
-    const setMarkerRef = (marker: google.maps.marker.AdvancedMarkerElement | null, key: string) => {
-        if (marker && markers.current[key]) return;
-        if (!marker && !markers.current[key]) return;
-
-        if (marker) {
-            markers.current[key] = marker;
-        } else {
-            delete markers.current[key];
+        
+        const newMarkers: { [key: string]: google.maps.marker.AdvancedMarkerElement } = {};
+        
+        for (const item of items) {
+            if (markers.current[item.id!]) {
+                newMarkers[item.id!] = markers.current[item.id!];
+            } else {
+                 const config = categoryConfig[item.category];
+                const pin = new Pin({
+                    background: config.color,
+                    borderColor: config.color,
+                    glyph: config.icon,
+                });
+                const marker = new google.maps.marker.AdvancedMarkerElement({
+                    position: { lat: item.latitude, lng: item.longitude },
+                    content: pin.element,
+                    title: item.title,
+                });
+                marker.addListener('click', () => {
+                    setSelectedMarker(item);
+                });
+                newMarkers[item.id!] = marker;
+            }
         }
-    };
+        
+        markers.current = newMarkers;
+        clusterer.current?.addMarkers(Object.values(newMarkers));
+
+    }, [items, map]);
+    
+    const handleCloseInfoWindow = () => {
+        setSelectedMarker(null);
+    }
+
+    if (!selectedMarker) return null;
 
     return (
-        <>
-            {items.map(item => (
-                <AdvancedMarker
-                    position={{ lat: item.latitude, lng: item.longitude }}
-                    key={item.id}
-                    ref={marker => setMarkerRef(marker, item.id!)}
-                >
-                    <Pin 
-                        background={categoryConfig[item.category].color} 
-                        borderColor={categoryConfig[item.category].color} 
-                        glyph={<categoryConfig[item.category].icon className="h-5 w-5 text-white" />} 
-                    />
-                </AdvancedMarker>
-            ))}
-        </>
-    )
-}
+        <InfoWindow
+            position={{ lat: selectedMarker.latitude, lng: selectedMarker.longitude }}
+            onCloseClick={handleCloseInfoWindow}
+            minWidth={200}
+        >
+            <div className="space-y-1 p-1">
+                <h3 className="font-bold">{selectedMarker.title}</h3>
+                <p className="text-sm">{selectedMarker.description}</p>
+                {(selectedMarker.category === 'program' || selectedMarker.category === 'dana') && (
+                    <>
+                        {selectedMarker.budget ? <p className="text-xs">Anggaran: {selectedMarker.budget?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p> : null}
+                        {selectedMarker.disbursed ? <p className="text-xs">Tersalurkan: {selectedMarker.disbursed?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p> : null}
+                    </>
+                )}
+            </div>
+        </InfoWindow>
+    );
+};
 
 
 export default function MapComponent() {
@@ -159,7 +148,7 @@ export default function MapComponent() {
             <Map
                 defaultCenter={{lat: -2.548926, lng: 118.014863}}
                 defaultZoom={5}
-                mapId="garda-lestari-map"
+                mapId={process.env.NEXT_PUBLIC_GOOGLE_MAP_ID || 'garda-lestari-map'}
                 gestureHandling={'greedy'}
                 disableDefaultUI={true}
                 className="h-full w-full"
