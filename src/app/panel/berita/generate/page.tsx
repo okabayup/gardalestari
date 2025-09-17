@@ -1,14 +1,14 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useRouter } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Upload, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { createBeritaPost, BeritaPost } from '@/app/actions/berita';
@@ -24,6 +24,7 @@ interface GenerateForm {
 
 export default function GenerateBeritaPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -32,7 +33,20 @@ export default function GenerateBeritaPage() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const { register, handleSubmit } = useForm<GenerateForm>();
+  const { register, handleSubmit, setValue } = useForm<GenerateForm>();
+
+  useEffect(() => {
+    // Pre-fill form from URL params if they exist
+    const topicParam = searchParams.get('topic');
+    const descriptionParam = searchParams.get('description');
+    if (topicParam) {
+        setValue('topic', topicParam);
+    }
+    if (descriptionParam) {
+        setValue('description', descriptionParam);
+    }
+  }, [searchParams, setValue]);
+
 
   const generateSlug = (title: string) => {
     if (!title) return '';
@@ -66,6 +80,7 @@ export default function GenerateBeritaPage() {
         formData.append('topic', data.topic);
         formData.append('description', data.description);
         userImages.forEach(file => {
+            // Server action expects file to be readable, we pass as is
             formData.append('userImages', file);
         });
 
