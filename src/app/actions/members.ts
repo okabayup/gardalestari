@@ -67,7 +67,7 @@ export async function getMembers(forPublic: boolean = false): Promise<MemberWith
       }
       
       // For public view, also exclude hidden members and unverified
-      if (forPublic && (data.isHidden === true || data.verificationStatus === 'unverified' || data.verificationStatus === 'rejected')) {
+      if (forPublic && (data.isHidden === true || (data.verificationStatus !== 'permanent' && data.verificationStatus !== 'manual'))) {
           continue;
       }
       
@@ -183,8 +183,10 @@ export async function createManualMember(
         positionId: string,
         type: MemberType,
         isSpecialMember: boolean,
+        isHidden: boolean,
         titlePrefix?: string,
         titlePostfix?: string,
+        region?: string;
     },
     photoFile?: File
 ) {
@@ -207,15 +209,15 @@ export async function createManualMember(
             createdAt: Timestamp.now(),
             level: 'Bronze',
             points: 0,
-            isHidden: false,
         };
 
         await addDoc(usersCollection, newMemberData);
         revalidatePath('/panel/members');
         revalidatePath('/members');
+        revalidatePath('/tentang');
 
     } catch (error) {
         console.error("[createManualMember Error]", error);
-        throw new Error("Gagal membuat anggota manual.");
+        throw new Error(`Gagal membuat anggota manual: ${(error as Error).message}`);
     }
 }

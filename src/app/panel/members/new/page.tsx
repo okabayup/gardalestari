@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Loader2, UserPlus } from 'lucide-react';
 import { createManualMember } from '@/app/actions/members';
-import type { MemberType } from '@/lib/definitions';
+import type { MemberType, VerificationStatus } from '@/lib/definitions';
 import { getPositions, Position } from '@/app/actions/positions';
 import Image from 'next/image';
 
@@ -25,8 +25,13 @@ const formSchema = z.object({
   titlePostfix: z.string().optional(),
   positionId: z.string({ required_error: "Jabatan wajib dipilih" }).min(1, "Jabatan wajib dipilih"),
   type: z.enum(['pusat', 'daerah', 'cabang', 'pembina', 'pengawas', 'penasehat'], { required_error: "Tipe keanggotaan wajib dipilih" }),
+  region: z.string().optional(),
   isSpecialMember: z.boolean().default(false),
+  isHidden: z.boolean().default(false),
   photoFile: z.any().optional(),
+}).refine(data => data.type !== 'daerah' || !!data.region, {
+  message: "Wilayah harus diisi untuk anggota DPD",
+  path: ["region"],
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -53,9 +58,16 @@ export default function NewManualMemberPage() {
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm<FormData>({ resolver: zodResolver(formSchema) });
+  } = useForm<FormData>({ 
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      isSpecialMember: false,
+      isHidden: false,
+    }
+  });
   
   const photoFile = watch('photoFile');
+  const memberType = watch('type');
 
   useEffect(() => {
     getPositions().then(setPositions);
@@ -154,6 +166,14 @@ export default function NewManualMemberPage() {
               </div>
           </div>
           
+           {memberType === 'daerah' && (
+             <div className="space-y-2">
+                <Label htmlFor="region">Wilayah/Daerah</Label>
+                <Input id="region" {...register('region')} placeholder="Contoh: Jawa Barat" />
+                {errors.region && <p className="text-sm text-destructive">{errors.region.message}</p>}
+            </div>
+           )}
+
            <div className="space-y-2">
                 <Label htmlFor="photoFile">Foto Profil</Label>
                 <Input id="photoFile" type="file" accept="image/*" {...register('photoFile')} />
@@ -165,6 +185,12 @@ export default function NewManualMemberPage() {
                   <Switch id="isSpecialMember" checked={field.value} onCheckedChange={field.onChange} />
               )}/>
               <Label htmlFor="isSpecialMember">Jadikan Anggota Istimewa (Hak Suara Khusus)</Label>
+            </div>
+             <div className="flex items-center space-x-2 pt-2">
+              <Controller name="isHidden" control={control} render={({ field }) => (
+                  <Switch id="isHidden" checked={field.value} onCheckedChange={field.onChange} />
+              )}/>
+              <Label htmlFor="isHidden">Sembunyikan dari Direktori Publik</Label>
             </div>
         </CardContent>
       </Card>
