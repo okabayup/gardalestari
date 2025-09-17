@@ -58,7 +58,7 @@ export async function getMembers(forPublic: boolean = false): Promise<MemberWith
     
     // For public views, only fetch verified and non-hidden members
     if (forPublic) {
-        q = query(q, where('verificationStatus', 'in', ['permanent', 'manual']), where('isHidden', '==', false));
+        q = query(q, where('verificationStatus', 'in', ['permanent', 'temporary', 'manual']), where('isHidden', '==', false));
     }
     
     const snapshot = await getDocs(q);

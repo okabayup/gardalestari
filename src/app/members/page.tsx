@@ -49,17 +49,6 @@ export default function MembersPage() {
     fetchMembers();
   }, [toast]);
 
-  const availableTabs = useMemo(() => {
-    return ALL_TABS.filter(tab => {
-        if (tab === 'Semua' || tab === 'Anggota Istimewa') return true;
-        if (tab === 'DPP') return allMembers.some(m => m.type === 'pusat');
-        if (tab === 'DPD') return allMembers.some(m => m.type === 'daerah');
-        if (tab === 'DPC') return allMembers.some(m => m.type === 'cabang');
-        if (tab === 'Dewan Kehormatan') return allMembers.some(m => ['pembina', 'pengawas', 'penasehat'].includes(m.type || ''));
-        return false;
-    })
-  }, [allMembers]);
-
   const allRegions = useMemo(() => {
     return [
       'Semua Wilayah',
@@ -159,7 +148,7 @@ export default function MembersPage() {
         <div className="relative">
           <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex space-x-2 pb-2">
-              {availableTabs.map((tab) => (
+              {ALL_TABS.map((tab) => (
                 <Button
                   key={tab}
                   variant={activeTab === tab ? 'default' : 'outline'}
