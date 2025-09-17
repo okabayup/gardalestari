@@ -6,7 +6,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-markercluster';
 import 'leaflet/dist/leaflet.css';
 import 'react-leaflet-markercluster/dist/styles.min.css';
-import L from 'leaflet';
+import L, { Map as LeafletMap } from 'leaflet';
 import { useToast } from '@/hooks/use-toast';
 import { MapData, MapDataCategory, getMapData } from '@/app/actions/map-data';
 import { categoryConfig } from '@/app/map/page';
@@ -39,16 +39,22 @@ const createClusterCustomIcon = (cluster: any) => {
     });
 };
 
-
 // --- Map Rendering Component ---
 
 interface MapRendererProps {
     data: MapData[];
+    setMap: React.Dispatch<React.SetStateAction<LeafletMap | null>>;
 }
 
-function MapRenderer({ data }: MapRendererProps) {
+function MapRenderer({ data, setMap }: MapRendererProps) {
     return (
-        <MapContainer center={[-2.548926, 118.014863]} zoom={5} scrollWheelZoom={true} className="h-full w-full z-10">
+        <MapContainer 
+            center={[-2.548926, 118.014863]} 
+            zoom={5} 
+            scrollWheelZoom={true} 
+            className="h-full w-full z-10"
+            whenCreated={setMap}
+        >
              <style jsx global>{`
                 .leaflet-container { height: 100%; width: 100%; z-index: 10; }
                 .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large { background-color: hsla(var(--primary) / 0.6) !important; }
@@ -89,6 +95,7 @@ export default function Map() {
     const [allData, setAllData] = useState<MapData[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedCategories, setSelectedCategories] = useState<MapDataCategory[]>(['potensi', 'permasalahan', 'program', 'kegiatan', 'dana']);
+    const [map, setMap] = useState<LeafletMap | null>(null);
 
     useEffect(() => {
         getMapData()
@@ -144,7 +151,7 @@ export default function Map() {
                 </div>
             )}
             
-            <MapRenderer data={filteredData} />
+            {map ? <MapRenderer data={filteredData} setMap={setMap}/> : <MapRenderer data={filteredData} setMap={setMap}/>}
         </div>
     );
 }
