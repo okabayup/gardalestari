@@ -94,11 +94,13 @@ export async function getAchievement(id: string): Promise<Achievement | null> {
 export async function createAchievement(data: Omit<Achievement, 'id' | 'date'> & { date: Timestamp }, imageFile?: File) {
   try {
     const achievementData: { [key: string]: any } = { ...data };
+    
     if (imageFile) {
         const imageRef = ref(storage, `achievements/${Date.now()}_${imageFile.name}`);
         await uploadBytes(imageRef, imageFile);
         achievementData.imageUrl = await getDownloadURL(imageRef);
     }
+
     await addDoc(achievementsCollection, achievementData);
     revalidatePath('/panel/achievements');
     revalidatePath('/achievements');
@@ -123,7 +125,7 @@ export async function createMyAchievement(
             throw new Error('User not found.');
         }
 
-        const achievementData: Omit<Achievement, 'id' | 'date'> & { date: Timestamp } = {
+        const achievementData: { [key: string]: any } = {
             ...data,
             userId: user.uid,
             userName: user.displayName || 'Pengguna',
@@ -131,11 +133,15 @@ export async function createMyAchievement(
         };
         
         if (imageFile) {
+            console.log("[createMyAchievement] Uploading image...");
             const imageRef = ref(storage, `achievements/${Date.now()}_${imageFile.name}`);
             await uploadBytes(imageRef, imageFile);
-            (achievementData as any).imageUrl = await getDownloadURL(imageRef);
+            achievementData.imageUrl = await getDownloadURL(imageRef);
+            console.log("[createMyAchievement] Image uploaded successfully:", achievementData.imageUrl);
         }
+
         await addDoc(achievementsCollection, achievementData);
+        
         revalidatePath('/achievements');
         revalidatePath('/profile/me');
     } catch (error) {
@@ -155,7 +161,9 @@ export async function updateAchievement(id: string, data: Partial<Omit<Achieveme
         const currentDoc = await getAchievement(id);
         if (currentDoc?.imageUrl) {
             try {
-                await deleteObject(ref(storage, currentDoc.imageUrl));
+                if (currentDoc.imageUrl.includes('firebasestorage.googleapis.com')) {
+                    await deleteObject(ref(storage, currentDoc.imageUrl));
+                }
             } catch (storageError: any) {
                  if (storageError.code !== 'storage/object-not-found') {
                     console.warn("[updateAchievement Warn] Could not delete old image", storageError);
@@ -183,7 +191,9 @@ export async function deleteAchievement(id: string) {
     const docToDelete = await getAchievement(id);
     if (docToDelete?.imageUrl) {
         try {
-            await deleteObject(ref(storage, docToDelete.imageUrl));
+             if (docToDelete.imageUrl.includes('firebasestorage.googleapis.com')) {
+                await deleteObject(ref(storage, docToDelete.imageUrl));
+             }
         } catch (storageError: any) {
             if (storageError.code !== 'storage/object-not-found') {
                 console.warn("[deleteAchievement Warn] Old image not found, skipping deletion.", storageError);

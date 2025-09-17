@@ -177,12 +177,20 @@ export default function NewPostPage() {
     
     setIsSubmitting(true);
     try {
-      const mediaPayload = mediaFiles.map(mf => ({
-        file: mf.file,
-        mentions: mf.mentions
-      }));
-      await createPost(caption, mediaPayload, user.uid);
-      logAnalyticsEvent('create_post', { media_count: mediaPayload.length });
+      const formData = new FormData();
+      formData.append('caption', caption);
+      formData.append('authorId', user.uid);
+      
+      const mediaPayloads = mediaFiles.map(mf => ({ mentions: mf.mentions }));
+      formData.append('mediaPayloads', JSON.stringify(mediaPayloads));
+
+      mediaFiles.forEach(mf => {
+        formData.append('files', mf.file);
+      });
+
+      await createPost(formData);
+      
+      logAnalyticsEvent('create_post', { media_count: mediaFiles.length });
       toast({
         title: 'Postingan berhasil dibuat!',
       });

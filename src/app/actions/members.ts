@@ -173,10 +173,6 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
         // Handle file upload first
         if (photoFile && photoFile.size > 0) {
             console.log("[updateMemberDetails] Uploading new profile picture...");
-            const storageRef = ref(storage, `profile-pictures/${userId}-${photoFile.name}`);
-            await uploadBytes(storageRef, photoFile);
-            dataToUpdate.avatarUrl = await getDownloadURL(storageRef);
-            
             // Optionally delete the old photo
             if (currentMemberData.avatarUrl && currentMemberData.avatarUrl.includes('firebasestorage.googleapis.com')) {
                  try {
@@ -189,6 +185,9 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
                     }
                 }
             }
+            const storageRef = ref(storage, `profile-pictures/${userId}-${photoFile.name}`);
+            await uploadBytes(storageRef, photoFile);
+            dataToUpdate.avatarUrl = await getDownloadURL(storageRef);
         }
 
         // Handle text fields
@@ -261,17 +260,17 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
 // Manually create a member without an auth account
 export async function createManualMember(formData: FormData) {
     try {
-        let avatarUrl = '';
-        const photoFile = formData.get('photoFile') as File | null;
         const fullName = formData.get('fullName') as string;
+        const photoFile = formData.get('photoFile') as File | null;
+        
+        let avatarUrl = `https://picsum.photos/seed/${fullName.replace(/\s+/g, '-')}/200/200`;
 
         if (photoFile && photoFile.size > 0) {
             console.log("[createManualMember] Uploading profile picture...");
             const storageRef = ref(storage, `profile-pictures/${Date.now()}-${photoFile.name}`);
             await uploadBytes(storageRef, photoFile);
             avatarUrl = await getDownloadURL(storageRef);
-        } else {
-             avatarUrl = `https://picsum.photos/seed/${fullName.replace(/\s+/g, '-')}/200/200`;
+            console.log("[createManualMember] Image uploaded successfully:", avatarUrl);
         }
         
         console.log("[createManualMember] Generating username...");

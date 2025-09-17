@@ -40,16 +40,11 @@ export async function getPartner(id: string): Promise<Partner | null> {
 }
 
 // Create a new partner
-export async function createPartner(data: Omit<Partner, 'id' | 'logoUrl'>, logoFile?: File) {
+export async function createPartner(data: Omit<Partner, 'id' | 'logoUrl'>, logoFile: File) {
   try {
-    let logoUrl = '';
-    if (logoFile) {
-        const logoRef = ref(storage, `partner-logos/${Date.now()}_${logoFile.name}`);
-        await uploadBytes(logoRef, logoFile);
-        logoUrl = await getDownloadURL(logoRef);
-    } else {
-        throw new Error("Logo harus diunggah.");
-    }
+    const logoRef = ref(storage, `partner-logos/${Date.now()}_${logoFile.name}`);
+    await uploadBytes(logoRef, logoFile);
+    const logoUrl = await getDownloadURL(logoRef);
     
     const partnerData = { ...data, logoUrl };
     await addDoc(partnersCollection, partnerData);
@@ -130,10 +125,6 @@ export async function deletePartner(id: string) {
     const partnerDocRef = doc(db, 'partners', id);
     const partner = await getPartner(id);
     
-    // Delete from Firestore
-    await deleteDoc(partnerDocRef);
-    
-    // Delete logo from Storage only if it's a Firebase Storage URL
     if (partner?.logoUrl && partner.logoUrl.includes('firebasestorage.googleapis.com')) {
         try {
             const logoRef = ref(storage, partner.logoUrl);
@@ -144,6 +135,8 @@ export async function deletePartner(id: string) {
             }
         }
     }
+
+    await deleteDoc(partnerDocRef);
 
     revalidatePath('/panel/partners');
     revalidatePath('/');

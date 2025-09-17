@@ -1,8 +1,9 @@
 
 'use server';
 
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, DocumentData, limit, getDoc, doc, setDoc, Timestamp } from 'firebase/firestore';
+import { db, storage } from '@/lib/firebase';
+import { collection, query, where, getDocs, DocumentData, limit, getDoc, doc, setDoc, Timestamp, updateProfile } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import type { MemberWithStatus } from '@/lib/definitions';
 import type { Position, PermissionId, PublicUser, PublicProfile } from '@/lib/definitions';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
@@ -278,4 +279,41 @@ export async function verifyWaNumber(userId: string, otp: string): Promise<boole
         console.error("[verifyWaNumber Error]", error);
         throw new Error("Gagal memverifikasi nomor WhatsApp.");
     }
+}
+
+export async function updateUserProfile(userId: string, formData: FormData) {
+  try {
+    const userDocRef = doc(db, 'users', userId);
+    const dataToUpdate: { [key: string]: any } = {};
+
+    const username = formData.get('username') as string | null;
+    const photoFile = formData.get('photoFile') as File | null;
+    
+    if (photoFile && photoFile.size > 0) {
+      console.log("[updateUserProfile] Uploading new profile picture...");
+      const storageRef = ref(storage, `profile-pictures/${userId}`);
+      await uploadBytes(storageRef, photoFile);
+      dataToUpdate.avatarUrl = await getDownloadURL(storageRef);
+      console.log("[updateUserProfile] Image uploaded successfully:", dataToUpdate.avatarUrl);
+    }
+
+    if (username) {
+        const isAvailable = !(await checkUsernameExists(username));
+        if (!isAvailable) {
+            throw new Error('Nama pengguna tersebut sudah digunakan.');
+        }
+        dataToUpdate.username = username;
+    }
+    
+    if (Object.keys(dataToUpdate).length > 0) {
+      await updateDoc(userDocRef, dataToUpdate);
+    }
+
+    revalidatePath(`/profile/me`);
+    revalidatePath(`/profile/${username}`);
+
+  } catch (error) {
+    console.error("[updateUserProfile Error]", error);
+    throw new Error(`Gagal memperbarui profil: ${(error as Error).message}`);
+  }
 }

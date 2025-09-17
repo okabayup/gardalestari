@@ -86,25 +86,29 @@ const buildPostWithAuthor = async (postDoc: any, currentUserId?: string): Promis
 
 
 // Create a new post with multiple files
-export async function createPost(caption: string, mediaPayload: {file: File, mentions: Mention[]}[], authorId: string) {
-  try {
-    if (!authorId) {
-      throw new Error('Pengguna tidak terautentikasi.');
-    }
-    if (mediaPayload.length === 0) {
-      throw new Error('Setidaknya satu file harus diunggah.');
-    }
+export async function createPost(formData: FormData) {
+  const caption = formData.get('caption') as string;
+  const authorId = formData.get('authorId') as string;
+  const mediaPayloads = JSON.parse(formData.get('mediaPayloads') as string) as {mentions: Mention[]}[];
+  const files = formData.getAll('files') as File[];
 
+  if (!authorId) {
+    throw new Error('Pengguna tidak terautentikasi.');
+  }
+  if (files.length === 0) {
+    throw new Error('Setidaknya satu file harus diunggah.');
+  }
+
+  try {
     const mediaItems: MediaItem[] = [];
     const mentionedUserIds = new Set<string>();
 
-    // Upload all files to Firebase Storage in parallel
-    await Promise.all(mediaPayload.map(async (payload) => {
-        const file = payload.file;
+    await Promise.all(files.map(async (file, index) => {
         const storageRef = ref(storage, `posts/${Date.now()}_${file.name}`);
         await uploadBytes(storageRef, file);
         const url = await getDownloadURL(storageRef);
         
+        const payload = mediaPayloads[index];
         const mentions = payload.mentions || [];
         mentions.forEach(m => mentionedUserIds.add(m.userId));
 
@@ -116,7 +120,6 @@ export async function createPost(caption: string, mediaPayload: {file: File, men
         });
     }));
 
-    // Create post document in Firestore
     const newPost = {
       authorId,
       caption,
@@ -133,7 +136,7 @@ export async function createPost(caption: string, mediaPayload: {file: File, men
     revalidatePath('/feed');
     revalidatePath('/profile/me');
   } catch (error) {
-    console.error("Error creating post:", error);
+    console.error("[createPost Error]", error);
     throw new Error("Gagal membuat postingan baru.");
   }
 }
