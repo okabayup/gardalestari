@@ -56,9 +56,9 @@ export async function getMembers(forPublic: boolean = false): Promise<MemberWith
   try {
     let q = query(usersCollection); 
     
-    // For public views, only fetch verified and non-hidden members
+    // For public views, only fetch verified members
     if (forPublic) {
-        q = query(q, where('verificationStatus', 'in', ['permanent', 'temporary', 'manual']), where('isHidden', '==', false));
+        q = query(q, where('verificationStatus', 'in', ['permanent', 'manual']));
     }
     
     const snapshot = await getDocs(q);
@@ -73,7 +73,7 @@ export async function getMembers(forPublic: boolean = false): Promise<MemberWith
       }
       
       // For public view, also exclude hidden members
-      if (forPublic && data.isHidden) {
+      if (forPublic && data.isHidden === true) {
           continue;
       }
 

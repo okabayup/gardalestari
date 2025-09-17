@@ -99,7 +99,7 @@ export default function AboutPage() {
         try {
           const [settingsData, membersData] = await Promise.all([
             getAppSettings(),
-            getMembers(),
+            getMembers(true), // Fetch public members
           ]);
           setSettings(settingsData);
           setAllMembers(membersData);
