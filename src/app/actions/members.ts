@@ -51,9 +51,15 @@ export async function getPendingVerificationCount(): Promise<number> {
 
 
 // Get all members, sorted by creation time
-export async function getMembers(onlyVerified: boolean = false): Promise<MemberWithStatus[]> {
+export async function getMembers(forPublic: boolean = false): Promise<MemberWithStatus[]> {
   try {
-    const q = query(usersCollection); 
+    let q = query(usersCollection); 
+    
+    // For public views, only fetch verified and non-hidden members
+    if (forPublic) {
+        q = query(q, where('verificationStatus', 'in', ['permanent', 'manual']), where('isHidden', '==', false));
+    }
+    
     const snapshot = await getDocs(q);
     let members: MemberWithStatus[] = [];
 
@@ -62,11 +68,6 @@ export async function getMembers(onlyVerified: boolean = false): Promise<MemberW
 
       // Exclude the official account from the members list
       if (data.phoneNumber === OFFICIAL_ACCOUNT_PHONE) {
-          continue;
-      }
-      
-      // Filter for only verified members if requested
-      if (onlyVerified && !['permanent', 'manual'].includes(data.verificationStatus)) {
           continue;
       }
 
@@ -87,6 +88,7 @@ export async function getMembers(onlyVerified: boolean = false): Promise<MemberW
         positionId: data.positionId,
         type: data.type || undefined,
         isSpecialMember: data.isSpecialMember || false,
+        isHidden: data.isHidden || false,
         joinDate: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
         ktpImageUrl: data.ktpImageUrl,
         selfieImageUrl: data.selfieImageUrl,
@@ -110,48 +112,26 @@ export async function getMembers(onlyVerified: boolean = false): Promise<MemberW
   }
 }
 
-// Update member details (position, type, region, verification status)
-export async function updateMemberDetails(id: string, details: { positionId?: string, type?: MemberType | '', region?: string, verificationStatus?: VerificationStatus, isSpecialMember?: boolean, titlePrefix?: string, titlePostfix?: string }) {
+// Update member details
+export async function updateMemberDetails(id: string, details: Partial<Omit<MemberWithStatus, 'id'>>) {
     try {
         const memberDocRef = doc(db, 'users', id);
         const currentMemberDoc = await getDoc(memberDocRef);
         if (!currentMemberDoc.exists()) throw new Error("Anggota tidak ditemukan.");
         
         const currentMemberData = currentMemberDoc.data();
-        const dataToUpdate: { [key: string]: any } = {};
+        const dataToUpdate: { [key: string]: any } = { ...details };
 
-        if (details.positionId) {
-            dataToUpdate.positionId = details.positionId;
-        } else if (details.positionId === '') { // Explicitly remove position
+        if (details.positionId === '') {
             dataToUpdate.positionId = deleteField();
         }
 
-        if (details.type) {
-            dataToUpdate.type = details.type;
-        } else if (details.type === '') { // Explicitly remove type
+        if (details.type === '') {
             dataToUpdate.type = deleteField();
         }
 
-        if (details.type === 'daerah' && details.region) {
-            dataToUpdate.region = details.region;
-        } else if (details.type !== 'daerah') {
+        if (details.type !== 'daerah') {
             dataToUpdate.region = deleteField();
-        }
-
-        if (details.verificationStatus) {
-            dataToUpdate.verificationStatus = details.verificationStatus;
-        }
-
-        if (details.isSpecialMember !== undefined) {
-            dataToUpdate.isSpecialMember = details.isSpecialMember;
-        }
-
-        if (details.titlePrefix !== undefined) {
-            dataToUpdate.titlePrefix = details.titlePrefix;
-        }
-
-        if (details.titlePostfix !== undefined) {
-            dataToUpdate.titlePostfix = details.titlePostfix;
         }
         
         await setDoc(memberDocRef, dataToUpdate, { merge: true });
@@ -226,6 +206,7 @@ export async function createManualMember(
             createdAt: Timestamp.now(),
             level: 'Bronze',
             points: 0,
+            isHidden: false,
         };
 
         await addDoc(usersCollection, newMemberData);

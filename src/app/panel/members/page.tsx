@@ -6,9 +6,8 @@ import {
   getMembers,
   updateMemberDetails,
   MemberWithStatus,
-  MemberType,
-  VerificationStatus,
 } from '@/app/actions/members';
+import type { MemberType, VerificationStatus } from '@/lib/definitions';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -71,7 +70,7 @@ export default function AdminMembersPage() {
     if (dialog === 'verify') setIsVerificationDialogOpen(true);
   };
   
-  const handleSaveDetails = async (id: string, details: { positionId?: string; type?: MemberType; region?: string, verificationStatus?: VerificationStatus, isSpecialMember?: boolean, titlePrefix?: string, titlePostfix?: string }) => {
+  const handleSaveDetails = async (id: string, details: Partial<Omit<MemberWithStatus, 'id'>>) => {
     setIsSavingDetails(true);
     try {
         await updateMemberDetails(id, details);
@@ -141,7 +140,7 @@ export default function AdminMembersPage() {
                   </TableRow>
                 ) : members.length > 0 ? (
                   members.map((member) => (
-                    <TableRow key={member.id}>
+                    <TableRow key={member.id} className={member.isHidden ? 'bg-muted/30 opacity-60' : ''}>
                       <TableCell className="font-medium">{formatFullName(member.name, member.titlePrefix, member.titlePostfix)}</TableCell>
                       <TableCell className="hidden md:table-cell">{member.phoneNumber}</TableCell>
                       <TableCell>{getStatusBadge(member.verificationStatus)}</TableCell>

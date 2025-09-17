@@ -9,14 +9,15 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Loader2 } from 'lucide-react';
-import { MemberWithStatus, MemberType, VerificationStatus } from '@/app/actions/members';
+import type { MemberWithStatus } from '@/app/actions/members';
 import { getPositions, Position } from '@/app/actions/positions';
+import type { MemberType, VerificationStatus } from '@/lib/definitions';
 
 interface EditMemberDialogProps {
   member: MemberWithStatus;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (id: string, details: { positionId?: string; type?: MemberType | ''; region?: string; verificationStatus?: VerificationStatus; isSpecialMember?: boolean; titlePrefix?: string; titlePostfix?: string }) => void;
+  onSave: (id: string, details: Partial<Omit<MemberWithStatus, 'id'>>) => void;
   isSaving: boolean;
 }
 
@@ -45,6 +46,7 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
   const [region, setRegion] = useState(member.region || '');
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>(member.verificationStatus || 'unverified');
   const [isSpecialMember, setIsSpecialMember] = useState(member.isSpecialMember || false);
+  const [isHidden, setIsHidden] = useState(member.isHidden || false);
   const [titlePrefix, setTitlePrefix] = useState(member.titlePrefix || '');
   const [titlePostfix, setTitlePostfix] = useState(member.titlePostfix || '');
   const [positions, setPositions] = useState<Position[]>([]);
@@ -60,6 +62,7 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
         setRegion(member.region || '');
         setVerificationStatus(member.verificationStatus || 'unverified');
         setIsSpecialMember(member.isSpecialMember || false);
+        setIsHidden(member.isHidden || false);
         setTitlePrefix(member.titlePrefix || '');
         setTitlePostfix(member.titlePostfix || '');
     }
@@ -72,20 +75,13 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
   }, [type]);
 
   const handleSave = () => {
-    const detailsToSave: { 
-        positionId?: string; 
-        type?: MemberType | ''; 
-        region?: string; 
-        verificationStatus?: VerificationStatus; 
-        isSpecialMember?: boolean; 
-        titlePrefix?: string; 
-        titlePostfix?: string 
-    } = {
+    const detailsToSave: Partial<Omit<MemberWithStatus, 'id'>> = {
         positionId: positionId === NO_POSITION_VALUE ? '' : positionId,
         type: type === NO_TYPE_VALUE ? '' : (type as MemberType),
         region: region,
         verificationStatus: verificationStatus,
         isSpecialMember: isSpecialMember,
+        isHidden: isHidden,
         titlePrefix: titlePrefix,
         titlePostfix: titlePostfix,
     };
@@ -175,6 +171,14 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
                 onCheckedChange={setIsSpecialMember}
               />
               <Label htmlFor="special-member">Jadikan Anggota Istimewa (Hak Suara Khusus)</Label>
+            </div>
+             <div className="flex items-center space-x-2 pt-2">
+              <Switch
+                id="is-hidden"
+                checked={isHidden}
+                onCheckedChange={setIsHidden}
+              />
+              <Label htmlFor="is-hidden">Sembunyikan dari Direktori Publik</Label>
             </div>
         </div>
         <DialogFooter>

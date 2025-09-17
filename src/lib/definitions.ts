@@ -260,6 +260,7 @@ export interface Member {
   region?: string;
   avatarUrl?: string;
   isSpecialMember?: boolean;
+  isHidden?: boolean;
 }
 
 export interface MemberWithStatus extends Member {
