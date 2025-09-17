@@ -1,3 +1,4 @@
+
 'use server';
 
 import { config } from 'dotenv';
@@ -11,3 +12,4 @@ import './flows/stamp-pdf-flow';
 import './flows/whatsapp-autoreply-flow';
 import './flows/assistant-flow';
 import './flows/tts-flow';
+import './flows/bulk-generate-flow';

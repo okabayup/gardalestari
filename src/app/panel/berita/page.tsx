@@ -24,13 +24,59 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
-import { getBeritaPosts, deleteBeritaPost, requestReindexing } from '@/app/actions/berita';
+import { getBeritaPosts, deleteBeritaPost, requestReindexing, getJobStatus, GenerationJob } from '@/app/actions/berita';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from '@/components/ui/badge';
 import type { BeritaPost } from '@/lib/definitions';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { Progress } from '@/components/ui/progress';
+
+const JobStatusBadge = ({ jobId, onComplete }: { jobId: string, onComplete: () => void }) => {
+    const [job, setJob] = useState<GenerationJob | null>(null);
+
+    useEffect(() => {
+        const pollStatus = async () => {
+            try {
+                const currentJob = await getJobStatus(jobId);
+                setJob(currentJob);
+
+                if (currentJob?.status === 'completed' || currentJob?.status === 'failed') {
+                    onComplete();
+                }
+            } catch (error) {
+                console.error("Failed to poll job status", error);
+                onComplete(); 
+            }
+        };
+
+        pollStatus();
+        const interval = setInterval(pollStatus, 3000); // Poll every 3 seconds
+
+        return () => clearInterval(interval);
+    }, [jobId, onComplete]);
+
+    if (!job || job.status === 'completed' || job.status === 'failed') {
+        return null;
+    }
+
+    const progress = job.totalCount > 0 ? (job.completedCount / job.totalCount) * 100 : 0;
+
+    return (
+        <Card className="mb-6 bg-primary/5 border-primary/20">
+            <CardContent className="p-4 flex items-center gap-4">
+                 <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                 <div className="flex-1 space-y-1">
+                     <p className="font-semibold text-sm">Agen AI sedang bekerja...</p>
+                     <Progress value={progress} className="h-2" />
+                 </div>
+                 <span className="text-sm font-medium">{job.completedCount}/{job.totalCount} Selesai</span>
+            </CardContent>
+        </Card>
+    );
+};
+
 
 export default function AdminBeritaPage() {
   const router = useRouter();
@@ -42,10 +88,10 @@ export default function AdminBeritaPage() {
   const [isReindexing, setIsReindexing] = useState<string | null>(null);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [postToDelete, setPostToDelete] = useState<BeritaPost | null>(null);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
 
   const canManage = hasPermission('manage_news');
   const canDelete = hasPermission('delete_news');
-
 
   const fetchPosts = useCallback(async () => {
     try {
@@ -64,8 +110,23 @@ export default function AdminBeritaPage() {
   }, [toast]);
   
   useEffect(() => {
+    setLoading(true);
     fetchPosts();
+    
+    // Check for an active job on mount
+    const jobId = localStorage.getItem('activeGenerationJobId');
+    if (jobId) {
+        setActiveJobId(jobId);
+    }
   }, [fetchPosts]);
+
+  const handleJobComplete = useCallback(() => {
+    toast({ title: 'Proses Selesai!', description: 'Semua draf artikel telah dibuat.' });
+    localStorage.removeItem('activeGenerationJobId');
+    setActiveJobId(null);
+    setLoading(true);
+    fetchPosts();
+  }, [fetchPosts, toast]);
   
   const getSeoBadgeColor = (score: number) => {
     if (score >= 75) return 'bg-green-500 hover:bg-green-500/80';
@@ -135,13 +196,14 @@ export default function AdminBeritaPage() {
                     <Newspaper className="mr-2 h-4 w-4" />
                     AI Newsroom
                 </Button>
-                <Button onClick={() => router.push('/panel/berita/new')}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Editor Cerdas
+                <Button onClick={() => router.push('/panel/berita/generate')}>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Generator
                 </Button>
             </div>
           )}
         </div>
+        {activeJobId && <JobStatusBadge jobId={activeJobId} onComplete={handleJobComplete} />}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
              <div>
@@ -180,7 +242,7 @@ export default function AdminBeritaPage() {
                       <TableCell className="font-medium flex items-center gap-2">
                         {post.isFeatured && <Star className="h-4 w-4 text-yellow-500 fill-yellow-400" />}
                         {post.status === 'published' ? (
-                            <Link href={`/${post.type}/${post.slug}`} target="_blank" className="hover:underline">{post.title}</Link>
+                            <Link href={`/${post.type === 'video' ? 'video' : 'berita'}/${post.slug}`} target="_blank" className="hover:underline">{post.title}</Link>
                         ) : (
                             <span>{post.title}</span>
                         )}

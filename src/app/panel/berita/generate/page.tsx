@@ -79,9 +79,19 @@ export default function GenerateBeritaPage() {
         const formData = new FormData();
         formData.append('topic', data.topic);
         formData.append('description', data.description);
-        userImages.forEach(file => {
-            // Server action expects file to be readable, we pass as is
-            formData.append('userImages', file);
+        
+        // Convert File objects to data URLs to pass to server action
+        const userImagePromises = userImages.map(file => {
+            return new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        });
+        const userImageDataUrls = await Promise.all(userImagePromises);
+        userImageDataUrls.forEach(dataUrl => {
+            formData.append('userImages', dataUrl);
         });
 
       const articleResult = await generateNewsArticle(formData);
@@ -103,7 +113,7 @@ export default function GenerateBeritaPage() {
     setLoading(true);
 
     try {
-      const newPost: Omit<BeritaPost, 'id' | 'type' | 'youtubeId' | 'isFeatured'> = {
+      const newPost: Omit<BeritaPost, 'id' | 'type' | 'youtubeId' | 'isFeatured' | 'seoScore'> = {
         title: generatedContent.title || 'Judul Dibuat AI',
         slug: generateSlug(generatedContent.title || 'judul-dibuat-ai'),
         author: user?.displayName || 'Admin',
@@ -116,7 +126,7 @@ export default function GenerateBeritaPage() {
         status: 'published',
       };
       
-      await createBeritaPost({ ...newPost, type: 'artikel' });
+      await createBeritaPost({ ...newPost, type: 'artikel', seoScore: 0, isFeatured: false });
 
       toast({
         title: 'Berita Disimpan!',

@@ -2,20 +2,76 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, where, orderBy } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, where, orderBy, Timestamp, setDoc } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import { notifyGoogleOfUpdate } from '@/services/indexing';
 import type { BeritaPost } from '@/lib/definitions';
 import { enhanceText } from '@/ai/flows/enhance-text-flow';
 
 const beritaPostsCollection = collection(db, 'beritaPosts');
+const generationJobsCollection = collection(db, 'generationJobs');
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://gardalestari.org';
 
+// --- Job Tracking for Agentic Features ---
+export interface GenerationJob {
+    id?: string;
+    status: 'pending' | 'in-progress' | 'completed' | 'failed';
+    totalCount: number;
+    completedCount: number;
+    errors: { topic: string; error: string }[];
+    createdAt: Timestamp;
+    completedAt?: Timestamp;
+}
+
+export async function createGenerationJob(totalCount: number): Promise<string> {
+    const newJob: Omit<GenerationJob, 'id'> = {
+        status: 'pending',
+        totalCount,
+        completedCount: 0,
+        errors: [],
+        createdAt: Timestamp.now(),
+    };
+    const docRef = await addDoc(generationJobsCollection, newJob);
+    return docRef.id;
+}
+
+export async function updateJobProgress(jobId: string, completedIncrement: number, error?: { topic: string; error: string }) {
+    const jobRef = doc(db, 'generationJobs', jobId);
+    const jobDoc = await getDoc(jobRef);
+    if (!jobDoc.exists()) throw new Error('Job not found');
+    
+    const currentJob = jobDoc.data() as GenerationJob;
+    const newCompletedCount = currentJob.completedCount + completedIncrement;
+    const newErrors = error ? [...currentJob.errors, error] : currentJob.errors;
+
+    const isComplete = newCompletedCount >= currentJob.totalCount;
+
+    await updateDoc(jobRef, {
+        completedCount: newCompletedCount,
+        status: isComplete ? 'completed' : 'in-progress',
+        errors: newErrors,
+        ...(isComplete && { completedAt: Timestamp.now() }),
+    });
+}
+
+
+export async function getJobStatus(jobId: string): Promise<GenerationJob | null> {
+    const docRef = doc(db, 'generationJobs', jobId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() } as GenerationJob;
+    }
+    return null;
+}
+
+
+// --- Content Management ---
+
 // Get all berita posts (articles and videos)
-export async function getBeritaPosts(type?: 'artikel' | 'video' | 'draft') {
+export async function getBeritaPosts(type?: 'artikel' | 'video') {
   let q;
   if (type) {
-      q = query(beritaPostsCollection, where('type', '==', type), orderBy('date', 'desc'));
+      q = query(beritaPostsCollection, where('type', '==', type), where('status', '==', 'published'), orderBy('date', 'desc'));
   } else {
       q = query(beritaPostsCollection, orderBy('date', 'desc'));
   }
@@ -44,15 +100,6 @@ export async function getBeritaPost(slug: string) {
 // Create a new berita post
 export async function createBeritaPost(post: Omit<BeritaPost, 'id'>) {
   try {
-    let finalSeoScore = post.seoScore || 0;
-    // Only analyze SEO for published articles with content
-    if (!finalSeoScore && post.content && post.status !== 'draft' && post.type === 'artikel') {
-        try {
-            const analysis = await enhanceText({ text: post.content });
-            finalSeoScore = analysis.seoScore;
-        } catch(e) { console.error("Auto SEO analysis failed on create", e); }
-    }
-
     const postData: Omit<BeritaPost, 'id'> = {
       title: post.title || 'Judul Default',
       slug: post.slug || 'slug-default',
@@ -66,12 +113,14 @@ export async function createBeritaPost(post: Omit<BeritaPost, 'id'>) {
       type: post.type || 'artikel',
       youtubeId: post.youtubeId || '',
       isFeatured: post.isFeatured || false,
-      seoScore: finalSeoScore,
+      seoScore: post.seoScore || 0,
       status: post.status || 'published',
     };
+    
+    // For drafts, we can use setDoc with a specific ID if we want, or just addDoc.
+    // Let's use addDoc for simplicity.
     const docRef = await addDoc(beritaPostsCollection, { ...postData });
     
-    // Only revalidate and notify if it's not a draft
     if (postData.status !== 'draft') {
         const pathToRevalidate = postData.type === 'video' ? '/video' : '/berita';
         revalidatePath('/panel/berita');

@@ -1,5 +1,4 @@
 
-
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
 
@@ -131,8 +130,8 @@ export interface DataBankEntry {
   content: string;
   category: 'Kebijakan' | 'Data Sektoral' | 'Riset' | 'Lainnya';
   source: string;
-  publishedDate: string; // ISO string
-  createdAt: string; // ISO string
+  publishedDate: Timestamp;
+  createdAt: Timestamp;
 }
 
 // --- Documents ---
@@ -142,7 +141,7 @@ export interface ImportantDocument {
   description?: string;
   documentNumber: string;
   category: string;
-  createdAt: string; // ISO string
+  createdAt: Timestamp;
   fileUrl: string;
   fileName: string;
   authorId: string;
@@ -151,7 +150,7 @@ export interface ImportantDocument {
   approverId?: string;
   approvedById?: string;
   approvedByName?: string;
-  approvedAt?: string; // ISO string
+  approvedAt?: Timestamp;
   rejectionReason?: string;
   rejectedById?: string;
   rejectedByName?: string;
@@ -167,7 +166,7 @@ export interface Event {
   id?: string;
   title: string;
   description: string;
-  date: Date;
+  date: Timestamp;
   location: string;
   imageUrl: string;
   imageHint: string;
@@ -211,7 +210,7 @@ export interface Idea {
   description: string;
   category: string;
   authorId: string;
-  createdAt: string; // ISO string
+  createdAt: Timestamp;
   status: IdeaStatus;
   upvotes: string[];
   downvotes: string[];
@@ -230,12 +229,6 @@ export interface IdeaAuthor {
 export interface IdeaWithAuthor extends Omit<Idea, 'authorId' | 'upvotes' | 'downvotes' | 'createdAt'> {
   author: IdeaAuthor;
   userVote?: VoteType;
-  timestamp: string; // Formatted time ago string
-}
-
-export interface IdeaCategory {
-    id?: string;
-    name: string;
 }
 
 // --- Map Data ---
@@ -248,7 +241,7 @@ export interface MapData {
   category: MapDataCategory;
   latitude: number;
   longitude: number;
-  createdAt: string; // ISO string
+  createdAt: Timestamp;
   budget?: number;
   disbursed?: number;
 }
@@ -316,7 +309,7 @@ export interface Post {
   caption: string;
   likes: string[];
   commentsCount: number;
-  createdAt: string; // ISO string
+  createdAt: Timestamp;
   status: 'published' | 'archived';
   mentionedUserIds: string[];
 }
@@ -346,7 +339,7 @@ export interface Comment {
     id: string;
     authorId: string;
     text: string;
-    createdAt: string; // ISO string
+    createdAt: Timestamp;
 }
 
 export interface CommentWithAuthor {
@@ -374,8 +367,8 @@ export interface Program {
   imageUrl: string;
   imageHint: string;
   tags: string[];
-  startDate: Date;
-  endDate: Date;
+  startDate: Timestamp;
+  endDate: Timestamp;
   source: ProgramSource;
   partnerId?: string; 
   benefits: string;
@@ -454,7 +447,7 @@ export interface ProjectComment {
     id: string;
     authorId: string;
     text: string;
-    createdAt: string; // ISO string
+    createdAt: Timestamp;
 }
 
 
@@ -471,8 +464,8 @@ export interface Recruitment {
   description: string;
   requirements: string;
   applicationUrl: string;
-  deadline: string; // ISO string
-  createdAt: string; // ISO string
+  deadline: Timestamp;
+  createdAt: Timestamp;
 }
 
 // --- Settings ---
@@ -518,9 +511,9 @@ export interface VotingTopic {
   title: string;
   description: string;
   options: VotingOption[];
-  startDate: string; // ISO string
-  endDate: string; // ISO string
-  createdAt: string; // ISO string
+  startDate: Timestamp;
+  endDate: Timestamp;
+  createdAt: Timestamp;
   totalVotes: number;
   voterIds: string[];
   coverImageUrl?: string;
@@ -592,5 +585,3 @@ export const AssistantOutputSchema = z.object({
   citations: z.array(CitationSchema).optional().describe('An array of sources cited in the `responseText`.'),
 });
 export type AssistantOutput = z.infer<typeof AssistantOutputSchema>;
-
-    
