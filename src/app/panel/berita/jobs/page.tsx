@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, AlertCircle, CheckCircle, Clock, RefreshCw, XCircle } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle, Clock, RefreshCw, XCircle, Eye } from 'lucide-react';
 import { getGenerationJobs, retryFailedTopics, GenerationJob } from '@/app/actions/berita';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -29,6 +29,7 @@ const JobStatusIcon = ({ status }: { status: GenerationJob['status'] }) => {
 };
 
 const JobCard = ({ job, onRetry }: { job: GenerationJob; onRetry: (job: GenerationJob) => void }) => {
+  const router = useRouter();
   const progress = job.totalCount > 0 ? (job.completedCount / job.totalCount) * 100 : 0;
   const hasErrors = job.errors.length > 0;
   
@@ -82,14 +83,18 @@ const JobCard = ({ job, onRetry }: { job: GenerationJob; onRetry: (job: Generati
           </Accordion>
         )}
       </CardContent>
-      {job.status === 'failed' || (job.status === 'completed' && hasErrors) ? (
-        <div className="p-4 border-t">
-          <Button size="sm" onClick={() => onRetry(job)}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Coba Lagi Topik yang Gagal ({job.errors.length})
-          </Button>
-        </div>
-      ) : null}
+      <CardFooter className="flex justify-end gap-2">
+        {(job.status === 'failed' || (job.status === 'completed' && hasErrors)) && (
+            <Button size="sm" variant="outline" onClick={() => onRetry(job)}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Coba Lagi ({job.errors.length})
+            </Button>
+        )}
+        <Button size="sm" onClick={() => router.push(`/panel/berita/jobs/${job.id}`)}>
+            <Eye className="mr-2 h-4 w-4" />
+            Lihat Detail
+        </Button>
+      </CardFooter>
     </Card>
   );
 };
@@ -101,7 +106,6 @@ export default function AIJobsHistoryPage() {
   const [loading, setLoading] = useState(true);
 
   const fetchJobs = useCallback(async () => {
-    setLoading(true);
     try {
       const fetchedJobs = await getGenerationJobs();
       setJobs(fetchedJobs);
@@ -114,15 +118,13 @@ export default function AIJobsHistoryPage() {
 
   useEffect(() => {
     fetchJobs();
-    const interval = setInterval(fetchJobs, 10000); // Poll every 10 seconds
-    return () => clearInterval(interval);
   }, [fetchJobs]);
 
   const handleRetry = async (job: GenerationJob) => {
     try {
       const newJobId = await retryFailedTopics(job);
       toast({ title: 'Tugas baru dibuat!', description: `Mencoba ulang topik yang gagal dengan ID tugas: ${newJobId}`});
-      fetchJobs();
+      router.push(`/panel/berita/jobs/${newJobId}`);
     } catch (error) {
        toast({ variant: 'destructive', title: 'Gagal mencoba ulang', description: (error as Error).message });
     }
@@ -140,7 +142,7 @@ export default function AIJobsHistoryPage() {
         </Button>
       </div>
 
-      {loading && jobs.length === 0 ? (
+      {loading ? (
         <div className="flex justify-center items-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>

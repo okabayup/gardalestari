@@ -6,8 +6,8 @@ import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, 
 import { revalidatePath } from 'next/cache';
 import { notifyGoogleOfUpdate } from '@/services/indexing';
 import type { BeritaPost } from '@/lib/definitions';
-import { enhanceText } from '@/ai/flows/enhance-text-flow';
 import { bulkGenerateNewsDrafts } from '@/ai/flows/bulk-generate-flow';
+import { logAnalyticsEvent } from '@/lib/analytics';
 
 const beritaPostsCollection = collection(db, 'beritaPosts');
 const generationJobsCollection = collection(db, 'generationJobs');
@@ -26,15 +26,16 @@ export interface GenerationJob {
 
 export async function createGenerationJob(totalCount: number): Promise<string> {
     try {
-        const newJob = {
-            status: 'pending' as const,
+        const newJobRef = doc(collection(db, 'generationJobs'));
+        await setDoc(newJobRef, {
+            status: 'pending',
             totalCount,
             completedCount: 0,
             errors: [],
             createdAt: serverTimestamp(),
-        };
-        const docRef = await addDoc(generationJobsCollection, newJob);
-        return docRef.id;
+        });
+        logAnalyticsEvent('create_bulk_job', { topic_count: totalCount });
+        return newJobRef.id;
     } catch (error) {
         console.error("[createGenerationJob Error]", error);
         throw new Error("Gagal membuat job baru di Firestore.");
@@ -65,31 +66,36 @@ export async function retryFailedTopics(job: GenerationJob): Promise<string> {
 export async function updateJobProgress(jobId: string, completedIncrement: number, error?: { topic: string; error: string }) {
     const jobRef = doc(db, 'generationJobs', jobId);
     
-    await runTransaction(db, async (transaction) => {
-        const jobDoc = await transaction.get(jobRef);
-        if (!jobDoc.exists()) throw new Error('Job not found');
+    try {
+      await runTransaction(db, async (transaction) => {
+          const jobDoc = await transaction.get(jobRef);
+          if (!jobDoc.exists()) throw new Error('Job not found');
 
-        const currentJob = jobDoc.data();
-        const newCompletedCount = (currentJob.completedCount || 0) + completedIncrement;
-        const newErrors = error ? [...(currentJob.errors || []), error] : (currentJob.errors || []);
+          const currentJob = jobDoc.data();
+          const newCompletedCount = (currentJob.completedCount || 0) + completedIncrement;
+          const newErrors = error ? [...(currentJob.errors || []), error] : (currentJob.errors || []);
 
-        const isComplete = newCompletedCount >= currentJob.totalCount;
-        let finalStatus = currentJob.status;
-
-        if (isComplete) {
-            finalStatus = newErrors.length > 0 && newErrors.length === currentJob.totalCount ? 'failed' : 'completed';
-        } else {
-            finalStatus = 'in-progress';
-        }
+          const isComplete = newCompletedCount >= currentJob.totalCount;
+          let finalStatus: GenerationJob['status'] = 'in-progress';
+          let completedAtField: { completedAt?: Timestamp } = {};
 
 
-        transaction.update(jobRef, {
-            completedCount: newCompletedCount,
-            status: finalStatus,
-            errors: newErrors,
-            ...(isComplete && { completedAt: serverTimestamp() }),
-        });
-    });
+          if (isComplete) {
+              finalStatus = newErrors.length === currentJob.totalCount ? 'failed' : 'completed';
+              completedAtField.completedAt = serverTimestamp();
+          }
+
+          transaction.update(jobRef, {
+              completedCount: newCompletedCount,
+              status: finalStatus,
+              errors: newErrors,
+              ...completedAtField
+          });
+      });
+    } catch (e) {
+      console.error("[updateJobProgress Error]", `Failed to update job ${jobId}`, e);
+      throw new Error(`Gagal memperbarui progres job: ${(e as Error).message}`);
+    }
 }
 
 
@@ -99,14 +105,18 @@ export async function getJobStatus(jobId: string): Promise<GenerationJob | null>
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
             const data = docSnap.data();
+            // Safe conversion of Timestamps to ISO strings
+            const createdAt = data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : new Date().toISOString();
+            const completedAt = data.completedAt instanceof Timestamp ? data.completedAt.toDate().toISOString() : undefined;
+
             return {
                 id: docSnap.id,
                 status: data.status,
                 totalCount: data.totalCount,
                 completedCount: data.completedCount,
-                errors: data.errors,
-                createdAt: (data.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
-                completedAt: (data.completedAt as Timestamp)?.toDate().toISOString(),
+                errors: data.errors || [],
+                createdAt,
+                completedAt,
             } as GenerationJob;
         }
         return null;
@@ -123,8 +133,9 @@ export async function getGenerationJobs(): Promise<GenerationJob[]> {
         
         return snapshot.docs.map(doc => {
             const data = doc.data();
-            const createdAt = data.createdAt as Timestamp | null;
-            const completedAt = data.completedAt as Timestamp | null;
+            // Safe conversion for all entries
+            const createdAt = data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : new Date().toISOString();
+            const completedAt = data.completedAt instanceof Timestamp ? data.completedAt.toDate().toISOString() : undefined;
 
             return {
                 id: doc.id,
@@ -132,8 +143,8 @@ export async function getGenerationJobs(): Promise<GenerationJob[]> {
                 totalCount: data.totalCount,
                 completedCount: data.completedCount,
                 errors: data.errors || [],
-                createdAt: createdAt ? createdAt.toDate().toISOString() : new Date().toISOString(),
-                completedAt: completedAt ? completedAt.toDate().toISOString() : undefined,
+                createdAt,
+                completedAt,
             } as GenerationJob;
         });
     } catch (error) {

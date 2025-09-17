@@ -31,7 +31,6 @@ import { Badge } from '@/components/ui/badge';
 import type { BeritaPost } from '@/lib/definitions';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { Progress } from '@/components/ui/progress';
 
 export default function AdminBeritaPage() {
   const router = useRouter();

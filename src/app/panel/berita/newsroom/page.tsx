@@ -70,12 +70,12 @@ export default function NewsroomPage() {
 
     try {
         const jobId = await createGenerationJob(selectedTopics.length);
-        localStorage.setItem('activeGenerationJobId', jobId);
-
+        
         // Don't await this, let it run in the background
         bulkGenerateNewsDrafts({ topics: selectedTopics, jobId });
 
-        router.push('/panel/berita');
+        // Redirect to the jobs monitoring page
+        router.push(`/panel/berita/jobs/${jobId}`);
     } catch (error) {
         toast({ variant: 'destructive', title: 'Gagal memulai proses massal', description: (error as Error).message });
         setIsBulkGenerating(false);
