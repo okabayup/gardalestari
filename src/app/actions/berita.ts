@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, where, orderBy, Timestamp, setDoc, serverTimestamp, writeBatch, runTransaction } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, where, orderBy, Timestamp, setDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import { notifyGoogleOfUpdate } from '@/services/indexing';
 import type { BeritaPost } from '@/lib/definitions';
@@ -107,14 +107,17 @@ export async function getGenerationJobs(): Promise<GenerationJob[]> {
     
     return snapshot.docs.map(doc => {
         const data = doc.data();
+        const createdAt = data.createdAt as Timestamp | null;
+        const completedAt = data.completedAt as Timestamp | null;
+
         return {
             id: doc.id,
             status: data.status,
             totalCount: data.totalCount,
             completedCount: data.completedCount,
             errors: data.errors || [],
-            createdAt: (data.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
-            completedAt: (data.completedAt as Timestamp)?.toDate().toISOString(),
+            createdAt: createdAt ? createdAt.toDate().toISOString() : new Date().toISOString(),
+            completedAt: completedAt ? completedAt.toDate().toISOString() : undefined,
         } as GenerationJob;
     });
 }
