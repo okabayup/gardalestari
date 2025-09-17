@@ -34,15 +34,13 @@ const IntentSchema = z.object({
   deskripsiIde: z.string().optional().describe('The description of the idea if the intent is AJUKAN_IDE.'),
 });
 
+// Initialize AI instance at the module level
+const ai = genkit({
+  plugins: [googleAI()],
+  model: 'googleai/gemini-2.5-pro',
+});
 
-export async function generateWhatsAppReply(input: z.infer<typeof WhatsAppReplyInputSchema>): Promise<void> {
-  // Lazily initialize AI instance within the server action
-  const ai = genkit({
-    plugins: [googleAI()],
-    model: 'googleai/gemini-2.5-pro',
-  });
-
-  const intentParserPrompt = ai.definePrompt({
+const intentParserPrompt = ai.definePrompt({
     name: 'whatsAppIntentParser',
     input: { schema: z.object({ message: z.string() }) },
     output: { schema: IntentSchema },
@@ -61,9 +59,9 @@ If the intent is AJUKAN_IDE, extract the title into 'judulIde' and the descripti
 
 Message: "{{{message}}}"
 `,
-  });
+});
 
-  const generalKnowledgePrompt = ai.definePrompt({
+const generalKnowledgePrompt = ai.definePrompt({
     name: 'whatsAppGeneralKnowledge',
     input: { schema: z.object({ message: z.string() }) },
     output: { schema: z.object({ reply: z.string() }) },
@@ -81,7 +79,9 @@ Incoming message:
 
 Your reply:
 `,
-  });
+});
+
+export async function generateWhatsAppReply(input: z.infer<typeof WhatsAppReplyInputSchema>): Promise<void> {
 
   const { sender, message } = input;
   

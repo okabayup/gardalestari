@@ -32,7 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const programs = await getPrograms();
   const programRoutes = programs.map((program) => ({
     url: `${BASE_URL}/programs/${program.id}`,
-    lastModified: program.endDate.toDate().toISOString(),
+    lastModified: new Date(program.endDate).toISOString(),
     changeFrequency: 'weekly' as const,
     priority: 0.7,
   }));
@@ -41,7 +41,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const events = await getEvents();
   const eventRoutes = events.map((event) => ({
     url: `${BASE_URL}/events/${event.id}`,
-    lastModified: event.date.toDate().toISOString(),
+    lastModified: new Date(event.date).toISOString(),
     changeFrequency: 'weekly' as const,
     priority: 0.7,
   }));
