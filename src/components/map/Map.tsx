@@ -1,17 +1,19 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { Map, AdvancedMarker, Pin, InfoWindow } from '@vis.gl/react-google-maps';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { Map, AdvancedMarker, Pin, InfoWindow, useMap } from '@vis.gl/react-google-maps';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import { useToast } from '@/hooks/use-toast';
-import { MapData, MapDataCategory, getMapData } from '@/app/actions/map-data';
+import { getMapData } from '@/app/actions/map-data';
+import type { MapData, MapDataCategory } from '@/lib/definitions';
 import { categoryConfig } from '@/app/map/page';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Layers, Loader2 } from 'lucide-react';
+import React from 'react';
 
 const MapMarker = ({ item }: { item: MapData }) => {
     const [infoWindowShown, setInfoWindowShown] = useState(false);
@@ -49,52 +51,53 @@ const MapMarker = ({ item }: { item: MapData }) => {
     );
 };
 
-const Markers = ({ items }: { items: MapData[] }) => {
+const Clusters = ({items}: {items: MapData[]}) => {
     const map = useMap();
-    const [markers, setMarkers] = useState<Record<string, AdvancedMarker>>({});
-    const clusterer = useMemo(() => {
-        if (!map) return null;
-        return new MarkerClusterer({ map });
+    const markers = useRef<{[key: string]: google.maps.marker.AdvancedMarkerElement}>({});
+    const clusterer = useRef<MarkerClusterer | null>(null);
+
+    useEffect(() => {
+        if (!map) return;
+        if (!clusterer.current) {
+            clusterer.current = new MarkerClusterer({map});
+        }
     }, [map]);
 
     useEffect(() => {
-        if (!clusterer) return;
-        
-        // Clear previous markers
-        clusterer.clearMarkers();
+        clusterer.current?.clearMarkers();
+        clusterer.current?.addMarkers(Object.values(markers.current));
+    }, [markers]);
 
-        // Create a map to hold new marker elements
-        const newMarkers: { [key: string]: HTMLElement } = {};
-        
-        // Create marker elements for each item
-        items.forEach(item => {
-            const config = categoryConfig[item.category];
-            const pin = new Pin({
-                background: config.color,
-                borderColor: config.color,
-                glyph: new config.icon(), // Note: This might not render complex icons well, a simpler glyph might be better
-            });
-            const markerElement = new AdvancedMarker({
-                position: { lat: item.latitude, lng: item.longitude },
-                content: pin.element,
-                title: item.title,
-            });
-            newMarkers[item.id!] = markerElement;
-        });
-        
-        // Add new markers to clusterer
-        clusterer.addMarkers(Object.values(newMarkers));
-        
-    }, [items, clusterer]);
+    const setMarkerRef = (marker: google.maps.marker.AdvancedMarkerElement | null, key: string) => {
+        if (marker && markers.current[key]) return;
+        if (!marker && !markers.current[key]) return;
+
+        if (marker) {
+            markers.current[key] = marker;
+        } else {
+            delete markers.current[key];
+        }
+    };
 
     return (
         <>
             {items.map(item => (
-                <MapMarker key={item.id} item={item} />
+                <AdvancedMarker
+                    position={{ lat: item.latitude, lng: item.longitude }}
+                    key={item.id}
+                    ref={marker => setMarkerRef(marker, item.id!)}
+                >
+                    <Pin 
+                        background={categoryConfig[item.category].color} 
+                        borderColor={categoryConfig[item.category].color} 
+                        glyph={<categoryConfig[item.category].icon className="h-5 w-5 text-white" />} 
+                    />
+                </AdvancedMarker>
             ))}
         </>
-    );
-};
+    )
+}
+
 
 export default function MapComponent() {
     const { toast } = useToast();
@@ -161,7 +164,7 @@ export default function MapComponent() {
                 disableDefaultUI={true}
                 className="h-full w-full"
             >
-                {filteredData.map(item => <MapMarker key={item.id} item={item} />)}
+                <Clusters items={filteredData} />
             </Map>
         </div>
     )
