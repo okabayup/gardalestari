@@ -1,4 +1,3 @@
-
 'use client';
 
 import dynamic from 'next/dynamic';
@@ -6,12 +5,6 @@ import { useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import type { MapDataCategory } from '@/lib/definitions';
 import { Sprout, Siren, ClipboardList, HelpingHand, HandCoins } from 'lucide-react';
-
-const Map = dynamic(() => import('@/components/map/Map'), { 
-    ssr: false,
-    loading: () => <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-});
-
 
 export const categoryConfig: Record<MapDataCategory, { label: string; icon: React.ElementType; color: string }> = {
     potensi: { label: 'Potensi', icon: Sprout, color: 'text-green-500' },
@@ -22,11 +15,18 @@ export const categoryConfig: Record<MapDataCategory, { label: string; icon: Reac
 };
 
 export default function MapPage() {
-    const mapComponent = useMemo(() => <Map />, []);
+    // Dynamically import the map component with ssr disabled, wrapped in useMemo
+    const Map = useMemo(() => dynamic(
+        () => import('@/components/map/Map'),
+        { 
+            loading: () => <div className="flex h-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>,
+            ssr: false
+        }
+    ), []);
 
     return (
         <div className="h-screen w-full">
-            {mapComponent}
+            <Map />
         </div>
     );
 }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -6,7 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-markercluster';
 import 'leaflet/dist/leaflet.css';
 import 'react-leaflet-markercluster/dist/styles.min.css';
-import L, { Map as LeafletMap } from 'leaflet';
+import L from 'leaflet';
 import { useToast } from '@/hooks/use-toast';
 import { MapData, MapDataCategory, getMapData } from '@/app/actions/map-data';
 import { categoryConfig } from '@/app/map/page';
@@ -39,7 +38,7 @@ const createClusterCustomIcon = (cluster: any) => {
     });
 };
 
-// --- Main Component with State Logic ---
+// --- Main Component ---
 
 export default function Map() {
     const { toast } = useToast();
@@ -67,7 +66,7 @@ export default function Map() {
 
     return (
         <div className="h-full w-full relative">
-            <div className="absolute top-4 right-4 z-20 space-y-2 md:top-20">
+            <div className="absolute top-4 right-4 z-[1000] space-y-2 md:top-20">
                 <Sheet>
                     <SheetTrigger asChild>
                         <Button variant="secondary" size="icon">
@@ -96,7 +95,7 @@ export default function Map() {
             </div>
 
             {loading && (
-                <div className="absolute inset-0 bg-background/50 z-30 flex items-center justify-center">
+                <div className="absolute inset-0 bg-background/50 z-[1001] flex items-center justify-center">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
             )}
@@ -126,8 +125,8 @@ export default function Map() {
                                     <p className="text-sm">{item.description}</p>
                                     {(item.category === 'program' || item.category === 'dana') && (
                                         <>
-                                            <p className="text-xs">Anggaran: {item.budget?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p>
-                                            <p className="text-xs">Tersalurkan: {item.disbursed?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p>
+                                            {item.budget ? <p className="text-xs">Anggaran: {item.budget?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p> : null}
+                                            {item.disbursed ? <p className="text-xs">Tersalurkan: {item.disbursed?.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}</p> : null}
                                         </>
                                     )}
                                 </div>
