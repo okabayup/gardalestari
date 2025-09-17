@@ -11,7 +11,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { getAppSettings } from '@/app/actions/settings';
-import MembershipCard from '@/components/members/MembershipCard';
 
 const benefits = [
   'Akses ke jaringan pemuda inovator',
@@ -26,9 +25,8 @@ export default function RegisterPage() {
     const { toast } = useToast();
     const [phone, setPhone] = useState('');
     const [otp, setOtp] = useState('');
-    const [step, setStep] = useState<'phone' | 'otp' | 'done'>('phone');
+    const [step, setStep] = useState<'phone' | 'otp'>('phone');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [memberId, setMemberId] = useState('');
     const [isRegistrationOpen, setRegistrationOpen] = useState<boolean | null>(null);
     const [countdown, setCountdown] = useState(0);
 
@@ -42,12 +40,11 @@ export default function RegisterPage() {
 
     useEffect(() => {
         if (user) {
-            const year = new Date().getFullYear();
-            const phoneSuffix = String(user.phoneNumber).slice(-6);
-            setMemberId(`GL-${year}-${phoneSuffix}`);
-            setStep('done');
+            // After user is created, redirect them to their profile page
+            // where they will be prompted to verify.
+            router.push('/profile/me');
         }
-    }, [user]);
+    }, [user, router]);
 
     useEffect(() => {
         let timer: NodeJS.Timeout;
@@ -81,7 +78,8 @@ export default function RegisterPage() {
         setIsSubmitting(true);
         try {
             await verifyOtp(otp);
-            // User is now signed in, useEffect will trigger update to 'done' step
+            // User is now signed in, the useEffect will redirect to profile
+            toast({ title: 'Pendaftaran Berhasil!', description: 'Anda akan diarahkan ke halaman profil Anda.' });
         } catch (error) {
             console.error(error);
             toast({ variant: 'destructive', title: 'Error', description: 'OTP tidak valid. Silakan coba lagi.' });
@@ -108,7 +106,7 @@ export default function RegisterPage() {
     }
 
 
-    if (loading || isRegistrationOpen === null) {
+    if (loading || isRegistrationOpen === null || user) {
         return (
             <div className="flex min-h-screen items-center justify-center">
                 <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -147,7 +145,7 @@ export default function RegisterPage() {
                             </Button>
                         </CardFooter>
                     </Card>
-                ) : step !== 'done' ? (
+                ) : (
                     <div className="grid md:grid-cols-2 gap-8 items-center">
                          <div className="hidden md:flex flex-col gap-4 text-foreground/90">
                             <h2 className="font-headline text-3xl font-bold">Satu Langkah Lagi Menuju Perubahan</h2>
@@ -211,31 +209,8 @@ export default function RegisterPage() {
                             </CardContent>
                         </Card>
                     </div>
-                ) : (
-                    <div className="flex flex-col items-center gap-6 text-center">
-                       <div className="space-y-2">
-                            <h1 className="text-2xl font-bold font-headline">Pendaftaran Berhasil!</h1>
-                            <p className="text-muted-foreground">Ini adalah Kartu Tanda Anggota (KTA) digital sementara Anda.</p>
-                        </div>
-                        {user && (
-                            <MembershipCard
-                                name={user.displayName || 'Anggota Baru'}
-                                photoUrl={user.photoURL || ''}
-                                memberId={memberId}
-                                nik={user.nik || undefined}
-                                profileUrl={user.username ? `/profile/${user.username}` : '#'}
-                                joinDate={user.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString('id-ID') : ''}
-                                position={user.position}
-                            />
-                        )}
-                        <Button size="lg" onClick={() => router.push('/profile/verify')}>
-                            Lanjutkan ke Verifikasi
-                        </Button>
-                    </div>
                 )}
             </div>
         </div>
     );
 }
-
-    
