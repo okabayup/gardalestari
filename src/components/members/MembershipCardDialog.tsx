@@ -50,12 +50,12 @@ export default function MembershipCardDialog({ isOpen, onClose, user }: Membersh
       });
   }
   
-  const getProfileUrl = () => {
+  const getVerificationUrl = () => {
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-    return `${baseUrl}/profile/${user.username}`;
+    return `${baseUrl}/kta/${user.username}`;
   }
   
-  const publicProfilePath = `/profile/${user.username}`;
+  const publicProfilePath = `/kta/${user.username}`;
 
 
   const handleDownload = async () => {
@@ -101,7 +101,7 @@ export default function MembershipCardDialog({ isOpen, onClose, user }: Membersh
                 photoUrl={user.photoURL || ''}
                 memberId={getMemberId()}
                 nik={user.nik}
-                profileUrl={getProfileUrl()}
+                profileUrl={getVerificationUrl()}
                 memberType={user.type}
                 joinDate={getJoinDate()}
                 position={user.position || 'Anggota'}
@@ -119,7 +119,7 @@ export default function MembershipCardDialog({ isOpen, onClose, user }: Membersh
             <Button asChild variant="outline" className="w-full">
                 <Link href={publicProfilePath} target="_blank">
                     <Eye className="mr-2 h-4 w-4" />
-                    Lihat Profil Publik
+                    Lihat Halaman Verifikasi
                 </Link>
             </Button>
         </div>

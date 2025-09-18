@@ -8,7 +8,7 @@ import { getUserByUsername, PublicProfile } from '@/app/actions/user';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
-import { Loader2, ShieldAlert, BadgeCheck, MapPin, Calendar, Grid3x3, Award, IdCard } from 'lucide-react';
+import { Loader2, ShieldAlert, Award, Grid3x3, IdCard, PlusCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { VerifiedBadge } from '@/components/members/VerifiedBadge';
 import MembershipCardDialog from '@/components/members/MembershipCardDialog';
@@ -50,8 +50,14 @@ const AchievementList = ({ achievements, isLoading }: { achievements: Achievemen
        return <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
     }
     if (!achievements || achievements.length === 0) {
-        return <div className="text-center py-10 text-muted-foreground">Pengguna ini belum memiliki prestasi.</div>;
+        return (
+            <div className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-lg">
+                <Award className="h-8 w-8 mx-auto mb-2"/>
+                <p>Pengguna ini belum memiliki prestasi.</p>
+            </div>
+        )
     }
+
     return (
         <div className="space-y-4">
             {achievements.map(item => (
@@ -171,20 +177,18 @@ export default function UserProfilePage() {
             setIsInvalid(false);
             const fetchedUser = await getUserByUsername(username);
 
-            if (!fetchedUser) {
+            if (!fetchedUser || fetchedUser.verificationStatus !== 'permanent') {
                 setIsInvalid(true);
             } else {
                 setUser(fetchedUser);
-                if (fetchedUser.verificationStatus === 'permanent') {
-                    setLoadingContent(true);
-                    const [posts, achievements] = await Promise.all([
-                        getPostsByUserId(fetchedUser.id),
-                        getAchievementsByUserId(fetchedUser.id)
-                    ]);
-                    setUserPosts(posts);
-                    setUserAchievements(achievements);
-                    setLoadingContent(false);
-                }
+                setLoadingContent(true);
+                const [posts, achievements] = await Promise.all([
+                    getPostsByUserId(fetchedUser.id),
+                    getAchievementsByUserId(fetchedUser.id)
+                ]);
+                setUserPosts(posts);
+                setUserAchievements(achievements);
+                setLoadingContent(false);
             }
             setLoading(false);
         };
@@ -209,31 +213,23 @@ export default function UserProfilePage() {
       </MainLayout>
     )
   }
-  
-  const isVerifiedMember = user.verificationStatus === 'permanent';
 
   return (
     <MainLayout>
         <div className="p-4 space-y-4">
-            {isVerifiedMember ? (
-                <>
-                    <UserProfileHeader user={user} postCount={userPosts.length} />
-                    <Tabs defaultValue="posts" className="w-full">
-                        <TabsList className="w-full grid grid-cols-2">
-                            <TabsTrigger value="posts"><Grid3x3 className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Postingan</span></TabsTrigger>
-                            <TabsTrigger value="achievements"><Award className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Prestasi</span></TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="posts" className="mt-4">
-                            <ProfilePostsGrid posts={userPosts} isLoading={loadingContent} />
-                        </TabsContent>
-                         <TabsContent value="achievements" className="mt-4">
-                            <AchievementList achievements={userAchievements} isLoading={loadingContent} />
-                        </TabsContent>
-                    </Tabs>
-                </>
-            ) : (
-                <InvalidProfileCard />
-            )}
+            <UserProfileHeader user={user} postCount={userPosts.length} />
+            <Tabs defaultValue="posts" className="w-full">
+                <TabsList className="w-full grid grid-cols-2">
+                    <TabsTrigger value="posts"><Grid3x3 className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Postingan</span></TabsTrigger>
+                    <TabsTrigger value="achievements"><Award className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Prestasi</span></TabsTrigger>
+                </TabsList>
+                <TabsContent value="posts" className="mt-4">
+                    <ProfilePostsGrid posts={userPosts} isLoading={loadingContent} />
+                </TabsContent>
+                 <TabsContent value="achievements" className="mt-4">
+                    <AchievementList achievements={userAchievements} isLoading={loadingContent} />
+                </TabsContent>
+            </Tabs>
         </div>
     </MainLayout>
   );
