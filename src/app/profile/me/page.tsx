@@ -22,6 +22,8 @@ import PostCard from '@/components/feed/PostCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { MemberLevelBadge } from '@/components/members/MemberLevelBadge';
 import { format } from 'date-fns';
+import { VerifiedBadge } from '@/components/members/VerifiedBadge';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 
 const ADMIN_PHONE_NUMBER = '+6285176752610';
 
@@ -34,8 +36,12 @@ const ProfileHeader = ({ user, postCount }: { user: any, postCount: number }) =>
               <AvatarFallback className="text-3xl">{user?.displayName?.charAt(0) || 'A'}</AvatarFallback>
             </Avatar>
             <div className="space-y-1">
-                <h1 className="text-2xl font-bold font-headline">{user?.displayName}</h1>
-                <p className="text-muted-foreground">{user?.position || 'Anggota Garda Lestari'}</p>
+                <div className="flex items-center gap-2">
+                     <h1 className="text-2xl font-bold font-headline">@{user?.username}</h1>
+                     <VerifiedBadge type={user.type} />
+                </div>
+                <p className="text-muted-foreground">{user?.displayName}</p>
+                <p className="text-sm pt-1">{user?.position || 'Anggota Garda Lestari'}</p>
                  <div className="flex items-center gap-2 pt-1">
                     <MemberLevelBadge level={user?.level || 'Bronze'} />
                     <span className="text-sm text-muted-foreground">{user?.points || 0} Poin</span>
@@ -332,17 +338,21 @@ export default function ProfileMePage() {
           <>
              {/* Hidden triggers for modals */}
             <button id="edit-profile-trigger" onClick={() => setIsEditModalOpen(true)} className="hidden">Edit</button>
-            <button id="kta-trigger" onClick={() => setIsKtaModalOpen(true)} className="hidden">KTA</button>
+            <Dialog open={isKtaModalOpen} onOpenChange={setIsKtaModalOpen}>
+              <DialogTrigger asChild>
+                 <button id="kta-trigger" className="hidden">Lihat KTA</button>
+              </DialogTrigger>
+              <MembershipCardDialog 
+                isOpen={isKtaModalOpen}
+                onClose={() => setIsKtaModalOpen(false)}
+                user={user}
+              />
+            </Dialog>
 
             <EditProfileModal
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
                 user={user}
-            />
-            <MembershipCardDialog 
-              isOpen={isKtaModalOpen}
-              onClose={() => setIsKtaModalOpen(false)}
-              user={user}
             />
           </>
         )}

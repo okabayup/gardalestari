@@ -110,10 +110,10 @@ const UserProfileHeader = ({ user, postCount }: { user: PublicProfile, postCount
                     </Avatar>
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                             <h1 className="text-2xl font-bold font-headline">{user?.name}</h1>
+                             <h1 className="text-2xl font-bold font-headline">@{user?.username}</h1>
                              <VerifiedBadge type={user.type} />
                         </div>
-                        <p className="text-muted-foreground">@{user?.username}</p>
+                        <p className="text-muted-foreground">{user?.name}</p>
                         <p className="text-sm pt-1">{user?.position || 'Anggota Garda Lestari'}</p>
                     </div>
                 </div>
