@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -132,7 +133,7 @@ const UserProfileHeader = ({ user, postCount }: { user: PublicProfile, postCount
                 </div>
                  <Button variant="outline" onClick={() => setIsKtaModalOpen(true)} className="w-full">
                     <IdCard className="mr-2 h-4 w-4" />
-                    Lihat KTA Digital
+                    Lihat Verifikasi (Publik)
                 </Button>
             </CardContent>
         </Card>
