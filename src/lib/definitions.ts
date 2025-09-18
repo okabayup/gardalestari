@@ -563,7 +563,8 @@ export type NotificationType =
     | 'member_verification_rejected'
     | 'member_position_updated'
     | 'event_reminder'
-    | 'new_program_announcement';
+    | 'new_program_announcement'
+    | 'kta_activated';
 
 export interface WhatsAppTemplate {
     id: NotificationType;

@@ -40,8 +40,15 @@ const defaultTemplates: Record<NotificationType, WhatsAppTemplate> = {
     },
     member_verified_permanent: {
         id: 'member_verified_permanent',
-        label: 'Verifikasi Anggota Berhasil',
+        label: 'Verifikasi Anggota Berhasil (deprecated)',
         message: '*Selamat, {namaPengguna}!* Akun Garda Lestari Anda telah diverifikasi secara permanen. Anda sekarang dapat mengakses Kartu Tanda Anggota (KTA) digital Anda.',
+        isActive: false,
+        placeholders: ['{namaPengguna}']
+    },
+    kta_activated: {
+        id: 'kta_activated',
+        label: 'Aktivasi KTA Berhasil',
+        message: 'Selamat, {namaPengguna}! Kartu Tanda Anggota (KTA) digital Anda telah aktif. Untuk menjaga keamanan dan profesionalitas komunitas, pastikan Anda menggunakan foto profil asli. Akun dengan foto profil yang tidak sesuai dapat diblokir oleh admin. Terima kasih atas kerja samanya!',
         isActive: true,
         placeholders: ['{namaPengguna}']
     },
@@ -218,3 +225,5 @@ export async function sendVerificationReminders(): Promise<{ success: boolean, c
         throw new Error(result.error || 'Gagal mengirim pesan pengingat massal.');
     }
 }
+
+

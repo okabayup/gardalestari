@@ -222,11 +222,11 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
 
         // Send WhatsApp and Push notification if verification status changes
         if (verificationStatus && verificationStatus !== currentMemberData.verificationStatus) {
-            let templateId: 'member_verified_permanent' | 'member_verification_rejected' | null = null;
+            let templateId: 'kta_activated' | 'member_verification_rejected' | null = null;
             let notificationPayload: { title: string, body: string } | null = null;
             
             if (verificationStatus === 'permanent') {
-                templateId = 'member_verified_permanent';
+                templateId = 'kta_activated';
                 notificationPayload = { title: 'Verifikasi Berhasil!', body: 'Selamat! Akun Anda telah diverifikasi secara permanen.' };
             } else if (verificationStatus === 'rejected') {
                 templateId = 'member_verification_rejected';
@@ -332,3 +332,4 @@ export async function createManualMember(formData: FormData) {
         throw new Error(`Gagal membuat anggota manual: ${(error as Error).message}`);
     }
 }
+

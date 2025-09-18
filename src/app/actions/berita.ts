@@ -33,13 +33,13 @@ export async function createGenerationJob(totalCount: number): Promise<string> {
             totalCount,
             completedCount: 0,
             errors: [],
-            createdAt: Timestamp.now(),
+            createdAt: Timestamp.now(), // Use Firestore Timestamp for server-side consistency
         });
         logAnalyticsEvent('create_bulk_job', { topic_count: totalCount });
         return newJobRef.id;
     } catch (error) {
         console.error("[createGenerationJob Error]", error);
-        throw new Error("Gagal membuat job baru di Firestore.");
+        throw new Error(`Gagal membuat job baru di Firestore: ${(error as Error).message}`);
     }
 }
 
@@ -313,4 +313,5 @@ export async function requestReindexing(slug: string, type: 'artikel' | 'video' 
         throw new Error("Gagal meminta indeksasi ulang.");
     }
 }
+
 

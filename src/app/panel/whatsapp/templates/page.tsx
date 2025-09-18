@@ -25,7 +25,7 @@ const templateGroups: { group: string; templates: NotificationType[] }[] = [
   },
   {
     group: 'Keanggotaan & Verifikasi',
-    templates: ['member_verified_permanent', 'member_verification_rejected', 'member_position_updated'],
+    templates: ['member_verified_permanent', 'member_verification_rejected', 'member_position_updated', 'kta_activated'],
   },
   {
     group: 'Proyek & Tugas',

@@ -1,21 +1,22 @@
 
+
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Sparkles, ArrowRight, PenSquare, Check, Circle, CheckCircle, XCircle } from 'lucide-react';
 import { suggestNewsTopics } from '@/ai/flows/news-generator-flow';
-import { createBeritaPost } from '@/app/actions/berita';
+import { createBeritaPost, createGenerationJob, updateJobProgress } from '@/app/actions/berita';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { createGenerationJob, updateJobProgress } from '@/app/actions/berita';
 import { Checkbox } from '@/components/ui/checkbox';
 import { generateNewsArticle } from '@/ai/flows/news-generator-flow';
 import Link from 'next/link';
+import { useAuth } from '@/hooks/use-auth';
 
 interface TopicSuggestion {
   title: string;
@@ -33,7 +34,9 @@ interface ProcessingTopic extends TopicSuggestion {
 
 export default function NewsroomPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
+  const { user } = useAuth();
   
   const [suggestions, setSuggestions] = useState<TopicSuggestion[]>([]);
   const [generatingTopics, setGeneratingTopics] = useState(false);
@@ -41,6 +44,15 @@ export default function NewsroomPage() {
   const [selectedTopics, setSelectedTopics] = useState<TopicSuggestion[]>([]);
   const [processingTopics, setProcessingTopics] = useState<ProcessingTopic[]>([]);
   const [isBulkGenerating, setIsBulkGenerating] = useState(false);
+
+  useEffect(() => {
+    // Pre-fill form from URL params if they exist
+    const descriptionParam = searchParams.get('description');
+    if (descriptionParam) {
+        setDescription(descriptionParam);
+    }
+  }, [searchParams]);
+
 
   const handleSuggestTopics = async () => {
     setGeneratingTopics(true);
@@ -73,15 +85,23 @@ export default function NewsroomPage() {
   }
 
   const handleBulkGenerate = async () => {
-    if (selectedTopics.length === 0) {
-      toast({ variant: 'destructive', title: 'Tidak ada topik terpilih' });
+    if (selectedTopics.length === 0 || !user) {
+      toast({ variant: 'destructive', title: 'Tidak ada topik terpilih atau pengguna tidak login' });
       return;
     }
     setIsBulkGenerating(true);
     setProcessingTopics(selectedTopics.map(t => ({ ...t, status: 'pending' })));
 
-    const jobId = await createGenerationJob(selectedTopics.length);
-    toast({ title: 'Memulai Proses Massal...', description: `Agen AI akan membuat ${selectedTopics.length} draf artikel.` });
+    let jobId: string;
+    try {
+        jobId = await createGenerationJob(selectedTopics.length);
+        toast({ title: 'Memulai Proses Massal...', description: `Agen AI akan membuat ${selectedTopics.length} draf artikel.` });
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Gagal membuat tugas', description: (error as Error).message });
+        setIsBulkGenerating(false);
+        return;
+    }
+    
 
     for (let i = 0; i < selectedTopics.length; i++) {
         const topic = selectedTopics[i];
@@ -92,6 +112,7 @@ export default function NewsroomPage() {
             const formData = new FormData();
             formData.append('topic', topic.title);
             formData.append('description', topic.description);
+            // No user images for bulk generation for simplicity
 
             const articleResult = await generateNewsArticle(formData);
 
