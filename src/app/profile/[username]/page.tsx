@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,87 +7,142 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getUserByUsername, PublicProfile } from '@/app/actions/user';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
-import PublicProfileLayout from '@/components/layout/PublicProfileLayout';
-import { Loader2, ShieldAlert, BadgeCheck, MapPin, Calendar, Briefcase, UserCircle, QrCode } from 'lucide-react';
+import MainLayout from '@/components/layout/MainLayout';
+import { Loader2, ShieldAlert, BadgeCheck, MapPin, Calendar, Grid3x3, Award, IdCard } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { VerifiedBadge } from '@/components/members/VerifiedBadge';
-import QRCode from 'qrcode.react';
-import { cn } from '@/lib/utils';
-import { MemberLevelBadge } from '@/components/members/MemberLevelBadge';
+import MembershipCardDialog from '@/components/members/MembershipCardDialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getPostsByUserId, PostWithAuthor } from '@/app/actions/posts';
+import { getAchievementsByUserId, Achievement } from '@/app/actions/achievements';
+import Image from 'next/image';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { format } from 'date-fns';
 
-
-const ProfileInfoRow = ({ icon: Icon, label, value, children }: { icon: React.ElementType, label: string, value?: string | undefined, children?: React.ReactNode }) => {
-    if (!value && !children) return null;
+const ProfilePostsGrid = ({ posts, isLoading }: { posts: PostWithAuthor[], isLoading: boolean }) => {
+    if (isLoading) {
+       return <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+    }
+    if (!posts || posts.length === 0) {
+        return <div className="text-center py-10 text-muted-foreground">Pengguna ini belum memiliki postingan.</div>;
+    }
     return (
-        <div className="flex items-start gap-3">
-            <Icon className="h-5 w-5 text-muted-foreground mt-1" />
-            <div>
-                <p className="text-xs text-muted-foreground">{label}</p>
-                {value ? <p className="font-medium">{value}</p> : children}
-            </div>
+        <div className="grid grid-cols-3 gap-1">
+            {posts.map(post => (
+                <Link href={`/p/${post.id}`} key={post.id} className="relative aspect-square">
+                   {post.media.length > 0 && (
+                        <Image 
+                            src={post.media[0].url}
+                            alt="Postingan"
+                            fill
+                            className="object-cover"
+                        />
+                   )}
+                </Link>
+            ))}
+        </div>
+    )
+}
+
+const AchievementList = ({ achievements, isLoading }: { achievements: Achievement[], isLoading: boolean }) => {
+    if (isLoading) {
+       return <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+    }
+    if (!achievements || achievements.length === 0) {
+        return <div className="text-center py-10 text-muted-foreground">Pengguna ini belum memiliki prestasi.</div>;
+    }
+    return (
+        <div className="space-y-4">
+            {achievements.map(item => (
+                <Card key={item.id}>
+                    {item.imageUrl && (
+                         <div className="relative h-32 w-full">
+                            <Image src={item.imageUrl} alt={item.title} fill className="object-cover rounded-t-lg" />
+                        </div>
+                    )}
+                    <CardHeader>
+                        <CardTitle className="text-base">{item.title}</CardTitle>
+                        <CardDescription>
+                            <ClientFormattedDate dateString={item.date} />
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-sm text-muted-foreground">{item.description}</p>
+                    </CardContent>
+                </Card>
+            ))}
         </div>
     )
 };
 
-const getStatusInfo = (status: PublicProfile['verificationStatus']): { text: string; icon: React.ElementType, className: string } => {
-    switch (status) {
-        case 'permanent': return { text: 'Anggota Permanen', icon: BadgeCheck, className: 'text-green-600' };
-        case 'temporary': return { text: 'Anggota Sementara', icon: BadgeCheck, className: 'text-yellow-600' };
-        default: return { text: 'Bukan Anggota Sah', icon: ShieldAlert, className: 'text-red-600' };
-    }
-}
 
-const InvalidKtaCard = () => (
+const InvalidProfileCard = () => (
     <Card className="m-4">
         <CardHeader className="items-center text-center">
              <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
-            <CardTitle className="text-destructive">KTA Tidak Sah</CardTitle>
+            <CardTitle className="text-destructive">Profil Tidak Ditemukan</CardTitle>
             <CardDescription>
-                Kartu Tanda Anggota dengan nama pengguna ini tidak ditemukan atau tidak valid. Pastikan Anda memiliki tautan yang benar.
+                Pengguna dengan nama ini tidak ditemukan atau belum terverifikasi. Pastikan Anda memiliki tautan yang benar.
             </CardDescription>
         </CardHeader>
     </Card>
 );
 
-const UserProfileCard = ({ user }: { user: PublicProfile }) => {
-    const statusInfo = getStatusInfo(user.verificationStatus);
-    const profileUrl = typeof window !== 'undefined' ? window.location.href : '';
-
+const UserProfileHeader = ({ user, postCount }: { user: PublicProfile, postCount: number }) => {
+    const [isKtaModalOpen, setIsKtaModalOpen] = useState(false);
+    
     return (
-        <Card className="m-4 shadow-lg">
-            <CardHeader className="items-center text-center bg-muted/30 pb-4">
-                <Avatar className="h-24 w-24 border-4 border-background shadow-md">
+      <>
+        <Card>
+            <CardContent className="p-6 space-y-4">
+                <div className="flex items-start gap-4">
+                    <Avatar className="h-24 w-24 border">
                     <AvatarImage src={user?.avatarUrl || ''} alt={user?.name || ''} />
                     <AvatarFallback className="text-3xl">{user?.name?.charAt(0) || 'A'}</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col items-center gap-1 pt-2">
-                     <div className="flex items-center gap-2">
-                        <CardTitle className="text-2xl">{user.name}</CardTitle>
-                        <VerifiedBadge type={user.type} />
+                    </Avatar>
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                             <h1 className="text-2xl font-bold font-headline">{user?.name}</h1>
+                             <VerifiedBadge type={user.type} />
+                        </div>
+                        <p className="text-muted-foreground">@{user?.username}</p>
+                        <p className="text-sm pt-1">{user?.position || 'Anggota Garda Lestari'}</p>
                     </div>
-                    <p className="text-muted-foreground">@{user.username}</p>
                 </div>
-            </CardHeader>
-            <CardContent className="p-6 space-y-6">
-                <div className="flex items-center justify-center p-3 rounded-md bg-green-50 border border-green-200">
-                    <statusInfo.icon className={cn("h-5 w-5 mr-2", statusInfo.className)} />
-                    <p className={cn("font-semibold text-sm", statusInfo.className)}>{statusInfo.text}</p>
+                <div className="flex items-center justify-around text-center">
+                    <div>
+                        <p className="font-bold text-lg">{postCount}</p>
+                        <p className="text-xs text-muted-foreground">Postingan</p>
+                    </div>
+                    <div>
+                        <p className="font-bold text-lg">0</p>
+                        <p className="text-xs text-muted-foreground">Pengikut</p>
+                    </div>
+                    <div>
+                        <p className="font-bold text-lg">0</p>
+                        <p className="text-xs text-muted-foreground">Mengikuti</p>
+                    </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <ProfileInfoRow icon={Briefcase} label="Jabatan" value={user.position} />
-                    <ProfileInfoRow icon={Calendar} label="Tanggal Registrasi" value={user.joinDate} />
-                    <ProfileInfoRow icon={MapPin} label="Wilayah" value={user.region || 'Nasional'} />
-                    <ProfileInfoRow icon={UserCircle} label="Level">
-                         <MemberLevelBadge level={user.level || 'Bronze'} />
-                    </ProfileInfoRow>
-                </div>
-                 <div className="flex flex-col items-center justify-center pt-4">
-                    <QRCode value={profileUrl} size={100} level="L" />
-                     <p className="text-xs text-muted-foreground mt-2">Pindai untuk verifikasi</p>
-                </div>
+                 <Button variant="outline" onClick={() => setIsKtaModalOpen(true)} className="w-full">
+                    <IdCard className="mr-2 h-4 w-4" />
+                    Lihat KTA Digital
+                </Button>
             </CardContent>
         </Card>
-    );
+        <MembershipCardDialog 
+          isOpen={isKtaModalOpen}
+          onClose={() => setIsKtaModalOpen(false)}
+          user={{
+              ...user,
+              uid: user.id, // Adapt PublicProfile to what MembershipCardDialog expects
+              displayName: user.name,
+              photoURL: user.avatarUrl,
+              metadata: { creationTime: user.joinDate }
+          } as any}
+        />
+      </>
+    )
 }
 
 export default function UserProfilePage() {
@@ -100,6 +154,10 @@ export default function UserProfilePage() {
   const [user, setUser] = useState<PublicProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isInvalid, setIsInvalid] = useState(false);
+
+  const [userPosts, setUserPosts] = useState<PostWithAuthor[]>([]);
+  const [userAchievements, setUserAchievements] = useState<Achievement[]>([]);
+  const [loadingContent, setLoadingContent] = useState(true);
 
   useEffect(() => {
     if (username) {
@@ -117,6 +175,16 @@ export default function UserProfilePage() {
                 setIsInvalid(true);
             } else {
                 setUser(fetchedUser);
+                if (fetchedUser.verificationStatus === 'permanent') {
+                    setLoadingContent(true);
+                    const [posts, achievements] = await Promise.all([
+                        getPostsByUserId(fetchedUser.id),
+                        getAchievementsByUserId(fetchedUser.id)
+                    ]);
+                    setUserPosts(posts);
+                    setUserAchievements(achievements);
+                    setLoadingContent(false);
+                }
             }
             setLoading(false);
         };
@@ -126,19 +194,60 @@ export default function UserProfilePage() {
 
   if (loading) {
     return (
-      <PublicProfileLayout>
+      <MainLayout>
         <div className="flex min-h-[calc(100vh-10rem)] items-center justify-center">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
         </div>
-      </PublicProfileLayout>
+      </MainLayout>
     );
   }
+  
+  if (isInvalid || !user) {
+    return (
+      <MainLayout>
+        <div className="py-4"><InvalidProfileCard /></div>
+      </MainLayout>
+    )
+  }
+  
+  const isVerifiedMember = user.verificationStatus === 'permanent';
 
   return (
-    <PublicProfileLayout>
-        <div className="py-4">
-           {isInvalid ? <InvalidKtaCard /> : user && <UserProfileCard user={user} />}
+    <MainLayout>
+        <div className="p-4 space-y-4">
+            {isVerifiedMember ? (
+                <>
+                    <UserProfileHeader user={user} postCount={userPosts.length} />
+                    <Tabs defaultValue="posts" className="w-full">
+                        <TabsList className="w-full grid grid-cols-2">
+                            <TabsTrigger value="posts"><Grid3x3 className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Postingan</span></TabsTrigger>
+                            <TabsTrigger value="achievements"><Award className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Prestasi</span></TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="posts" className="mt-4">
+                            <ProfilePostsGrid posts={userPosts} isLoading={loadingContent} />
+                        </TabsContent>
+                         <TabsContent value="achievements" className="mt-4">
+                            <AchievementList achievements={userAchievements} isLoading={loadingContent} />
+                        </TabsContent>
+                    </Tabs>
+                </>
+            ) : (
+                <InvalidProfileCard />
+            )}
         </div>
-    </PublicProfileLayout>
+    </MainLayout>
   );
+}
+
+function ClientFormattedDate({ dateString }: { dateString: string }) {
+    const [formattedDate, setFormattedDate] = useState('');
+    useEffect(() => {
+        const doFormat = async () => {
+            const { id } = await import('date-fns/locale/id');
+            const date = new Date(dateString);
+            setFormattedDate(format(date, 'dd MMMM yyyy', { locale: id }));
+        };
+        doFormat();
+    }, [dateString]);
+    return <>{formattedDate || 'Memuat...'}</>;
 }

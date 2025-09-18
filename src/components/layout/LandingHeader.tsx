@@ -17,10 +17,10 @@ const navItems = [
 ];
 
 interface LandingHeaderProps {
-  isRegistrationOpen: boolean;
+  isRegistrationOpen?: boolean;
 }
 
-export default function LandingHeader({ isRegistrationOpen }: LandingHeaderProps) {
+export default function LandingHeader({ isRegistrationOpen = true }: LandingHeaderProps) {
   const { user, loading } = useAuth();
 
   return (
