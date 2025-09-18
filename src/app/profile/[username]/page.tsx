@@ -117,20 +117,6 @@ const UserProfileHeader = ({ user, postCount }: { user: PublicProfile, postCount
                         <p className="text-sm pt-1">{user?.position || 'Anggota Garda Lestari'}</p>
                     </div>
                 </div>
-                <div className="flex items-center justify-around text-center">
-                    <div>
-                        <p className="font-bold text-lg">{postCount}</p>
-                        <p className="text-xs text-muted-foreground">Postingan</p>
-                    </div>
-                    <div>
-                        <p className="font-bold text-lg">0</p>
-                        <p className="text-xs text-muted-foreground">Pengikut</p>
-                    </div>
-                    <div>
-                        <p className="font-bold text-lg">0</p>
-                        <p className="text-xs text-muted-foreground">Mengikuti</p>
-                    </div>
-                </div>
                  <Button variant="outline" onClick={() => setIsVerificationModalOpen(true)} className="w-full">
                     <Eye className="mr-2 h-4 w-4" />
                     Lihat Verifikasi (Publik)
