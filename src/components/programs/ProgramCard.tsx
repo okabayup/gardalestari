@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Image from 'next/image';
@@ -35,6 +36,7 @@ export default function ProgramCard({ id, title, description, imageUrl, imageHin
 
   const buttonText = isPast 
     ? 'Telah Berakhir' 
+    : !endDate ? 'Lihat Detail' 
     : programType === 'pasif' 
     ? 'Lihat Detail' 
     : 'Daftar Program';
@@ -59,7 +61,7 @@ export default function ProgramCard({ id, title, description, imageUrl, imageHin
         <CardTitle>{title}</CardTitle>
         <div className="flex items-center text-sm text-muted-foreground pt-1">
           <CalendarIcon className="mr-2 h-4 w-4"/>
-          <span>{formattedStartDate || '...'} - {endDate ? (formattedEndDate || '...') : 'Sekarang'}</span>
+          <span>{formattedStartDate || '...'} - {endDate ? (formattedEndDate || '...') : 'Tak Terbatas'}</span>
         </div>
       </CardHeader>
       <CardContent className="flex-grow flex flex-col">

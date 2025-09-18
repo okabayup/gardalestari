@@ -122,8 +122,8 @@ export default function NewProgramPage() {
     Object.entries(data).forEach(([key, value]) => {
         if (key === 'dateRange') {
             formData.append('dateRangeFrom', (value as {from: Date}).from.toISOString());
-            if ((value as {to?: Date}).to) {
-                formData.append('dateRangeTo', ((value as {to: Date}).to).toISOString());
+            if ((value as {to?: Date}).to && !data.isUnlimited) {
+                formData.append('dateRangeTo', ((value as {to: Date}).to!).toISOString());
             }
         } else if (key === 'tags') {
             formData.append(key, (value as string[]).join(','));
@@ -223,10 +223,9 @@ export default function NewProgramPage() {
                           <PopoverTrigger asChild>
                           <Button id="date" variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value?.from && "text-muted-foreground")}>
                               <CalendarIcon className="mr-2 h-4 w-4" />
-                              {field.value?.from ? (field.value.to ? (
+                              {field.value?.from ? ((field.value.to && !watchIsUnlimited) ? (
                                   <>{format(field.value.from, "LLL dd, y")} - {format(field.value.to, "LLL dd, y")}</>
-                              ) : (format(field.value.from, "LLL dd, y"))
-                              ) : (<span>Pilih rentang tanggal</span>)}
+                              ) : (format(field.value.from, "LLL dd, y"))) : (<span>Pilih rentang tanggal</span>)}
                           </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
