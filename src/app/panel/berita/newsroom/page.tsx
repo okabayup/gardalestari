@@ -17,6 +17,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { generateNewsArticle } from '@/ai/flows/news-generator-flow';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
+import { logAnalyticsEvent } from '@/lib/analytics';
 
 interface TopicSuggestion {
   title: string;
@@ -94,6 +95,7 @@ export default function NewsroomPage() {
 
     let jobId: string;
     try {
+        logAnalyticsEvent('create_bulk_job', { topic_count: selectedTopics.length });
         jobId = await createGenerationJob(selectedTopics.length);
         toast({ title: 'Memulai Proses Massal...', description: `Agen AI akan membuat ${selectedTopics.length} draf artikel.` });
     } catch (error) {
