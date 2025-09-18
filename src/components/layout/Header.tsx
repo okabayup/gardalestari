@@ -22,6 +22,7 @@ import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { getNotificationsForUser, markNotificationsAsRead, Notification, getUnreadNotificationsCount } from '@/app/actions/notifications';
 import { formatDistanceToNow } from 'date-fns';
+import { GlobalSearch } from '../search/GlobalSearch';
 
 const NotificationItem = ({ title, body, time, read, link }: { title: string, body: string, time: string, read: boolean, link?: string }) => (
     <Link href={link || '#'} className="block p-3 hover:bg-muted/50 rounded-lg">
@@ -90,11 +91,6 @@ export default function Header() {
     await signOut();
     router.push('/login');
   };
-
-  const formatTimeAgo = async (date: Date) => {
-      const { id } = await import('date-fns/locale/id');
-      return formatDistanceToNow(date, { addSuffix: true, locale: id });
-  }
   
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -105,6 +101,7 @@ export default function Header() {
         <div className="ml-auto flex items-center gap-2">
           {user && (
             <>
+               <GlobalSearch />
                <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetTrigger asChild>
                    <Button variant="ghost" size="icon" className="relative" onClick={handleOpenSheet}>

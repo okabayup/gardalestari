@@ -141,7 +141,6 @@ export default function NewPostPage() {
   const handleSelectUserToTag = (mediaIndex: number, selectedUser: PublicUser, position: {x: number, y: number}) => {
     setMediaFiles(prev => prev.map((media, i) => {
       if (i === mediaIndex) {
-        // Prevent tagging the same user twice in the same media
         if (media.mentions.some(m => m.userId === selectedUser.id)) return media;
         
         const newMention: Mention = {
@@ -228,24 +227,28 @@ export default function NewPostPage() {
                     <CarouselContent className="h-full">
                       {mediaFiles.map((media, index) => (
                         <CarouselItem key={index} className="relative w-full h-full flex items-center justify-center">
-                           <UserSearchPopover onSelectUser={(user) => {
-                                const rect = (document.getElementById(`media-container-${index}`) as HTMLDivElement).getBoundingClientRect();
-                                const { x, y } = (document.getElementById(`media-container-${index}`) as any).lastClickPosition || {x: 0, y: 0};
-                                handleSelectUserToTag(index, user, { x: ((x - rect.left) / rect.width) * 100, y: ((y - rect.top) / rect.height) * 100 });
-                           }}>
-                             <div 
-                                id={`media-container-${index}`}
-                                className="w-full h-full"
-                                onClick={(e: MouseEvent<HTMLDivElement>) => {
-                                  (e.currentTarget as any).lastClickPosition = { x: e.clientX, y: e.clientY };
-                                }}>
-                                  {media.type === 'image' ? (
-                                    <Image src={media.previewUrl} alt="Pratinjau media" fill className="object-contain" />
-                                  ) : (
-                                    <video src={media.previewUrl} className="w-full h-full object-contain" controls muted loop />
-                                  )}
-                              </div>
-                           </UserSearchPopover>
+                          <UserSearchPopover onSelectUser={(user) => {
+                            const container = document.getElementById(`media-container-${index}`);
+                            if (!container) return;
+                            const rect = container.getBoundingClientRect();
+                            const { clientX, clientY } = (container as any).lastClickPosition || { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 };
+                            const x = ((clientX - rect.left) / rect.width) * 100;
+                            const y = ((clientY - rect.top) / rect.height) * 100;
+                            handleSelectUserToTag(index, user, { x, y });
+                          }}>
+                            <div 
+                              id={`media-container-${index}`}
+                              className="w-full h-full cursor-pointer"
+                              onClick={(e: MouseEvent<HTMLDivElement>) => {
+                                (e.currentTarget as any).lastClickPosition = { clientX: e.clientX, clientY: e.clientY };
+                              }}>
+                                {media.type === 'image' ? (
+                                  <Image src={media.previewUrl} alt="Pratinjau media" fill className="object-contain" />
+                                ) : (
+                                  <video src={media.previewUrl} className="w-full h-full object-contain" controls muted loop />
+                                )}
+                            </div>
+                          </UserSearchPopover>
 
                           {media.mentions.map((mention, mentionIndex) => (
                             <UserTag key={mention.userId} mention={mention} onRemove={() => removeMention(index, mentionIndex)} />
