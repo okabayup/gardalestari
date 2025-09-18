@@ -59,10 +59,12 @@ export default function ProgramCard({ id, title, description, imageUrl, imageHin
       </div>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
-        <div className="flex items-center text-sm text-muted-foreground pt-1">
-          <CalendarIcon className="mr-2 h-4 w-4"/>
-          <span>{formattedStartDate || '...'} - {endDate ? (formattedEndDate || '...') : 'Tak Terbatas'}</span>
-        </div>
+        {endDate && (
+          <div className="flex items-center text-sm text-muted-foreground pt-1">
+            <CalendarIcon className="mr-2 h-4 w-4"/>
+            <span>{formattedStartDate || '...'} - {formattedEndDate || '...'}</span>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="flex-grow flex flex-col">
         <p className="text-muted-foreground text-sm mb-4 flex-grow">{description.substring(0, 100)}...</p>

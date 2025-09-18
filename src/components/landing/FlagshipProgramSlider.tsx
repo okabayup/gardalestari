@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -27,13 +26,13 @@ const ProgramSliderCard = ({ program }: { program: Program }) => {
     useEffect(() => {
         // Format date only on the client-side after hydration
         if (program.endDate) {
-            setFormattedDate(
-                `${format(new Date(program.startDate), "d MMM", { locale: id })} - ${format(new Date(program.endDate), "d MMM yyyy", { locale: id })}`
-            );
+             import('date-fns/locale/id').then(localeModule => {
+                setFormattedDate(
+                    `${format(new Date(program.startDate), "d MMM", { locale: localeModule.id })} - ${format(new Date(program.endDate!), "d MMM yyyy", { locale: localeModule.id })}`
+                );
+            });
         } else {
-             setFormattedDate(
-                `Mulai ${format(new Date(program.startDate), "d MMM yyyy", { locale: id })}`
-            );
+            setFormattedDate(null); // No date for unlimited programs
         }
     }, [program.startDate, program.endDate]);
 
@@ -70,9 +69,11 @@ const ProgramSliderCard = ({ program }: { program: Program }) => {
                             ))}
                         </div>
                         <h3 className="text-white font-bold text-lg line-clamp-2">{program.title}</h3>
-                        <p className="text-xs text-white/80 h-4">
-                            {formattedDate || 'Memuat tanggal...'}
-                        </p>
+                        {formattedDate && (
+                            <p className="text-xs text-white/80 h-4">
+                                {formattedDate}
+                            </p>
+                        )}
                     </div>
                 </CardContent>
                 <div className="p-4 bg-card">
