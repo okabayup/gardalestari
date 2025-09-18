@@ -7,9 +7,9 @@ import { getUserByUsername, PublicProfile } from '@/app/actions/user';
 import { Loader2, ShieldAlert } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import MembershipCard from '@/components/members/MembershipCard';
-import LandingHeader from '@/components/layout/LandingHeader';
-import Footer from '@/components/landing/Footer';
 import { getAppSettings } from '@/app/actions/settings';
+import Link from 'next/link';
+import Image from 'next/image';
 
 
 const InvalidProfileCard = () => (
@@ -18,7 +18,7 @@ const InvalidProfileCard = () => (
              <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
             <CardTitle className="text-destructive">Verifikasi Gagal</CardTitle>
             <CardDescription>
-                Pengguna dengan nama ini tidak ditemukan atau belum terverifikasi. Pastikan Anda memiliki tautan yang benar.
+                Pengguna dengan nama ini tidak ditemukan atau belum terverifikasi secara permanen. Pastikan Anda memiliki tautan yang benar.
             </CardDescription>
         </CardHeader>
     </Card>
@@ -30,23 +30,19 @@ export default function KtaVerificationPage() {
 
     const [user, setUser] = useState<PublicProfile | null>(null);
     const [loading, setLoading] = useState(true);
-    const [isRegistrationOpen, setRegistrationOpen] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             try {
-                const [userData, settings] = await Promise.all([
-                    getUserByUsername(username),
-                    getAppSettings()
-                ]);
+                const userData = await getUserByUsername(username);
                 
+                // Only show profile if verification is permanent
                 if (userData && userData.verificationStatus === 'permanent') {
                     setUser(userData);
                 } else {
                     setUser(null);
                 }
-                setRegistrationOpen(settings.isRegistrationOpen);
             } catch (error) {
                  console.error("Failed to fetch user data for verification", error);
                  setUser(null);
@@ -82,7 +78,11 @@ export default function KtaVerificationPage() {
 
     return (
         <div className="flex min-h-screen flex-col bg-secondary">
-            <LandingHeader isRegistrationOpen={isRegistrationOpen} />
+            <header className="py-4 px-6 container mx-auto">
+                <Link href="/" className="inline-block">
+                    <Image src="/logo.png" alt="Garda Lestari Logo" width={120} height={32} className="h-8 w-auto" />
+                </Link>
+            </header>
             <main className="flex-1 flex items-center justify-center p-4">
                  {loading ? (
                     <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -91,7 +91,7 @@ export default function KtaVerificationPage() {
                         name={user.name}
                         photoUrl={user.avatarUrl || ''}
                         memberId={getMemberId(user)}
-                        nik={undefined} // Hide NIK on public page
+                        nik={undefined} // IMPORTANT: NIK is explicitly not passed to the public page
                         profileUrl={getVerificationUrl(user)}
                         memberType={user.type}
                         joinDate={getJoinDate(user)}
@@ -101,7 +101,9 @@ export default function KtaVerificationPage() {
                     <InvalidProfileCard />
                  )}
             </main>
-            <Footer />
+             <footer className="py-4 text-center text-xs text-muted-foreground">
+                &copy; {new Date().getFullYear()} Garda Muda Lestari.
+            </footer>
         </div>
     )
 }

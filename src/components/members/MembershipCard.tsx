@@ -65,7 +65,7 @@ export default function MembershipCard({ name, photoUrl, memberId, nik, profileU
                 <div className="grid grid-cols-2 gap-x-6 gap-y-4 w-full text-left pt-2 text-foreground">
                     <div>
                         <p className="text-xs text-muted-foreground uppercase">NIK</p>
-                        <p className="font-mono tracking-wide text-sm">{nik || 'Belum Terverifikasi'}</p>
+                        <p className="font-mono tracking-wide text-sm">{nik || '••••••••••••••••'}</p>
                     </div>
                      <div>
                         <p className="text-xs text-muted-foreground uppercase">ID Anggota</p>
