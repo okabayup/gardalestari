@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -9,7 +8,7 @@ import { getUserByUsername, PublicProfile } from '@/app/actions/user';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
-import { Loader2, ShieldAlert, Award, Grid3x3, IdCard, PlusCircle, Eye } from 'lucide-react';
+import { Loader2, ShieldAlert, Award, Grid3x3, IdCard, PlusCircle, Eye, Instagram, Linkedin } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { VerifiedBadge } from '@/components/members/VerifiedBadge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,7 +18,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 
 const ProfilePostsGrid = ({ posts, isLoading }: { posts: PostWithAuthor[], isLoading: boolean }) => {
     if (isLoading) {
@@ -115,6 +114,18 @@ const UserProfileHeader = ({ user, postCount }: { user: PublicProfile, postCount
                         </div>
                         <p className="text-muted-foreground">{user?.name}</p>
                         <p className="text-sm pt-1">{user?.position || 'Anggota Garda Lestari'}</p>
+                        <div className="flex items-center gap-2 pt-2">
+                            {user.instagram && (
+                                <Link href={user.instagram} target="_blank">
+                                    <Button variant="outline" size="icon"><Instagram className="h-4 w-4" /></Button>
+                                </Link>
+                            )}
+                             {user.linkedin && (
+                                <Link href={user.linkedin} target="_blank">
+                                    <Button variant="outline" size="icon"><Linkedin className="h-4 w-4" /></Button>
+                                </Link>
+                            )}
+                        </div>
                     </div>
                 </div>
                  <Button variant="outline" onClick={() => setIsVerificationModalOpen(true)} className="w-full">

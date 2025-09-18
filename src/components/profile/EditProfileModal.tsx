@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Linkedin, Instagram } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Info } from 'lucide-react';
@@ -21,7 +21,7 @@ import { useDebounce } from 'use-debounce';
 interface EditProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  user: User & { fullName?: string; nik?: string; username?: string };
+  user: User & { fullName?: string; nik?: string; username?: string, instagram?: string, linkedin?: string };
 }
 
 export default function EditProfileModal({ isOpen, onClose, user }: EditProfileModalProps) {
@@ -32,6 +32,9 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
   const [debouncedUsername] = useDebounce(username, 500);
   const [isUsernameAvailable, setIsUsernameAvailable] = useState(true);
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  
+  const [instagram, setInstagram] = useState(user.instagram || '');
+  const [linkedin, setLinkedin] = useState(user.linkedin || '');
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(user.photoURL);
@@ -95,7 +98,7 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
 
     setLoading(true);
     try {
-      const updates: { photoFile?: File; username?: string } = {};
+      const updates: { photoFile?: File; username?: string; instagram?: string; linkedin?: string } = {};
       let hasChanges = false;
 
       if (photoFile) {
@@ -104,6 +107,14 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
       }
       if (canEditUsername && username && username !== user.username) {
         updates.username = username;
+        hasChanges = true;
+      }
+      if (instagram !== (user.instagram || '')) {
+        updates.instagram = instagram;
+        hasChanges = true;
+      }
+       if (linkedin !== (user.linkedin || '')) {
+        updates.linkedin = linkedin;
         hasChanges = true;
       }
 
@@ -133,7 +144,10 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
     }
   };
 
-  const hasMadeChanges = (photoFile !== null) || (canEditUsername && username !== user.username);
+  const hasMadeChanges = (photoFile !== null) || 
+    (canEditUsername && username !== user.username) ||
+    (instagram !== (user.instagram || '')) ||
+    (linkedin !== (user.linkedin || ''));
 
 
   return (
@@ -149,7 +163,7 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
         <DialogHeader>
           <DialogTitle>Edit Profil</DialogTitle>
           <DialogDescription>
-            Perbarui foto profil atau nama pengguna Anda. Nama lengkap dan NIK tidak dapat diubah.
+            Perbarui foto profil, nama pengguna, dan tautan media sosial Anda.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
@@ -190,6 +204,23 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
             </div>
           )}
 
+          <div className="grid grid-cols-1 gap-4">
+             <div className="space-y-2">
+                <Label htmlFor="instagram">URL Profil Instagram</Label>
+                 <div className="relative">
+                    <Instagram className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input id="instagram" value={instagram} onChange={e => setInstagram(e.target.value)} placeholder="https://instagram.com/username" className="pl-9"/>
+                 </div>
+            </div>
+             <div className="space-y-2">
+                <Label htmlFor="linkedin">URL Profil LinkedIn</Label>
+                 <div className="relative">
+                    <Linkedin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input id="linkedin" value={linkedin} onChange={e => setLinkedin(e.target.value)} placeholder="https://linkedin.com/in/username" className="pl-9"/>
+                 </div>
+            </div>
+          </div>
+
 
           <Alert>
               <Info className="h-4 w-4" />
@@ -205,10 +236,6 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
                     <div>
                         <p className="font-semibold">Nama Lengkap</p>
                         <p className="text-muted-foreground">{user.displayName || 'Belum diatur'}</p>
-                    </div>
-                    <div>
-                        <p className="font-semibold">NIK</p>
-                        <p className="text-muted-foreground">{user.nik || 'Belum diatur'}</p>
                     </div>
                 </div>
               </AlertDescription>

@@ -38,6 +38,8 @@ type ExtendedUser = User & {
   waNumber?: string;
   waVerified?: boolean;
   type?: MemberType;
+  instagram?: string;
+  linkedin?: string;
 };
 
 interface AuthContextType {
@@ -47,8 +49,8 @@ interface AuthContextType {
   signInWithPhone: (phoneNumber: string, appVerifierContainerId: string) => Promise<void>;
   verifyOtp: (otp: string) => Promise<void>;
   signOut: () => Promise<void>;
-  updateUserProfile: (updates: { photoFile?: File, username?: string }) => Promise<void>;
-  submitForVerification: (data: { fullName: string; nik: string; ktpFile: File; selfieFile: File; photoFile?: File; waNumber: string }) => Promise<void>;
+  updateUserProfile: (updates: { photoFile?: File, username?: string, instagram?: string, linkedin?: string }) => Promise<void>;
+  submitForVerification: (data: { fullName: string; nik: string; ktpFile: File; photoFile?: File; waNumber: string }) => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -118,6 +120,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           waNumber: userData.waNumber,
           waVerified: userData.waVerified,
           type: userType,
+          instagram: userData.instagram,
+          linkedin: userData.linkedin,
       };
       setUser(extendedUser);
     } else {
@@ -252,7 +256,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const updateUserProfile = async (updates: { photoFile?: File, username?: string }) => {
+  const updateUserProfile = async (updates: { photoFile?: File, username?: string, instagram?: string, linkedin?: string }) => {
     if (!auth.currentUser) throw new Error("Pengguna tidak ditemukan.");
 
     const updateData: { [key: string]: any } = {};
@@ -275,6 +279,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       updateData.username = updates.username;
     }
+
+    if (updates.instagram) {
+        updateData.instagram = updates.instagram;
+    }
+     if (updates.linkedin) {
+        updateData.linkedin = updates.linkedin;
+    }
     
     const userDocRef = doc(db, 'users', auth.currentUser.uid);
     await setDoc(userDocRef, updateData, { merge: true });
@@ -282,7 +293,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(prevUser => prevUser ? { ...prevUser, ...updateData } : null);
 };
 
-const submitForVerification = async (data: { fullName: string; nik: string; ktpFile: File; selfieFile: File; photoFile?: File; waNumber: string; }) => {
+const submitForVerification = async (data: { fullName: string; nik: string; ktpFile: File; photoFile?: File; waNumber: string; }) => {
     if (!auth.currentUser) throw new Error("Pengguna tidak ditemukan.");
 
     logAnalyticsEvent('begin_verification');
@@ -301,18 +312,13 @@ const submitForVerification = async (data: { fullName: string; nik: string; ktpF
     const storage = getStorage();
     
     const ktpRef = ref(storage, `kyc/${uid}/ktp.jpg`);
-    const selfieRef = ref(storage, `kyc/${uid}/selfie.jpg`);
-    const profilePicRef = ref(storage, `profile-pictures/${uid}`);
 
-    const [ktpUploadResult, selfieUploadResult] = await Promise.all([
-      uploadBytes(ktpRef, data.ktpFile),
-      uploadBytes(selfieRef, data.selfieFile)
-    ]);
+    const ktpUploadResult = await uploadBytes(ktpRef, data.ktpFile);
     const ktpImageUrl = await getDownloadURL(ktpUploadResult.ref);
-    const selfieImageUrl = await getDownloadURL(selfieUploadResult.ref);
     
     let newPhotoURL = user?.photoURL ?? null;
     if (data.photoFile) {
+      const profilePicRef = ref(storage, `profile-pictures/${uid}`);
       const photoUploadResult = await uploadBytes(profilePicRef, data.photoFile);
       newPhotoURL = await getDownloadURL(photoUploadResult.ref);
     }
@@ -326,9 +332,8 @@ const submitForVerification = async (data: { fullName: string; nik: string; ktpF
         nik: data.nik,
         waNumber: data.waNumber,
         waVerified: true, // Mark as verified since it's part of the flow
-        verificationStatus: 'permanent' as VerificationStatus,
+        verificationStatus: 'temporary' as VerificationStatus,
         ktpImageUrl,
-        selfieImageUrl,
         avatarUrl: newPhotoURL,
         photoURL: newPhotoURL,
         submittedAt: serverTimestamp()
@@ -388,5 +393,3 @@ export const useRequireAuth = (redirectTo = '/login') => {
 
   return { user, loading };
 };
-
-    

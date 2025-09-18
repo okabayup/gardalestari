@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useRef, useEffect, ChangeEvent } from 'react';
@@ -10,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Camera, User, Fingerprint, CheckCircle, MessageSquare, PartyPopper, Lightbulb, Sprout } from 'lucide-react';
+import { Loader2, Camera, User, Fingerprint, CheckCircle, MessageSquare, PartyPopper, Lightbulb, Sprout, Pencil } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { readKtp } from '@/ai/flows/ocr-ktp-flow';
 import { saveWaNumber, verifyWaNumber } from '@/app/actions/user';
@@ -22,7 +21,7 @@ import { Progress } from '@/components/ui/progress';
 
 type Step = 'welcome' | 'data' | 'whatsapp' | 'features' | 'ktp' | 'confirm' | 'submitting';
 
-const STEPS_COUNT = 6;
+const STEPS_COUNT = 5;
 
 export default function VerificationFlow() {
   const { user, submitForVerification, refreshUser, signOut } = useAuth();
@@ -71,7 +70,7 @@ export default function VerificationFlow() {
     async function switchCameraForStep() {
       if (step === 'ktp') {
         await startCamera('environment');
-        setProgress((4 / STEPS_COUNT) * 100);
+        setProgress((3 / STEPS_COUNT) * 100);
       } else {
         stopCamera();
       }
@@ -85,8 +84,8 @@ export default function VerificationFlow() {
       case 'welcome': setProgress(0); break;
       case 'data': setProgress((1 / STEPS_COUNT) * 100); break;
       case 'whatsapp': setProgress((2 / STEPS_COUNT) * 100); break;
-      case 'features': setProgress((3 / STEPS_COUNT) * 100); break;
-      case 'confirm': setProgress((5 / STEPS_COUNT) * 100); break;
+      case 'features': setProgress((2.5 / STEPS_COUNT) * 100); break;
+      case 'confirm': setProgress((4 / STEPS_COUNT) * 100); break;
       case 'submitting': setProgress(100); break;
     }
   }, [step]);
@@ -414,20 +413,17 @@ export default function VerificationFlow() {
           <div className="text-center space-y-6">
             <PartyPopper className="mx-auto h-16 w-16 text-primary" />
             <h2 className="text-2xl font-bold font-headline">Verifikasi WhatsApp Berhasil!</h2>
-            <p className="text-muted-foreground">Selamat datang! Kini Anda bisa mulai berinteraksi. Jelajahi Bank Ide untuk berkolaborasi atau lihat Program yang sedang berjalan.</p>
+            <p className="text-muted-foreground">Selamat datang! Sekarang, personalisasikan akun Anda. Kunjungi halaman profil untuk <span className='font-semibold text-primary'>mengatur username</span> dan menautkan media sosial Anda.</p>
             <div className="flex gap-4">
-              <Button variant="outline" className="w-full flex-col h-auto py-3" onClick={() => router.push('/ideas')}>
-                <Lightbulb className="h-6 w-6 mb-2"/>
-                Bank Ide
+              <Button variant="outline" className="w-full flex-col h-auto py-3" onClick={() => router.push('/profile/me')}>
+                <Pencil className="h-6 w-6 mb-2"/>
+                Lengkapi Profil
               </Button>
-              <Button variant="outline" className="w-full flex-col h-auto py-3" onClick={() => router.push('/programs')}>
+              <Button variant="outline" className="w-full flex-col h-auto py-3" onClick={() => setStep('ktp')}>
                 <Sprout className="h-6 w-6 mb-2"/>
-                Program
+                Lanjut Verifikasi
               </Button>
             </div>
-            <Button size="lg" className="w-full" onClick={() => setStep('ktp')}>
-              Lanjut ke Verifikasi KTP
-            </Button>
           </div>
         );
       case 'ktp':
@@ -505,11 +501,11 @@ export default function VerificationFlow() {
   const getStepDescription = () => {
     switch (step) {
       case 'welcome': return "Selamat datang di proses verifikasi keanggotaan.";
-      case 'data': return "Langkah 1 dari 5: Isi data diri Anda.";
-      case 'whatsapp': return "Langkah 2 dari 5: Verifikasi nomor WhatsApp.";
+      case 'data': return "Langkah 1 dari 4: Isi data diri Anda.";
+      case 'whatsapp': return "Langkah 2 dari 4: Verifikasi nomor WhatsApp.";
       case 'features': return "Selamat Datang! Mari kita lanjutkan.";
-      case 'ktp': return "Langkah 4 dari 5: Ambil Foto KTP.";
-      case 'confirm': return "Langkah 5 dari 5: Konfirmasi data Anda.";
+      case 'ktp': return "Langkah 3 dari 4: Ambil Foto KTP.";
+      case 'confirm': return "Langkah 4 dari 4: Konfirmasi data Anda.";
       case 'submitting': return "Sedang memproses pengajuan Anda.";
       default: return "Verifikasi Identitas";
     }

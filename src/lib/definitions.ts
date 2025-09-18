@@ -1,5 +1,4 @@
 
-
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
 
@@ -228,10 +227,10 @@ export interface IdeaAuthor {
   type?: MemberType;
 }
 
-export interface IdeaWithAuthor extends Omit<Idea, 'authorId' | 'upvotes' | 'downvotes'> {
+export interface IdeaWithAuthor extends Omit<Idea, 'authorId' | 'upvotes' | 'downvotes' | 'createdAt'> {
   author: IdeaAuthor;
   userVote?: VoteType;
-  createdAt: string; // Changed from Timestamp to string
+  createdAt: string; 
 }
 
 // --- Map Data ---
@@ -272,6 +271,8 @@ export interface Member {
   avatarUrl?: string;
   isSpecialMember?: boolean;
   isHidden?: boolean;
+  instagram?: string;
+  linkedin?: string;
 }
 
 export interface MemberWithStatus extends Member {

@@ -2,7 +2,7 @@
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, query, where, getDocs, DocumentData, limit, getDoc, doc, setDoc, Timestamp, updateProfile, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, DocumentData, limit, getDoc, doc, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import type { MemberWithStatus } from '@/lib/definitions';
 import type { Position, PermissionId, PublicUser, PublicProfile } from '@/lib/definitions';
@@ -93,6 +93,8 @@ export async function getUserByUid(uid: string): Promise<(MemberWithStatus & { w
             permissions: permissions,
             waNumber: data.waNumber,
             waVerified: data.waVerified || false,
+            instagram: data.instagram,
+            linkedin: data.linkedin,
         };
 
     } catch (error) {
@@ -142,6 +144,8 @@ export async function getUserByUsername(username: string): Promise<PublicProfile
             region: data.region,
             joinDate: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
             permissions: [], // Permissions are not needed for public profile
+            instagram: data.instagram,
+            linkedin: data.linkedin,
         };
 
     } catch (error) {
@@ -281,28 +285,36 @@ export async function verifyWaNumber(userId: string, otp: string): Promise<boole
     }
 }
 
-export async function updateUserProfile(userId: string, formData: FormData) {
+export async function updateUserProfile(userId: string, data: { username?: string, photoFile?: File, instagram?: string, linkedin?: string }) {
   try {
     const userDocRef = doc(db, 'users', userId);
     const dataToUpdate: { [key: string]: any } = {};
 
-    const username = formData.get('username') as string | null;
-    const photoFile = formData.get('photoFile') as File | null;
-    
-    if (photoFile && photoFile.size > 0) {
+    if (data.photoFile) {
       console.log("[updateUserProfile] Uploading new profile picture...");
       const storageRef = ref(storage, `profile-pictures/${userId}`);
-      await uploadBytes(storageRef, photoFile);
+      await uploadBytes(storageRef, data.photoFile);
       dataToUpdate.avatarUrl = await getDownloadURL(storageRef);
       console.log("[updateUserProfile] Image uploaded successfully:", dataToUpdate.avatarUrl);
     }
 
-    if (username) {
-        const isAvailable = !(await checkUsernameExists(username));
-        if (!isAvailable) {
-            throw new Error('Nama pengguna tersebut sudah digunakan.');
+    if (data.username) {
+        const userDoc = await getDoc(userDocRef);
+        const currentUsername = userDoc.data()?.username;
+        if (data.username !== currentUsername) {
+            const isAvailable = !(await checkUsernameExists(data.username));
+            if (!isAvailable) {
+                throw new Error('Nama pengguna tersebut sudah digunakan.');
+            }
+            dataToUpdate.username = data.username;
         }
-        dataToUpdate.username = username;
+    }
+
+    if (data.instagram) {
+      dataToUpdate.instagram = data.instagram;
+    }
+    if (data.linkedin) {
+      dataToUpdate.linkedin = data.linkedin;
     }
     
     if (Object.keys(dataToUpdate).length > 0) {
@@ -310,7 +322,7 @@ export async function updateUserProfile(userId: string, formData: FormData) {
     }
 
     revalidatePath(`/profile/me`);
-    revalidatePath(`/profile/${username}`);
+    revalidatePath(`/profile/${data.username || watch('username')}`);
 
   } catch (error) {
     console.error("[updateUserProfile Error]", error);
