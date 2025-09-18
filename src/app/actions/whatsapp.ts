@@ -48,7 +48,7 @@ const defaultTemplates: Record<NotificationType, WhatsAppTemplate> = {
     kta_activated: {
         id: 'kta_activated',
         label: 'Aktivasi KTA Berhasil',
-        message: 'Selamat, {namaPengguna}! Kartu Tanda Anggota (KTA) digital Anda telah aktif. Untuk menjaga keamanan dan profesionalitas komunitas, pastikan Anda menggunakan foto profil asli. Akun dengan foto profil yang tidak sesuai dapat diblokir oleh admin. Terima kasih atas kerja samanya!',
+        message: 'Selamat, {namaPengguna}! Kartu Tanda Anggota (KTA) digital Anda telah aktif. Untuk menjaga keamanan dan profesionalitas komunitas, pastikan Anda menggunakan foto profil asli. Akun dengan foto profil yang tidak sesuai dapat diblokir oleh admin.\n\nSilakan bergabung ke grup WhatsApp anggota melalui tautan berikut:\nhttps://chat.whatsapp.com/LD72HX9daPxD9CxknhTmFL?mode=ems_copy_t',
         isActive: true,
         placeholders: ['{namaPengguna}']
     },
@@ -225,5 +225,3 @@ export async function sendVerificationReminders(): Promise<{ success: boolean, c
         throw new Error(result.error || 'Gagal mengirim pesan pengingat massal.');
     }
 }
-
-
