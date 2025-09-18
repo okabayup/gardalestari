@@ -217,10 +217,11 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
         
         await updateDoc(memberDocRef, dataToUpdate);
 
+        const memberPhoneNumber = currentMemberData.waNumber;
+        const memberName = currentMemberData.fullName;
+
         // Send WhatsApp and Push notification if verification status changes
         if (verificationStatus && verificationStatus !== currentMemberData.verificationStatus) {
-            const memberPhoneNumber = currentMemberData.waNumber;
-            const memberName = currentMemberData.fullName;
             let templateId: 'member_verified_permanent' | 'member_verification_rejected' | null = null;
             let notificationPayload: { title: string, body: string } | null = null;
             
@@ -245,6 +246,31 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
                     { ...notificationPayload, link: '/profile/me' },
                     { type: 'users', userIds: [userId] }
                 );
+            }
+        }
+        
+        // Send WhatsApp and Push notification if position changes
+        const newPositionId = dataToUpdate.positionId || "no-position";
+        const oldPositionId = currentMemberData.positionId || "no-position";
+        
+        if (newPositionId !== oldPositionId) {
+            const { name: newPositionName } = await getPositionDetails(newPositionId === "no-position" ? undefined : newPositionId);
+
+            await sendNotification(
+                { 
+                    title: 'Jabatan Diperbarui', 
+                    body: `Selamat! Jabatan Anda telah diperbarui menjadi ${newPositionName}.`,
+                    link: '/profile/me'
+                },
+                { type: 'users', userIds: [userId] }
+            );
+
+            const template = await getWhatsappTemplate('member_position_updated');
+            if (template.isActive && memberPhoneNumber) {
+                const message = template.message
+                    .replace('{namaPengguna}', memberName)
+                    .replace('{namaJabatan}', newPositionName);
+                await sendWhatsAppMessage(memberPhoneNumber, message);
             }
         }
         

@@ -561,6 +561,7 @@ export type NotificationType =
     | 'new_task_assigned'
     | 'member_verified_permanent'
     | 'member_verification_rejected'
+    | 'member_position_updated'
     | 'event_reminder'
     | 'new_program_announcement';
 

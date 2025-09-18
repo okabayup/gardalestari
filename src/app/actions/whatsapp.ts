@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -50,6 +51,13 @@ const defaultTemplates: Record<NotificationType, WhatsAppTemplate> = {
         message: 'Halo {namaPengguna}. Mohon maaf, pengajuan verifikasi akun Garda Lestari Anda *ditolak*. Silakan periksa kembali data Anda dan coba lagi.',
         isActive: true,
         placeholders: ['{namaPengguna}']
+    },
+    member_position_updated: {
+        id: 'member_position_updated',
+        label: 'Jabatan Anggota Diperbarui',
+        message: 'Halo {namaPengguna}, ada pembaruan pada akun Anda. Jabatan Anda telah diubah menjadi *{namaJabatan}*. Terima kasih atas kontribusi Anda!',
+        isActive: true,
+        placeholders: ['{namaPengguna}', '{namaJabatan}']
     },
     event_reminder: {
         id: 'event_reminder',

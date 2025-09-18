@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -24,7 +25,7 @@ const templateGroups: { group: string; templates: NotificationType[] }[] = [
   },
   {
     group: 'Keanggotaan & Verifikasi',
-    templates: ['member_verified_permanent', 'member_verification_rejected'],
+    templates: ['member_verified_permanent', 'member_verification_rejected', 'member_position_updated'],
   },
   {
     group: 'Proyek & Tugas',
