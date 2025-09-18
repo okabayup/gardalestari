@@ -8,6 +8,7 @@ import { sendWhatsAppMessage as sendWhatsAppMessageSatuConnect, sendBulkWhatsApp
 import { revalidatePath } from 'next/cache';
 import { getPrograms } from './programs';
 import type { NotificationType, WhatsAppTemplate } from '@/lib/definitions';
+import { getMembers } from './members';
 
 const defaultTemplates: Record<NotificationType, WhatsAppTemplate> = {
     document_submission: {
@@ -189,27 +190,55 @@ export async function getLatestProgramsText(): Promise<string> {
     }
 }
 
-async function getUnverifiedUsers(): Promise<{ phoneNumber: string }[]> {
+async function getVerifiedMembers(): Promise<{ phoneNumber: string }[]> {
     const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('verificationStatus', '==', 'unverified'));
+    const q = query(usersRef, where('verificationStatus', '==', 'permanent'), where('waVerified', '==', true));
     const querySnapshot = await getDocs(q);
     const users: { phoneNumber: string }[] = [];
     querySnapshot.forEach(doc => {
         const data = doc.data();
-        if (data.phoneNumber) {
-            users.push({ phoneNumber: data.phoneNumber });
+        if (data.waNumber) {
+            users.push({ phoneNumber: data.waNumber });
         }
     });
     return users;
 }
 
-export async function getUnverifiedUserCount(): Promise<number> {
-    const users = await getUnverifiedUsers();
+export async function getVerifiedMemberCount(): Promise<number> {
+    const users = await getVerifiedMembers();
     return users.length;
 }
 
+export async function sendGroupJoinReminders(): Promise<{ success: boolean, count: number }> {
+    const users = await getVerifiedMembers();
+    if (users.length === 0) {
+        return { success: true, count: 0 };
+    }
+
+    const phoneNumbers = users.map(u => u.phoneNumber.replace(/^\+/, ''));
+    const message = "Halo Anggota Garda Lestari!\n\nKami mengundang Anda untuk bergabung ke dalam grup WhatsApp resmi kami untuk mendapatkan informasi terbaru, berdiskusi, dan berkolaborasi.\n\nSilakan klik tautan di bawah ini untuk bergabung:\nhttps://chat.whatsapp.com/LD72HX9daPxD9CxknhTmFL?mode=ems_copy_t\n\nTerima kasih atas partisipasi Anda!";
+    
+    const result = await sendBulkWhatsAppMessageSatuConnect(phoneNumbers, message);
+
+    if (result.success) {
+        return { success: true, count: result.data?.sentCount || phoneNumbers.length };
+    } else {
+        throw new Error(result.error || 'Gagal mengirim pesan pengingat massal.');
+    }
+}
+
+
 export async function sendVerificationReminders(): Promise<{ success: boolean, count: number }> {
-    const users = await getUnverifiedUsers();
+    const q = query(collection(db, 'users'), where('verificationStatus', 'in', ['unverified', 'temporary']));
+    const querySnapshot = await getDocs(q);
+    const users: { phoneNumber: string }[] = [];
+    querySnapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.waNumber) {
+            users.push({ phoneNumber: data.waNumber });
+        }
+    });
+
     if (users.length === 0) {
         return { success: true, count: 0 };
     }
@@ -224,4 +253,10 @@ export async function sendVerificationReminders(): Promise<{ success: boolean, c
     } else {
         throw new Error(result.error || 'Gagal mengirim pesan pengingat massal.');
     }
+}
+
+export async function getUnverifiedUserCount(): Promise<number> {
+    const q = query(collection(db, 'users'), where('verificationStatus', 'in', ['unverified', 'temporary']));
+    const snapshot = await getCountFromServer(q);
+    return snapshot.data().count;
 }

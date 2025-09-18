@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,8 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Send, MessageSquareWarning } from 'lucide-react';
-import { sendTestMessage, sendBulkTestMessage, sendVerificationReminders, getUnverifiedUserCount } from '@/app/actions/whatsapp';
+import { Loader2, Send, MessageSquareWarning, Users } from 'lucide-react';
+import { sendTestMessage, sendBulkTestMessage, sendVerificationReminders, getUnverifiedUserCount, sendGroupJoinReminders, getVerifiedMemberCount } from '@/app/actions/whatsapp';
 import { useRouter } from 'next/navigation';
 import {
   AlertDialog,
@@ -44,12 +45,19 @@ export default function WhatsappTestPage() {
   
   const [loadingSingle, setLoadingSingle] = useState(false);
   const [loadingBulk, setLoadingBulk] = useState(false);
+  
   const [unverifiedCount, setUnverifiedCount] = useState(0);
+  const [verifiedCount, setVerifiedCount] = useState(0);
+
   const [loadingReminder, setLoadingReminder] = useState(false);
+  const [loadingGroupReminder, setLoadingGroupReminder] = useState(false);
+
   const [showReminderConfirm, setShowReminderConfirm] = useState(false);
+  const [showGroupReminderConfirm, setShowGroupReminderConfirm] = useState(false);
 
   useEffect(() => {
     getUnverifiedUserCount().then(setUnverifiedCount);
+    getVerifiedMemberCount().then(setVerifiedCount);
   }, []);
   
   const singleForm = useForm<SingleMessageFormData>({ resolver: zodResolver(singleMessageSchema) });
@@ -96,6 +104,19 @@ export default function WhatsappTestPage() {
     }
   };
 
+  const handleSendGroupReminders = async () => {
+    setShowGroupReminderConfirm(false);
+    setLoadingGroupReminder(true);
+    try {
+      const result = await sendGroupJoinReminders();
+      toast({ title: 'Pengingat Grup Terkirim!', description: `Pesan pengingat berhasil dikirim ke ${result.count} anggota.` });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Gagal Mengirim Pengingat Grup', description: (error as Error).message });
+    } finally {
+      setLoadingGroupReminder(false);
+    }
+  }
+
   return (
     <>
       <div className="space-y-6">
@@ -109,21 +130,38 @@ export default function WhatsappTestPage() {
             </Button>
         </div>
 
-        <Card>
-            <CardHeader>
-                <CardTitle>Pengingat Verifikasi Anggota</CardTitle>
-                <CardDescription>
-                    Kirim pengingat massal melalui WhatsApp kepada {unverifiedCount > 0 ? `${unverifiedCount} anggota` : 'anggota'} yang belum menyelesaikan proses verifikasi.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                 <Button onClick={() => setShowReminderConfirm(true)} disabled={loadingReminder || unverifiedCount === 0}>
-                    {loadingReminder && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    <MessageSquareWarning className="mr-2 h-4 w-4" />
-                    Kirim Pengingat ke {unverifiedCount} Anggota
-                </Button>
-            </CardContent>
-        </Card>
+        <div className="grid md:grid-cols-2 gap-6">
+          <Card>
+              <CardHeader>
+                  <CardTitle>Pengingat Verifikasi Anggota</CardTitle>
+                  <CardDescription>
+                      Kirim pengingat massal kepada {unverifiedCount > 0 ? `${unverifiedCount} anggota` : 'anggota'} yang belum menyelesaikan proses verifikasi.
+                  </CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <Button onClick={() => setShowReminderConfirm(true)} disabled={loadingReminder || unverifiedCount === 0}>
+                      {loadingReminder && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      <MessageSquareWarning className="mr-2 h-4 w-4" />
+                      Kirim Pengingat Verifikasi
+                  </Button>
+              </CardContent>
+          </Card>
+           <Card>
+              <CardHeader>
+                  <CardTitle>Pengingat Gabung Grup</CardTitle>
+                  <CardDescription>
+                      Kirim undangan ke grup WhatsApp kepada {verifiedCount > 0 ? `${verifiedCount} anggota` : 'anggota'} terverifikasi.
+                  </CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <Button onClick={() => setShowGroupReminderConfirm(true)} disabled={loadingGroupReminder || verifiedCount === 0}>
+                      {loadingGroupReminder && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      <Users className="mr-2 h-4 w-4" />
+                      Kirim Undangan Grup
+                  </Button>
+              </CardContent>
+          </Card>
+        </div>
         
         <div className="grid md:grid-cols-2 gap-6">
           <Card>
@@ -193,6 +231,23 @@ export default function WhatsappTestPage() {
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction onClick={handleSendReminders}>
               Ya, Kirim Sekarang
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+       <AlertDialog open={showGroupReminderConfirm} onOpenChange={setShowGroupReminderConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Konfirmasi Undangan Grup</AlertDialogTitle>
+            <AlertDialogDescription>
+              Anda akan mengirimkan undangan grup WhatsApp ke <span className="font-bold">{verifiedCount}</span> anggota terverifikasi.
+              Lanjutkan?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSendGroupReminders}>
+              Ya, Kirim Undangan
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
