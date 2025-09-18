@@ -35,7 +35,7 @@ const formSchema = z.object({
   category: z.enum(['flagship', 'ongoing'], { required_error: 'Kategori program wajib dipilih' }),
   programType: z.enum(['aktif', 'pasif'], { required_error: 'Jenis program wajib dipilih' }),
   imageSource: z.enum(['ai', 'url', 'upload']).default('url'),
-  imageUrl: z.string().optional(),
+  imageUrl: z.string().url('URL gambar tidak valid').optional().or(z.literal('')),
   imageHint: z.string().optional(),
   tags: z.array(z.string()).min(1, 'Minimal satu tag harus dipilih'),
   dateRange: z.object({
