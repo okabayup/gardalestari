@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, getDocs, collection, query, where } from 'firebase/firestore';
 import { sendWhatsAppMessage as sendWhatsAppMessageSatuConnect, sendBulkWhatsAppMessage as sendBulkWhatsAppMessageSatuConnect } from '@/services/whatsapp';
 import { revalidatePath } from 'next/cache';
 import { getPrograms } from './programs';
@@ -171,5 +171,42 @@ export async function getLatestProgramsText(): Promise<string> {
     } catch (error) {
         console.error("[getLatestProgramsText Error]", error);
         return "Mohon maaf, terjadi kesalahan saat mengambil data program terbaru.";
+    }
+}
+
+async function getUnverifiedUsers(): Promise<{ phoneNumber: string }[]> {
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('verificationStatus', '==', 'unverified'));
+    const querySnapshot = await getDocs(q);
+    const users: { phoneNumber: string }[] = [];
+    querySnapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.phoneNumber) {
+            users.push({ phoneNumber: data.phoneNumber });
+        }
+    });
+    return users;
+}
+
+export async function getUnverifiedUserCount(): Promise<number> {
+    const users = await getUnverifiedUsers();
+    return users.length;
+}
+
+export async function sendVerificationReminders(): Promise<{ success: boolean, count: number }> {
+    const users = await getUnverifiedUsers();
+    if (users.length === 0) {
+        return { success: true, count: 0 };
+    }
+
+    const phoneNumbers = users.map(u => u.phoneNumber.replace(/^\+/, ''));
+    const message = "Halo! Kami dari Garda Lestari mengingatkan Anda untuk menyelesaikan proses verifikasi akun Anda. Buka aplikasi dan klik menu verifikasi di halaman profil untuk melanjutkan.";
+    
+    const result = await sendBulkWhatsAppMessageSatuConnect(phoneNumbers, message);
+
+    if (result.success) {
+        return { success: true, count: result.data?.sentCount || phoneNumbers.length };
+    } else {
+        throw new Error(result.error || 'Gagal mengirim pesan pengingat massal.');
     }
 }
