@@ -1,10 +1,11 @@
 
+
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, MoreHorizontal, Loader2, Trash2, Sparkles, RefreshCw, Star, Newspaper, Search, CircleDashed, History } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Loader2, Trash2, Sparkles, RefreshCw, Star, Newspaper, Search, CircleDashed, History, ChevronsUpDown, Check, X } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,14 +24,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useCallback } from 'react';
-import { getBeritaPosts, deleteBeritaPost, requestReindexing } from '@/app/actions/berita';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { getBeritaPosts, deleteBeritaPost, requestReindexing, updateBeritaStatusBulk } from '@/app/actions/berita';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from '@/components/ui/badge';
 import type { BeritaPost } from '@/lib/definitions';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function AdminBeritaPage() {
   const router = useRouter();
@@ -42,13 +44,15 @@ export default function AdminBeritaPage() {
   const [isReindexing, setIsReindexing] = useState<string | null>(null);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [postToDelete, setPostToDelete] = useState<BeritaPost | null>(null);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
 
   const canManage = hasPermission('manage_news');
   const canDelete = hasPermission('delete_news');
 
   const fetchPosts = useCallback(async () => {
     try {
-      const fetchedPosts = await getBeritaPosts();
+      const fetchedPosts = await getBeritaPosts(undefined, true);
       setPosts(fetchedPosts);
     } catch (error) {
       console.error(error);
@@ -66,6 +70,31 @@ export default function AdminBeritaPage() {
     setLoading(true);
     fetchPosts();
   }, [fetchPosts]);
+
+  const handleSelectRow = (id: string, checked: boolean) => {
+    setSelectedRowKeys(prev => 
+      checked ? [...prev, id] : prev.filter(key => key !== id)
+    );
+  };
+  
+  const handleSelectAll = (checked: boolean) => {
+    setSelectedRowKeys(checked ? posts.map(p => p.id!) : []);
+  };
+
+  const handleBulkStatusUpdate = async (status: 'published' | 'draft') => {
+    if (selectedRowKeys.length === 0) return;
+    setIsBulkUpdating(true);
+    try {
+        await updateBeritaStatusBulk(selectedRowKeys, status);
+        toast({ title: 'Status Diperbarui', description: `${selectedRowKeys.length} konten telah diperbarui.`});
+        setSelectedRowKeys([]);
+        fetchPosts();
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Gagal Memperbarui', description: (error as Error).message });
+    } finally {
+        setIsBulkUpdating(false);
+    }
+  }
 
   const handleDeleteClick = (post: BeritaPost) => {
     setPostToDelete(post);
@@ -146,16 +175,39 @@ export default function AdminBeritaPage() {
                 <CardTitle>Daftar Konten</CardTitle>
                 <CardDescription>Total {posts.length} konten ditemukan.</CardDescription>
              </div>
-             {canManage && (
-                <Button variant="outline" size="sm" onClick={() => router.push('/panel/berita/kategori')}>
-                    Kelola Kategori
-                </Button>
-             )}
+             <div className="flex items-center gap-2">
+                {selectedRowKeys.length > 0 && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" disabled={isBulkUpdating}>
+                                {isBulkUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ChevronsUpDown className="mr-2 h-4 w-4" />}
+                                Ubah Status ({selectedRowKeys.length})
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuItem onClick={() => handleBulkStatusUpdate('published')}><Check className="mr-2 h-4 w-4" /> Terbitkan</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleBulkStatusUpdate('draft')}><X className="mr-2 h-4 w-4" /> Jadikan Draf</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
+                {canManage && (
+                    <Button variant="outline" size="sm" onClick={() => router.push('/panel/berita/kategori')}>
+                        Kelola Kategori
+                    </Button>
+                )}
+             </div>
           </CardHeader>
           <CardContent className="p-0">
             <Table>
               <TableHeader>
                 <TableRow>
+                   <TableHead className="w-[40px]">
+                      <Checkbox
+                        checked={selectedRowKeys.length === posts.length && posts.length > 0}
+                        onCheckedChange={handleSelectAll}
+                        aria-label="Pilih semua"
+                      />
+                   </TableHead>
                   <TableHead>Judul</TableHead>
                   <TableHead>Tipe</TableHead>
                   <TableHead>Status</TableHead>
@@ -168,13 +220,20 @@ export default function AdminBeritaPage() {
               <TableBody>
                 {loading ? (
                     <TableRow>
-                        <TableCell colSpan={5} className="text-center py-10">
+                        <TableCell colSpan={6} className="text-center py-10">
                             <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                         </TableCell>
                     </TableRow>
                 ) : posts.length > 0 ? (
                   posts.map((post) => (
                     <TableRow key={post.id} className={cn(post.status === 'draft' && 'bg-muted/30')}>
+                      <TableCell>
+                          <Checkbox
+                            checked={selectedRowKeys.includes(post.id!)}
+                            onCheckedChange={(checked) => handleSelectRow(post.id!, !!checked)}
+                            aria-label={`Pilih ${post.title}`}
+                          />
+                      </TableCell>
                       <TableCell className="font-medium flex items-center gap-2">
                         {post.isFeatured && <Star className="h-4 w-4 text-yellow-500 fill-yellow-400" />}
                         {post.status === 'published' ? (
@@ -234,7 +293,7 @@ export default function AdminBeritaPage() {
                   ))
                 ) : (
                     <TableRow>
-                        <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                        <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
                             Belum ada konten.
                         </TableCell>
                     </TableRow>

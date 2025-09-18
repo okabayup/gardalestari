@@ -3,12 +3,11 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, where, orderBy, Timestamp, setDoc, runTransaction } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, where, orderBy, Timestamp, setDoc, runTransaction, writeBatch } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import { notifyGoogleOfUpdate } from '@/services/indexing';
 import type { BeritaPost } from '@/lib/definitions';
 import { bulkGenerateNewsDrafts } from '@/ai/flows/bulk-generate-flow';
-import { logAnalyticsEvent } from '@/lib/analytics';
 
 const beritaPostsCollection = collection(db, 'beritaPosts');
 const generationJobsCollection = collection(db, 'generationJobs');
@@ -157,21 +156,24 @@ export async function getGenerationJobs(): Promise<GenerationJob[]> {
 // --- Content Management ---
 
 // Get all berita posts (articles and videos)
-export async function getBeritaPosts(type?: 'artikel' | 'video', includeDrafts = false) {
+export async function getBeritaPosts(type?: 'artikel' | 'video', includeDrafts = false): Promise<BeritaPost[]> {
   try {
     let q;
+    const constraints = [];
     if (type) {
-        q = query(beritaPostsCollection, where('type', '==', type), orderBy('date', 'desc'));
-    } else {
-        q = query(beritaPostsCollection, orderBy('date', 'desc'));
+        constraints.push(where('type', '==', type));
     }
+    constraints.push(orderBy('date', 'desc'));
+    
+    q = query(beritaPostsCollection, ...constraints);
+    
     const snapshot = await getDocs(q);
     
     let posts: BeritaPost[] = [];
     snapshot.forEach(doc => {
       posts.push({ id: doc.id, ...doc.data() } as BeritaPost);
     });
-
+    
     if (!includeDrafts) {
         posts = posts.filter(post => post.status === 'published');
     }
@@ -271,6 +273,27 @@ export async function updateBeritaPost(id: string, post: Partial<BeritaPost>) {
   }
 }
 
+export async function updateBeritaStatusBulk(ids: string[], status: 'published' | 'draft') {
+    if (ids.length === 0) return;
+    try {
+        const batch = writeBatch(db);
+        ids.forEach(id => {
+            const docRef = doc(db, 'beritaPosts', id);
+            batch.update(docRef, { status: status });
+        });
+        await batch.commit();
+
+        revalidatePath('/panel/berita');
+        revalidatePath('/berita');
+        revalidatePath('/video');
+        revalidatePath('/');
+    } catch (error) {
+        console.error("[updateBeritaStatusBulk Error]", error);
+        throw new Error("Gagal memperbarui status konten secara massal.");
+    }
+}
+
+
 // Delete a berita post
 export async function deleteBeritaPost(id: string) {
   try {
@@ -318,7 +341,3 @@ export async function requestReindexing(slug: string, type: 'artikel' | 'video' 
         throw new Error("Gagal meminta indeksasi ulang.");
     }
 }
-
-
-
-
