@@ -1,8 +1,9 @@
 
+
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, where, orderBy, Timestamp, setDoc, serverTimestamp, runTransaction } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, where, orderBy, Timestamp, setDoc, runTransaction } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import { notifyGoogleOfUpdate } from '@/services/indexing';
 import type { BeritaPost } from '@/lib/definitions';
@@ -32,7 +33,7 @@ export async function createGenerationJob(totalCount: number): Promise<string> {
             totalCount,
             completedCount: 0,
             errors: [],
-            createdAt: serverTimestamp(),
+            createdAt: Timestamp.now(),
         });
         logAnalyticsEvent('create_bulk_job', { topic_count: totalCount });
         return newJobRef.id;
@@ -82,7 +83,7 @@ export async function updateJobProgress(jobId: string, completedIncrement: numbe
 
           if (isComplete) {
               finalStatus = newErrors.length === currentJob.totalCount ? 'failed' : 'completed';
-              completedAtField.completedAt = serverTimestamp();
+              completedAtField.completedAt = Timestamp.now();
           }
 
           transaction.update(jobRef, {
@@ -312,3 +313,4 @@ export async function requestReindexing(slug: string, type: 'artikel' | 'video' 
         throw new Error("Gagal meminta indeksasi ulang.");
     }
 }
+
