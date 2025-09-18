@@ -228,9 +228,10 @@ export interface IdeaAuthor {
   type?: MemberType;
 }
 
-export interface IdeaWithAuthor extends Omit<Idea, 'authorId' | 'upvotes' | 'downvotes' | 'createdAt'> {
+export interface IdeaWithAuthor extends Omit<Idea, 'authorId' | 'upvotes' | 'downvotes'> {
   author: IdeaAuthor;
   userVote?: VoteType;
+  createdAt: string; // Changed from Timestamp to string
 }
 
 // --- Map Data ---

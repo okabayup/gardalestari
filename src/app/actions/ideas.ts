@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -67,10 +68,11 @@ const buildIdeaWithAuthor = async (ideaDoc: any, currentUserId?: string): Promis
             else if (ideaData.downvotes.includes(currentUserId)) userVote = 'down';
         }
 
-        const { upvotes, downvotes, ...restOfData } = ideaData;
+        const { upvotes, downvotes, createdAt, ...restOfData } = ideaData;
 
         return {
           ...restOfData,
+          createdAt: createdAt.toDate().toISOString(), // Convert Timestamp to ISO string
           author: author,
           userVote: userVote,
         };
@@ -353,3 +355,4 @@ export async function deleteIdeaCategory(id: string) {
         throw new Error("Gagal menghapus kategori ide.");
     }
 }
+
