@@ -139,7 +139,13 @@ const UserProfileHeader = ({ user, postCount }: { user: PublicProfile, postCount
         </Card>
         <Dialog open={isVerificationModalOpen} onOpenChange={setIsVerificationModalOpen}>
             <DialogContent className="max-w-md p-0 bg-transparent border-none shadow-none">
-                <iframe src={`/kta/${user.username}`} className="w-full h-[600px] rounded-lg border" title="Verifikasi Anggota"/>
+                 <DialogHeader className="sr-only">
+                    <DialogTitle>Verifikasi Anggota: {user.name}</DialogTitle>
+                    <DialogDescription>
+                        Halaman verifikasi publik untuk anggota Garda Lestari.
+                    </DialogDescription>
+                </DialogHeader>
+                <iframe src={`/kta/${user.username}`} className="w-full h-[600px] rounded-lg border" title={`Verifikasi Anggota: ${user.name}`}/>
             </DialogContent>
         </Dialog>
       </>
