@@ -7,18 +7,28 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Sparkles, ArrowRight, PenSquare, Check, Circle } from 'lucide-react';
+import { Loader2, Sparkles, ArrowRight, PenSquare, Check, Circle, CheckCircle, XCircle } from 'lucide-react';
 import { suggestNewsTopics } from '@/ai/flows/news-generator-flow';
-import { bulkGenerateNewsDrafts } from '@/ai/flows/bulk-generate-flow';
+import { createBeritaPost } from '@/app/actions/berita';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { createGenerationJob } from '@/app/actions/berita';
+import { createGenerationJob, updateJobProgress } from '@/app/actions/berita';
 import { Checkbox } from '@/components/ui/checkbox';
+import { generateNewsArticle } from '@/ai/flows/news-generator-flow';
+import Link from 'next/link';
 
 interface TopicSuggestion {
   title: string;
   description: string;
   keywords: string[];
+}
+
+type TopicStatus = 'pending' | 'processing' | 'success' | 'failed';
+
+interface ProcessingTopic extends TopicSuggestion {
+    status: TopicStatus;
+    result?: { id: string; slug: string; };
+    error?: string;
 }
 
 export default function NewsroomPage() {
@@ -29,12 +39,14 @@ export default function NewsroomPage() {
   const [generatingTopics, setGeneratingTopics] = useState(false);
   const [description, setDescription] = useState('');
   const [selectedTopics, setSelectedTopics] = useState<TopicSuggestion[]>([]);
+  const [processingTopics, setProcessingTopics] = useState<ProcessingTopic[]>([]);
   const [isBulkGenerating, setIsBulkGenerating] = useState(false);
 
   const handleSuggestTopics = async () => {
     setGeneratingTopics(true);
     setSuggestions([]);
     setSelectedTopics([]);
+    setProcessingTopics([]);
     try {
       const result = await suggestNewsTopics({ description });
       setSuggestions(result.topics);
@@ -66,20 +78,51 @@ export default function NewsroomPage() {
       return;
     }
     setIsBulkGenerating(true);
+    setProcessingTopics(selectedTopics.map(t => ({ ...t, status: 'pending' })));
+
+    const jobId = await createGenerationJob(selectedTopics.length);
     toast({ title: 'Memulai Proses Massal...', description: `Agen AI akan membuat ${selectedTopics.length} draf artikel.` });
 
-    try {
-        const jobId = await createGenerationJob(selectedTopics.length);
-        
-        // Don't await this, let it run in the background
-        bulkGenerateNewsDrafts({ topics: selectedTopics, jobId });
+    for (let i = 0; i < selectedTopics.length; i++) {
+        const topic = selectedTopics[i];
 
-        // Redirect to the jobs monitoring page
-        router.push(`/panel/berita/jobs/${jobId}`);
-    } catch (error) {
-        toast({ variant: 'destructive', title: 'Gagal memulai proses massal', description: (error as Error).message });
-        setIsBulkGenerating(false);
+        setProcessingTopics(prev => prev.map((t, index) => index === i ? { ...t, status: 'processing' } : t));
+        
+        try {
+            const formData = new FormData();
+            formData.append('topic', topic.title);
+            formData.append('description', topic.description);
+
+            const articleResult = await generateNewsArticle(formData);
+
+            const newPost = await createBeritaPost({
+                title: articleResult.title,
+                slug: `draft-${Date.now()}-${articleResult.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 50)}`,
+                content: articleResult.content,
+                author: 'Garda Warta (AI)',
+                date: new Date().toISOString(),
+                imageUrl: articleResult.coverImageUrl,
+                imageHint: articleResult.imageHints[0] || 'AI Generated',
+                excerpt: articleResult.excerpt,
+                category: articleResult.category,
+                type: 'artikel',
+                isFeatured: false,
+                seoScore: 0,
+                status: 'draft',
+            });
+            if (!newPost || !newPost.id) throw new Error("Gagal menyimpan draf ke database.");
+
+            await updateJobProgress(jobId, 1);
+            setProcessingTopics(prev => prev.map((t, index) => index === i ? { ...t, status: 'success', result: { id: newPost.id!, slug: newPost.slug } } : t));
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan tidak diketahui.";
+            await updateJobProgress(jobId, 1, { topic: topic.title, error: errorMessage });
+            setProcessingTopics(prev => prev.map((t, index) => index === i ? { ...t, status: 'failed', error: errorMessage } : t));
+        }
     }
+    
+    toast({ title: 'Proses Selesai!', description: 'Semua topik telah diproses. Periksa hasilnya di bawah.'});
+    // Do not set isBulkGenerating to false to prevent re-running
   }
 
 
@@ -110,7 +153,7 @@ export default function NewsroomPage() {
                     placeholder="Contoh: fokus pada dampak perubahan iklim di pesisir utara Jawa, atau cari topik yang cocok untuk Hari Tani Nasional."
                 />
             </div>
-          <Button onClick={handleSuggestTopics} disabled={generatingTopics}>
+          <Button onClick={handleSuggestTopics} disabled={generatingTopics || isBulkGenerating}>
             {generatingTopics ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
             {generatingTopics ? 'Mencari Ide...' : 'Dapatkan 5 Ide Topik Baru'}
           </Button>
@@ -141,6 +184,7 @@ export default function NewsroomPage() {
                             id={`topic-${index}`}
                             onCheckedChange={(checked) => handleToggleTopicSelection(topic, !!checked)}
                             className="mt-1"
+                            disabled={isBulkGenerating}
                         />
                         <div className="flex-1 space-y-2">
                             <Label htmlFor={`topic-${index}`} className="font-semibold cursor-pointer">{topic.title}</Label>
@@ -155,6 +199,7 @@ export default function NewsroomPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => handleUseTopic(topic)}
+                    disabled={isBulkGenerating}
                   >
                     Gunakan & Edit
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -163,6 +208,36 @@ export default function NewsroomPage() {
               </Card>
             ))}
           </CardContent>
+        </Card>
+      )}
+
+      {isBulkGenerating && processingTopics.length > 0 && (
+        <Card>
+            <CardHeader>
+                <CardTitle>Proses Pembuatan Artikel Massal</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+                {processingTopics.map((topic, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 rounded-md border">
+                        <div className="flex-1">
+                            <p className="font-medium">{topic.title}</p>
+                            {topic.status === 'failed' && <p className="text-xs text-destructive">{topic.error}</p>}
+                            {topic.status === 'success' && topic.result && (
+                                <Link href={`/panel/berita/edit/${topic.result.slug}`} className="text-xs text-primary hover:underline">
+                                    Berhasil! Klik untuk mengedit draf.
+                                </Link>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            {topic.status === 'pending' && <Circle className="h-4 w-4" />}
+                            {topic.status === 'processing' && <Loader2 className="h-4 w-4 animate-spin" />}
+                            {topic.status === 'success' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                            {topic.status === 'failed' && <XCircle className="h-4 w-4 text-destructive" />}
+                            <span>{topic.status.charAt(0).toUpperCase() + topic.status.slice(1)}</span>
+                        </div>
+                    </div>
+                ))}
+            </CardContent>
         </Card>
       )}
 
