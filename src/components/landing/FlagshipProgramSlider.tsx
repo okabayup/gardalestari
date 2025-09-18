@@ -21,17 +21,24 @@ interface FlagshipProgramSliderProps {
 
 const ProgramSliderCard = ({ program }: { program: Program }) => {
     const isExternalSubmission = program.submissionType === 'external' && program.applicationUrl;
+    const isPassiveOrUnlimited = program.programType === 'pasif' || !program.endDate;
     const [formattedDate, setFormattedDate] = useState<string | null>(null);
 
     useEffect(() => {
         // Format date only on the client-side after hydration
-        setFormattedDate(
-            `${format(new Date(program.startDate), "d MMM", { locale: id })} - ${format(new Date(program.endDate), "d MMM yyyy", { locale: id })}`
-        );
+        if (program.endDate) {
+            setFormattedDate(
+                `${format(new Date(program.startDate), "d MMM", { locale: id })} - ${format(new Date(program.endDate), "d MMM yyyy", { locale: id })}`
+            );
+        } else {
+             setFormattedDate(
+                `Mulai ${format(new Date(program.startDate), "d MMM yyyy", { locale: id })}`
+            );
+        }
     }, [program.startDate, program.endDate]);
 
 
-    const actionButton = isExternalSubmission ? (
+    const actionButton = (isExternalSubmission && !isPassiveOrUnlimited) ? (
         <Button asChild size="sm">
             <Link href={program.applicationUrl!} target="_blank">
                 Daftar Sekarang <ArrowRight className="ml-2 h-4 w-4" />
