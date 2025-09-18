@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Calendar as CalendarIcon, Paperclip, Upload, Link as LinkIcon } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, Paperclip, Upload, Link as LinkIcon, Wand2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import type { ProgramFormData } from '@/lib/definitions';
 import { Checkbox } from '@/components/ui/checkbox';
+import { generateImage } from '@/ai/flows/image-generate-flow';
 
 
 const formSchema = z.object({
@@ -66,6 +67,7 @@ export default function EditProgramPage() {
   
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
+  const [loadingImage, setLoadingImage] = useState(false);
 
   const [allTags, setAllTags] = useState<ProgramTag[]>([]);
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -114,7 +116,7 @@ export default function EditProgramPage() {
                   to: programData.endDate
                 },
                 isUnlimited: !programData.endDate,
-                imageSource: programData.imageUrl?.includes('firebasestorage') ? 'upload' : 'url'
+                imageSource: programData.imageUrl?.includes('firebasestorage') ? 'upload' : (programData.imageUrl?.includes('picsum') ? 'ai' : 'url')
             });
             if (programData.attachmentUrl && programData.attachmentName) {
                 setCurrentAttachment({name: programData.attachmentName, url: programData.attachmentUrl});
@@ -131,6 +133,28 @@ export default function EditProgramPage() {
     }
     fetchData();
   }, [programId, reset, router, toast]);
+  
+  const handleGenerateImage = async () => {
+      const imageHint = getValues('imageHint');
+      if (!imageHint || !imageHint.trim()) {
+          toast({ variant: 'destructive', title: 'Petunjuk gambar kosong' });
+          return;
+      }
+      setLoadingImage(true);
+      try {
+          const result = await generateImage({ prompt: imageHint });
+          if (result.imageUrl) {
+              setValue('imageUrl', result.imageUrl);
+              toast({ title: 'Gambar berhasil dibuat!' });
+          } else {
+              throw new Error("AI tidak mengembalikan URL gambar.");
+          }
+      } catch (error) {
+          toast({ variant: 'destructive', title: 'Gagal membuat gambar', description: (error as Error).message });
+      } finally {
+          setLoadingImage(false);
+      }
+  };
 
   const onSubmit = async (data: ProgramFormData) => {
     setLoading(true);
@@ -185,7 +209,7 @@ export default function EditProgramPage() {
         </div>
         <div className="flex gap-2">
             <Button variant="outline" type="button" onClick={() => router.push('/panel/programs')}>Batal</Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || loadingImage}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Simpan Perubahan
             </Button>
@@ -356,18 +380,19 @@ export default function EditProgramPage() {
                     render={({ field }) => (
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-3 gap-2">
                              <Label className="flex flex-col items-center justify-center gap-2 cursor-pointer rounded-md border p-2 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
+                                <Wand2 className="h-5 w-5" />
                                 <span className="text-xs">AI</span>
-                                <RadioGroupItem value="ai" className="sr-only" />
+                                <RadioGroupItem value="ai" {...register('imageSource')} className="sr-only" />
                              </Label>
                              <Label className="flex flex-col items-center justify-center gap-2 cursor-pointer rounded-md border p-2 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
                                 <LinkIcon className="h-5 w-5" />
                                 <span className="text-xs">URL</span>
-                                <RadioGroupItem value="url" className="sr-only" />
+                                <RadioGroupItem value="url" {...register('imageSource')} className="sr-only" />
                              </Label>
                              <Label className="flex flex-col items-center justify-center gap-2 cursor-pointer rounded-md border p-2 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary">
                                 <Upload className="h-5 w-5" />
                                 <span className="text-xs">Unggah</span>
-                                <RadioGroupItem value="upload" className="sr-only" />
+                                <RadioGroupItem value="upload" {...register('imageSource')} className="sr-only" />
                              </Label>
                         </RadioGroup>
                     )}
@@ -379,6 +404,10 @@ export default function EditProgramPage() {
                     <Label htmlFor="imageHint">Petunjuk Gambar (AI)</Label>
                     <Input id="imageHint" {...register('imageHint')} placeholder="Contoh: pemuda menanam pohon di hutan"/>
                      {errors.imageHint && <p className="text-sm text-destructive">{errors.imageHint.message}</p>}
+                     <Button type="button" size="sm" variant="outline" className="w-full" onClick={handleGenerateImage} disabled={loadingImage}>
+                        {loadingImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                        Buat Gambar dengan AI
+                    </Button>
                  </div>
                )}
                 {watchImageSource === 'url' && (
