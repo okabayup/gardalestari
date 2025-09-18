@@ -65,9 +65,12 @@ export async function getAchievements(): Promise<Achievement[]> {
 // Get all achievements for a specific user
 export async function getAchievementsByUserId(userId: string): Promise<Achievement[]> {
   try {
-    const q = query(achievementsCollection, where('userId', '==', userId), orderBy('date', 'desc'));
+    const q = query(achievementsCollection, where('userId', '==', userId));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Achievement));
+    const achievements = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Achievement));
+    
+    // Sort in memory instead of in the query
+    return achievements.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   } catch (error) {
     console.error("[getAchievementsByUserId Error]", error);
     throw new Error("Gagal mengambil data prestasi pengguna.");
