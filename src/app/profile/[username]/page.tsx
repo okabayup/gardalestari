@@ -9,10 +9,9 @@ import { getUserByUsername, PublicProfile } from '@/app/actions/user';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
-import { Loader2, ShieldAlert, Award, Grid3x3, IdCard, PlusCircle } from 'lucide-react';
+import { Loader2, ShieldAlert, Award, Grid3x3, IdCard, PlusCircle, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { VerifiedBadge } from '@/components/members/VerifiedBadge';
-import MembershipCardDialog from '@/components/members/MembershipCardDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getPostsByUserId, PostWithAuthor } from '@/app/actions/posts';
 import { getAchievementsByUserId, Achievement } from '@/app/actions/achievements';
@@ -20,6 +19,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 const ProfilePostsGrid = ({ posts, isLoading }: { posts: PostWithAuthor[], isLoading: boolean }) => {
     if (isLoading) {
@@ -97,7 +97,7 @@ const InvalidProfileCard = () => (
 );
 
 const UserProfileHeader = ({ user, postCount }: { user: PublicProfile, postCount: number }) => {
-    const [isKtaModalOpen, setIsKtaModalOpen] = useState(false);
+    const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
     
     return (
       <>
@@ -131,23 +131,17 @@ const UserProfileHeader = ({ user, postCount }: { user: PublicProfile, postCount
                         <p className="text-xs text-muted-foreground">Mengikuti</p>
                     </div>
                 </div>
-                 <Button variant="outline" onClick={() => setIsKtaModalOpen(true)} className="w-full">
-                    <IdCard className="mr-2 h-4 w-4" />
+                 <Button variant="outline" onClick={() => setIsVerificationModalOpen(true)} className="w-full">
+                    <Eye className="mr-2 h-4 w-4" />
                     Lihat Verifikasi (Publik)
                 </Button>
             </CardContent>
         </Card>
-        <MembershipCardDialog 
-          isOpen={isKtaModalOpen}
-          onClose={() => setIsKtaModalOpen(false)}
-          user={{
-              ...user,
-              uid: user.id, // Adapt PublicProfile to what MembershipCardDialog expects
-              displayName: user.name,
-              photoURL: user.avatarUrl,
-              metadata: { creationTime: user.joinDate }
-          } as any}
-        />
+        <Dialog open={isVerificationModalOpen} onOpenChange={setIsVerificationModalOpen}>
+            <DialogContent className="max-w-md p-0 bg-transparent border-none shadow-none">
+                <iframe src={`/kta/${user.username}`} className="w-full h-[600px] rounded-lg border" title="Verifikasi Anggota"/>
+            </DialogContent>
+        </Dialog>
       </>
     )
 }

@@ -49,7 +49,7 @@ const ProfileHeader = ({ user, postCount }: { user: any, postCount: number }) =>
             </Button>
             <Button variant="outline" onClick={() => (document.getElementById('kta-trigger') as HTMLButtonElement)?.click()} className="w-full" disabled={user?.verificationStatus !== 'permanent'}>
                 <IdCard className="mr-2 h-4 w-4" />
-                Lihat Verifikasi (Publik)
+                Lihat KTA
             </Button>
         </div>
     </CardContent>
