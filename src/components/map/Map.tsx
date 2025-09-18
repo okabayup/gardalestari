@@ -9,7 +9,7 @@ import { getMapData } from '@/app/actions/map-data';
 import { getMapDatasets, MapDataset } from '@/app/actions/map-datasets'; // Updated import
 import type { MapData, MapDataCategory } from '@/lib/definitions';
 import { categoryConfig } from '@/app/map/page';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -131,7 +131,9 @@ export default function MapComponent() {
             getMapDatasets()
         ]).then(([internal, external]) => {
             setInternalData(internal);
-            setExternalDatasets(external.filter(d => d.isVisible));
+            const visibleExternal = external.filter(d => d.isVisible);
+            setExternalDatasets(visibleExternal);
+            setSelectedDatasetIds(visibleExternal.map(d => d.id!));
         }).catch(() => toast({ variant: 'destructive', title: 'Gagal memuat data peta' }))
         .finally(() => setLoading(false));
     }, [toast]);
