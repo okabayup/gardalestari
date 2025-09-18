@@ -3,7 +3,7 @@
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, query, orderBy, limit } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, query, orderBy, limit, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import { getWhatsappTemplate } from './whatsapp';
@@ -23,7 +23,7 @@ const toProgram = (doc: any): Program => {
         id: doc.id,
         ...data,
         startDate: (data.startDate as Timestamp).toDate(),
-        endDate: (data.endDate as Timestamp).toDate(),
+        endDate: data.endDate ? (data.endDate as Timestamp).toDate() : undefined,
     } as Program;
 }
 
@@ -62,7 +62,7 @@ export async function searchPrograms(searchQuery: string): Promise<Partial<Progr
 // Get all programs
 export async function getPrograms(): Promise<Program[]> {
   try {
-    const q = query(programsCollection, orderBy('endDate', 'desc'));
+    const q = query(programsCollection, orderBy('startDate', 'desc'));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(toProgram);
   } catch (error) {
@@ -92,7 +92,7 @@ export async function createProgram(
     try {
         const programData = Object.fromEntries(formData.entries());
         const { 
-            imageFile, attachment, dateRangeFrom, dateRangeTo, tags, 
+            imageFile, attachment, dateRangeFrom, dateRangeTo, tags, isUnlimited,
             ...rest 
         } = programData;
 
@@ -100,8 +100,14 @@ export async function createProgram(
             ...rest,
             tags: Array.isArray(tags) ? tags : (tags as string).split(','),
             startDate: Timestamp.fromDate(new Date(dateRangeFrom as string)),
-            endDate: Timestamp.fromDate(new Date(dateRangeTo as string)),
+            createdAt: serverTimestamp(),
         };
+
+        if (isUnlimited === 'true') {
+            dataToCreate.endDate = null;
+        } else if (dateRangeTo) {
+            dataToCreate.endDate = Timestamp.fromDate(new Date(dateRangeTo as string));
+        }
 
         if (programData.imageSource === 'upload' && imageFile instanceof File) {
             const imageRef = ref(storage, `program-images/${Date.now()}_${imageFile.name}`);
@@ -140,7 +146,7 @@ export async function createProgram(
 
             try {
                 const template = await getWhatsappTemplate('new_program_announcement');
-                if (template.isActive) {
+                if (template.isActive && dateRangeTo) {
                     const members = await getMembers();
                     const phoneNumbers = members.map(doc => doc.waNumber).filter(Boolean) as string[];
 
@@ -172,7 +178,7 @@ export async function updateProgram(id: string, formData: FormData) {
     try {
         const programData = Object.fromEntries(formData.entries());
         const { 
-            imageFile, attachment, dateRangeFrom, dateRangeTo, tags, 
+            imageFile, attachment, dateRangeFrom, dateRangeTo, tags, isUnlimited,
             ...rest 
         } = programData;
 
@@ -182,8 +188,13 @@ export async function updateProgram(id: string, formData: FormData) {
         };
         
         if (dateRangeFrom) dataToUpdate.startDate = Timestamp.fromDate(new Date(dateRangeFrom as string));
-        if (dateRangeTo) dataToUpdate.endDate = Timestamp.fromDate(new Date(dateRangeTo as string));
         
+        if (isUnlimited === 'true') {
+            dataToUpdate.endDate = null;
+        } else if (dateRangeTo) {
+            dataToUpdate.endDate = Timestamp.fromDate(new Date(dateRangeTo as string));
+        }
+
         if (imageFile instanceof File) {
             const imageRef = ref(storage, `program-images/${Date.now()}_${imageFile.name}`);
             await uploadBytes(imageRef, imageFile);

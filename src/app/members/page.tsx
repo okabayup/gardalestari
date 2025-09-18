@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -175,6 +176,7 @@ export default function MembersPage() {
                 <MemberCard
                     key={member.id}
                     name={member.name}
+                    username={member.username}
                     titlePrefix={member.titlePrefix}
                     titlePostfix={member.titlePostfix}
                     position={member.position || 'Anggota'}
