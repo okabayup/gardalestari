@@ -1,11 +1,10 @@
 
-'use client';
+'use server';
 
-import { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { getAnnouncements, Announcement } from '@/app/actions/announcements';
-import { Loader2, Megaphone, Paperclip } from 'lucide-react';
+import { Megaphone, Paperclip } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -38,15 +37,8 @@ const AnnouncementItem = ({ announcement }: { announcement: Announcement }) => {
   );
 };
 
-export default function AnnouncementsPage() {
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getAnnouncements()
-      .then(setAnnouncements)
-      .finally(() => setLoading(false));
-  }, []);
+export default async function AnnouncementsPage() {
+  const announcements = await getAnnouncements();
 
   return (
     <MainLayout>
@@ -55,11 +47,6 @@ export default function AnnouncementsPage() {
           <h1 className="font-headline text-3xl font-bold">Pengumuman</h1>
           <p className="text-muted-foreground">Informasi penting dan pembaruan dari organisasi.</p>
         </div>
-        {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
           <div className="space-y-4">
             {announcements.length > 0 ? (
               announcements.map((item) => (
@@ -74,7 +61,6 @@ export default function AnnouncementsPage() {
               </div>
             )}
           </div>
-        )}
       </div>
     </MainLayout>
   );

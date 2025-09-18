@@ -1,26 +1,18 @@
 
-'use client';
+'use server';
 
-import { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { getAchievements, Achievement } from '@/app/actions/achievements';
-import { Loader2, Award } from 'lucide-react';
+import { Award } from 'lucide-react';
 import { format } from 'date-fns';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { id as idLocale } from 'date-fns/locale/id';
 
 const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
-  const [formattedDate, setFormattedDate] = useState('');
-
-  useEffect(() => {
-    const formatDate = async () => {
-      const { id } = await import('date-fns/locale/id');
-      setFormattedDate(format(new Date(achievement.date), 'dd MMMM yyyy', { locale: id }));
-    };
-    formatDate();
-  }, [achievement.date]);
+  const formattedDate = format(new Date(achievement.date), 'dd MMMM yyyy', { locale: idLocale });
 
   return (
     <Card className="overflow-hidden">
@@ -36,7 +28,7 @@ const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
         )}
         <CardHeader>
             <CardTitle>{achievement.title}</CardTitle>
-            <CardDescription>{formattedDate || 'Memuat tanggal...'}</CardDescription>
+            <CardDescription>{formattedDate}</CardDescription>
         </CardHeader>
         <CardContent>
             <div className="flex items-center gap-2 mb-4">
@@ -52,16 +44,8 @@ const AchievementCard = ({ achievement }: { achievement: Achievement }) => {
   )
 }
 
-export default function AchievementsPage() {
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getAchievements()
-      .then(setAchievements)
-      .finally(() => setLoading(false));
-  }, []);
-  
+export default async function AchievementsPage() {
+  const achievements = await getAchievements();
   const years = [...new Set(achievements.map(a => new Date(a.date).getFullYear()))].sort((a, b) => b - a);
 
   return (
@@ -71,11 +55,6 @@ export default function AchievementsPage() {
           <h1 className="font-headline text-3xl font-bold">Galeri Prestasi</h1>
           <p className="text-muted-foreground">Pencapaian gemilang dari para anggota Garda Lestari.</p>
         </div>
-        {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
           <div className="space-y-8">
             {achievements.length > 0 ? (
               years.map(year => (
@@ -102,7 +81,6 @@ export default function AchievementsPage() {
               </div>
             )}
           </div>
-        )}
       </div>
     </MainLayout>
   );

@@ -1,23 +1,13 @@
 
-'use client';
+'use server';
 
-import { getBeritaPosts, BeritaPost } from '@/app/actions/berita';
+import { getBeritaPosts } from '@/app/actions/berita';
 import BeritaPostCard from '@/components/berita/BeritaPostCard';
 import LandingHeader from '@/components/layout/LandingHeader';
 import Footer from '@/components/landing/Footer';
-import { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
 
-export default function BeritaPage() {
-  const [posts, setPosts] = useState<BeritaPost[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getBeritaPosts('artikel', false).then(data => { // Explicitly set includeDrafts to false
-      setPosts(data);
-      setLoading(false);
-    });
-  }, []);
+export default async function BeritaPage() {
+  const posts = await getBeritaPosts('artikel', false);
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
@@ -28,11 +18,7 @@ export default function BeritaPage() {
                     <h1 className="font-headline text-3xl font-bold">Berita Kami</h1>
                     <p className="text-muted-foreground">Cerita dan wawasan dari lapangan.</p>
                 </div>
-                {loading ? (
-                  <div className="flex justify-center py-20">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                  </div>
-                ) : posts.length > 0 ? (
+                {posts.length > 0 ? (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {posts.map((post) => (
                             <BeritaPostCard key={post.slug} {...post} />

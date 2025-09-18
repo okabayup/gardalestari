@@ -28,6 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
+import { id } from 'date-fns/locale';
 
 export default function AdminAchievementsPage() {
   const router = useRouter();
@@ -41,11 +42,6 @@ export default function AdminAchievementsPage() {
   
   const canManage = hasPermission('manage_achievements');
 
-  useEffect(() => {
-    fetchAchievements();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const fetchAchievements = async () => {
     setLoading(true);
     try {
@@ -57,6 +53,11 @@ export default function AdminAchievementsPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchAchievements();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleDeleteClick = (item: Achievement) => {
     setItemToDelete(item);
@@ -78,11 +79,6 @@ export default function AdminAchievementsPage() {
       setItemToDelete(null);
     }
   };
-
-  const formatDate = async (date: string) => {
-    const { id } = await import('date-fns/locale/id');
-    return format(new Date(date), 'dd MMM yyyy', { locale: id });
-  }
 
   return (
     <>
@@ -133,7 +129,7 @@ export default function AdminAchievementsPage() {
                       </TableCell>
                       <TableCell className="font-medium">{item.title}</TableCell>
                       <TableCell>
-                          <ClientFormattedDate date={item.date} />
+                          {format(new Date(item.date), 'dd MMM yyyy', { locale: id })}
                       </TableCell>
                       <TableCell className="text-right">
                         {canManage && (
@@ -184,19 +180,4 @@ export default function AdminAchievementsPage() {
       </AlertDialog>
     </>
   );
-}
-
-// Client-side component to handle date formatting
-function ClientFormattedDate({ date }: { date: string }) {
-  const [formattedDate, setFormattedDate] = useState('');
-
-  useEffect(() => {
-    const formatDate = async () => {
-      const { id } = await import('date-fns/locale/id');
-      setFormattedDate(format(new Date(date), 'dd MMM yyyy', { locale: id }));
-    };
-    formatDate();
-  }, [date]);
-
-  return <>{formattedDate || 'Memuat...'}</>;
 }

@@ -1,16 +1,15 @@
 
-'use client';
+'use server';
 
-import { getBeritaPosts, BeritaPost } from '@/app/actions/berita';
+import { getBeritaPosts } from '@/app/actions/berita';
 import LandingHeader from '@/components/layout/LandingHeader';
 import Footer from '@/components/landing/Footer';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
-import { PlayCircle, Loader2 } from 'lucide-react';
+import { PlayCircle } from 'lucide-react';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
 
-const VideoPostCard = ({ video }: { video: BeritaPost }) => {
+const VideoPostCard = ({ video }: { video: import('@/lib/definitions').BeritaPost }) => {
   return (
     <Link href={`/video/${video.slug}`}>
       <Card className="overflow-hidden group">
@@ -34,16 +33,8 @@ const VideoPostCard = ({ video }: { video: BeritaPost }) => {
 };
 
 
-export default function VideoPage() {
-  const [videos, setVideos] = useState<BeritaPost[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getBeritaPosts('video', false).then(data => { // Explicitly set includeDrafts to false
-        setVideos(data);
-        setLoading(false);
-    });
-  }, []);
+export default async function VideoPage() {
+  const videos = await getBeritaPosts('video', false);
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
@@ -54,11 +45,7 @@ export default function VideoPage() {
                     <h1 className="font-headline text-3xl font-bold">Galeri Video</h1>
                     <p className="text-muted-foreground">Liputan, wawasan, dan cerita inspiratif dalam format video.</p>
                 </div>
-                {loading ? (
-                  <div className="flex justify-center py-20">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                  </div>
-                ) : videos.length > 0 ? (
+                {videos.length > 0 ? (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {videos.map((video) => (
                             <VideoPostCard key={video.slug} video={video} />
