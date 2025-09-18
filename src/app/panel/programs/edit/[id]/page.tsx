@@ -25,6 +25,7 @@ import { getForms, ProgramForm } from '@/app/actions/forms';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import type { ProgramFormData } from '@/lib/definitions';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 const formSchema = z.object({
@@ -38,8 +39,9 @@ const formSchema = z.object({
   tags: z.array(z.string()).min(1, 'Minimal satu tag harus dipilih'),
   dateRange: z.object({
     from: z.date({ required_error: 'Tanggal mulai wajib diisi' }),
-    to: z.date({ required_error: 'Tanggal selesai wajib diisi' }),
+    to: z.date().optional(),
   }),
+  isUnlimited: z.boolean().default(false),
   source: z.enum(['garda_lestari', 'mitra'], { required_error: 'Sumber program wajib dipilih' }),
   partnerId: z.string().optional(),
   benefits: z.string().min(1, 'Benefit wajib diisi'),
@@ -50,6 +52,9 @@ const formSchema = z.object({
   requiresRecommendation: z.boolean().default(false),
   imageFile: z.any().optional(),
   attachment: z.any().optional(),
+}).refine(data => !data.isUnlimited ? !!data.dateRange.to : true, {
+    message: "Tanggal selesai wajib diisi jika waktu tidak tak terbatas.",
+    path: ["dateRange"],
 });
 
 
@@ -83,6 +88,7 @@ export default function EditProgramPage() {
   const watchSubmissionType = watch('submissionType');
   const watchImageSource = watch('imageSource');
   const watchTags = watch('tags', []);
+  const watchIsUnlimited = watch('isUnlimited');
   const attachmentFile = watch("attachment");
   const attachmentFileName = attachmentFile?.[0]?.name;
 
@@ -107,6 +113,7 @@ export default function EditProgramPage() {
                   from: programData.startDate, 
                   to: programData.endDate
                 },
+                isUnlimited: !programData.endDate,
                 imageSource: programData.imageUrl?.includes('firebasestorage') ? 'upload' : 'url'
             });
             if (programData.attachmentUrl && programData.attachmentName) {
@@ -132,7 +139,9 @@ export default function EditProgramPage() {
     Object.entries(data).forEach(([key, value]) => {
         if (key === 'dateRange') {
             formData.append('dateRangeFrom', (value as {from: Date}).from.toISOString());
-            formData.append('dateRangeTo', (value as {to: Date}).to.toISOString());
+            if ((value as {to?: Date}).to && !data.isUnlimited) {
+                formData.append('dateRangeTo', ((value as {to: Date}).to!).toISOString());
+            }
         } else if (key === 'tags') {
             formData.append(key, (value as string[]).join(','));
         } else if (key === 'imageFile' || key === 'attachment') {
@@ -227,10 +236,9 @@ export default function EditProgramPage() {
                           <PopoverTrigger asChild>
                           <Button id="date" variant={"outline"} className={cn("w-full justify-start text-left font-normal", !field.value?.from && "text-muted-foreground")}>
                               <CalendarIcon className="mr-2 h-4 w-4" />
-                              {field.value?.from ? (field.value.to ? (
+                              {field.value?.from ? ((field.value.to && !watchIsUnlimited) ? (
                                   <>{format(field.value.from, "LLL dd, y")} - {format(field.value.to, "LLL dd, y")}</>
-                              ) : (format(field.value.from, "LLL dd, y"))
-                              ) : (<span>Pilih rentang tanggal</span>)}
+                              ) : (format(field.value.from, "LLL dd, y"))) : (<span>Pilih rentang tanggal</span>)}
                           </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
@@ -238,14 +246,29 @@ export default function EditProgramPage() {
                               initialFocus
                               mode="range"
                               defaultMonth={field.value?.from}
-                              selected={{ from: field.value?.from, to: field.value?.to }}
+                              selected={{ from: field.value?.from, to: watchIsUnlimited ? undefined : field.value?.to }}
                               onSelect={(range) => field.onChange(range || { from: undefined, to: undefined })}
                               numberOfMonths={1}
+                              disabled={{ before: field.name === 'dateRange' && field.value?.from ? field.value.from : undefined }}
                           />
                           </PopoverContent>
                       </Popover>
                   )} />
-                   {errors.dateRange && <p className="text-sm text-destructive">{errors.dateRange.from?.message || errors.dateRange.to?.message}</p>}
+                  <div className="flex items-center space-x-2 pt-2">
+                      <Controller
+                          name="isUnlimited"
+                          control={control}
+                          render={({ field }) => (
+                            <Checkbox
+                              id="isUnlimited"
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          )}
+                        />
+                      <Label htmlFor="isUnlimited">Waktu tak terbatas (tidak ada tanggal selesai)</Label>
+                  </div>
+                   {errors.dateRange && <p className="text-sm text-destructive">{errors.dateRange.root?.message || errors.dateRange.from?.message || errors.dateRange.to?.message}</p>}
               </div>
             </CardContent>
           </Card>
