@@ -6,7 +6,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProjectTask } from '@/app/actions/projects';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import TaskDetailDialog from './TaskDetailDialog';
 import type { MemberWithStatus } from '@/app/actions/members';
 import { cn } from '@/lib/utils';
