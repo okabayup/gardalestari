@@ -160,18 +160,22 @@ export async function getGenerationJobs(): Promise<GenerationJob[]> {
 export async function getBeritaPosts(type?: 'artikel' | 'video', includeDrafts = false) {
   try {
     let q;
-    const baseQuery = includeDrafts ? [] : [where('status', '==', 'published')];
-
     if (type) {
-        q = query(beritaPostsCollection, ...baseQuery, where('type', '==', type), orderBy('date', 'desc'));
+        q = query(beritaPostsCollection, where('type', '==', type), orderBy('date', 'desc'));
     } else {
-        q = query(beritaPostsCollection, ...baseQuery, orderBy('date', 'desc'));
+        q = query(beritaPostsCollection, orderBy('date', 'desc'));
     }
     const snapshot = await getDocs(q);
-    const posts: BeritaPost[] = [];
+    
+    let posts: BeritaPost[] = [];
     snapshot.forEach(doc => {
       posts.push({ id: doc.id, ...doc.data() } as BeritaPost);
     });
+
+    if (!includeDrafts) {
+        posts = posts.filter(post => post.status === 'published');
+    }
+
     return posts;
   } catch (error) {
     console.error("[getBeritaPosts Error]", error);
@@ -314,6 +318,7 @@ export async function requestReindexing(slug: string, type: 'artikel' | 'video' 
         throw new Error("Gagal meminta indeksasi ulang.");
     }
 }
+
 
 
 
