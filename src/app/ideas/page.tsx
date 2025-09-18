@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -77,7 +78,7 @@ export default function IdeasPage() {
   const [loading, setLoading] = useState(true);
 
   // Filter and search state
-  const [sortBy, setSortBy] = useState<'newest' | 'top'>(searchParams.get('sort') as any || 'newest');
+  const [sortBy, setSortBy] = useState<'newest' | 'top'>(searchParams.get('sort') as any || 'top');
   const [category, setCategory] = useState(searchParams.get('category') || 'Semua');
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
   const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
@@ -111,7 +112,7 @@ export default function IdeasPage() {
     
     // Update URL params
     const params = new URLSearchParams();
-    if (sortBy !== 'newest') params.set('sort', sortBy);
+    if (sortBy !== 'top') params.set('sort', sortBy);
     if (category !== 'Semua') params.set('category', category);
     if (debouncedSearchTerm) params.set('q', debouncedSearchTerm);
     router.replace(`${pathname}?${params.toString()}`);
@@ -179,8 +180,8 @@ export default function IdeasPage() {
             <Select value={sortBy} onValueChange={(val) => setSortBy(val as any)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="newest">Terbaru</SelectItem>
                     <SelectItem value="top">Paling Populer</SelectItem>
+                    <SelectItem value="newest">Terbaru</SelectItem>
                 </SelectContent>
             </Select>
         </div>

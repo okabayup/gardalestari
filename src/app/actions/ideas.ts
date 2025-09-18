@@ -113,7 +113,7 @@ export async function createIdea(authorId: string, title: string, description: s
 // Get all ideas with filters and search
 export async function getIdeas(
     userId: string, 
-    sortBy: 'newest' | 'top' = 'newest', 
+    sortBy: 'newest' | 'top' = 'top', 
     categoryFilter?: string, 
     searchQuery?: string
 ): Promise<IdeaWithAuthor[]> {
@@ -355,4 +355,5 @@ export async function deleteIdeaCategory(id: string) {
         throw new Error("Gagal menghapus kategori ide.");
     }
 }
+
 
