@@ -13,7 +13,7 @@ export default function BeritaPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getBeritaPosts('artikel').then(data => {
+    getBeritaPosts('artikel', false).then(data => { // Explicitly set includeDrafts to false
       setPosts(data);
       setLoading(false);
     });

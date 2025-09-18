@@ -43,7 +43,7 @@ export default async function LandingPage() {
   const allPrograms = await getPrograms();
   const members = await getMembers();
   const partners = await getPartners();
-  const allPosts = await getBeritaPosts();
+  const allPosts = await getBeritaPosts(undefined, false); // Fetch only published posts
   const events = await getEvents();
   
   const flagshipPrograms = allPrograms.filter(p => p.category === 'flagship');

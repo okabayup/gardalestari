@@ -20,7 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // Rute dinamis untuk berita dan video
-  const posts = await getBeritaPosts();
+  const posts = await getBeritaPosts(undefined, false); // Fetch only published posts
   const contentRoutes = posts.map((post) => ({
     url: `${BASE_URL}/${post.type === 'video' ? 'video' : 'berita'}/${post.slug}`,
     lastModified: new Date(post.date).toISOString(),
@@ -32,7 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const programs = await getPrograms();
   const programRoutes = programs.map((program) => ({
     url: `${BASE_URL}/programs/${program.id}`,
-    lastModified: new Date(program.endDate).toISOString(),
+    lastModified: new Date(program.endDate || new Date()).toISOString(),
     changeFrequency: 'weekly' as const,
     priority: 0.7,
   }));

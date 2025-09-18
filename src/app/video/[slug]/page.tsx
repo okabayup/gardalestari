@@ -16,7 +16,7 @@ export async function generateMetadata(
   const slug = params.slug;
   const post = await getBeritaPost(slug);
 
-  if (!post || post.type !== 'video' || !post.youtubeId) {
+  if (!post || post.type !== 'video' || !post.youtubeId || post.status !== 'published') {
     return {
       title: 'Video Tidak Ditemukan',
     }
@@ -58,7 +58,7 @@ export async function generateMetadata(
 export default async function VideoPostPage({ params }: Props) {
     const post = await getBeritaPost(params.slug);
 
-    if (!post || post.type !== 'video') {
+    if (!post || post.type !== 'video' || post.status !== 'published') {
         notFound();
     }
 

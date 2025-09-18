@@ -27,7 +27,7 @@ export interface GenerationJob {
 
 export async function createGenerationJob(totalCount: number): Promise<string> {
     try {
-        const newJobRef = doc(collection(db, 'generationJobs'));
+        const newJobRef = doc(generationJobsCollection);
         await setDoc(newJobRef, {
             status: 'pending',
             totalCount,
@@ -157,13 +157,15 @@ export async function getGenerationJobs(): Promise<GenerationJob[]> {
 // --- Content Management ---
 
 // Get all berita posts (articles and videos)
-export async function getBeritaPosts(type?: 'artikel' | 'video') {
+export async function getBeritaPosts(type?: 'artikel' | 'video', includeDrafts = false) {
   try {
     let q;
+    const baseQuery = includeDrafts ? [] : [where('status', '==', 'published')];
+
     if (type) {
-        q = query(beritaPostsCollection, where('type', '==', type), orderBy('date', 'desc'));
+        q = query(beritaPostsCollection, ...baseQuery, where('type', '==', type), orderBy('date', 'desc'));
     } else {
-        q = query(beritaPostsCollection, orderBy('date', 'desc'));
+        q = query(beritaPostsCollection, ...baseQuery, orderBy('date', 'desc'));
     }
     const snapshot = await getDocs(q);
     const posts: BeritaPost[] = [];

@@ -23,7 +23,7 @@ export async function generateMetadata(
   const slug = params.slug;
   const post = await getBeritaPost(slug);
 
-  if (!post) {
+  if (!post || post.status !== 'published') {
     return {
       title: 'Berita Tidak Ditemukan',
     }
@@ -142,7 +142,7 @@ export default async function BeritaPostPage({ params }: Props) {
   const slug = params.slug;
   const post = await getBeritaPost(slug);
 
-  if (!post) {
+  if (!post || post.status !== 'published') {
     return notFound();
   }
 

@@ -39,7 +39,7 @@ export default function VideoPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getBeritaPosts('video').then(data => {
+    getBeritaPosts('video', false).then(data => { // Explicitly set includeDrafts to false
         setVideos(data);
         setLoading(false);
     });
