@@ -37,6 +37,8 @@ import {
   Presentation,
   Lightbulb,
   TrendingUp,
+  Layers,
+  Database
 } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
