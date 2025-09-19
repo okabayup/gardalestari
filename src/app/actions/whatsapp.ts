@@ -3,7 +3,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, getDocs, collection, query, where, getCountFromServer } from 'firebase/firestore';
+import { doc, getDoc, setDoc, getDocs, collection, query, where, getCountFromServer, orderBy, limit } from 'firebase/firestore';
 import { sendWhatsAppMessage as sendWhatsAppMessageSatuConnect, sendBulkWhatsAppMessage as sendBulkWhatsAppMessageSatuConnect } from '@/services/whatsapp';
 import { revalidatePath } from 'next/cache';
 import { getPrograms } from './programs';
@@ -190,9 +190,18 @@ export async function getLatestProgramsText(): Promise<string> {
     }
 }
 
-async function getVerifiedMembers(): Promise<{ phoneNumber: string }[]> {
+async function getVerifiedMembers(limitCount?: number): Promise<{ phoneNumber: string }[]> {
     const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('verificationStatus', '==', 'permanent'), where('waVerified', '==', true));
+    const constraints = [
+        where('verificationStatus', '==', 'permanent'),
+        where('waVerified', '==', true),
+        orderBy('createdAt', 'desc')
+    ];
+    if (limitCount) {
+        constraints.push(limit(limitCount));
+    }
+    
+    const q = query(usersRef, ...constraints);
     const querySnapshot = await getDocs(q);
     const users: { phoneNumber: string }[] = [];
     querySnapshot.forEach(doc => {
@@ -205,12 +214,15 @@ async function getVerifiedMembers(): Promise<{ phoneNumber: string }[]> {
 }
 
 export async function getVerifiedMemberCount(): Promise<number> {
-    const users = await getVerifiedMembers();
-    return users.length;
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('verificationStatus', '==', 'permanent'), where('waVerified', '==', true));
+    const snapshot = await getCountFromServer(q);
+    return snapshot.data().count;
 }
 
+
 export async function sendGroupJoinReminders(): Promise<{ success: boolean, count: number }> {
-    const users = await getVerifiedMembers();
+    const users = await getVerifiedMembers(100);
     if (users.length === 0) {
         return { success: true, count: 0 };
     }

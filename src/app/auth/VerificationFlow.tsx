@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useRef, useEffect, ChangeEvent } from 'react';
@@ -413,7 +414,7 @@ export default function VerificationFlow() {
           <div className="text-center space-y-6">
             <PartyPopper className="mx-auto h-16 w-16 text-primary" />
             <h2 className="text-2xl font-bold font-headline">Verifikasi WhatsApp Berhasil!</h2>
-            <p className="text-muted-foreground">Selamat datang! Sekarang, personalisasikan akun Anda. Kunjungi halaman profil untuk <span className='font-semibold text-primary'>mengatur username</span> dan menautkan media sosial Anda.</p>
+            <p className="text-muted-foreground">Selamat datang! Sekarang, personalisasikan akun Anda. Kunjungi halaman profil untuk <span className='font-semibold text-primary'>mengatur username dan menautkan media sosial</span> Anda.</p>
             <div className="flex gap-4">
               <Button variant="outline" className="w-full flex-col h-auto py-3" onClick={() => router.push('/profile/me')}>
                 <Pencil className="h-6 w-6 mb-2"/>
@@ -421,7 +422,7 @@ export default function VerificationFlow() {
               </Button>
               <Button variant="outline" className="w-full flex-col h-auto py-3" onClick={() => setStep('ktp')}>
                 <Sprout className="h-6 w-6 mb-2"/>
-                Lanjut Verifikasi
+                Lanjut Verifikasi KTP
               </Button>
             </div>
           </div>

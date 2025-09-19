@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -184,25 +185,29 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
             />
           </div>
           
-          {canEditUsername && (
-             <div className="space-y-2">
-                <Label htmlFor="username">Nama Pengguna</Label>
-                <Input 
-                    id="username"
-                    value={username}
-                    onChange={handleUsernameChange}
-                    placeholder="pilih_nama_pengguna_unik"
-                />
-                <div className="text-xs text-muted-foreground h-4 px-1">
-                    {isCheckingUsername ? "Memeriksa ketersediaan..." : (
+          <div className="space-y-2">
+            <Label htmlFor="username">Nama Pengguna</Label>
+            <Input 
+                id="username"
+                value={username}
+                onChange={handleUsernameChange}
+                placeholder="pilih_nama_pengguna_unik"
+                disabled={!canEditUsername}
+            />
+            <div className="text-xs text-muted-foreground h-4 px-1">
+                {canEditUsername ? (
+                    isCheckingUsername ? "Memeriksa ketersediaan..." : (
                         debouncedUsername && (isUsernameAvailable ? 
                             <span className="text-green-600">Tersedia!</span> : 
                             <span className="text-destructive">Sudah digunakan.</span>
                         )
-                    )}
-                </div>
+                    )
+                ) : (
+                    "Nama pengguna tidak dapat diubah lagi."
+                )}
             </div>
-          )}
+          </div>
+
 
           <div className="grid grid-cols-1 gap-4">
              <div className="space-y-2">
@@ -227,12 +232,6 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
               <AlertTitle>Informasi Akun</AlertTitle>
               <AlertDescription>
                 <div className="space-y-2 text-sm">
-                    {!canEditUsername && (
-                        <div>
-                            <p className="font-semibold">Nama Pengguna</p>
-                            <p className="text-muted-foreground">@{user.username || 'Belum diatur'}</p>
-                        </div>
-                    )}
                     <div>
                         <p className="font-semibold">Nama Lengkap</p>
                         <p className="text-muted-foreground">{user.displayName || 'Belum diatur'}</p>
