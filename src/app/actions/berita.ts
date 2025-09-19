@@ -6,8 +6,10 @@ import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, where, orderBy, Timestamp, setDoc, runTransaction, writeBatch } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import { notifyGoogleOfUpdate } from '@/services/indexing';
-import type { BeritaPost } from '@/lib/definitions';
+import type { BeritaPost, IndexingStatus } from '@/lib/definitions';
 import { bulkGenerateNewsDrafts } from '@/ai/flows/bulk-generate-flow';
+import { google } from 'googleapis';
+
 
 const beritaPostsCollection = collection(db, 'beritaPosts');
 const generationJobsCollection = collection(db, 'generationJobs');
@@ -339,5 +341,40 @@ export async function requestReindexing(slug: string, type: 'artikel' | 'video' 
     } catch (error) {
         console.error("[requestReindexing Error]", error);
         throw new Error("Gagal meminta indeksasi ulang.");
+    }
+}
+
+async function getGoogleAuth() {
+    if (!process.env.GOOGLE_CLIENT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY) {
+        throw new Error('Google Cloud service account credentials are not set in environment variables.');
+    }
+    return new google.auth.JWT(
+        process.env.GOOGLE_CLIENT_EMAIL,
+        undefined,
+        process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        ['https://www.googleapis.com/auth/indexing']
+    );
+}
+
+export async function getNotificationStatus(url: string): Promise<IndexingStatus | null> {
+    try {
+        const auth = await getGoogleAuth();
+        const indexer = google.indexing({ version: 'v3', auth });
+
+        const encodedUrl = encodeURIComponent(url);
+        const response = await indexer.urlNotifications.getMetadata({
+            url: encodedUrl,
+        });
+
+        if (response.status === 200 && response.data) {
+            return {
+                latestUpdate: response.data.latestUpdate,
+                latestRemove: response.data.latestRemove,
+            };
+        }
+        return null;
+    } catch (error: any) {
+        console.error('Error fetching notification status:', error.response?.data || error.message);
+        return null;
     }
 }

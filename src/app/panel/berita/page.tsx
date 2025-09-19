@@ -5,7 +5,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, MoreHorizontal, Loader2, Trash2, Sparkles, RefreshCw, Star, Newspaper, Search, CircleDashed, History, ChevronsUpDown, Check, X } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Loader2, Trash2, Sparkles, RefreshCw, Star, Newspaper, Search, CircleDashed, History, ChevronsUpDown, Check, X, Info } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,14 +25,73 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { getBeritaPosts, deleteBeritaPost, requestReindexing, updateBeritaStatusBulk } from '@/app/actions/berita';
+import { getBeritaPosts, deleteBeritaPost, requestReindexing, updateBeritaStatusBulk, getNotificationStatus } from '@/app/actions/berita';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from '@/components/ui/badge';
-import type { BeritaPost } from '@/lib/definitions';
+import type { BeritaPost, IndexingStatus } from '@/lib/definitions';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { formatDistanceToNow } from 'date-fns';
+import { id } from 'date-fns/locale';
+
+const IndexingStatusBadge = ({ post }: { post: BeritaPost }) => {
+    const [status, setStatus] = useState<IndexingStatus | null | undefined>(post.indexingStatus);
+    const [loading, setLoading] = useState(false);
+
+    const handleFetchStatus = useCallback(async () => {
+        if (post.status !== 'published') return;
+        setLoading(true);
+        const fetchedStatus = await getNotificationStatus(`${process.env.NEXT_PUBLIC_BASE_URL}/${post.type === 'video' ? 'video' : 'berita'}/${post.slug}`);
+        setStatus(fetchedStatus);
+        setLoading(false);
+    }, [post.status, post.type, post.slug]);
+    
+    const latestNotification = status?.latestUpdate?.notifyTime ? status.latestUpdate : status?.latestRemove;
+
+    if (loading) {
+        return <Loader2 className="h-4 w-4 animate-spin" />;
+    }
+    
+    if (!latestNotification) {
+        return (
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                         <Badge variant="outline" className="cursor-pointer" onClick={handleFetchStatus}>
+                            <CircleDashed className="h-3 w-3" />
+                         </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Status tidak diketahui. Klik untuk memeriksa.</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+           
+        );
+    }
+    
+    const timeAgo = formatDistanceToNow(new Date(latestNotification.notifyTime), { addSuffix: true, locale: id });
+    const isUpdate = latestNotification.type === 'URL_UPDATED';
+
+    return (
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Badge variant={isUpdate ? 'default' : 'destructive'} className="cursor-pointer" onClick={handleFetchStatus}>
+                        {isUpdate ? 'Updated' : 'Deleted'}
+                    </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Google terakhir diberitahu {timeAgo}.</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    );
+};
+
 
 export default function AdminBeritaPage() {
   const router = useRouter();
@@ -106,6 +165,8 @@ export default function AdminBeritaPage() {
     try {
         const result = await requestReindexing(slug, type);
         toast({ title: "Sukses", description: result.message });
+        // Optionally re-fetch status after a delay
+        setTimeout(() => fetchPosts(), 2000);
     } catch (error) {
          toast({ variant: "destructive", title: "Gagal", description: (error as Error).message });
     } finally {
@@ -213,6 +274,7 @@ export default function AdminBeritaPage() {
                   <TableHead>Judul</TableHead>
                   <TableHead>Tipe</TableHead>
                   <TableHead>Status</TableHead>
+                   <TableHead>Indeks Google</TableHead>
                   <TableHead className="hidden md:table-cell">Tanggal</TableHead>
                   <TableHead>
                     <span className="sr-only">Aksi</span>
@@ -222,7 +284,7 @@ export default function AdminBeritaPage() {
               <TableBody>
                 {loading ? (
                     <TableRow>
-                        <TableCell colSpan={6} className="text-center py-10">
+                        <TableCell colSpan={7} className="text-center py-10">
                             <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                         </TableCell>
                     </TableRow>
@@ -249,6 +311,9 @@ export default function AdminBeritaPage() {
                          <Badge variant={post.status === 'published' ? 'default' : 'secondary'}>
                           {post.status === 'published' ? 'Diterbitkan' : 'Draf'}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                          <IndexingStatusBadge post={post} />
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{new Date(post.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</TableCell>
                       <TableCell>
@@ -295,7 +360,7 @@ export default function AdminBeritaPage() {
                   ))
                 ) : (
                     <TableRow>
-                        <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                        <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
                             Belum ada konten.
                         </TableCell>
                     </TableRow>

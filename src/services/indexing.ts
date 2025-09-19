@@ -1,8 +1,11 @@
 
 'use server';
 import { google } from 'googleapis';
+import { db } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const SCOPES = ['https://www.googleapis.com/auth/indexing'];
+const indexingLogsCollection = collection(db, 'indexingLogs');
 
 // Type for the notification sent to Google Indexing API
 type IndexingNotificationType = 'URL_UPDATED' | 'URL_DELETED';
@@ -35,6 +38,12 @@ async function getGoogleAuth() {
  * @returns An object indicating success or failure.
  */
 export async function notifyGoogleOfUpdate(url: string, type: IndexingNotificationType) {
+    let logData: { [key: string]: any } = {
+        url,
+        type,
+        requestTimestamp: serverTimestamp(),
+    };
+
     try {
         const auth = await getGoogleAuth();
         const indexer = google.indexing({ version: 'v3', auth });
@@ -46,18 +55,27 @@ export async function notifyGoogleOfUpdate(url: string, type: IndexingNotificati
             },
         });
         
+        logData.responseStatus = response.status;
+        logData.responseBody = response.data;
+
         if (response.status === 200) {
             console.log(`Successfully notified Google about URL (${type}): ${url}`);
-            return { success: true };
+            await addDoc(indexingLogsCollection, logData);
+            return { success: true, data: response.data };
         } else {
-             console.error('Google Indexing API responded with status:', response.status, response.statusText);
-             return { success: false, error: `Google API responded with status ${response.status}` };
+             const errorMsg = `Google API responded with status ${response.status}: ${response.statusText}`;
+             console.error('Google Indexing API Error:', errorMsg, response.data);
+             logData.error = errorMsg;
+             await addDoc(indexingLogsCollection, logData);
+             return { success: false, error: errorMsg };
         }
 
     } catch (error: any) {
-        console.error('Error notifying Google Indexing API:', error.response?.data || error.message);
-        // Improved error message extraction
         const errorMessage = error.response?.data?.error?.message || error.message || 'An unknown error occurred.';
+        console.error('Error notifying Google Indexing API:', errorMessage);
+        logData.responseStatus = error.response?.status || 500;
+        logData.error = errorMessage;
+        await addDoc(indexingLogsCollection, logData);
         return { success: false, error: errorMessage };
     }
 }

@@ -1,4 +1,5 @@
 
+
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
 
@@ -121,7 +122,30 @@ export interface BeritaPost {
   isFeatured?: boolean;
   seoScore?: number;
   status?: 'published' | 'draft';
+  indexingStatus?: IndexingStatus;
 }
+
+export interface IndexingLog {
+    id?: string;
+    url: string;
+    type: 'URL_UPDATED' | 'URL_DELETED';
+    requestTimestamp: Timestamp;
+    responseStatus: number;
+    responseBody: any;
+    error?: string;
+}
+
+export interface IndexingStatus {
+    latestUpdate?: {
+        type: string;
+        notifyTime: string;
+    };
+    latestRemove?: {
+        type: string;
+        notifyTime: string;
+    };
+}
+
 
 // --- Data Bank ---
 export interface DataBankEntry {
