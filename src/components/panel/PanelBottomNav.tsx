@@ -42,7 +42,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Separator } from '../ui/separator';
 import type { PermissionId } from '@/lib/definitions';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
-import { usePanelBadges } from '@/hooks/use-panel-badges.tsx';
+import { usePanelBadges, PanelBadgesProvider } from '@/hooks/use-panel-badges';
 import { Badge } from '../ui/badge';
 
 
@@ -181,7 +181,7 @@ const MoreMenuSheet = () => {
 }
 
 
-export default function PanelBottomNav() {
+function PanelBottomNavComponent() {
   const pathname = usePathname();
   const { user, hasPermission } = useAuth();
   const { badges } = usePanelBadges();
@@ -217,4 +217,12 @@ export default function PanelBottomNav() {
       </nav>
     </div>
   );
+}
+
+export default function PanelBottomNav() {
+    return (
+        <PanelBadgesProvider>
+            <PanelBottomNavComponent />
+        </PanelBadgesProvider>
+    )
 }

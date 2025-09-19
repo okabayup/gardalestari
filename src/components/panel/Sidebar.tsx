@@ -38,7 +38,7 @@ import Image from 'next/image';
 import { Button } from '../ui/button';
 import type { PermissionId } from '@/lib/definitions';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { usePanelBadges } from '@/hooks/use-panel-badges.tsx';
+import { usePanelBadges, PanelBadgesProvider } from '@/hooks/use-panel-badges';
 import { Badge } from '../ui/badge';
 
 
@@ -115,7 +115,7 @@ const navGroups: {
 ];
 
 
-export function Sidebar() {
+function SidebarComponent() {
   const pathname = usePathname();
   const { user, signOut, hasPermission } = useAuth();
   const router = useRouter();
@@ -221,4 +221,12 @@ export function Sidebar() {
       </div>
     </div>
   );
+}
+
+export function Sidebar() {
+    return (
+        <PanelBadgesProvider>
+            <SidebarComponent />
+        </PanelBadgesProvider>
+    )
 }

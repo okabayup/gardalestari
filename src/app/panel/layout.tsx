@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useAuth } from '@/hooks/use-auth';
@@ -6,7 +5,6 @@ import { Loader2 } from 'lucide-react';
 import { Sidebar } from '@/components/panel/Sidebar';
 import { redirect } from 'next/navigation';
 import PanelBottomNav from '@/components/panel/PanelBottomNav';
-import { PanelBadgesProvider } from '@/hooks/use-panel-badges.tsx';
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -26,16 +24,14 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
 
   return (
-    <PanelBadgesProvider>
-        <div className="grid h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-        <Sidebar />
-        <div className="flex flex-col">
-            <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto pb-20 sm:pb-4">
-            {children}
-            </main>
-        </div>
-        <PanelBottomNav />
-        </div>
-    </PanelBadgesProvider>
+    <div className="grid h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+    <Sidebar />
+    <div className="flex flex-col">
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto pb-20 sm:pb-4">
+        {children}
+        </main>
+    </div>
+    <PanelBottomNav />
+    </div>
   );
 }
