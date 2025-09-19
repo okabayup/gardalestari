@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   getMembers,
   updateMemberDetails,

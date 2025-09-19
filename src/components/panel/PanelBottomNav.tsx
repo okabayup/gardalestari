@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -55,19 +56,16 @@ const mainNavItems = [
 
 const groupedNavItems: {
   group: string;
-  icon: React.ElementType;
   items: { href: string; icon: React.ElementType; label: string, permission?: PermissionId }[];
 }[] = [
    {
     group: 'Analitik',
-    icon: TrendingUp,
     items: [
       { href: '/panel/performance', icon: TrendingUp, label: 'Performa', permission: 'manage_settings' },
     ]
   },
   {
     group: 'Publikasi',
-    icon: Presentation,
     items: [
       { href: '/panel/events', icon: Calendar, label: 'Acara', permission: 'manage_events' },
       { href: '/panel/landing', icon: Landmark, label: 'Halaman Utama', permission: 'manage_landing_page' },
@@ -75,7 +73,6 @@ const groupedNavItems: {
   },
   {
     group: 'Keterlibatan Anggota',
-    icon: Lightbulb,
     items: [
       { href: '/panel/ideas', icon: Lightbulb, label: 'Bank Ide', permission: 'manage_ideas'},
       { href: '/panel/announcements', icon: MegaphoneIcon, label: 'Pengumuman', permission: 'manage_announcements'},
@@ -86,7 +83,6 @@ const groupedNavItems: {
   },
   {
     group: 'Program & Peluang',
-    icon: Briefcase,
     items: [
        { href: '/panel/recruitments', icon: Briefcase, label: 'Rekrutmen', permission: 'manage_recruitments' },
        { href: '/panel/partners', icon: Handshake, label: 'Mitra', permission: 'manage_partners' },
@@ -94,7 +90,6 @@ const groupedNavItems: {
   },
   {
     group: 'E-Office',
-    icon: Building2,
     items: [
         { href: '/panel/documents', icon: BookCopy, label: 'Surat & Dokumen', permission: 'manage_documents'},
         { href: '/panel/projects', icon: KanbanSquare, label: 'Manajemen Proyek', permission: 'manage_projects' },
@@ -103,16 +98,16 @@ const groupedNavItems: {
   },
   {
     group: 'Manajemen Internal',
-    icon: Users,
     items: [
       { href: '/panel/positions', icon: UserCheck, label: 'Jabatan', permission: 'manage_positions' },
       { href: '/panel/forms', icon: FileText, label: 'Formulir', permission: 'manage_forms' },
       { href: '/panel/map-data', icon: Map, label: 'Data Peta', permission: 'manage_map_data' },
+      { href: '/panel/map-datasets', icon: Layers, label: 'Dataset Peta', permission: 'manage_map_datasets' },
+      { href: '/panel/data-bank', icon: Database, label: 'Bank Data', permission: 'manage_data_bank'},
     ],
   },
    {
     group: 'Pengaturan',
-    icon: Settings,
     items: [
       { href: '/panel/settings', icon: Settings, label: 'Pengaturan Aplikasi', permission: 'manage_settings' },
     ],
@@ -123,8 +118,9 @@ const groupedNavItems: {
 const MoreMenuSheet = () => {
     const { hasPermission } = useAuth();
     const pathname = usePathname();
-
-    const getVisibleItems = (items: any[]) => items.filter(item => !item.permission || hasPermission(item.permission));
+    const defaultAccordionValue = groupedNavItems.find(group => 
+      group.items.some(item => pathname.startsWith(item.href))
+    )?.group;
     
     return (
         <Sheet>
@@ -148,32 +144,31 @@ const MoreMenuSheet = () => {
                 </SheetHeader>
                 <Separator className="my-4" />
                  <ScrollArea className="h-[calc(80vh-8rem)]">
-                    <div className="grid grid-cols-3 gap-4">
-                        {groupedNavItems.map((group) => {
-                            const visibleItems = getVisibleItems(group.items);
+                   <Accordion type="single" collapsible defaultValue={defaultAccordionValue} className="w-full">
+                        {groupedNavItems.map(group => {
+                            const visibleItems = group.items.filter(item => !item.permission || hasPermission(item.permission));
                             if (visibleItems.length === 0) return null;
-
-                            // For groups with a single item, link the whole group card
-                            if (visibleItems.length === 1) {
-                                const item = visibleItems[0];
-                                return (
-                                    <Link key={group.group} href={item.href} className="flex flex-col items-center text-center gap-2 p-4 rounded-lg bg-secondary/50 hover:bg-secondary">
-                                        <group.icon className="h-6 w-6 text-primary" />
-                                        <span className="font-medium text-xs">{item.label}</span>
-                                    </Link>
-                                )
-                            }
                             
-                            // For groups with multiple items, use a popover/sheet (or just link to the first item as a directory)
-                            // For simplicity, we can link to the first item of the group
                             return (
-                                <Link key={group.group} href={visibleItems[0].href} className="flex flex-col items-center text-center gap-2 p-4 rounded-lg bg-secondary/50 hover:bg-secondary">
-                                    <group.icon className="h-6 w-6 text-primary" />
-                                    <span className="font-medium text-xs">{group.group}</span>
-                                </Link>
+                                <AccordionItem value={group.group} key={group.group}>
+                                    <AccordionTrigger>{group.group}</AccordionTrigger>
+                                    <AccordionContent>
+                                        <div className="flex flex-col space-y-1 pl-4">
+                                            {visibleItems.map(item => (
+                                                <Link key={item.href} href={item.href} className={cn(
+                                                    'flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary text-sm',
+                                                    pathname.startsWith(item.href) && 'bg-muted text-primary font-semibold'
+                                                )}>
+                                                    <item.icon className="h-4 w-4" />
+                                                    {item.label}
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
                             )
                         })}
-                    </div>
+                    </Accordion>
                 </ScrollArea>
             </SheetContent>
         </Sheet>
