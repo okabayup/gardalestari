@@ -125,10 +125,6 @@ const MoreMenuSheet = () => {
     const pathname = usePathname();
 
     const getVisibleItems = (items: any[]) => items.filter(item => !item.permission || hasPermission(item.permission));
-
-    const defaultAccordionValue = groupedNavItems.find(group => 
-        getVisibleItems(group.items).some(item => pathname.startsWith(item.href))
-    )?.group;
     
     return (
         <Sheet>
@@ -152,28 +148,32 @@ const MoreMenuSheet = () => {
                 </SheetHeader>
                 <Separator className="my-4" />
                  <ScrollArea className="h-[calc(80vh-8rem)]">
-                    <Accordion type="single" collapsible defaultValue={defaultAccordionValue} className="w-full">
+                    <div className="grid grid-cols-3 gap-4">
                         {groupedNavItems.map((group) => {
                             const visibleItems = getVisibleItems(group.items);
                             if (visibleItems.length === 0) return null;
 
+                            // For groups with a single item, link the whole group card
+                            if (visibleItems.length === 1) {
+                                const item = visibleItems[0];
+                                return (
+                                    <Link key={group.group} href={item.href} className="flex flex-col items-center text-center gap-2 p-4 rounded-lg bg-secondary/50 hover:bg-secondary">
+                                        <group.icon className="h-6 w-6 text-primary" />
+                                        <span className="font-medium text-xs">{item.label}</span>
+                                    </Link>
+                                )
+                            }
+                            
+                            // For groups with multiple items, use a popover/sheet (or just link to the first item as a directory)
+                            // For simplicity, we can link to the first item of the group
                             return (
-                                <AccordionItem key={group.group} value={group.group}>
-                                    <AccordionTrigger>{group.group}</AccordionTrigger>
-                                    <AccordionContent>
-                                        <div className="space-y-1">
-                                            {visibleItems.map(item => (
-                                                 <Link key={item.label} href={item.href} className="flex items-center gap-4 p-3 rounded-lg hover:bg-secondary">
-                                                    <item.icon className="h-5 w-5 text-primary" />
-                                                    <span className="font-medium text-sm text-foreground">{item.label}</span>
-                                                 </Link>
-                                            ))}
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
+                                <Link key={group.group} href={visibleItems[0].href} className="flex flex-col items-center text-center gap-2 p-4 rounded-lg bg-secondary/50 hover:bg-secondary">
+                                    <group.icon className="h-6 w-6 text-primary" />
+                                    <span className="font-medium text-xs">{group.group}</span>
+                                </Link>
                             )
                         })}
-                    </Accordion>
+                    </div>
                 </ScrollArea>
             </SheetContent>
         </Sheet>
