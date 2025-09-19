@@ -115,7 +115,9 @@ export default function AdminBeritaPage() {
   
   const handleCheckIndexStatus = (slug: string, type: 'artikel' | 'video' = 'artikel') => {
     const siteUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/${type === 'video' ? 'video' : 'berita'}/${slug}`;
-    const searchConsoleUrl = `https://search.google.com/search-console/inspect?resource_id=${process.env.NEXT_PUBLIC_BASE_URL}&id=${encodeURIComponent(siteUrl)}`;
+    const domain = (new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://gardalestari.org')).hostname;
+    const resourceId = `sc-domain:${domain}`;
+    const searchConsoleUrl = `https://search.google.com/search-console/inspect?resource_id=${resourceId}&id=${encodeURIComponent(siteUrl)}`;
     window.open(searchConsoleUrl, '_blank');
   }
 
