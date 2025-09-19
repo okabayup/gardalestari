@@ -156,7 +156,7 @@ export default function Header() {
                     </div>
                     <Badge variant="secondary">Segera</Badge>
                   </DropdownMenuItem>
-                  {hasPermission('manage_users') && (
+                  {user.permissions && user.permissions.length > 0 && (
                       <DropdownMenuItem onClick={() => router.push('/panel/dashboard')} className="cursor-pointer">
                           <Shield className="mr-2 h-4 w-4" />
                           <span>Panel Admin</span>

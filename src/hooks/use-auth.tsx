@@ -23,7 +23,7 @@ import { logAnalyticsEvent } from '@/lib/analytics';
 import { seedInitialData } from '@/lib/seed-data';
 
 
-type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected';
+type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected' | 'manual';
 
 type ExtendedUser = User & {
   points?: number;
@@ -64,7 +64,7 @@ declare global {
     }
 }
 
-const ADMIN_PHONE_NUMBER = process.env.NEXT_PUBLIC_ADMIN_PHONE_NUMBER;
+const ADMIN_PHONE_NUMBER = '+6285176752610';
 const OFFICIAL_ACCOUNT_PHONE = '+6285144904161';
 
 
@@ -93,10 +93,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
       }
       
-      // Grant all permissions if phone number matches admin
+      // Grant all permissions if phone number matches admin, but don't override display data
       if (user.phoneNumber === ADMIN_PHONE_NUMBER) {
           permissions = ALL_PERMISSIONS.map(p => p.id);
-          positionName = 'Super Admin';
+          // We don't override positionName here so the real position is shown
       }
 
       if (user.phoneNumber === OFFICIAL_ACCOUNT_PHONE) {
