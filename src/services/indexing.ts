@@ -56,6 +56,8 @@ export async function notifyGoogleOfUpdate(url: string, type: IndexingNotificati
 
     } catch (error: any) {
         console.error('Error notifying Google Indexing API:', error.response?.data || error.message);
-        return { success: false, error: error.response?.data?.error?.message || error.message };
+        // Improved error message extraction
+        const errorMessage = error.response?.data?.error?.message || error.message || 'An unknown error occurred.';
+        return { success: false, error: errorMessage };
     }
 }

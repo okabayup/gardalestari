@@ -226,7 +226,7 @@ export async function createBeritaPost(post: Omit<BeritaPost, 'id'>) {
     
     const docRef = await addDoc(beritaPostsCollection, { ...postData });
     
-    if (postData.status !== 'draft') {
+    if (postData.status === 'published') {
         const pathToRevalidate = postData.type === 'video' ? '/video' : '/berita';
         revalidatePath('/panel/berita');
         revalidatePath(pathToRevalidate);
@@ -262,7 +262,7 @@ export async function updateBeritaPost(id: string, post: Partial<BeritaPost>) {
 
 
     // Notify Google Indexing API
-    if (post.slug && post.status !== 'draft') {
+    if (post.slug && post.status === 'published') {
       const publicUrl = `${BASE_URL}${pathToRevalidate}/${post.slug}`;
       await notifyGoogleOfUpdate(publicUrl, 'URL_UPDATED');
     }
@@ -307,7 +307,7 @@ export async function deleteBeritaPost(id: string) {
     const postData = postToDelete.data() as BeritaPost;
     
     // Only notify google if it was a published post
-    if (postData.status !== 'draft') {
+    if (postData.status === 'published') {
         const pathToRevalidate = postData.type === 'video' ? '/video' : '/berita';
         const publicUrl = `${BASE_URL}${pathToRevalidate}/${postData.slug}`;
         await notifyGoogleOfUpdate(publicUrl, 'URL_DELETED');
