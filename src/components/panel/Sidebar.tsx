@@ -29,6 +29,7 @@ import {
   Video,
   Database,
   Layers,
+  TrendingUp,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
@@ -48,6 +49,13 @@ const navGroups: {
 }[] = [
   {
     items: [{ href: '/panel/dashboard', icon: Home, label: 'Dasbor' }],
+  },
+  {
+    group: 'Analitik',
+    icon: TrendingUp,
+    items: [
+      { href: '/panel/performance', icon: TrendingUp, label: 'Performa', permission: 'manage_settings' },
+    ]
   },
   {
     group: 'Publikasi',

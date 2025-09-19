@@ -1,5 +1,4 @@
 
-
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
 
@@ -625,3 +624,31 @@ export const AssistantOutputSchema = z.object({
   citations: z.array(CitationSchema).optional().describe('An array of sources cited in the `responseText`.'),
 });
 export type AssistantOutput = z.infer<typeof AssistantOutputSchema>;
+
+// --- Analytics ---
+export interface AnalyticsReport {
+    dimensionHeaders: { name: string }[];
+    metricHeaders: { name: string; type: string }[];
+    rows: {
+        dimensionValues: { value: string }[];
+        metricValues: { value: string }[];
+    }[];
+}
+
+export interface PageSpeedReport {
+    loadingExperience: {
+        metrics: {
+            LARGEST_CONTENTFUL_PAINT_MS: { percentile: number; category: string };
+            CUMULATIVE_LAYOUT_SHIFT_SCORE: { percentile: number; category: string };
+            INTERACTION_TO_NEXT_PAINT: { percentile: number; category: string };
+        };
+    };
+    lighthouseResult: {
+        categories: {
+            performance: { score: number };
+            accessibility: { score: number };
+            'best-practices': { score: number };
+            seo: { score: number };
+        };
+    };
+}

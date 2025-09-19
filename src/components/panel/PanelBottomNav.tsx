@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -36,13 +35,14 @@ import {
   MessageCircle,
   Presentation,
   Lightbulb,
+  TrendingUp,
 } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { Separator } from '../ui/separator';
 import type { PermissionId } from '@/lib/definitions';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
-import { usePanelBadges } from '@/hooks/use-panel-badges';
+import { usePanelBadges } from '@/hooks/use-panel-badges.tsx';
 import { Badge } from '../ui/badge';
 
 
@@ -58,6 +58,13 @@ const groupedNavItems: {
   icon: React.ElementType;
   items: { href: string; icon: React.ElementType; label: string, permission?: PermissionId }[];
 }[] = [
+   {
+    group: 'Analitik',
+    icon: TrendingUp,
+    items: [
+      { href: '/panel/performance', icon: TrendingUp, label: 'Performa', permission: 'manage_settings' },
+    ]
+  },
   {
     group: 'Publikasi',
     icon: Presentation,
