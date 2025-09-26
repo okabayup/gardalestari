@@ -36,9 +36,12 @@ const nextConfig: NextConfig = {
   webpack: (config, { isServer }) => {
     // This is to suppress the 'require.extensions' warning from handlebars
     // which is a dependency of dotprompt, used by Genkit.
+    // It also excludes heavy server-side libraries from the client bundle.
     if (!isServer) {
         config.externals.push({
-            'handlebars': 'commonjs handlebars'
+            'handlebars': 'commonjs handlebars',
+            'docx': 'commonjs docx',
+            'pdf-lib': 'commonjs pdf-lib'
         });
     }
     return config;
