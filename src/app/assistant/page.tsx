@@ -1,117 +1,38 @@
 
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bot, User, Send, Loader2, Link as LinkIcon, Lightbulb, UserCircle, Plus, Trash2, Paperclip, X, MessageSquare, ChevronLeft, Menu } from 'lucide-react';
+import { Bot, User, Send, Loader2, Link as LinkIcon, Lightbulb, UserCircle, Plus, Trash2, Paperclip, X, ChevronLeft, Menu } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { answerQuestion } from '@/ai/flows/assistant-flow';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { AssistantOutput, Citation } from '@/lib/definitions';
-import { marked } from 'marked';
-import { cn } from '@/lib/utils';
 import { produce } from 'immer';
 import Image from 'next/image';
 import MainLayout from '@/components/layout/MainLayout';
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
-const samplePrompts = [
-    'Bagaimana cara mengajukan ide baru?',
-    'Bantu saya membuat ide bisnis di sektor pertanian.',
-    'Program apa saja yang sedang dibuka?',
-    'Bagaimana cara melihat Kartu Tanda Anggota saya?',
-];
+// Dynamically import components
+const RenderMessage = React.lazy(() => import('@/components/assistant/RenderMessage'));
+const HistoryList = React.lazy(() => import('@/components/assistant/HistoryList'));
+const SamplePrompts = React.lazy(() => import('@/components/assistant/SamplePrompts'));
 
 interface Message {
   role: 'user' | 'assistant';
-  content: any; // Can be string or array of parts for multimodal
+  content: any;
   citations?: Citation[];
 }
 
-interface Thread {
+export interface Thread {
     id: string;
     title: string;
     messages: Message[];
     createdAt: number;
 }
-
-const CitationCard = ({ citation }: { citation: Citation }) => {
-    return (
-         <Card className="shadow-lg border-primary/20">
-            <CardHeader>
-                <CardTitle className="text-sm flex items-center gap-2">
-                    {citation.type === 'data' ? <LinkIcon className="h-4 w-4"/> : <Lightbulb className="h-4 w-4"/>}
-                    {citation.title}
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <p className="text-xs text-muted-foreground mb-4 line-clamp-3">{citation.summary}</p>
-                 <Button asChild size="sm" className="w-full">
-                    <Link href={citation.url} target="_blank">Lihat Detail</Link>
-                </Button>
-            </CardContent>
-        </Card>
-    )
-}
-
-const RenderMessage = ({ message }: { message: Message }) => {
-    const { content, citations } = message;
-    
-    const parts = Array.isArray(content) ? content : [{ text: content }];
-    const textContent = parts.find(p => p.text)?.text || '';
-    const imagePart = parts.find(p => p.media);
-
-    const renderer = new marked.Renderer();
-    const linkRenderer = renderer.link;
-    renderer.link = (href, title, text) => {
-        const html = linkRenderer.call(renderer, href, title, text);
-        return html.replace(/^<a /, '<a target="_blank" rel="noopener noreferrer" ');
-    };
-
-    const rawHtml = marked(textContent, { renderer }) as string;
-    const textParts = rawHtml.split(/(\[Sumber \d+\]|\[Ide \d+\]|\[Program \d+\]|\[Event \d+\]|\[Achievement \d+\])/g);
-
-    return (
-        <div className="space-y-3">
-            {imagePart && (
-                <div className="relative h-48 w-full rounded-md overflow-hidden border">
-                    <Image src={imagePart.media.url} alt="User upload" layout="fill" objectFit="contain" />
-                </div>
-            )}
-            <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed">
-                {textParts.map((part, index) => {
-                    const match = part.match(/\[(?:Sumber|Ide|Program|Event|Achievement) (\d+)\]/);
-                    if (match) {
-                    const num = parseInt(match[1], 10);
-                    const citation = citations?.[num - 1];
-
-                    if (citation) {
-                        return (
-                        <Popover key={index}>
-                            <PopoverTrigger asChild>
-                                <sup className="mx-0.5 -top-0.5 relative">
-                                <button className="px-1.5 py-0.5 bg-primary/10 text-primary rounded-md text-xs font-semibold hover:bg-primary/20">{num}</button>
-                                </sup>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-72">
-                                <CitationCard citation={citation} />
-                            </PopoverContent>
-                            </Popover>
-                        );
-                    }
-                    }
-                    return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
-                })}
-            </div>
-        </div>
-    );
-};
 
 const ThinkingAnimation = () => (
     <div className="flex items-center gap-1.5">
@@ -119,7 +40,7 @@ const ThinkingAnimation = () => (
         <span className="h-2 w-2 rounded-full bg-primary animate-pulse [animation-delay:-0.15s]"></span>
         <span className="h-2 w-2 rounded-full bg-primary animate-pulse"></span>
     </div>
-)
+);
 
 export default function AssistantPage() {
   const { user } = useAuth();
@@ -152,19 +73,28 @@ export default function AssistantPage() {
   }, []);
 
   useEffect(() => {
-    const savedThreads = localStorage.getItem('ai-threads');
-    if (savedThreads) {
-      setThreads(JSON.parse(savedThreads));
-      const latestThread = JSON.parse(savedThreads)[0];
-      if(latestThread) setActiveThreadId(latestThread.id);
-    } else {
-      createNewThread();
+    try {
+        const savedThreads = localStorage.getItem('ai-threads');
+        if (savedThreads) {
+          const parsedThreads = JSON.parse(savedThreads);
+          setThreads(parsedThreads);
+          const latestThread = parsedThreads[0];
+          if(latestThread) setActiveThreadId(latestThread.id);
+          else createNewThread();
+        } else {
+          createNewThread();
+        }
+    } catch (e) {
+        console.error("Failed to parse threads from localStorage", e);
+        createNewThread();
     }
   }, [createNewThread]);
   
   useEffect(() => {
     if (threads.length > 0) {
       localStorage.setItem('ai-threads', JSON.stringify(threads));
+    } else {
+      localStorage.removeItem('ai-threads');
     }
   }, [threads]);
   
@@ -249,46 +179,22 @@ export default function AssistantPage() {
   const handleDeleteThread = (threadId: string) => {
     setThreads(prev => {
         const newThreads = prev.filter(t => t.id !== threadId);
-        if (newThreads.length === 0) {
-            createNewThread();
-        } else if (activeThreadId === threadId) {
-            setActiveThreadId(newThreads[0].id);
+        if (activeThreadId === threadId) {
+            if (newThreads.length > 0) {
+              setActiveThreadId(newThreads[0].id);
+            } else {
+              // This will trigger createNewThread via useEffect
+              setActiveThreadId(null); 
+            }
         }
         return newThreads;
     });
-  }
-
-  const HistoryList = () => (
-    <ScrollArea className="flex-1">
-        <div className="p-2 space-y-1">
-        {[...threads].sort((a,b) => b.createdAt - a.createdAt).map(thread => (
-             <div key={thread.id} className="relative group">
-                <button
-                    onClick={() => setActiveThreadId(thread.id)}
-                    className={cn(
-                        'w-full text-left p-2 rounded-md text-sm truncate',
-                        activeThreadId === thread.id ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-accent'
-                    )}
-                >
-                    {thread.title}
-                </button>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1 h-6 w-6 opacity-0 group-hover:opacity-100"
-                    onClick={() => handleDeleteThread(thread.id)}
-                >
-                    <Trash2 className="h-4 w-4"/>
-                </Button>
-            </div>
-        ))}
-        </div>
-    </ScrollArea>
-  );
+  };
 
   return (
     <MainLayout>
         <div className="h-full grid md:grid-cols-[280px_1fr]">
+            {/* Desktop Sidebar */}
             <aside className="hidden md:flex flex-col border-r h-full bg-muted/50">
                 <div className="p-4 border-b">
                     <h2 className="font-semibold text-lg">Riwayat Percakapan</h2>
@@ -299,9 +205,17 @@ export default function AssistantPage() {
                     </Button>
                     <Button variant="ghost" size="icon" onClick={createNewThread}><Plus /></Button>
                 </div>
-                <HistoryList />
+                <Suspense fallback={<div className="p-4"><Loader2 className="animate-spin" /></div>}>
+                    <HistoryList
+                        threads={threads}
+                        activeThreadId={activeThreadId}
+                        setActiveThreadId={setActiveThreadId}
+                        handleDeleteThread={handleDeleteThread}
+                    />
+                </Suspense>
             </aside>
             <div className="relative flex flex-col h-full">
+                {/* Mobile Header */}
                 <header className="md:hidden p-2 border-b flex items-center justify-between gap-2">
                     <Button variant="ghost" size="icon" onClick={() => router.push('/feed')}><ChevronLeft /></Button>
                     <h2 className="font-semibold truncate text-center">{activeThread?.title}</h2>
@@ -316,7 +230,14 @@ export default function AssistantPage() {
                              <div className="p-4 flex items-center justify-between border-b">
                                 <Button variant="outline" size="sm" onClick={createNewThread}><Plus className="mr-2 h-4 w-4"/> Baru</Button>
                             </div>
-                             <HistoryList />
+                            <Suspense fallback={<div className="p-4"><Loader2 className="animate-spin" /></div>}>
+                                <HistoryList
+                                    threads={threads}
+                                    activeThreadId={activeThreadId}
+                                    setActiveThreadId={setActiveThreadId}
+                                    handleDeleteThread={handleDeleteThread}
+                                />
+                            </Suspense>
                         </SheetContent>
                     </Sheet>
                 </header>
@@ -331,7 +252,9 @@ export default function AssistantPage() {
                                 {message.role === 'user' ? <UserCircle size={24} /> : <Bot size={20} />}
                             </div>
                             <div className="flex-1 pt-1">
-                                <RenderMessage message={message} />
+                                <Suspense fallback={<p>Memuat...</p>}>
+                                    <RenderMessage message={message} />
+                                </Suspense>
                             </div>
                         </div>
                     ))}
@@ -346,16 +269,9 @@ export default function AssistantPage() {
                         </div>
                     )}
                     {activeThread?.messages.length === 1 && (
-                        <div className="space-y-2 pt-4">
-                            <p className="text-xs text-muted-foreground font-semibold">Atau coba salah satu dari ini:</p>
-                            <div className="flex flex-wrap gap-2">
-                                {samplePrompts.map(prompt => (
-                                    <Button key={prompt} size="sm" variant="outline" onClick={() => handleSendMessage(prompt)}>
-                                        {prompt}
-                                    </Button>
-                                ))}
-                            </div>
-                        </div>
+                         <Suspense fallback={null}>
+                            <SamplePrompts onSelectPrompt={handleSendMessage} />
+                        </Suspense>
                     )}
                     </div>
                 </ScrollArea>
