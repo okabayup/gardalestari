@@ -8,13 +8,13 @@ import { LayoutGrid, Users, Sprout, FolderKanban, Sparkles } from 'lucide-react'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { Separator } from '../ui/separator';
 import { useAuth } from '@/hooks/use-auth';
-import Assistant from '../assistant/Assistant';
 import { directoryItems } from '@/lib/definitions';
 
 const mainNavItems = [
   { href: '/feed', label: 'Beranda', icon: LayoutGrid },
   { href: '/members', label: 'Anggota', icon: Users },
   { href: '/programs', label: 'Program', icon: Sprout },
+  { href: '/assistant', label: 'Agen AI', icon: Sparkles },
 ];
 
 const DirectorySheet = () => {
@@ -79,13 +79,6 @@ export default function BottomNav() {
             </Link>
           );
         })}
-        {/* Assistant as a standard menu item */}
-        <div className={cn(
-            'relative flex h-full flex-col items-center justify-center gap-1 p-1 text-sm transition-colors hover:text-primary',
-            'text-muted-foreground'
-        )}>
-            <Assistant />
-        </div>
         <DirectorySheet />
       </nav>
     </div>
