@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -14,11 +13,11 @@ const navItems = [
   { href: '/feed', label: 'Beranda', icon: LayoutGrid },
   { href: '/members', label: 'Anggota', icon: Users },
   { href: '/programs', label: 'Program', icon: Sprout },
-  { href: '/events', label: 'Acara', icon: CalendarDays },
 ];
 
 const directoryItems = [
     { href: '/ideas', label: 'Bank Ide', icon: Lightbulb },
+    { href: '/events', label: 'Acara', icon: CalendarDays },
     { href: '/berita', label: 'Berita', icon: Newspaper },
     { href: '/video', label: 'Video', icon: Video },
     { href: '/recruitments', label: 'Rekrutmen', icon: Briefcase },

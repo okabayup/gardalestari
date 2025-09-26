@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRequireAuth } from '@/hooks/use-auth';
@@ -8,7 +9,6 @@ import InstallPWA from './InstallPWA';
 import { useFcm } from '@/hooks/use-fcm';
 import { usePathname } from 'next/navigation';
 import VerificationFlow from '@/components/auth/VerificationFlow';
-import Assistant from '../assistant/Assistant';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useRequireAuth();
@@ -39,7 +39,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             <>
               <BottomNav />
               <InstallPWA />
-              <Assistant />
             </>
           )}
         </>

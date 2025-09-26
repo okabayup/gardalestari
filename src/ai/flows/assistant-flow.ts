@@ -26,7 +26,8 @@ import {
   type AssistantInput, 
   type AssistantOutput,
 } from '@/lib/definitions';
-import { Message, Part, Tool, defineTool, GenerationCommon, generate, content, role } from 'genkit';
+import { Message, Part, Tool, defineTool, GenerationCommon, generate, content } from 'genkit';
+import { role } from 'genkit/zod';
 import { generateImage as generateImageFlow } from './image-generate-flow';
 
 
@@ -181,7 +182,14 @@ const generateImageTool = ai.defineTool(
                 throw new Error("Image generation failed to return a URL.");
             }
             const storageRef = ref(storage, `ai-generated-images/${Date.now()}.png`);
-            await uploadBytes(storageRef, Buffer.from(imageUrl.split(',')[1], 'base64'), { contentType: 'image/png' });
+            // The flow now returns a full data URI, so we need to handle it.
+            const isDataUri = imageUrl.startsWith('data:');
+            const buffer = isDataUri 
+                ? Buffer.from(imageUrl.split(',')[1], 'base64')
+                : Buffer.from(await(await fetch(imageUrl)).arrayBuffer());
+            const contentType = isDataUri ? imageUrl.split(';')[0].split(':')[1] : 'image/png';
+            
+            await uploadBytes(storageRef, buffer, { contentType });
             const downloadUrl = await getDownloadURL(storageRef);
             console.log(`[generateImageTool] Image successfully generated and uploaded to: ${downloadUrl}`);
             return { imageUrl: downloadUrl };
@@ -210,7 +218,7 @@ Your primary roles are:
 2. **Providing Information**: Answer questions about Garda Lestari, its mission, and its activities. Use your tools to find relevant data.
 3. **Brainstorming & Analysis**: Help users brainstorm ideas for social projects, businesses, or programs. Use the provided tools to search the internal "Data Bank", "Idea Bank", "Programs", "Events", and "Achievements" for relevant context, data, and inspiration. You can also analyze images provided by the user.
 4. **Generating Documents**: If a user asks to "create", "make", or "generate" a document, letter, or proposal, use the 'createDocument' tool. The user MUST specify a file name with a .docx or .pdf extension. If they don't, ask them for the file name and format. After the tool succeeds, your response MUST include a prominent Markdown link to the download URL.
-5. **Generating Images**: If a user asks to "generate", "create", "make", or "draw" an image or picture, use the 'generateImage' tool. After the tool succeeds, your response MUST include a prominent Markdown-formatted image (`![prompt](url)`) to display it.
+5. **Generating Images**: If a user asks to "generate", "create", "make", or "draw" an image or picture, use the 'generateImage' tool. After the tool succeeds, your response MUST include a prominent Markdown-formatted image (\`![prompt](url)\`) to display it.
 
 **APP KNOWLEDGE BASE:**
 - \`/feed\`: Halaman utama berisi linimasa postingan dari anggota, mirip media sosial.
@@ -261,7 +269,7 @@ const assistantFlow = ai.defineFlow(
       outputSchema: AssistantOutputSchema,
     },
     async (input) => {
-        console.log('[assistantFlow] Received input:', input);
+        console.log('[assistantFlow] Received input:', JSON.stringify(input, null, 2));
         const { query, history, image } = input;
         
         const tools = Object.values(availableTools);
@@ -282,7 +290,7 @@ const assistantFlow = ai.defineFlow(
 
         try {
             console.log('[assistantFlow] Initial generation call...');
-            const {candidates} = await generate({
+            let {candidates} = await generate({
                 tools,
                 system: systemPrompt,
                 messages,
@@ -331,6 +339,7 @@ const assistantFlow = ai.defineFlow(
                     console.log('[assistantFlow] Re-generating with tool responses...');
                     const nextResponse = await generate({
                         tools,
+                        system: systemPrompt, // Re-pass system prompt
                         messages,
                         config: generationConfig,
                         output: {
@@ -338,6 +347,9 @@ const assistantFlow = ai.defineFlow(
                             schema: AssistantOutputSchema
                         },
                     });
+                    if (!nextResponse.candidates[0]) {
+                        throw new Error('AI failed to generate a subsequent response after tool call.');
+                    }
                     choice = nextResponse.candidates[0];
                 }
                 
