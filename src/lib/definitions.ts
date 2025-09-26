@@ -122,7 +122,7 @@ export interface BeritaPost {
   isFeatured?: boolean;
   seoScore?: number;
   status?: 'published' | 'draft';
-  indexingStatus?: IndexingStatus;
+  indexingStatus?: IndexingStatus | null;
 }
 
 export interface IndexingLog {

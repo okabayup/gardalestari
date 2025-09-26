@@ -44,10 +44,16 @@ const IndexingStatusBadge = ({ post }: { post: BeritaPost }) => {
     const handleFetchStatus = useCallback(async () => {
         if (post.status !== 'published') return;
         setLoading(true);
-        const url = `${process.env.NEXT_PUBLIC_BASE_URL}/${post.type === 'video' ? 'video' : 'berita'}/${post.slug}`;
-        const fetchedStatus = await getNotificationStatus(url);
-        setStatus(fetchedStatus);
-        setLoading(false);
+        try {
+            const url = `${process.env.NEXT_PUBLIC_BASE_URL}/${post.type === 'video' ? 'video' : 'berita'}/${post.slug}`;
+            const fetchedStatus = await getNotificationStatus(url);
+            setStatus(fetchedStatus);
+        } catch (error) {
+            // Silently fail is okay here as it's a secondary check
+            console.error("Failed to fetch notification status:", error);
+        } finally {
+            setLoading(false);
+        }
     }, [post.status, post.type, post.slug]);
     
     const latestNotification = status?.latestUpdate?.notifyTime ? status.latestUpdate : status?.latestRemove;
@@ -314,7 +320,7 @@ export default function AdminBeritaPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                          <IndexingStatusBadge post={post} />
+                          {post.status === 'published' && <IndexingStatusBadge post={post} />}
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{new Date(post.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</TableCell>
                       <TableCell>

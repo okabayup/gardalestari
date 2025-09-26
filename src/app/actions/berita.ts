@@ -359,7 +359,7 @@ async function getGoogleAuth() {
         process.env.GOOGLE_CLIENT_EMAIL,
         undefined,
         process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-        ['https://www.googleapis.com/auth/indexing']
+        ['https://www.googleapis.com/auth/indexing', 'https://www.googleapis.com/auth/webmasters.readonly']
     );
 }
 
@@ -381,6 +381,10 @@ export async function getNotificationStatus(url: string): Promise<IndexingStatus
         }
         return null;
     } catch (error: any) {
+        // It's common for a URL to not have notification metadata yet.
+        if (error.code === 404) {
+            return null;
+        }
         console.error('Error fetching notification status:', error.response?.data || error.message);
         return null;
     }
