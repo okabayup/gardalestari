@@ -260,6 +260,9 @@ export default function AssistantPage() {
 
   const HistorySidebar = () => (
     <div className="flex flex-col h-full bg-muted/50">
+        <SheetHeader className="p-4 border-b">
+            <SheetTitle className="text-left">Riwayat Percakapan</SheetTitle>
+        </SheetHeader>
         <div className="p-4 flex items-center justify-between border-b">
             <Button variant="outline" size="sm" onClick={() => router.push('/feed')}>
                 <ChevronLeft className="mr-2 h-4 w-4" /> Kembali ke Beranda
