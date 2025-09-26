@@ -5,11 +5,12 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bot, User, Send, Loader2, Link as LinkIcon, Lightbulb, UserCircle, Plus, Trash2, Paperclip, X, MessageSquare, ChevronLeft } from 'lucide-react';
+import { Bot, User, Send, Loader2, Link as LinkIcon, Lightbulb, UserCircle, Plus, Trash2, Paperclip, X, MessageSquare, ChevronLeft, Menu } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { answerQuestion } from '@/ai/flows/assistant-flow';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { AssistantOutput, Citation } from '@/lib/definitions';
 import { marked } from 'marked';
@@ -122,6 +123,7 @@ const ThinkingAnimation = () => (
 
 export default function AssistantPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -259,7 +261,9 @@ export default function AssistantPage() {
   const HistorySidebar = () => (
     <div className="flex flex-col h-full bg-muted/50">
         <div className="p-4 flex items-center justify-between border-b">
-            <h2 className="text-lg font-semibold">Riwayat</h2>
+            <Button variant="outline" size="sm" onClick={() => router.push('/feed')}>
+                <ChevronLeft className="mr-2 h-4 w-4" /> Kembali ke Beranda
+            </Button>
             <Button variant="ghost" size="icon" onClick={createNewThread}><Plus /></Button>
         </div>
         <ScrollArea className="flex-1">
@@ -297,16 +301,17 @@ export default function AssistantPage() {
                 <HistorySidebar />
             </aside>
             <div className="relative flex flex-col h-full">
-                <header className="md:hidden p-2 border-b flex items-center gap-2">
+                <header className="md:hidden p-2 border-b flex items-center justify-between gap-2">
+                    <Button variant="ghost" size="icon" onClick={() => router.push('/feed')}><ChevronLeft /></Button>
+                    <h2 className="font-semibold truncate text-center">{activeThread?.title}</h2>
                     <Sheet>
                         <SheetTrigger asChild>
-                            <Button variant="ghost" size="icon"><ChevronLeft /></Button>
+                            <Button variant="ghost" size="icon"><Menu /></Button>
                         </SheetTrigger>
                         <SheetContent side="left" className="p-0 w-3/4">
                              <HistorySidebar />
                         </SheetContent>
                     </Sheet>
-                    <h2 className="font-semibold truncate">{activeThread?.title}</h2>
                 </header>
                 <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
                     <div className="max-w-4xl mx-auto space-y-8 pb-32">
