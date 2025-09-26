@@ -258,50 +258,48 @@ export default function AssistantPage() {
     });
   }
 
-  const HistorySidebar = () => (
-    <div className="flex flex-col h-full bg-muted/50">
-        <SheetHeader className="p-4 border-b">
-            <SheetTitle className="text-left">Riwayat Percakapan</SheetTitle>
-        </SheetHeader>
-        <div className="p-4 flex items-center justify-between border-b">
-            <Button variant="outline" size="sm" onClick={() => router.push('/feed')}>
-                <ChevronLeft className="mr-2 h-4 w-4" /> Kembali ke Beranda
-            </Button>
-            <Button variant="ghost" size="icon" onClick={createNewThread}><Plus /></Button>
-        </div>
-        <ScrollArea className="flex-1">
-            <div className="p-2 space-y-1">
-            {threads.sort((a,b) => b.createdAt - a.createdAt).map(thread => (
-                 <div key={thread.id} className="relative group">
-                    <button
-                        onClick={() => setActiveThreadId(thread.id)}
-                        className={cn(
-                            'w-full text-left p-2 rounded-md text-sm truncate',
-                            activeThreadId === thread.id ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-accent'
-                        )}
-                    >
-                        {thread.title}
-                    </button>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-1 top-1 h-6 w-6 opacity-0 group-hover:opacity-100"
-                        onClick={() => handleDeleteThread(thread.id)}
-                    >
-                        <Trash2 className="h-4 w-4"/>
-                    </Button>
-                </div>
-            ))}
+  const HistoryList = () => (
+    <ScrollArea className="flex-1">
+        <div className="p-2 space-y-1">
+        {threads.sort((a,b) => b.createdAt - a.createdAt).map(thread => (
+             <div key={thread.id} className="relative group">
+                <button
+                    onClick={() => setActiveThreadId(thread.id)}
+                    className={cn(
+                        'w-full text-left p-2 rounded-md text-sm truncate',
+                        activeThreadId === thread.id ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-accent'
+                    )}
+                >
+                    {thread.title}
+                </button>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1 h-6 w-6 opacity-0 group-hover:opacity-100"
+                    onClick={() => handleDeleteThread(thread.id)}
+                >
+                    <Trash2 className="h-4 w-4"/>
+                </Button>
             </div>
-        </ScrollArea>
-    </div>
+        ))}
+        </div>
+    </ScrollArea>
   );
 
   return (
     <MainLayout>
         <div className="h-full grid md:grid-cols-[280px_1fr]">
-            <aside className="hidden md:block border-r h-full">
-                <HistorySidebar />
+            <aside className="hidden md:flex flex-col border-r h-full bg-muted/50">
+                <div className="p-4 border-b">
+                    <h2 className="font-semibold text-lg">Riwayat Percakapan</h2>
+                </div>
+                <div className="p-4 flex items-center justify-between border-b">
+                    <Button variant="outline" size="sm" onClick={() => router.push('/feed')}>
+                        <ChevronLeft className="mr-2 h-4 w-4" /> Kembali ke Beranda
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={createNewThread}><Plus /></Button>
+                </div>
+                <HistoryList />
             </aside>
             <div className="relative flex flex-col h-full">
                 <header className="md:hidden p-2 border-b flex items-center justify-between gap-2">
@@ -311,8 +309,14 @@ export default function AssistantPage() {
                         <SheetTrigger asChild>
                             <Button variant="ghost" size="icon"><Menu /></Button>
                         </SheetTrigger>
-                        <SheetContent side="left" className="p-0 w-3/4">
-                             <HistorySidebar />
+                        <SheetContent side="left" className="p-0 w-3/4 flex flex-col">
+                             <SheetHeader className="p-4 border-b">
+                                <SheetTitle className="text-left">Riwayat Percakapan</SheetTitle>
+                             </SheetHeader>
+                             <div className="p-4 flex items-center justify-between border-b">
+                                <Button variant="outline" size="sm" onClick={createNewThread}><Plus className="mr-2 h-4 w-4"/> Baru</Button>
+                            </div>
+                             <HistoryList />
                         </SheetContent>
                     </Sheet>
                 </header>
