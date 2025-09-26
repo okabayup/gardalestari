@@ -385,7 +385,7 @@ export async function getNotificationStatus(url: string): Promise<IndexingStatus
         if (error.code === 404) {
             return null;
         }
-        console.error('Error fetching notification status:', error.response?.data || error.message);
+        console.error('Error fetching notification status:', error.response?.data || error.message || error);
         return null;
     }
 }
