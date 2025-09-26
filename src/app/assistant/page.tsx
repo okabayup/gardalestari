@@ -261,7 +261,7 @@ export default function AssistantPage() {
   const HistoryList = () => (
     <ScrollArea className="flex-1">
         <div className="p-2 space-y-1">
-        {threads.sort((a,b) => b.createdAt - a.createdAt).map(thread => (
+        {[...threads].sort((a,b) => b.createdAt - a.createdAt).map(thread => (
              <div key={thread.id} className="relative group">
                 <button
                     onClick={() => setActiveThreadId(thread.id)}
