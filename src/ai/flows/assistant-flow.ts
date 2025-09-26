@@ -27,6 +27,7 @@ import {
   type AssistantOutput,
 } from '@/lib/definitions';
 import { Message, Part, Tool, defineTool, GenerationCommon, generate, content, role } from 'genkit';
+import { generateImage as generateImageFlow } from './image-generate-flow';
 
 
 // Define tools for the AI to use
@@ -161,6 +162,36 @@ const createDocumentTool = ai.defineTool(
   }
 );
 
+const generateImageTool = ai.defineTool(
+    {
+        name: 'generateImage',
+        description: 'Generates an image from a text prompt and returns its public URL.',
+        inputSchema: z.object({
+            prompt: z.string().describe('A detailed, professional photograph prompt for the image to be generated.'),
+        }),
+        outputSchema: z.object({
+            imageUrl: z.string().describe('The public URL of the generated image.'),
+        }),
+    },
+    async ({ prompt }) => {
+        console.log(`[generateImageTool] Generating image with prompt: "${prompt}"`);
+        try {
+            const { imageUrl } = await generateImageFlow({ prompt });
+            if (!imageUrl) {
+                throw new Error("Image generation failed to return a URL.");
+            }
+            const storageRef = ref(storage, `ai-generated-images/${Date.now()}.png`);
+            await uploadBytes(storageRef, Buffer.from(imageUrl.split(',')[1], 'base64'), { contentType: 'image/png' });
+            const downloadUrl = await getDownloadURL(storageRef);
+            console.log(`[generateImageTool] Image successfully generated and uploaded to: ${downloadUrl}`);
+            return { imageUrl: downloadUrl };
+        } catch (error) {
+            console.error(`[generateImageTool Error]`, error);
+            throw new Error(`Failed to generate image: ${(error as Error).message}`);
+        }
+    }
+);
+
 
 const availableTools: Record<string, Tool> = {
     searchDataBank: searchDataBankTool,
@@ -169,6 +200,7 @@ const availableTools: Record<string, Tool> = {
     searchEvents: searchEventsTool,
     searchAchievements: searchAchievementsTool,
     createDocument: createDocumentTool,
+    generateImage: generateImageTool,
 };
 
 const systemPrompt = `You are Garda, the official AI assistant for Garda Lestari, a youth-led organization focused on agro-maritime and forestry innovation in Indonesia. Your tone is professional, helpful, encouraging, and slightly formal. Always answer in Bahasa Indonesia. Use Markdown for formatting (e.g., *bold*, lists).
@@ -176,8 +208,9 @@ const systemPrompt = `You are Garda, the official AI assistant for Garda Lestari
 Your primary roles are:
 1. **Guiding Users**: Help users understand and use the application's features. When asked how to do something, provide clear, step-by-step instructions.
 2. **Providing Information**: Answer questions about Garda Lestari, its mission, and its activities. Use your tools to find relevant data.
-3. **Brainstorming & Analysis**: Help users brainstorm ideas for social projects, businesses, or programs. Use the provided tools to search the internal "Data Bank", "Idea Bank", "Programs", "Events", and "Achievements" for relevant context, data, and inspiration.
+3. **Brainstorming & Analysis**: Help users brainstorm ideas for social projects, businesses, or programs. Use the provided tools to search the internal "Data Bank", "Idea Bank", "Programs", "Events", and "Achievements" for relevant context, data, and inspiration. You can also analyze images provided by the user.
 4. **Generating Documents**: If a user asks to "create", "make", or "generate" a document, letter, or proposal, use the 'createDocument' tool. The user MUST specify a file name with a .docx or .pdf extension. If they don't, ask them for the file name and format. After the tool succeeds, your response MUST include a prominent Markdown link to the download URL.
+5. **Generating Images**: If a user asks to "generate", "create", "make", or "draw" an image or picture, use the 'generateImage' tool. After the tool succeeds, your response MUST include a prominent Markdown-formatted image (`![prompt](url)`) to display it.
 
 **APP KNOWLEDGE BASE:**
 - \`/feed\`: Halaman utama berisi linimasa postingan dari anggota, mirip media sosial.
@@ -229,17 +262,22 @@ const assistantFlow = ai.defineFlow(
     },
     async (input) => {
         console.log('[assistantFlow] Received input:', input);
-        const { query, history } = input;
+        const { query, history, image } = input;
         
         const tools = Object.values(availableTools);
 
         const generationConfig: GenerationCommon = {
             temperature: 0.2,
         };
+        
+        const userPrompt: Part[] = [{ text: query }];
+        if (image) {
+            userPrompt.push({ media: { url: image } });
+        }
 
         const messages: Message[] = [
             ...history?.map(h => role(h.role, h.content)) || [],
-            role('user', query),
+            role('user', userPrompt),
         ];
 
         try {

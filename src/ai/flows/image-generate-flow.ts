@@ -35,9 +35,12 @@ const generateImageFlow = ai.defineFlow(
     const { media } = await ai.generate({
       model: 'googleai/gemini-2.5-flash-image-preview',
       prompt: `A high-quality, professional photograph of: ${input.prompt}`,
+      config: {
+        responseModalities: ['TEXT', 'IMAGE'],
+      },
     });
 
-    const imageUrl = media.url;
+    const imageUrl = media?.url;
     if (!imageUrl) {
       throw new Error('Failed to generate image. No URL returned from the model.');
     }

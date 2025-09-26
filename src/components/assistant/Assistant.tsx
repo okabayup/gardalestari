@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bot, User, Send, Loader2, Link as LinkIcon, Lightbulb, UserCircle, Mic, MessageSquare, Plus, Trash2 } from 'lucide-react';
+import { Bot, User, Send, Loader2, Link as LinkIcon, Lightbulb, UserCircle, Mic, MessageSquare, Plus, Trash2, Paperclip, X } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { answerQuestion } from '@/ai/flows/assistant-flow';
 import { textToSpeech } from '@/ai/flows/tts-flow';
@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 import { produce } from 'immer';
 import { Badge } from '../ui/badge';
+import Image from 'next/image';
 
 const samplePrompts = [
     'Bagaimana cara mengajukan ide baru?',
@@ -29,7 +30,7 @@ const samplePrompts = [
 
 interface Message {
   role: 'user' | 'assistant';
-  content: string;
+  content: any; // Can be string or array of parts for multimodal
   citations?: Citation[];
   audioUrl?: string;
   isVoiceInput?: boolean;
@@ -63,6 +64,11 @@ const CitationCard = ({ citation }: { citation: Citation }) => {
 const RenderMessage = ({ message }: { message: Message }) => {
     const { content, citations, audioUrl } = message;
     const audioRef = useRef<HTMLAudioElement>(null);
+    
+    // Normalize content to always be an array of parts
+    const parts = Array.isArray(content) ? content : [{ text: content }];
+    const textContent = parts.find(p => p.text)?.text || '';
+    const imagePart = parts.find(p => p.media);
 
     useEffect(() => {
         if(audioUrl && audioRef.current) {
@@ -77,14 +83,19 @@ const RenderMessage = ({ message }: { message: Message }) => {
         return html.replace(/^<a /, '<a target="_blank" rel="noopener noreferrer" ');
     };
 
-    const rawHtml = marked(content, { renderer }) as string;
-    const parts = rawHtml.split(/(\[Sumber \d+\]|\[Ide \d+\]|\[Program \d+\]|\[Event \d+\]|\[Achievement \d+\])/g);
+    const rawHtml = marked(textContent, { renderer }) as string;
+    const textParts = rawHtml.split(/(\[Sumber \d+\]|\[Ide \d+\]|\[Program \d+\]|\[Event \d+\]|\[Achievement \d+\])/g);
 
     return (
         <div className="space-y-3">
+            {imagePart && (
+                <div className="relative h-48 w-full rounded-md overflow-hidden border">
+                    <Image src={imagePart.media.url} alt="User upload" layout="fill" objectFit="contain" />
+                </div>
+            )}
             <ScrollArea className="max-h-60 pr-4">
                  <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed">
-                    {parts.map((part, index) => {
+                    {textParts.map((part, index) => {
                         const match = part.match(/\[(?:Sumber|Ide|Program|Event|Achievement) (\d+)\]/);
                         if (match) {
                         const num = parseInt(match[1], 10);
@@ -119,13 +130,14 @@ const RenderMessage = ({ message }: { message: Message }) => {
 
 const AssistantUI = ({ thread, onSendMessage, isLoading, onNewThread }: { 
     thread: Thread;
-    onSendMessage: (message: string, isVoice: boolean) => Promise<void>; 
+    onSendMessage: (query: string, image?: string) => Promise<void>; 
     isLoading: boolean;
     onNewThread: () => void;
 }) => {
   const [input, setInput] = useState('');
-  const [isListening, setIsListening] = useState(false);
+  const [image, setImage] = useState<{file: File, preview: string} | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -133,40 +145,29 @@ const AssistantUI = ({ thread, onSendMessage, isLoading, onNewThread }: {
     }
   }, [thread.messages]);
 
-  const handleSubmit = (isVoice = false) => {
-    if (!input.trim() || isLoading) return;
-    onSendMessage(input, isVoice);
+  const handleSubmit = async () => {
+    if ((!input.trim() && !image) || isLoading) return;
+    
+    let imageAsDataUri: string | undefined;
+    if (image) {
+        imageAsDataUri = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target?.result as string);
+            reader.readAsDataURL(image.file);
+        });
+    }
+    
+    onSendMessage(input, imageAsDataUri);
     setInput('');
+    setImage(null);
   };
   
-  const handleVoiceInput = () => {
-    if (isListening) return;
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert("Browser Anda tidak mendukung pengenalan suara.");
-      return;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+        const file = e.target.files[0];
+        setImage({ file, preview: URL.createObjectURL(file) });
     }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'id-ID';
-    recognition.interimResults = false;
-    
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = (event) => {
-      console.error("Speech recognition error", event.error);
-      setIsListening(false);
-    };
-    
-    recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      onSendMessage(transcript, true);
-    };
-
-    recognition.start();
   };
-
 
   return (
     <div className="flex flex-col h-full">
@@ -204,7 +205,7 @@ const AssistantUI = ({ thread, onSendMessage, isLoading, onNewThread }: {
                     <p className="text-xs text-muted-foreground font-semibold">Atau coba salah satu dari ini:</p>
                     <div className="flex flex-wrap gap-2">
                         {samplePrompts.map(prompt => (
-                            <Button key={prompt} size="sm" variant="outline" onClick={() => onSendMessage(prompt, false)}>
+                            <Button key={prompt} size="sm" variant="outline" onClick={() => onSendMessage(prompt)}>
                                 {prompt}
                             </Button>
                         ))}
@@ -214,22 +215,37 @@ const AssistantUI = ({ thread, onSendMessage, isLoading, onNewThread }: {
             </div>
         </ScrollArea>
         <div className="pt-4 border-t">
+            {image && (
+                <div className="relative w-20 h-20 mb-2 rounded-md overflow-hidden border">
+                    <Image src={image.preview} alt="upload preview" layout="fill" objectFit="cover" />
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-0 right-0 h-6 w-6 bg-black/50 hover:bg-black/70"
+                        onClick={() => setImage(null)}
+                    >
+                        <X className="h-4 w-4 text-white" />
+                    </Button>
+                </div>
+            )}
             <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="flex w-full items-center gap-2">
-            <Button type="button" variant="ghost" size="icon" onClick={onNewThread} disabled={isLoading}>
-                <Plus />
-            </Button>
-            <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Tanyakan sesuatu pada Garda..."
-                disabled={isLoading}
-            />
-            <Button type="button" variant="ghost" size="icon" onClick={handleVoiceInput} disabled={isLoading}>
-                <Mic className={cn(isListening && "text-destructive")}/>
-            </Button>
-            <Button type="submit" size="icon" disabled={isLoading || !input.trim()}>
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            </Button>
+                <Button type="button" variant="ghost" size="icon" onClick={onNewThread} disabled={isLoading}>
+                    <Plus />
+                </Button>
+                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*"/>
+                <Button type="button" variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
+                    <Paperclip />
+                </Button>
+                <Input
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Tanyakan sesuatu pada Garda..."
+                    disabled={isLoading}
+                />
+                <Button type="submit" size="icon" disabled={isLoading || (!input.trim() && !image)}>
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
             </form>
         </div>
     </div>
@@ -267,11 +283,14 @@ export default function Assistant() {
 
   const activeThread = threads.find(t => t.id === activeThreadId);
 
-  const handleSendMessage = async (query: string, isVoiceInput: boolean) => {
+  const handleSendMessage = async (query: string, image?: string) => {
     if (!user || !activeThread) return;
     setIsLoading(true);
 
-    const userMessage: Message = { role: 'user', content: query, isVoiceInput };
+    const userMessage: Message = { 
+        role: 'user', 
+        content: image ? [{ text: query }, { media: { url: image } }] : query 
+    };
     
     // Update state optimistically
     const updatedThreads = produce(threads, draft => {
@@ -286,20 +305,13 @@ export default function Assistant() {
     setThreads(updatedThreads);
 
     try {
-      const history = activeThread.messages.slice(1);
-      const assistantResponse = await answerQuestion({ query, userId: user.uid, history });
-      
-      let audioUrl: string | undefined;
-      if (isVoiceInput) {
-          const ttsResponse = await textToSpeech(assistantResponse.responseText);
-          audioUrl = ttsResponse.audioDataUri;
-      }
+      const history = activeThread.messages.slice(1).map(m => ({ role: m.role, content: Array.isArray(m.content) ? m.content.find(p => p.text)?.text || '' : m.content}));
+      const assistantResponse = await answerQuestion({ query, userId: user.uid, history, image });
       
       const assistantMessage: Message = {
         role: 'assistant',
         content: assistantResponse.responseText,
         citations: assistantResponse.citations,
-        audioUrl: audioUrl,
       };
 
       const finalThreads = produce(updatedThreads, draft => {

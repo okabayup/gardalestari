@@ -607,8 +607,9 @@ export const AssistantInputSchema = z.object({
   userId: z.string().describe('The ID of the user asking the question.'),
   history: z.array(z.object({
       role: z.enum(['user', 'assistant']),
-      content: z.string(),
+      content: z.any(),
   })).optional().describe('The previous conversation history.'),
+  image: z.string().optional().describe('An optional image provided by the user as a data URI.'),
 });
 export type AssistantInput = z.infer<typeof AssistantInputSchema>;
 
