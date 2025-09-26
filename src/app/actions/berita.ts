@@ -177,9 +177,8 @@ export async function getBeritaPosts(type?: 'artikel' | 'video', includeDrafts =
     let posts: BeritaPost[] = [];
     for (const doc of snapshot.docs) {
       const postData = { id: doc.id, ...doc.data() } as BeritaPost;
-      if (postData.status === 'published') {
-        const url = `${BASE_URL}/${postData.type === 'video' ? 'video' : 'berita'}/${postData.slug}`;
-        postData.indexingStatus = await getNotificationStatus(url);
+      if (postData.status === 'published' && postData.slug) {
+        postData.indexingStatus = await getNotificationStatus(postData.slug);
       }
       posts.push(postData);
     }
@@ -223,7 +222,7 @@ export async function createBeritaPost(post: Omit<BeritaPost, 'id'>) {
     revalidatePath('/panel/berita');
     revalidatePath('/');
 
-    if (postData.status === 'published') {
+    if (postData.status === 'published' && postData.slug) {
         const pathSegment = postData.type === 'video' ? 'video' : 'berita';
         revalidatePath(`/${pathSegment}`);
         const publicUrl = `${BASE_URL}/${pathSegment}/${postData.slug}`;
@@ -260,7 +259,7 @@ export async function updateBeritaPost(id: string, post: Partial<BeritaPost>) {
 
 
     // Notify Google Indexing API only if status changes to published or if a published post is updated
-    if (post.slug && (post.status === 'published' || oldStatus === 'published')) {
+    if (post.slug && (post.status === 'published' || (oldStatus === 'published' && post.status === 'published'))) {
       const publicUrl = `${BASE_URL}/${pathSegment}/${post.slug}`;
       notifyGoogleOfUpdate(publicUrl, 'URL_UPDATED');
     }
@@ -282,7 +281,7 @@ export async function updateBeritaStatusBulk(ids: string[], status: 'published' 
                 const postData = postDoc.data() as BeritaPost;
                 batch.update(postDoc.ref, { status: status });
 
-                if (status === 'published' && postData.status !== 'published') {
+                if (status === 'published' && postData.status !== 'published' && postData.slug) {
                     const pathSegment = postData.type === 'video' ? 'video' : 'berita';
                     const publicUrl = `${BASE_URL}/${pathSegment}/${postData.slug}`;
                     notifyGoogleOfUpdate(publicUrl, 'URL_UPDATED');
@@ -316,7 +315,7 @@ export async function deleteBeritaPost(id: string) {
     const postData = postToDelete.data() as BeritaPost;
     
     // Only notify google if it was a published post
-    if (postData.status === 'published') {
+    if (postData.status === 'published' && postData.slug) {
         const pathSegment = postData.type === 'video' ? 'video' : 'berita';
         const publicUrl = `${BASE_URL}/${pathSegment}/${postData.slug}`;
         notifyGoogleOfUpdate(publicUrl, 'URL_DELETED');
@@ -337,7 +336,7 @@ export async function deleteBeritaPost(id: string) {
 // Action to manually request re-indexing
 export async function requestReindexing(slug: string, type: 'artikel' | 'video' = 'artikel') {
     try {
-        const basePath = type === 'video' ? '/video' : 'berita';
+        const basePath = type === 'video' ? 'video' : 'berita';
         const publicUrl = `${BASE_URL}/${basePath}/${slug}`;
         const result = await notifyGoogleOfUpdate(publicUrl, 'URL_UPDATED');
         if (result.success) {
@@ -363,14 +362,19 @@ async function getGoogleAuth() {
     );
 }
 
-export async function getNotificationStatus(url: string): Promise<IndexingStatus | null> {
+export async function getNotificationStatus(slug: string): Promise<IndexingStatus | null> {
     try {
+        const post = await getBeritaPost(slug);
+        if (!post) return null;
+        
+        const pathSegment = post.type === 'video' ? 'video' : 'berita';
+        const url = `${BASE_URL}/${pathSegment}/${post.slug}`;
+        
         const auth = await getGoogleAuth();
         const indexer = google.indexing({ version: 'v3', auth });
 
-        const encodedUrl = encodeURIComponent(url);
         const response = await indexer.urlNotifications.getMetadata({
-            url: encodedUrl,
+            url: url,
         });
 
         if (response.status === 200 && response.data) {

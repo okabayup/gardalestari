@@ -45,8 +45,7 @@ const IndexingStatusBadge = ({ post }: { post: BeritaPost }) => {
         if (post.status !== 'published') return;
         setLoading(true);
         try {
-            const url = `${process.env.NEXT_PUBLIC_BASE_URL}/${post.type === 'video' ? 'video' : 'berita'}/${post.slug}`;
-            const fetchedStatus = await getNotificationStatus(url);
+            const fetchedStatus = await getNotificationStatus(post.slug);
             setStatus(fetchedStatus);
         } catch (error) {
             // Silently fail is okay here as it's a secondary check
@@ -54,7 +53,7 @@ const IndexingStatusBadge = ({ post }: { post: BeritaPost }) => {
         } finally {
             setLoading(false);
         }
-    }, [post.status, post.type, post.slug]);
+    }, [post.status, post.slug]);
     
     const latestNotification = status?.latestUpdate?.notifyTime ? status.latestUpdate : status?.latestRemove;
 
@@ -183,9 +182,7 @@ export default function AdminBeritaPage() {
   
   const handleCheckIndexStatus = (slug: string, type: 'artikel' | 'video' = 'artikel') => {
     const siteUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/${type === 'video' ? 'video' : 'berita'}/${slug}`;
-    const domain = (new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://gardalestari.org')).hostname;
-    const resourceId = `sc-domain:${domain}`;
-    const searchConsoleUrl = `https://search.google.com/search-console/inspect?resource_id=${resourceId}&id=${encodeURIComponent(siteUrl)}`;
+    const searchConsoleUrl = `https://search.google.com/search-console/inspect?resource_id=sc-domain:${new URL(siteUrl).hostname}&id=${encodeURIComponent(siteUrl)}`;
     window.open(searchConsoleUrl, '_blank');
   }
 
