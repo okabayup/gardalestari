@@ -1,7 +1,9 @@
 
+
 'use server';
 
-import MainLayout from '@/components/layout/MainLayout';
+import LandingHeader from '@/components/layout/LandingHeader';
+import Footer from '@/components/landing/Footer';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { getAnnouncements, Announcement } from '@/app/actions/announcements';
 import { Megaphone, Paperclip } from 'lucide-react';
@@ -41,9 +43,10 @@ export default async function AnnouncementsPage() {
   const announcements = await getAnnouncements();
 
   return (
-    <MainLayout>
-      <div className="p-6 space-y-6">
-        <div className="text-center sm:text-left">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <LandingHeader />
+      <div className="container py-12 md:py-16">
+        <div className="text-center sm:text-left mb-8">
           <h1 className="font-headline text-3xl font-bold">Pengumuman</h1>
           <p className="text-muted-foreground">Informasi penting dan pembaruan dari organisasi.</p>
         </div>
@@ -62,6 +65,7 @@ export default async function AnnouncementsPage() {
             )}
           </div>
       </div>
-    </MainLayout>
+      <Footer />
+    </div>
   );
 }

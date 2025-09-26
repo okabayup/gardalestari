@@ -7,11 +7,22 @@ import { getEvents } from '@/app/actions/events';
 const BASE_URL = 'https://gardalestari.org'; 
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Rute statis
+  // Static public routes
   const staticRoutes = [
-    '/', '/login', '/register', '/feed', '/members', '/programs', '/events',
-    '/benefits', '/berita', '/video', '/profile', '/tentang', '/recruitments',
-    '/evoting', '/map', '/kebijakan-privasi', '/hapus-data', '/ketentuan-layanan',
+    '/',
+    '/berita',
+    '/video',
+    '/tentang',
+    '/programs',
+    '/events',
+    '/recruitments',
+    '/documents',
+    '/announcements',
+    '/kebijakan-privasi',
+    '/ketentuan-layanan',
+    '/hapus-data',
+    '/login',
+    '/register'
   ].map((route) => ({
     url: `${BASE_URL}${route}`,
     lastModified: new Date().toISOString(),
@@ -19,7 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: route === '/' ? 1 : 0.8,
   }));
 
-  // Rute dinamis untuk berita dan video
+  // Dynamic routes for blog posts and videos
   const posts = await getBeritaPosts(undefined, false); // Fetch only published posts
   const contentRoutes = posts.map((post) => ({
     url: `${BASE_URL}/${post.type === 'video' ? 'video' : 'berita'}/${post.slug}`,
@@ -28,16 +39,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
   
-  // Rute dinamis untuk program
+  // Dynamic routes for programs
   const programs = await getPrograms();
   const programRoutes = programs.map((program) => ({
     url: `${BASE_URL}/programs/${program.id}`,
-    lastModified: new Date(program.endDate || new Date()).toISOString(),
+    lastModified: new Date(program.endDate || program.startDate).toISOString(),
     changeFrequency: 'weekly' as const,
     priority: 0.7,
   }));
 
-  // Rute dinamis untuk acara
+  // Dynamic routes for events
   const events = await getEvents();
   const eventRoutes = events.map((event) => ({
     url: `${BASE_URL}/events/${event.id}`,
@@ -45,6 +56,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: 'weekly' as const,
     priority: 0.7,
   }));
+
+  // Note: Internal routes like /feed, /profile, /panel/* etc. are intentionally excluded
+  // as they should not be indexed by search engines.
 
   return [...staticRoutes, ...contentRoutes, ...programRoutes, ...eventRoutes];
 }

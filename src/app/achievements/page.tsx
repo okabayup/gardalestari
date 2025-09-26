@@ -1,7 +1,9 @@
 
+
 'use server';
 
-import MainLayout from '@/components/layout/MainLayout';
+import LandingHeader from '@/components/layout/LandingHeader';
+import Footer from '@/components/landing/Footer';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { getAchievements, Achievement } from '@/app/actions/achievements';
 import { Award } from 'lucide-react';
@@ -49,9 +51,10 @@ export default async function AchievementsPage() {
   const years = [...new Set(achievements.map(a => new Date(a.date).getFullYear()))].sort((a, b) => b - a);
 
   return (
-    <MainLayout>
-      <div className="p-6 space-y-6">
-        <div className="text-center sm:text-left">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <LandingHeader />
+      <div className="container py-12 md:py-16">
+        <div className="text-center sm:text-left mb-8">
           <h1 className="font-headline text-3xl font-bold">Galeri Prestasi</h1>
           <p className="text-muted-foreground">Pencapaian gemilang dari para anggota Garda Lestari.</p>
         </div>
@@ -63,7 +66,7 @@ export default async function AchievementsPage() {
                         <h2 className="font-headline text-2xl font-semibold">{year}</h2>
                         <Separator className="flex-1" />
                     </div>
-                    <div className="grid md:grid-cols-2 gap-6">
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {achievements
                         .filter(a => new Date(a.date).getFullYear() === year)
                         .map((item) => (
@@ -82,6 +85,7 @@ export default async function AchievementsPage() {
             )}
           </div>
       </div>
-    </MainLayout>
+      <Footer />
+    </div>
   );
 }

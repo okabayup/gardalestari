@@ -1,4 +1,5 @@
 
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ import PartnerSlider from '@/components/landing/PartnerSlider';
 import VideoSlider from '@/components/landing/VideoSlider';
 import Footer from '@/components/landing/Footer';
 import FlagshipProgramSlider from '@/components/landing/FlagshipProgramSlider';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
 const StatCard = ({ icon, value, label }: { icon: React.ReactNode, value: string, label: string }) => (
@@ -51,6 +53,7 @@ export default async function LandingPage() {
   const featuredVideos = allPosts.filter(p => p.type === 'video' && p.isFeatured);
 
   const featuredPartners = partners.filter(p => p.isFeatured);
+  const featuredMembers = members.filter(m => m.isSpecialMember).slice(0, 3);
   const WHATSAPP_LINK = `https://wa.me/${process.env.WHATSAPP_NUMBER || '6285176752610'}`;
 
   const totalMembers = members.length + (settings.dummyMembers || 0);
@@ -203,9 +206,35 @@ export default async function LandingPage() {
               </div>
             </div>
         </section>
+
+        {/* Featured Members Section */}
+        {featuredMembers.length > 0 && (
+            <section id="faces" className="w-full bg-background py-16 md:py-28">
+                <div className="container">
+                    <div className="mb-14 text-center">
+                        <span className="text-sm font-semibold uppercase text-primary">Wajah Garda Lestari</span>
+                        <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl mt-2">Cerita dari Anggota Kami</h2>
+                        <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Dengarkan langsung dari mereka yang telah merasakan dampak positif dari gerakan ini.</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {featuredMembers.map((member) => (
+                            <div key={member.id} className="flex flex-col items-center text-center">
+                                <Avatar className="h-24 w-24 mb-4">
+                                    <AvatarImage src={member.avatarUrl} alt={member.name} />
+                                    <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <p className="text-lg font-semibold italic text-foreground">"Bergabung dengan Garda Lestari membuka wawasan dan jaringan saya secara luar biasa."</p>
+                                <p className="mt-4 font-bold">{member.name}</p>
+                                <p className="text-sm text-muted-foreground">{member.position}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+        )}
         
         {/* Featured Videos Section */}
-        <section id="video" className="w-full bg-background py-16 md:py-28">
+        <section id="video" className="w-full bg-secondary py-16 md:py-28">
           <div className="container">
              <div className="mb-14 text-center">
               <span className="text-sm font-semibold uppercase text-primary">Video Unggulan</span>
@@ -228,7 +257,7 @@ export default async function LandingPage() {
         </section>
 
         {/* Latest News Section */}
-        <section id="news" className="w-full bg-secondary py-16 md:py-28">
+        <section id="news" className="w-full bg-background py-16 md:py-28">
           <div className="container">
             <div className="mb-14 text-center">
               <span className="text-sm font-semibold uppercase text-primary">Kabar Terbaru</span>
@@ -272,7 +301,7 @@ export default async function LandingPage() {
         </section>
         
         {/* Call to Action Section */}
-        <section id="partnership" className="w-full bg-background py-16 md:py-28 overflow-hidden">
+        <section id="partnership" className="w-full bg-secondary py-16 md:py-28 overflow-hidden">
           <div className="container">
             <div className="mb-14 text-center animate-in fade-in zoom-in-95 duration-500">
               <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl">Jadilah Bagian dari Dampak</h2>
@@ -312,3 +341,4 @@ export default async function LandingPage() {
     </div>
   );
 }
+
