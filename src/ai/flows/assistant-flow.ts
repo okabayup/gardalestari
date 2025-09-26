@@ -18,7 +18,8 @@ import { searchEvents, Event } from '@/app/actions/events';
 import { searchAchievements, Achievement } from '@/app/actions/achievements';
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Document, Packer, Paragraph, TextRun } from 'docx';
+import { Document as DocxDocument, Packer, Paragraph, TextRun } from 'docx';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { 
   AssistantInputSchema, 
   AssistantOutputSchema,
@@ -82,12 +83,12 @@ const searchAchievementsTool = ai.defineTool(
 const createDocumentTool = ai.defineTool(
   {
     name: 'createDocument',
-    description: 'Generates a formal document (.docx) based on a given prompt, such as creating a proposal, official letter, or report. The generated document will be saved to cloud storage, and the function will return a public download URL.',
+    description: 'Generates a formal document (.docx or .pdf) based on a given prompt, such as creating a proposal, official letter, or report. The generated document will be saved to cloud storage, and the function will return a public download URL.',
     inputSchema: z.object({ 
-      prompt: z.string().describe('A detailed prompt describing the content and format of the document to be generated. For example: "Buat draf surat permohonan audiensi kepada Menteri Pertanian mengenai program petani muda."'),
-      fileName: z.string().describe('The desired file name for the document, ending with .docx. For example: "proposal-kemitraan.docx".'),
+      prompt: z.string().describe('A detailed prompt describing the content and format of the document to be generated. For example: "Buat draf surat permohonan audiensi kepada Menteri Pertanian dalam format PDF."'),
+      fileName: z.string().describe('The desired file name for the document, ending with .docx or .pdf. For example: "proposal-kemitraan.docx" atau "laporan-kegiatan.pdf".'),
      }),
-    outputSchema: z.object({ downloadUrl: z.string().describe('The public URL to download the generated .docx file.') }),
+    outputSchema: z.object({ downloadUrl: z.string().describe('The public URL to download the generated file.') }),
   },
   async ({ prompt, fileName }) => {
     console.log(`[createDocumentTool] Starting document generation for: ${fileName}`);
@@ -101,23 +102,53 @@ const createDocumentTool = ai.defineTool(
         if (!content) {
             throw new Error("AI failed to generate document content.");
         }
-
-        const paragraphs = content.split('\n').filter(p => p.trim() !== '').map(p => new Paragraph({
-            children: [new TextRun(p)],
-            spacing: { after: 200 },
-        }));
-
-        const doc = new Document({
-            sections: [{
-                properties: {},
-                children: paragraphs,
-            }],
-        });
         
-        const buffer = await Packer.toBuffer(doc);
+        let buffer: Buffer;
+        let contentType: string;
+        
+        const fileExtension = fileName.split('.').pop()?.toLowerCase();
+
+        if (fileExtension === 'pdf') {
+            // Generate PDF
+            contentType = 'application/pdf';
+            const pdfDoc = await PDFDocument.create();
+            const page = pdfDoc.addPage();
+            const { width, height } = page.getSize();
+            const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+            const fontSize = 12;
+
+            page.drawText(content, {
+                x: 50,
+                y: height - 4 * fontSize,
+                font,
+                fontSize,
+                lineHeight: 15,
+                maxWidth: width - 100,
+            });
+
+            const pdfBytes = await pdfDoc.save();
+            buffer = Buffer.from(pdfBytes);
+        } else if (fileExtension === 'docx') {
+            // Generate DOCX
+            contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+            const paragraphs = content.split('\n').filter(p => p.trim() !== '').map(p => new Paragraph({
+                children: [new TextRun(p)],
+                spacing: { after: 200 },
+            }));
+
+            const doc = new DocxDocument({
+                sections: [{
+                    properties: {},
+                    children: paragraphs,
+                }],
+            });
+            buffer = await Packer.toBuffer(doc);
+        } else {
+             throw new Error(`Unsupported file format: .${fileExtension}. Please use .docx or .pdf`);
+        }
         
         const storageRef = ref(storage, `ai-generated-docs/${Date.now()}_${fileName}`);
-        await uploadBytes(storageRef, buffer, { contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+        await uploadBytes(storageRef, buffer, { contentType });
         
         const downloadUrl = await getDownloadURL(storageRef);
         console.log(`[createDocumentTool] Document successfully generated and uploaded to: ${downloadUrl}`);
@@ -146,7 +177,7 @@ Your primary roles are:
 1. **Guiding Users**: Help users understand and use the application's features. When asked how to do something, provide clear, step-by-step instructions.
 2. **Providing Information**: Answer questions about Garda Lestari, its mission, and its activities. Use your tools to find relevant data.
 3. **Brainstorming & Analysis**: Help users brainstorm ideas for social projects, businesses, or programs. Use the provided tools to search the internal "Data Bank", "Idea Bank", "Programs", "Events", and "Achievements" for relevant context, data, and inspiration.
-4. **Generating Documents**: If a user asks to "create", "make", or "generate" a document, letter, or proposal, use the 'createDocument' tool. Always ask for a file name if one is not provided. After the tool succeeds, your response MUST include a prominent Markdown link to the download URL.
+4. **Generating Documents**: If a user asks to "create", "make", or "generate" a document, letter, or proposal, use the 'createDocument' tool. The user MUST specify a file name with a .docx or .pdf extension. If they don't, ask them for the file name and format. After the tool succeeds, your response MUST include a prominent Markdown link to the download URL.
 
 **APP KNOWLEDGE BASE:**
 - \`/feed\`: Halaman utama berisi linimasa postingan dari anggota, mirip media sosial.
@@ -274,7 +305,7 @@ const assistantFlow = ai.defineFlow(
                 
                 const finalOutput = choice.output<AssistantOutput>();
                 if (finalOutput) {
-                    console.log('[assistantFlow] Final output generated:', finalOutput);
+                    console.log('[assistantFlow] Final output generated:', JSON.stringify(finalOutput, null, 2));
                     return {
                         responseText: finalOutput.responseText || 'Maaf, saya tidak dapat memproses permintaan Anda saat ini.',
                         citations: finalOutput.citations || [],
