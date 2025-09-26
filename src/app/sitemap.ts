@@ -31,7 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   // Dynamic routes for blog posts and videos
-  const posts = await getBeritaPosts(undefined, false); // Fetch only published posts
+  const posts = await getBeritaPosts();
   const contentRoutes = posts.map((post) => ({
     url: `${BASE_URL}/${post.type === 'video' ? 'video' : 'berita'}/${post.slug}`,
     lastModified: new Date(post.date).toISOString(),

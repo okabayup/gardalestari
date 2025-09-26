@@ -44,7 +44,8 @@ const IndexingStatusBadge = ({ post }: { post: BeritaPost }) => {
     const handleFetchStatus = useCallback(async () => {
         if (post.status !== 'published') return;
         setLoading(true);
-        const fetchedStatus = await getNotificationStatus(`${process.env.NEXT_PUBLIC_BASE_URL}/${post.type === 'video' ? 'video' : 'berita'}/${post.slug}`);
+        const url = `${process.env.NEXT_PUBLIC_BASE_URL}/${post.type === 'video' ? 'video' : 'berita'}/${post.slug}`;
+        const fetchedStatus = await getNotificationStatus(url);
         setStatus(fetchedStatus);
         setLoading(false);
     }, [post.status, post.type, post.slug]);

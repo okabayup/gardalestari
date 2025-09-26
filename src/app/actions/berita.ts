@@ -165,6 +165,9 @@ export async function getBeritaPosts(type?: 'artikel' | 'video', includeDrafts =
     if (type) {
         constraints.push(where('type', '==', type));
     }
+    if (!includeDrafts) {
+        constraints.push(where('status', '==', 'published'));
+    }
     constraints.push(orderBy('date', 'desc'));
     
     q = query(beritaPostsCollection, ...constraints);
@@ -172,12 +175,13 @@ export async function getBeritaPosts(type?: 'artikel' | 'video', includeDrafts =
     const snapshot = await getDocs(q);
     
     let posts: BeritaPost[] = [];
-    snapshot.forEach(doc => {
-      posts.push({ id: doc.id, ...doc.data() } as BeritaPost);
-    });
-    
-    if (!includeDrafts) {
-        posts = posts.filter(post => post.status === 'published');
+    for (const doc of snapshot.docs) {
+      const postData = { id: doc.id, ...doc.data() } as BeritaPost;
+      if (postData.status === 'published') {
+        const url = `${BASE_URL}/${postData.type === 'video' ? 'video' : 'berita'}/${postData.slug}`;
+        postData.indexingStatus = await getNotificationStatus(url);
+      }
+      posts.push(postData);
     }
 
     return posts;
@@ -210,32 +214,21 @@ export async function getBeritaPost(slug: string) {
 export async function createBeritaPost(post: Omit<BeritaPost, 'id'>) {
   try {
     const postData: Omit<BeritaPost, 'id'> = {
-      title: post.title || 'Judul Default',
-      slug: post.slug || 'slug-default',
-      content: post.content || '<p>Konten default.</p>',
-      author: post.author || 'Admin',
-      date: post.date || new Date().toISOString(),
-      imageUrl: post.imageUrl || '',
-      imageHint: post.imageHint || '',
-      excerpt: post.excerpt || '',
-      category: post.category || 'Umum',
-      type: post.type || 'artikel',
-      youtubeId: post.youtubeId || '',
-      isFeatured: post.isFeatured || false,
-      seoScore: post.seoScore || 0,
-      status: post.status || 'published',
+      ...post,
+      status: post.status || 'draft', // Default to draft
     };
     
     const docRef = await addDoc(beritaPostsCollection, { ...postData });
     
+    revalidatePath('/panel/berita');
+    revalidatePath('/');
+
     if (postData.status === 'published') {
-        const pathToRevalidate = postData.type === 'video' ? '/video' : '/berita';
-        revalidatePath('/panel/berita');
-        revalidatePath(pathToRevalidate);
-        revalidatePath('/');
-        
-        const publicUrl = `${BASE_URL}${pathToRevalidate}/${postData.slug}`;
-        await notifyGoogleOfUpdate(publicUrl, 'URL_UPDATED');
+        const pathSegment = postData.type === 'video' ? 'video' : 'berita';
+        revalidatePath(`/${pathSegment}`);
+        const publicUrl = `${BASE_URL}/${pathSegment}/${postData.slug}`;
+        // Do not await, let it run in the background
+        notifyGoogleOfUpdate(publicUrl, 'URL_UPDATED');
     }
 
     return { id: docRef.id, ...postData };
@@ -251,22 +244,25 @@ export async function createBeritaPost(post: Omit<BeritaPost, 'id'>) {
 export async function updateBeritaPost(id: string, post: Partial<BeritaPost>) {
   try {
     const postDoc = doc(db, 'beritaPosts', id);
+    const oldPostSnap = await getDoc(postDoc);
+    const oldStatus = oldPostSnap.data()?.status;
+
     await updateDoc(postDoc, post);
     
-    const pathToRevalidate = post.type === 'video' ? '/video' : '/berita';
+    const pathSegment = post.type === 'video' ? 'video' : 'berita';
     revalidatePath('/panel/berita');
     revalidatePath(`/panel/berita/edit/${post.slug}`);
-    revalidatePath(pathToRevalidate);
+    revalidatePath(`/${pathSegment}`);
      if (post.slug) {
-        revalidatePath(`${pathToRevalidate}/${post.slug}`);
+        revalidatePath(`/${pathSegment}/${post.slug}`);
     }
     revalidatePath('/');
 
 
-    // Notify Google Indexing API
-    if (post.slug && post.status === 'published') {
-      const publicUrl = `${BASE_URL}${pathToRevalidate}/${post.slug}`;
-      await notifyGoogleOfUpdate(publicUrl, 'URL_UPDATED');
+    // Notify Google Indexing API only if status changes to published or if a published post is updated
+    if (post.slug && (post.status === 'published' || oldStatus === 'published')) {
+      const publicUrl = `${BASE_URL}/${pathSegment}/${post.slug}`;
+      notifyGoogleOfUpdate(publicUrl, 'URL_UPDATED');
     }
 
   } catch (error) {
@@ -279,10 +275,21 @@ export async function updateBeritaStatusBulk(ids: string[], status: 'published' 
     if (ids.length === 0) return;
     try {
         const batch = writeBatch(db);
-        ids.forEach(id => {
-            const docRef = doc(db, 'beritaPosts', id);
-            batch.update(docRef, { status: status });
-        });
+        const postsToUpdate = await Promise.all(ids.map(id => getDoc(doc(beritaPostsCollection, id))));
+
+        for (const postDoc of postsToUpdate) {
+            if (postDoc.exists()) {
+                const postData = postDoc.data() as BeritaPost;
+                batch.update(postDoc.ref, { status: status });
+
+                if (status === 'published' && postData.status !== 'published') {
+                    const pathSegment = postData.type === 'video' ? 'video' : 'berita';
+                    const publicUrl = `${BASE_URL}/${pathSegment}/${postData.slug}`;
+                    notifyGoogleOfUpdate(publicUrl, 'URL_UPDATED');
+                }
+            }
+        }
+        
         await batch.commit();
 
         revalidatePath('/panel/berita');
@@ -310,9 +317,9 @@ export async function deleteBeritaPost(id: string) {
     
     // Only notify google if it was a published post
     if (postData.status === 'published') {
-        const pathToRevalidate = postData.type === 'video' ? '/video' : '/berita';
-        const publicUrl = `${BASE_URL}${pathToRevalidate}/${postData.slug}`;
-        await notifyGoogleOfUpdate(publicUrl, 'URL_DELETED');
+        const pathSegment = postData.type === 'video' ? 'video' : 'berita';
+        const publicUrl = `${BASE_URL}/${pathSegment}/${postData.slug}`;
+        notifyGoogleOfUpdate(publicUrl, 'URL_DELETED');
     }
     
     await deleteDoc(postDocRef);
@@ -330,8 +337,8 @@ export async function deleteBeritaPost(id: string) {
 // Action to manually request re-indexing
 export async function requestReindexing(slug: string, type: 'artikel' | 'video' = 'artikel') {
     try {
-        const basePath = type === 'video' ? '/video' : '/berita';
-        const publicUrl = `${BASE_URL}${basePath}/${slug}`;
+        const basePath = type === 'video' ? '/video' : 'berita';
+        const publicUrl = `${BASE_URL}/${basePath}/${slug}`;
         const result = await notifyGoogleOfUpdate(publicUrl, 'URL_UPDATED');
         if (result.success) {
             return { message: `Permintaan indeksasi untuk ${slug} berhasil dikirim.` };
