@@ -29,13 +29,16 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }
   
   const isMapPage = pathname === '/map';
+  const isAssistantPage = pathname === '/assistant';
+  const showHeader = !isMapPage && !isAssistantPage;
+  const showBottomNav = !isMapPage && !isAssistantPage;
   
   return (
-    <div className="relative mx-auto flex min-h-screen w-full max-w-lg flex-col bg-background">
+    <div className="relative flex h-screen w-full flex-col bg-background">
         <>
-          {!isMapPage && <Header />}
-          <main className="flex-1 pb-16">{children}</main>
-          {!isMapPage && (
+          {showHeader && <Header />}
+          <main className="flex-1 overflow-auto">{children}</main>
+          {showBottomNav && (
             <>
               <BottomNav />
               <InstallPWA />
