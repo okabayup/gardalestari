@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -29,6 +30,7 @@ export async function getAppSettings(): Promise<AppSettings> {
         dummyPrograms: 0,
         dummyEvents: 0,
         dummyNews: 0,
+        isTestimonialsEnabled: false,
         ...data,
       } as AppSettings;
     }
@@ -50,6 +52,7 @@ export async function getAppSettings(): Promise<AppSettings> {
     dummyPrograms: 0,
     dummyEvents: 0,
     dummyNews: 0,
+    isTestimonialsEnabled: false,
   };
 }
 
@@ -61,7 +64,7 @@ export async function updateAppSettings(formData: FormData) {
     // Handle simple string and boolean fields
     for (const [key, value] of formData.entries()) {
         if (typeof value === 'string' && !key.endsWith('File')) {
-            if(key === 'isRegistrationOpen' || key === 'isWhatsappNotificationsEnabled') {
+            if(key === 'isRegistrationOpen' || key === 'isWhatsappNotificationsEnabled' || key === 'isTestimonialsEnabled') {
                  dataToUpdate[key] = value === 'true';
             } else if (key.startsWith('dummy')) {
                 dataToUpdate[key] = Number(value) || 0;

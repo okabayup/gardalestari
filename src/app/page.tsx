@@ -208,7 +208,7 @@ export default async function LandingPage() {
         </section>
 
         {/* Featured Members Section */}
-        {featuredMembers.length > 0 && (
+        {settings.isTestimonialsEnabled && featuredMembers.length > 0 && (
             <section id="faces" className="w-full bg-background py-16 md:py-28">
                 <div className="container">
                     <div className="mb-14 text-center">
@@ -341,4 +341,3 @@ export default async function LandingPage() {
     </div>
   );
 }
-

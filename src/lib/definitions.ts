@@ -1,4 +1,5 @@
 
+
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
 
@@ -520,6 +521,7 @@ export interface AppSettings {
   dummyPrograms: number;
   dummyEvents: number;
   dummyNews: number;
+  isTestimonialsEnabled?: boolean;
 }
 
 // --- User ---
