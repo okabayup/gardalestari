@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Bot, User, Send, Loader2, Link as LinkIcon, Lightbulb, UserCircle, Plus, Trash2, Paperclip, X, ChevronLeft, Menu } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { answerQuestion } from '@/ai/flows/assistant-flow';
+import { answerQuestion } from '@/app/actions/assistant';
 import { useRouter } from 'next/navigation';
 import type { AssistantOutput, Citation } from '@/lib/definitions';
 import { produce } from 'immer';
