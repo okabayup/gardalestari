@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Bot, User, Send, Loader2, Link as LinkIcon, Lightbulb, UserCircle, Mic, MessageSquare, Plus, Trash2, Paperclip, X } from 'lucide-react';
+import { Bot, User, Send, Loader2, Link as LinkIcon, Lightbulb, UserCircle, Mic, MessageSquare, Plus, Trash2, Paperclip, X, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { answerQuestion } from '@/ai/flows/assistant-flow';
 import { textToSpeech } from '@/ai/flows/tts-flow';
@@ -240,7 +240,7 @@ const AssistantUI = ({ thread, onSendMessage, isLoading, onNewThread }: {
                 <Input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="Tanyakan sesuatu pada Garda..."
+                    placeholder="Tanyakan sesuatu pada Agen AI..."
                     disabled={isLoading}
                 />
                 <Button type="submit" size="icon" disabled={isLoading || (!input.trim() && !image)}>
@@ -261,7 +261,7 @@ export default function Assistant() {
 
   const getInitialMessage = (): Message => ({
     role: 'assistant',
-    content: "Halo! Saya Garda, asisten AI Anda. Apa yang bisa saya bantu hari ini? Anda bisa bertanya tentang cara menggunakan aplikasi, atau meminta bantuan untuk brainstorming ide."
+    content: "Halo! Saya Garda, Agen AI Anda. Apa yang bisa saya bantu hari ini? Anda bisa bertanya tentang cara menggunakan aplikasi, atau meminta bantuan untuk brainstorming ide."
   });
 
   const createNewThread = useCallback(() => {
@@ -346,24 +346,15 @@ export default function Assistant() {
 
   return (
     <>
-      <div className="fixed bottom-36 right-4 z-50">
-        <div className="relative">
-            <Button
-                className="h-12 w-12 rounded-full shadow-lg"
-                size="icon"
-                onClick={() => setIsOpen(true)}
-            >
-                <Bot className="h-6 w-6" />
-                <span className="sr-only">Buka Asisten AI</span>
-            </Button>
-             <Badge variant="secondary" className="absolute -top-2 -right-3 text-xs">Segera</Badge>
-        </div>
-      </div>
+      <Button variant="outline" onClick={() => setIsOpen(true)}>
+        <Sparkles className="mr-2 h-4 w-4" />
+        Tanya Agen AI
+      </Button>
        <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="h-[85vh] w-[95vw] max-w-4xl flex flex-col p-0 gap-0">
            <DialogHeader className="sr-only">
-                <DialogTitle>Asisten AI Garda</DialogTitle>
-                <p>Asisten AI untuk Garda Lestari</p>
+                <DialogTitle>Agen AI Garda</DialogTitle>
+                <p>Agen AI untuk Garda Lestari</p>
            </DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] h-full">
             <div className="hidden md:flex flex-col bg-muted/50 border-r h-full">
@@ -421,7 +412,3 @@ export default function Assistant() {
     </>
   );
 }
-
-    
-
-    

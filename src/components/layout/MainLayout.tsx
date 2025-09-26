@@ -8,7 +8,7 @@ import { Loader2 } from 'lucide-react';
 import InstallPWA from './InstallPWA';
 import { useFcm } from '@/hooks/use-fcm';
 import { usePathname } from 'next/navigation';
-import VerificationFlow from '@/components/auth/VerificationFlow';
+import VerificationFlow from '@/app/auth/VerificationFlow';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useRequireAuth();

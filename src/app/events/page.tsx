@@ -17,13 +17,14 @@ export default async function EventsPage() {
         <div className="flex items-center justify-between">
             <BackButton />
         </div>
-        <div className="text-center sm:text-left">
-            <h1 className="font-headline text-3xl font-bold">Acara Mendatang</h1>
-            <p className="text-muted-foreground">Bergabunglah bersama kami untuk membuat perubahan</p>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="text-center sm:text-left">
+                <h1 className="font-headline text-3xl font-bold">Acara Mendatang</h1>
+                <p className="text-muted-foreground">Bergabunglah bersama kami untuk membuat perubahan</p>
+            </div>
+            <Assistant />
         </div>
         
-        <Assistant />
-
         <div className="space-y-4 pt-4">
         {events.length > 0 ? (
             events.map((event) => (
