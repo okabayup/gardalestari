@@ -16,6 +16,9 @@ import { searchIdeaBank, Idea } from '@/app/actions/ideas';
 import { searchPrograms, Program } from '@/app/actions/programs';
 import { searchEvents, Event } from '@/app/actions/events';
 import { searchAchievements, Achievement } from '@/app/actions/achievements';
+import { storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { 
   AssistantInputSchema, 
   AssistantOutputSchema,
@@ -76,12 +79,65 @@ const searchAchievementsTool = ai.defineTool(
   async ({ query }) => searchAchievements(query)
 );
 
+const createDocumentTool = ai.defineTool(
+  {
+    name: 'createDocument',
+    description: 'Generates a formal document (.docx) based on a given prompt, such as creating a proposal, official letter, or report. The generated document will be saved to cloud storage, and the function will return a public download URL.',
+    inputSchema: z.object({ 
+      prompt: z.string().describe('A detailed prompt describing the content and format of the document to be generated. For example: "Buat draf surat permohonan audiensi kepada Menteri Pertanian mengenai program petani muda."'),
+      fileName: z.string().describe('The desired file name for the document, ending with .docx. For example: "proposal-kemitraan.docx".'),
+     }),
+    outputSchema: z.object({ downloadUrl: z.string().describe('The public URL to download the generated .docx file.') }),
+  },
+  async ({ prompt, fileName }) => {
+    console.log(`[createDocumentTool] Starting document generation for: ${fileName}`);
+    try {
+        const generationResponse = await ai.generate({
+            prompt: `You are an expert administrative assistant. Generate the full text content for the following document request. The output must be plain text, well-formatted with clear headings and paragraphs. Do not use Markdown.\n\nDOCUMENT REQUEST: "${prompt}"`,
+            config: { temperature: 0.3 }
+        });
+
+        const content = generationResponse.text;
+        if (!content) {
+            throw new Error("AI failed to generate document content.");
+        }
+
+        const paragraphs = content.split('\n').filter(p => p.trim() !== '').map(p => new Paragraph({
+            children: [new TextRun(p)],
+            spacing: { after: 200 },
+        }));
+
+        const doc = new Document({
+            sections: [{
+                properties: {},
+                children: paragraphs,
+            }],
+        });
+        
+        const buffer = await Packer.toBuffer(doc);
+        
+        const storageRef = ref(storage, `ai-generated-docs/${Date.now()}_${fileName}`);
+        await uploadBytes(storageRef, buffer, { contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+        
+        const downloadUrl = await getDownloadURL(storageRef);
+        console.log(`[createDocumentTool] Document successfully generated and uploaded to: ${downloadUrl}`);
+        
+        return { downloadUrl };
+    } catch (error) {
+        console.error(`[createDocumentTool Error]`, error);
+        throw new Error(`Failed to generate document: ${(error as Error).message}`);
+    }
+  }
+);
+
+
 const availableTools: Record<string, Tool> = {
     searchDataBank: searchDataBankTool,
     searchIdeaBank: searchIdeaBankTool,
     searchPrograms: searchProgramsTool,
     searchEvents: searchEventsTool,
-    searchAchievements: searchAchievementsTool
+    searchAchievements: searchAchievementsTool,
+    createDocument: createDocumentTool,
 };
 
 const systemPrompt = `You are Garda, the official AI assistant for Garda Lestari, a youth-led organization focused on agro-maritime and forestry innovation in Indonesia. Your tone is professional, helpful, encouraging, and slightly formal. Always answer in Bahasa Indonesia. Use Markdown for formatting (e.g., *bold*, lists).
@@ -90,6 +146,7 @@ Your primary roles are:
 1. **Guiding Users**: Help users understand and use the application's features. When asked how to do something, provide clear, step-by-step instructions.
 2. **Providing Information**: Answer questions about Garda Lestari, its mission, and its activities. Use your tools to find relevant data.
 3. **Brainstorming & Analysis**: Help users brainstorm ideas for social projects, businesses, or programs. Use the provided tools to search the internal "Data Bank", "Idea Bank", "Programs", "Events", and "Achievements" for relevant context, data, and inspiration.
+4. **Generating Documents**: If a user asks to "create", "make", or "generate" a document, letter, or proposal, use the 'createDocument' tool. Always ask for a file name if one is not provided. After the tool succeeds, your response MUST include a prominent Markdown link to the download URL.
 
 **APP KNOWLEDGE BASE:**
 - \`/feed\`: Halaman utama berisi linimasa postingan dari anggota, mirip media sosial.
@@ -140,6 +197,7 @@ const assistantFlow = ai.defineFlow(
       outputSchema: AssistantOutputSchema,
     },
     async (input) => {
+        console.log('[assistantFlow] Received input:', input);
         const { query, history } = input;
         
         const tools = Object.values(availableTools);
@@ -153,64 +211,82 @@ const assistantFlow = ai.defineFlow(
             role('user', query),
         ];
 
-        const {candidates} = await generate({
-            tools,
-            system: systemPrompt,
-            messages,
-            config: generationConfig,
-            output: {
-                format: 'json',
-                schema: AssistantOutputSchema
-            },
-        });
+        try {
+            console.log('[assistantFlow] Initial generation call...');
+            const {candidates} = await generate({
+                tools,
+                system: systemPrompt,
+                messages,
+                config: generationConfig,
+                output: {
+                    format: 'json',
+                    schema: AssistantOutputSchema
+                },
+            });
 
-        for (const candidate of candidates) {
-            let choice = candidate;
-            while(true) {
-                const toolCalls = choice.toolCalls();
-                if (!toolCalls || toolCalls.length === 0) {
-                     break; 
-                }
-
-                const toolResponses: Part[] = [];
-                for (const call of toolCalls) {
-                    const tool = availableTools[call.name];
-                    if (!tool) {
-                        toolResponses.push(content('tool', {
-                            name: call.name,
-                            error: `Tool ${call.name} not found.`
-                        }));
-                        continue;
+            for (const candidate of candidates) {
+                let choice = candidate;
+                // Loop to handle tool calls
+                while(true) {
+                    const toolCalls = choice.toolCalls();
+                    if (!toolCalls || toolCalls.length === 0) {
+                        break; // No more tool calls, exit loop
                     }
-                    const result = await tool.fn(call.args);
-                    toolResponses.push(content('tool', result, {name: call.name}));
+
+                    console.log(`[assistantFlow] Processing ${toolCalls.length} tool call(s).`);
+                    const toolResponses: Part[] = [];
+
+                    for (const call of toolCalls) {
+                        console.log(`[assistantFlow] Calling tool: ${call.name} with args:`, call.args);
+                        const tool = availableTools[call.name];
+                        if (!tool) {
+                            const errorMsg = `Tool ${call.name} not found.`;
+                            console.error(`[assistantFlow] ${errorMsg}`);
+                            toolResponses.push(content('tool', { name: call.name, error: errorMsg }));
+                            continue;
+                        }
+                        try {
+                            const result = await tool.fn(call.args);
+                            toolResponses.push(content('tool', result, {name: call.name}));
+                            console.log(`[assistantFlow] Tool ${call.name} returned successfully.`);
+                        } catch (e) {
+                            const toolError = `Tool ${call.name} failed: ${(e as Error).message}`;
+                            console.error(`[assistantFlow] ${toolError}`);
+                            toolResponses.push(content('tool', { name: call.name, error: toolError }));
+                        }
+                    }
+                    
+                    messages.push(choice.message);
+                    messages.push({ role: 'tool', content: toolResponses});
+                    
+                    console.log('[assistantFlow] Re-generating with tool responses...');
+                    const nextResponse = await generate({
+                        tools,
+                        messages,
+                        config: generationConfig,
+                        output: {
+                            format: 'json',
+                            schema: AssistantOutputSchema
+                        },
+                    });
+                    choice = nextResponse.candidates[0];
                 }
                 
-                messages.push(choice.message);
-                messages.push({ role: 'tool', content: toolResponses});
-                
-                const nextResponse = await generate({
-                    tools,
-                    messages,
-                    config: generationConfig,
-                     output: {
-                        format: 'json',
-                        schema: AssistantOutputSchema
-                    },
-                });
-                choice = nextResponse.candidates[0];
+                const finalOutput = choice.output<AssistantOutput>();
+                if (finalOutput) {
+                    console.log('[assistantFlow] Final output generated:', finalOutput);
+                    return {
+                        responseText: finalOutput.responseText || 'Maaf, saya tidak dapat memproses permintaan Anda saat ini.',
+                        citations: finalOutput.citations || [],
+                    };
+                }
             }
-            
-            const finalOutput = choice.output<AssistantOutput>();
-            if (finalOutput) {
-                return {
-                    responseText: finalOutput.responseText || 'Maaf, saya tidak dapat memproses permintaan Anda saat ini.',
-                    citations: finalOutput.citations || [],
-                };
-            }
+        } catch (e) {
+             console.error('[assistantFlow] Critical error during generation pipeline:', e);
+             throw new Error(`AI assistant failed to generate a valid response: ${(e as Error).message}`);
         }
         
-       throw new Error('AI assistant failed to generate a valid response.');
+       throw new Error('AI assistant failed to generate a valid response after processing all candidates.');
     }
 );
 
