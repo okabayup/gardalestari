@@ -345,14 +345,13 @@ export default function Assistant() {
 
 
   return (
-    <>
-      <DialogTrigger asChild>
-        <div className="w-full h-full flex flex-col items-center justify-center gap-1">
-            <Sparkles className="h-5 w-5" />
-            <span className="text-xs">Agen AI</span>
-        </div>
-      </DialogTrigger>
-       <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+            <div className="w-full h-full flex flex-col items-center justify-center gap-1">
+                <Sparkles className="h-5 w-5" />
+                <span className="text-xs">Agen AI</span>
+            </div>
+        </DialogTrigger>
         <DialogContent className="h-[85vh] w-[95vw] max-w-4xl flex flex-col p-0 gap-0">
            <DialogHeader className="sr-only">
                 <DialogTitle>Agen AI Garda</DialogTitle>
@@ -411,6 +410,5 @@ export default function Assistant() {
           </div>
         </DialogContent>
       </Dialog>
-    </>
   );
 }
