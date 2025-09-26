@@ -26,7 +26,7 @@ import {
   type AssistantInput, 
   type AssistantOutput,
 } from '@/lib/definitions';
-import { Message, Part, Tool, defineTool, GenerationCommon, generate, content, role } from 'genkit';
+import { Message, Part, Tool, defineTool, GenerationCommon, generate, content, genkit } from 'genkit';
 import { generateImage as generateImageFlow } from './image-generate-flow';
 
 
@@ -283,8 +283,8 @@ const assistantFlow = ai.defineFlow(
         }
 
         const messages: Message[] = [
-            ...history?.map(h => role(h.role, h.content)) || [],
-            role('user', userPrompt),
+            ...history?.map(h => genkit.role(h.role, h.content)) || [],
+            genkit.role('user', userPrompt),
         ];
 
         try {
