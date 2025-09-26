@@ -238,85 +238,85 @@ export default function AssistantPage() {
 
   return (
     <MainLayout>
-    <div className="flex flex-col h-full p-4">
-        <ScrollArea className="flex-1 -mx-4 px-4" ref={scrollAreaRef}>
-            <div className="space-y-6 pb-4">
-            {activeThread.messages.map((message, index) => (
-                <div key={index} className={cn('flex items-start gap-3', message.role === 'user' ? 'justify-end' : '')}>
-                    {message.role === 'assistant' && (
+        <div className="flex flex-col h-full">
+            <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+                <div className="space-y-6 pb-24">
+                {activeThread.messages.map((message, index) => (
+                    <div key={index} className={cn('flex items-start gap-3', message.role === 'user' ? 'justify-end' : '')}>
+                        {message.role === 'assistant' && (
+                            <div className="flex-shrink-0 h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
+                                <Bot size={20} />
+                            </div>
+                        )}
+                        <div className={cn('max-w-[85%] rounded-lg p-3 text-sm', message.role === 'user' ? 'bg-secondary text-secondary-foreground' : 'bg-background border')}>
+                            <RenderMessage message={message} />
+                        </div>
+                        {message.role === 'user' && (
+                            <div className="flex-shrink-0 h-8 w-8 rounded-full bg-muted flex items-center justify-center">
+                                <UserCircle size={24} />
+                            </div>
+                        )}
+                    </div>
+                ))}
+                {isLoading && (
+                    <div className="flex items-start gap-3">
                         <div className="flex-shrink-0 h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
                             <Bot size={20} />
                         </div>
-                    )}
-                    <div className={cn('max-w-[85%] rounded-lg p-3 text-sm', message.role === 'user' ? 'bg-secondary text-secondary-foreground' : 'bg-background border')}>
-                        <RenderMessage message={message} />
-                    </div>
-                    {message.role === 'user' && (
-                        <div className="flex-shrink-0 h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                            <UserCircle size={24} />
+                        <div className="rounded-lg p-3 text-sm bg-background border">
+                            <Loader2 className="h-5 w-5 animate-spin text-primary" />
                         </div>
-                    )}
-                </div>
-            ))}
-            {isLoading && (
-                <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                        <Bot size={20} />
                     </div>
-                    <div className="rounded-lg p-3 text-sm bg-background border">
-                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                )}
+                {activeThread.messages.length === 1 && (
+                    <div className="space-y-2 pt-4">
+                        <p className="text-xs text-muted-foreground font-semibold">Atau coba salah satu dari ini:</p>
+                        <div className="flex flex-wrap gap-2">
+                            {samplePrompts.map(prompt => (
+                                <Button key={prompt} size="sm" variant="outline" onClick={() => handleSendMessage(prompt)}>
+                                    {prompt}
+                                </Button>
+                            ))}
+                        </div>
                     </div>
+                )}
                 </div>
-            )}
-             {activeThread.messages.length === 1 && (
-                <div className="space-y-2 pt-4">
-                    <p className="text-xs text-muted-foreground font-semibold">Atau coba salah satu dari ini:</p>
-                    <div className="flex flex-wrap gap-2">
-                        {samplePrompts.map(prompt => (
-                            <Button key={prompt} size="sm" variant="outline" onClick={() => handleSendMessage(prompt)}>
-                                {prompt}
-                            </Button>
-                        ))}
+            </ScrollArea>
+            <div className="fixed bottom-16 left-1/2 w-full max-w-lg -translate-x-1/2 border-t bg-background/95 p-4 backdrop-blur-sm">
+                {image && (
+                    <div className="relative w-20 h-20 mb-2 rounded-md overflow-hidden border">
+                        <Image src={image.preview} alt="upload preview" layout="fill" objectFit="cover" />
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-0 right-0 h-6 w-6 bg-black/50 hover:bg-black/70"
+                            onClick={() => setImage(null)}
+                        >
+                            <X className="h-4 w-4 text-white" />
+                        </Button>
                     </div>
-                </div>
-            )}
-            </div>
-        </ScrollArea>
-        <div className="pt-4 border-t mt-auto">
-            {image && (
-                <div className="relative w-20 h-20 mb-2 rounded-md overflow-hidden border">
-                    <Image src={image.preview} alt="upload preview" layout="fill" objectFit="cover" />
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-0 right-0 h-6 w-6 bg-black/50 hover:bg-black/70"
-                        onClick={() => setImage(null)}
-                    >
-                        <X className="h-4 w-4 text-white" />
+                )}
+                <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="flex w-full items-center gap-2">
+                    <Button type="button" variant="ghost" size="icon" onClick={createNewThread} disabled={isLoading}>
+                        <Plus />
                     </Button>
-                </div>
-            )}
-            <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="flex w-full items-center gap-2">
-                 <Button type="button" variant="ghost" size="icon" onClick={createNewThread} disabled={isLoading}>
-                    <Plus />
-                </Button>
-                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*"/>
-                <Button type="button" variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
-                    <Paperclip />
-                </Button>
-                <Input
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="Tanyakan sesuatu pada Agen AI..."
-                    disabled={isLoading}
-                />
-                <Button type="submit" size="icon" disabled={isLoading || (!input.trim() && !image)}>
-                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                </Button>
-            </form>
+                    <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*"/>
+                    <Button type="button" variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isLoading}>
+                        <Paperclip />
+                    </Button>
+                    <Input
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        placeholder="Tanyakan sesuatu pada Agen AI..."
+                        disabled={isLoading}
+                    />
+                    <Button type="submit" size="icon" disabled={isLoading || (!input.trim() && !image)}>
+                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </Button>
+                </form>
+            </div>
         </div>
-    </div>
     </MainLayout>
   );
 }
