@@ -2,6 +2,8 @@
 
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
+import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb } from 'lucide-react';
+
 
 export const ALL_PERMISSIONS = [
     { id: 'manage_users', label: 'Kelola Anggota & Verifikasi' },
@@ -33,6 +35,21 @@ export const ALL_PERMISSIONS = [
 ] as const;
 
 export type PermissionId = typeof ALL_PERMISSIONS[number]['id'];
+
+export const directoryItems = [
+    { href: '/ideas', label: 'Bank Ide', icon: Lightbulb },
+    { href: '/events', label: 'Acara', icon: Calendar },
+    { href: '/berita', label: 'Berita', icon: Newspaper },
+    { href: '/video', label: 'Video', icon: Video },
+    { href: '/recruitments', label: 'Rekrutmen', icon: Briefcase },
+    { href: '/achievements', label: 'Prestasi', icon: Award },
+    { href: '/panel/partners', label: 'Mitra', icon: Handshake },
+    { href: '/announcements', label: 'Pengumuman', icon: Megaphone },
+    { href: '/documents', label: 'Dokumen', icon: FileText },
+    { href: '/map', label: 'Peta', icon: Map },
+    { href: '/evoting', label: 'E-Voting', icon: Vote },
+];
+
 
 export const initialPositions = [
     "Dewan Pembina",

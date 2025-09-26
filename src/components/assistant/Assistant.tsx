@@ -3,7 +3,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Bot, User, Send, Loader2, Link as LinkIcon, Lightbulb, UserCircle, Mic, MessageSquare, Plus, Trash2, Paperclip, X, Sparkles } from 'lucide-react';
@@ -346,10 +346,12 @@ export default function Assistant() {
 
   return (
     <>
-      <Button variant="outline" onClick={() => setIsOpen(true)}>
-        <Sparkles className="mr-2 h-4 w-4" />
-        Tanya Agen AI
-      </Button>
+      <DialogTrigger asChild>
+        <div className="w-full h-full flex flex-col items-center justify-center gap-1">
+            <Sparkles className="h-5 w-5" />
+            <span className="text-xs">Agen AI</span>
+        </div>
+      </DialogTrigger>
        <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="h-[85vh] w-[95vw] max-w-4xl flex flex-col p-0 gap-0">
            <DialogHeader className="sr-only">

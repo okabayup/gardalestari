@@ -26,8 +26,7 @@ import {
   type AssistantInput, 
   type AssistantOutput,
 } from '@/lib/definitions';
-import { Message, Part, Tool, defineTool, GenerationCommon, generate, content } from 'genkit';
-import { role } from 'genkit/zod';
+import { Message, Part, Tool, defineTool, GenerationCommon, generate, content, role } from 'genkit';
 import { generateImage as generateImageFlow } from './image-generate-flow';
 
 
