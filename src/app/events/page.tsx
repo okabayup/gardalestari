@@ -6,7 +6,6 @@ import EventCard from '@/components/events/EventCard';
 import { getEvents, Event } from '@/app/actions/events';
 import { Calendar } from 'lucide-react';
 import BackButton from '@/components/utils/BackButton';
-import Assistant from '@/components/assistant/Assistant';
 
 export default async function EventsPage() {
   const events = await getEvents();
@@ -22,7 +21,6 @@ export default async function EventsPage() {
                 <h1 className="font-headline text-3xl font-bold">Acara Mendatang</h1>
                 <p className="text-muted-foreground">Bergabunglah bersama kami untuk membuat perubahan</p>
             </div>
-            <Assistant />
         </div>
         
         <div className="space-y-4 pt-4">

@@ -9,6 +9,7 @@ import InstallPWA from './InstallPWA';
 import { useFcm } from '@/hooks/use-fcm';
 import { usePathname } from 'next/navigation';
 import VerificationFlow from '@/app/auth/VerificationFlow';
+import Assistant from '../assistant/Assistant';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useRequireAuth();

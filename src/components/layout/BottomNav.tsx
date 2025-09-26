@@ -8,6 +8,7 @@ import { LayoutGrid, Users, Sprout, CalendarDays, Briefcase, Award, FolderKanban
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { Separator } from '../ui/separator';
 import { useAuth } from '@/hooks/use-auth';
+import Assistant from '../assistant/Assistant';
 
 const navItems = [
   { href: '/feed', label: 'Beranda', icon: LayoutGrid },
@@ -74,7 +75,7 @@ export default function BottomNav() {
   }
 
   return (
-    <div className="fixed bottom-0 z-40 h-16 w-full max-w-lg border-t bg-background/70 backdrop-blur-lg">
+    <div className="fixed bottom-0 z-40 h-16 w-full max-w-lg border-t bg-background/70 backdrop-blur-lg left-1/2 -translate-x-1/2">
       <nav className="grid h-full grid-cols-5 items-center">
         {navItems.map((item) => {
           const isActive = pathname.startsWith(item.href);
@@ -92,6 +93,10 @@ export default function BottomNav() {
             </Link>
           );
         })}
+        <div className="flex flex-col items-center justify-center gap-1 text-sm text-muted-foreground">
+            <Assistant />
+            <span className="text-xs -mt-1">Agen AI</span>
+        </div>
         <DirectorySheet />
       </nav>
     </div>
