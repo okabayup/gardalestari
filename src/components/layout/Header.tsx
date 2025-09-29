@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { LogOut, UserCircle, Shield, Bell, Loader2, Award } from 'lucide-react';
+import { LogOut, UserCircle, Shield, Bell, Loader2, Award, Coins } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { Badge } from '../ui/badge';
@@ -135,6 +135,13 @@ export default function Header() {
                 </SheetContent>
               </Sheet>
 
+              <Button variant="ghost" size="sm" className="h-8 gap-2" asChild>
+                  <Link href="/points">
+                    <Coins className="h-4 w-4 text-yellow-500" />
+                    <span className="text-sm font-bold">{user.greenPoints || 0}</span>
+                  </Link>
+              </Button>
+
               <DropdownMenu>
                 <DropdownMenuTrigger>
                   <Avatar className="h-8 w-8">
@@ -149,12 +156,11 @@ export default function Header() {
                     <UserCircle className="mr-2 h-4 w-4" />
                     <span>Profil Saya</span>
                   </DropdownMenuItem>
-                   <DropdownMenuItem onClick={() => router.push('/benefits')} className="cursor-pointer flex justify-between items-center">
+                   <DropdownMenuItem onClick={() => router.push('/points')} className="cursor-pointer flex justify-between items-center">
                     <div className="flex items-center">
-                      <Award className="mr-2 h-4 w-4" />
-                      <span>Level & Misi</span>
+                      <Coins className="mr-2 h-4 w-4" />
+                      <span>Poin Hijau</span>
                     </div>
-                    <Badge variant="secondary">Segera</Badge>
                   </DropdownMenuItem>
                   {user.permissions && user.permissions.length > 0 && (
                       <DropdownMenuItem onClick={() => router.push('/panel/dashboard')} className="cursor-pointer">

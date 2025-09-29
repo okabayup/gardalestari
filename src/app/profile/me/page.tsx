@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, Shield, Pencil, AlertTriangle, Loader2, Grid3x3, Archive, Tag, IdCard, Undo, History, Award, Info, PlusCircle, Copy, Users } from 'lucide-react';
+import { LogOut, Shield, Pencil, AlertTriangle, Loader2, Grid3x3, Archive, Tag, IdCard, Undo, History, Award, Info, PlusCircle, Copy, Users, Coins } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import EditProfileModal from '@/components/profile/EditProfileModal';
@@ -23,6 +23,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { format } from 'date-fns';
 import { VerifiedBadge } from '@/components/members/VerifiedBadge';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 const ADMIN_PHONE_NUMBER = '+6285176752610';
 
@@ -59,8 +61,8 @@ const ProfileHeader = ({ user, postCount }: { user: any, postCount: number }) =>
                     <p className="text-xs text-muted-foreground">Anggota Direkrut</p>
                 </div>
                 <div className="p-2 bg-muted/50 rounded-lg">
-                    <p className="text-xl font-bold">{(user?.referralCount || 0) * 5}</p>
-                    <p className="text-xs text-muted-foreground">Bibit Gratis</p>
+                    <p className="text-xl font-bold">{user?.greenPoints || 0}</p>
+                    <p className="text-xs text-muted-foreground">Poin Hijau</p>
                 </div>
             </div>
 

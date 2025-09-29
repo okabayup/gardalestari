@@ -13,7 +13,7 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs, Timestamp, runTransaction, increment } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs, Timestamp, runTransaction, increment, limit } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { redirect, usePathname } from 'next/navigation';
 import { useToast } from './use-toast';
@@ -29,6 +29,7 @@ type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected' 
 type ExtendedUser = User & {
   referralCount?: number;
   referralCode?: string;
+  greenPoints?: number;
   verificationStatus?: VerificationStatus;
   fullName?: string;
   username?: string;
@@ -111,6 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ...user, 
           referralCount: userData.referralCount || 0,
           referralCode: userData.referralCode,
+          greenPoints: userData.greenPoints || 0,
           verificationStatus: userData.verificationStatus,
           displayName: userData.fullName || user.displayName,
           photoURL: userData.avatarUrl || user.photoURL,
@@ -130,7 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       setUser(extendedUser);
     } else {
-      setUser({ ...user, referralCount: 0, verificationStatus: 'unverified' });
+      setUser({ ...user, referralCount: 0, greenPoints: 0, verificationStatus: 'unverified' });
     }
   }, []);
 
@@ -251,9 +253,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             createdAt: serverTimestamp(),
             referralCode: ownReferralCode,
             referralCount: 0,
+            greenPoints: 5, // Initial welcome points
             referredBy: referredBy,
             verificationStatus: 'unverified',
         });
+
+        // Award points to referrer
+        if (referredBy) {
+            const referrerRef = doc(db, 'users', referredBy);
+            await runTransaction(db, async (transaction) => {
+                const referrerDoc = await transaction.get(referrerRef);
+                if (referrerDoc.exists()) {
+                    transaction.update(referrerRef, { greenPoints: increment(25) });
+                }
+            });
+        }
+        
         logAnalyticsEvent('sign_up', { method: 'phone', referral: !!referredBy });
     } else {
         logAnalyticsEvent('login', { method: 'phone' });
