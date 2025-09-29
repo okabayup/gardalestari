@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -19,6 +20,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 
 const ProfilePostsGrid = ({ posts, isLoading }: { posts: PostWithAuthor[], isLoading: boolean }) => {
     if (isLoading) {
@@ -126,6 +128,18 @@ const UserProfileHeader = ({ user, postCount }: { user: PublicProfile, postCount
                                 </Link>
                             )}
                         </div>
+                    </div>
+                </div>
+                 <div className="space-y-2">
+                    <Label>Keahlian</Label>
+                    <div className="flex flex-wrap gap-2">
+                        {user.skills?.length ? user.skills.map(skill => <Badge key={skill} variant="secondary">{skill}</Badge>) : <p className="text-xs text-muted-foreground">Belum ada keahlian ditambahkan.</p>}
+                    </div>
+                </div>
+                 <div className="space-y-2">
+                    <Label>Minat</Label>
+                    <div className="flex flex-wrap gap-2">
+                         {user.interests?.length ? user.interests.map(interest => <Badge key={interest} variant="outline">{interest}</Badge>) : <p className="text-xs text-muted-foreground">Belum ada minat ditambahkan.</p>}
                     </div>
                 </div>
                  <Button variant="outline" onClick={() => setIsVerificationModalOpen(true)} className="w-full">

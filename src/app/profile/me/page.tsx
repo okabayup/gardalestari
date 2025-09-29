@@ -46,6 +46,9 @@ const ProfileHeader = ({ user, postCount }: { user: any, postCount: number }) =>
                     <MemberLevelBadge level={user?.level || 'Bronze'} />
                     <span className="text-sm text-muted-foreground">{user?.points || 0} Poin</span>
                 </div>
+                 <div className="flex flex-wrap gap-2 pt-2">
+                    {user.skills?.map((skill: string) => <Badge key={skill} variant="secondary">{skill}</Badge>)}
+                </div>
             </div>
         </div>
         <div className="flex gap-2">
@@ -53,10 +56,15 @@ const ProfileHeader = ({ user, postCount }: { user: any, postCount: number }) =>
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit Profil
             </Button>
-            <Button variant="outline" onClick={() => (document.getElementById('kta-trigger') as HTMLButtonElement)?.click()} className="w-full" disabled={user?.verificationStatus !== 'permanent'}>
-                <IdCard className="mr-2 h-4 w-4" />
-                Lihat KTA
-            </Button>
+            <Dialog>
+                <DialogTrigger asChild>
+                    <Button variant="outline" className="w-full" disabled={user?.verificationStatus !== 'permanent'}>
+                        <IdCard className="mr-2 h-4 w-4" />
+                        Lihat KTA
+                    </Button>
+                </DialogTrigger>
+                <MembershipCardDialog user={user} />
+            </Dialog>
         </div>
     </CardContent>
   </Card>
@@ -178,7 +186,7 @@ const VerificationStatusAlert = ({ status }: { status?: 'unverified' | 'temporar
                 <AlertTitle>Verifikasi Akun</AlertTitle>
                 <AlertDescription>
                     Akun Anda belum terverifikasi. Silakan lengkapi proses verifikasi untuk mendapatkan Kartu Tanda Anggota (KTA).
-                    <Button className="mt-2 w-full" onClick={() => router.push('/profile/verify')}>Mulai Verifikasi</Button>
+                    <Button className="mt-2 w-full" onClick={() => router.push('/auth/VerificationFlow')}>Mulai Verifikasi</Button>
                 </AlertDescription>
             </Alert>
         )
@@ -201,7 +209,7 @@ const VerificationStatusAlert = ({ status }: { status?: 'unverified' | 'temporar
                 <AlertTitle>Verifikasi Ditolak</AlertTitle>
                 <AlertDescription>
                     Sayangnya, verifikasi Anda ditolak. Silakan coba lagi dengan data yang valid.
-                    <Button variant="destructive" className="mt-2 w-full" onClick={() => router.push('/profile/verify')}>Ulangi Verifikasi</Button>
+                    <Button variant="destructive" className="mt-2 w-full" onClick={() => router.push('/auth/VerificationFlow')}>Ulangi Verifikasi</Button>
                 </AlertDescription>
             </Alert>
         )
@@ -215,7 +223,6 @@ export default function ProfileMePage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isKtaModalOpen, setIsKtaModalOpen] = useState(false);
   
   const [userPosts, setUserPosts] = useState<PostWithAuthor[]>([]);
   const [archivedPosts, setArchivedPosts] = useState<PostWithAuthor[]>([]);
@@ -338,15 +345,11 @@ export default function ProfileMePage() {
           <>
              {/* Hidden triggers for modals */}
             <button id="edit-profile-trigger" onClick={() => setIsEditModalOpen(true)} className="hidden">Edit</button>
-            <Dialog open={isKtaModalOpen} onOpenChange={setIsKtaModalOpen}>
+            <Dialog>
               <DialogTrigger asChild>
                  <button id="kta-trigger" className="hidden">Lihat KTA</button>
               </DialogTrigger>
-              <MembershipCardDialog 
-                isOpen={isKtaModalOpen}
-                onClose={() => setIsKtaModalOpen(false)}
-                user={user}
-              />
+              <MembershipCardDialog user={user} />
             </Dialog>
 
             <EditProfileModal

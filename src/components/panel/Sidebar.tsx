@@ -76,7 +76,8 @@ const navGroups: {
       { href: '/panel/notifications', icon: Bell, label: 'Notifikasi', permission: 'send_notifications' },
       { href: '/panel/evoting', icon: Vote, label: 'E-Voting', permission: 'manage_evoting' },
       { href: '/panel/achievements', icon: Award, label: 'Prestasi', permission: 'manage_achievements' },
-    ]
+      { href: '/panel/badges', icon: Award, label: 'Lencana', permission: 'manage_badges' },
+    ],
   },
    {
     group: 'Program & Peluang',

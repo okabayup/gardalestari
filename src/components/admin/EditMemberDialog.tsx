@@ -9,13 +9,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Loader2 } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import type { MemberWithStatus } from '@/app/actions/members';
 import { getPositions, Position } from '@/app/actions/positions';
+import { getBadges, assignBadgeToUser, removeBadgeFromUser, Badge as BadgeType } from '@/app/actions/badges';
 import type { MemberType, VerificationStatus } from '@/lib/definitions';
 import Image from 'next/image';
 import { ScrollArea } from '../ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '../ui/badge';
+import { Checkbox } from '../ui/checkbox';
 
 
 interface EditMemberDialogProps {
@@ -57,11 +60,14 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
   const [titlePrefix, setTitlePrefix] = useState(member.titlePrefix || '');
   const [titlePostfix, setTitlePostfix] = useState(member.titlePostfix || '');
   const [positions, setPositions] = useState<Position[]>([]);
+  const [allBadges, setAllBadges] = useState<BadgeType[]>([]);
+  const [memberBadges, setMemberBadges] = useState<string[]>([]);
   const [photoFile, setPhotoFile] = useState<File | undefined>(undefined);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   useEffect(() => {
     getPositions().then(setPositions);
+    getBadges().then(setAllBadges);
   }, []);
 
   useEffect(() => {
@@ -74,6 +80,7 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
         setIsHidden(member.isHidden || false);
         setTitlePrefix(member.titlePrefix || '');
         setTitlePostfix(member.titlePostfix || '');
+        setMemberBadges(member.assignedBadges || []);
         setPhotoPreview(member.avatarUrl || null);
         setPhotoFile(undefined);
     }
@@ -113,6 +120,22 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
 
     onSave(member.id, formData);
   };
+  
+  const handleBadgeToggle = async (badgeId: string, isAssigned: boolean) => {
+    try {
+        if (isAssigned) {
+            await removeBadgeFromUser(member.id, badgeId);
+            setMemberBadges(prev => prev.filter(id => id !== badgeId));
+            toast({title: 'Lencana dicabut'});
+        } else {
+            await assignBadgeToUser(member.id, badgeId);
+            setMemberBadges(prev => [...prev, badgeId]);
+            toast({title: 'Lencana diberikan'});
+        }
+    } catch (error) {
+        toast({variant: 'destructive', title: 'Gagal mengubah lencana'});
+    }
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -196,6 +219,26 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
                         ))}
                     </SelectContent>
                 </Select>
+            </div>
+            <div className="space-y-4 pt-4">
+                <Label>Lencana</Label>
+                 <div className="grid grid-cols-2 gap-2">
+                    {allBadges.map(badge => {
+                        const isAssigned = memberBadges.includes(badge.id!);
+                        return (
+                            <div key={badge.id} className="flex items-center space-x-2">
+                                <Checkbox 
+                                    id={`badge-${badge.id}`} 
+                                    checked={isAssigned}
+                                    onCheckedChange={() => handleBadgeToggle(badge.id!, isAssigned)}
+                                />
+                                <label htmlFor={`badge-${badge.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                    {badge.name}
+                                </label>
+                            </div>
+                        )
+                    })}
+                </div>
             </div>
             <div className="flex items-center space-x-2 pt-2">
                 <Switch

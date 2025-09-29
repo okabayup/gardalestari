@@ -60,6 +60,7 @@ export async function assignBadgeToUser(userId: string, badgeId: string) {
             assignedBadges: arrayUnion(badgeId)
         });
         revalidatePath(`/profile/me`);
+        revalidatePath(`/profile/${userId}`);
     } catch(error) {
         console.error("[assignBadgeToUser Error]", error);
         throw new Error("Gagal memberikan lencana.");
@@ -73,6 +74,7 @@ export async function removeBadgeFromUser(userId: string, badgeId: string) {
             assignedBadges: arrayRemove(badgeId)
         });
          revalidatePath(`/profile/me`);
+         revalidatePath(`/profile/${userId}`);
     } catch(error) {
         console.error("[removeBadgeFromUser Error]", error);
         throw new Error("Gagal mencabut lencana.");

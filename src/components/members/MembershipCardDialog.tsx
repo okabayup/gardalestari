@@ -2,22 +2,22 @@
 
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import MembershipCard from './MembershipCard';
 import type { User } from 'firebase/auth';
 import { Button } from '../ui/button';
 import { toPng } from 'html-to-image';
-import { Download, Loader2, X, Eye } from 'lucide-react';
+import { Download, Loader2, X, Eye, Award } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '../ui/badge';
 import Link from 'next/link';
-import type { MemberType } from '@/lib/definitions';
+import type { MemberType, Badge as BadgeType } from '@/lib/definitions';
+import { getBadges } from '@/app/actions/badges';
+import * as LucideIcons from 'lucide-react';
 
 
 interface MembershipCardDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
   user: User & {
     verificationStatus?: 'unverified' | 'temporary' | 'permanent' | 'rejected';
     fullName?: string;
@@ -25,13 +25,19 @@ interface MembershipCardDialogProps {
     nik?: string;
     type?: MemberType;
     position?: string;
+    assignedBadges?: string[];
   };
 }
 
-export default function MembershipCardDialog({ isOpen, onClose, user }: MembershipCardDialogProps) {
+export default function MembershipCardDialog({ user }: MembershipCardDialogProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const [isDownloading, setIsDownloading] = useState(false);
+  const [allBadges, setAllBadges] = useState<BadgeType[]>([]);
+
+  useEffect(() => {
+    getBadges().then(setAllBadges);
+  }, []);
 
   if (!user) return null;
   
@@ -56,6 +62,8 @@ export default function MembershipCardDialog({ isOpen, onClose, user }: Membersh
   }
   
   const publicProfilePath = `/kta/${user.username}`;
+  
+  const userBadges = allBadges.filter(b => user.assignedBadges?.includes(b.id!));
 
 
   const handleDownload = async () => {
@@ -88,7 +96,6 @@ export default function MembershipCardDialog({ isOpen, onClose, user }: Membersh
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-sm p-4">
         <DialogHeader className="sr-only">
           <DialogTitle>Kartu Tanda Anggota</DialogTitle>
@@ -107,6 +114,22 @@ export default function MembershipCardDialog({ isOpen, onClose, user }: Membersh
                 position={user.position || 'Anggota'}
             />
         </div>
+         <div className="pt-2">
+            <h4 className="font-semibold text-sm mb-2">Lencana Diperoleh</h4>
+            {userBadges.length > 0 ? (
+                 <div className="flex flex-wrap gap-2">
+                    {userBadges.map(badge => {
+                        const IconComponent = (LucideIcons as any)[badge.icon] || Award;
+                        return (
+                            <Badge key={badge.id} variant="secondary" className="pl-2">
+                                <IconComponent className="h-3 w-3 mr-1.5" />
+                                {badge.name}
+                            </Badge>
+                        )
+                    })}
+                 </div>
+            ) : <p className="text-xs text-muted-foreground">Belum ada lencana yang diperoleh.</p>}
+        </div>
          <div className="pt-4 space-y-2">
             <Button onClick={handleDownload} className="w-full" disabled={isDownloading}>
                 {isDownloading ? 
@@ -124,6 +147,5 @@ export default function MembershipCardDialog({ isOpen, onClose, user }: Membersh
             </Button>
         </div>
       </DialogContent>
-    </Dialog>
   );
 }
