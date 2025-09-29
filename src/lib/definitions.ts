@@ -245,6 +245,36 @@ export interface ProgramForm {
   fields: FormField[];
 }
 
+// --- Green Points & Missions ---
+export interface RedeemableItem {
+  id?: string;
+  name: string;
+  description: string;
+  pointsRequired: number;
+  stock: number;
+  imageUrl?: string;
+}
+
+export interface Mission {
+  id?: string;
+  name: string;
+  description: string;
+  points: number;
+  type: 'referral' | 'content' | 'event' | 'social';
+  action?: string; // e.g., 'create_post_with_hashtag_#lestari'
+}
+
+export interface RedemptionLog {
+  id: string;
+  userId: string;
+  userName: string;
+  itemId: string;
+  itemName: string;
+  pointsSpent: number;
+  redeemedAt: string; // ISO String
+}
+
+
 // --- Ideas & Challenges ---
 export type VoteType = 'up' | 'down';
 

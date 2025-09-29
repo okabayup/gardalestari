@@ -30,6 +30,8 @@ import {
   Layers,
   Database,
   Target,
+  Gift,
+  Coins
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
@@ -86,6 +88,15 @@ const navGroups: {
        { href: '/panel/programs', icon: Megaphone, label: 'Program', permission: 'manage_programs' },
        { href: '/panel/recruitments', icon: Briefcase, label: 'Rekrutmen', permission: 'manage_recruitments' },
        { href: '/panel/partners', icon: Handshake, label: 'Mitra', permission: 'manage_partners' },
+    ]
+  },
+   {
+    group: 'Poin Hijau',
+    icon: Coins,
+    items: [
+       { href: '/panel/redeem', icon: Gift, label: 'Item Hadiah' },
+       { href: '/panel/missions', icon: Target, label: 'Misi' },
+       { href: '/panel/redeem/history', icon: BookCopy, label: 'Riwayat Penukaran' },
     ]
   },
   {
