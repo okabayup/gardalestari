@@ -49,6 +49,7 @@ export default function KategoriIdePage() {
 
   useEffect(() => {
     fetchCategories();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onSubmit = async (data: FormData) => {
@@ -86,10 +87,10 @@ export default function KategoriIdePage() {
     <>
       <div className="flex items-center justify-between mb-6">
           <div>
-              <h1 className="font-headline text-2xl font-bold">Kelola Kategori Ide</h1>
-              <p className="text-muted-foreground">Tambah, hapus, dan kelola semua kategori untuk Bank Ide.</p>
+              <h1 className="font-headline text-2xl font-bold">Kelola Kategori Ide & Solusi</h1>
+              <p className="text-muted-foreground">Tambah, hapus, dan kelola semua kategori untuk Lab Ide & Aksi.</p>
           </div>
-          <Button variant="outline" onClick={() => router.push('/panel/ideas')}>Kembali ke Bank Ide</Button>
+          <Button variant="outline" onClick={() => router.push('/panel/ideas')}>Kembali ke Lab Ide</Button>
       </div>
       <div className="grid gap-6 md:grid-cols-2">
         <div>

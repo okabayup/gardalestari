@@ -54,8 +54,8 @@ export default function AdminIdeasPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-headline text-2xl font-bold">Manajemen Bank Ide</h1>
-          <p className="text-muted-foreground">Tinjau dan kelola semua ide yang diajukan oleh anggota.</p>
+          <h1 className="font-headline text-2xl font-bold">Manajemen Lab Ide & Aksi</h1>
+          <p className="text-muted-foreground">Tinjau dan kelola semua ide dan solusi yang diajukan oleh anggota.</p>
         </div>
         <Button variant="outline" size="sm" onClick={() => router.push('/panel/ideas/kategori')}>
           <Tags className="mr-2 h-4 w-4" />
@@ -65,8 +65,8 @@ export default function AdminIdeasPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Daftar Ide</CardTitle>
-          <CardDescription>Total {ideas.length} ide ditemukan.</CardDescription>
+          <CardTitle>Daftar Ide & Solusi</CardTitle>
+          <CardDescription>Total {ideas.length} item ditemukan.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>

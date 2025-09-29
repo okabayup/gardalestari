@@ -36,7 +36,7 @@ export const ALL_PERMISSIONS = [
 export type PermissionId = typeof ALL_PERMISSIONS[number]['id'];
 
 export const directoryItems = [
-    { href: '/ideas', label: 'Bank Ide', icon: Lightbulb },
+    { href: '/ideas', label: 'Lab Ide & Aksi', icon: Lightbulb },
     { href: '/events', label: 'Acara', icon: Calendar },
     { href: '/berita', label: 'Berita', icon: Newspaper },
     { href: '/video', label: 'Video', icon: Video },
