@@ -1,5 +1,3 @@
-
-
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -126,7 +124,8 @@ export async function getIdeas(
     userId: string, 
     sortBy: 'newest' | 'top' = 'top', 
     categoryFilter?: string, 
-    searchQuery?: string
+    searchQuery?: string,
+    typeFilter?: 'ALL' | IdeaType
 ): Promise<IdeaWithAuthor[]> {
     try {
         const orderField = sortBy === 'top' ? 'voteScore' : 'createdAt';
@@ -140,6 +139,10 @@ export async function getIdeas(
 
         let ideasPromises = ideasSnapshot.docs.map(doc => buildIdeaWithAuthor(doc, userId));
         let ideas = (await Promise.all(ideasPromises)).filter((p): p is IdeaWithAuthor => p !== null);
+        
+        if (typeFilter && typeFilter !== 'ALL') {
+            ideas = ideas.filter(idea => idea.type === typeFilter);
+        }
 
         if (searchQuery) {
             const lowercasedQuery = searchQuery.toLowerCase();
@@ -368,6 +371,39 @@ export async function deleteIdeaCategory(id: string) {
 }
 
 // --- Challenge Management ---
+export async function createChallenge(
+    data: Omit<Challenge, 'id' | 'createdAt' | 'authorId' | 'deadline'> & { deadline: Date },
+    authorId: string,
+): Promise<string> {
+    try {
+        const challengeData = {
+            ...data,
+            deadline: Timestamp.fromDate(data.deadline),
+            authorId,
+            createdAt: Timestamp.now(),
+        };
+        const docRef = await addDoc(challengesCollection, challengeData);
+        revalidatePath('/panel/ideas/challenges');
+        revalidatePath('/ideas/challenges');
+        return docRef.id;
+    } catch (error) {
+        console.error("Error creating challenge:", error);
+        throw new Error("Gagal membuat tantangan baru.");
+    }
+}
+
+export async function getChallenges(): Promise<Challenge[]> {
+    try {
+        const q = query(challengesCollection, orderBy('deadline', 'desc'));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Challenge));
+    } catch (error) {
+        console.error("[getChallenges Error]", error);
+        throw new Error("Gagal mengambil daftar tantangan.");
+    }
+}
+
+
 export async function getActiveChallenges(): Promise<Challenge[]> {
     try {
         const now = Timestamp.now();

@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -23,13 +22,14 @@ import {
   BookCopy,
   KanbanSquare,
   Building2,
+  Menu,
+  MessageCircle,
   Presentation,
   Lightbulb,
-  MessageCircle,
-  Video,
-  Database,
-  Layers,
   TrendingUp,
+  Layers,
+  Database,
+  Target,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
@@ -71,6 +71,7 @@ const navGroups: {
     icon: Lightbulb,
     items: [
       { href: '/panel/ideas', icon: Lightbulb, label: 'Lab Ide & Aksi', permission: 'manage_ideas'},
+      { href: '/panel/ideas/challenges', icon: Target, label: 'Tantangan', permission: 'manage_ideas'},
       { href: '/panel/announcements', icon: Megaphone, label: 'Pengumuman', permission: 'manage_announcements'},
       { href: '/panel/notifications', icon: Bell, label: 'Notifikasi', permission: 'send_notifications' },
       { href: '/panel/evoting', icon: Vote, label: 'E-Voting', permission: 'manage_evoting' },

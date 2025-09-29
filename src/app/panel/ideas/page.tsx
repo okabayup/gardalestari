@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,9 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, MoreHorizontal } from 'lucide-react';
+import { Loader2, MoreHorizontal, Tags, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Tags } from 'lucide-react';
 
 export default function AdminIdeasPage() {
   const router = useRouter();
@@ -57,10 +55,16 @@ export default function AdminIdeasPage() {
           <h1 className="font-headline text-2xl font-bold">Manajemen Lab Ide & Aksi</h1>
           <p className="text-muted-foreground">Tinjau dan kelola semua ide dan solusi yang diajukan oleh anggota.</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => router.push('/panel/ideas/kategori')}>
-          <Tags className="mr-2 h-4 w-4" />
-          Kelola Kategori
-        </Button>
+        <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => router.push('/panel/ideas/challenges')}>
+              <Target className="mr-2 h-4 w-4" />
+              Kelola Tantangan
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => router.push('/panel/ideas/kategori')}>
+              <Tags className="mr-2 h-4 w-4" />
+              Kelola Kategori
+            </Button>
+        </div>
       </div>
 
       <Card>
