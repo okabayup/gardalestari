@@ -29,7 +29,7 @@ export const useFcm = () => {
           console.log('Notification permission granted.');
 
           const currentToken = await getToken(messaging, { 
-            vapidKey: 'BK-uYpO5l_ZLQPL1tLSQyGi2gw7tDrW0yoGKNYoSLwlEgxGgcHB4yx8OdCVfjzPUHJ4GHdDnHy_bhgCiiYXOgrQ',
+            vapidKey: process.env.NEXT_PUBLIC_FCM_VAPID_KEY,
             serviceWorkerRegistration: await navigator.serviceWorker.ready,
           });
 

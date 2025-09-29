@@ -13,7 +13,7 @@ import { google } from 'googleapis';
 
 const beritaPostsCollection = collection(db, 'beritaPosts');
 const generationJobsCollection = collection(db, 'generationJobs');
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://gardalestari.org';
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 // --- Job Tracking for Agentic Features ---
 export interface GenerationJob {

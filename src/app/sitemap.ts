@@ -4,7 +4,7 @@ import { getBeritaPosts } from '@/app/actions/berita';
 import { getPrograms } from '@/app/actions/programs';
 import { getEvents } from '@/app/actions/events';
 
-const BASE_URL = 'https://gardalestari.org'; 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://gardalestari.org'; 
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Static public routes

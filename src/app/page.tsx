@@ -54,7 +54,7 @@ export default async function LandingPage() {
 
   const featuredPartners = partners.filter(p => p.isFeatured);
   const featuredMembers = members.filter(m => m.isSpecialMember).slice(0, 3);
-  const WHATSAPP_LINK = `https://wa.me/${process.env.WHATSAPP_NUMBER || '6285176752610'}`;
+  const WHATSAPP_LINK = `https://wa.me/${process.env.SATUCONNECT_DEVICE_ID || '6285176752610'}`;
 
   const totalMembers = members.length + (settings.dummyMembers || 0);
   const totalPrograms = allPrograms.length + (settings.dummyPrograms || 0);

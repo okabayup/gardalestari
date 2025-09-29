@@ -17,8 +17,8 @@ import { format } from 'date-fns';
 const usersCollection = collection(db, 'users');
 const positionsCollection = collection(db, 'positions');
 
-const OFFICIAL_ACCOUNT_PHONE = '+6285144904161';
-const ADMIN_PHONE_NUMBER = '+6285176752610';
+const OFFICIAL_ACCOUNT_PHONE = process.env.SATUCONNECT_DEVICE_ID;
+const ADMIN_PHONE_NUMBER = process.env.ADMIN_PHONE_NUMBER;
 
 // Helper to get position details from ID
 async function getPositionDetails(positionId?: string): Promise<{ name: string, permissions: PermissionId[] }> {
@@ -63,7 +63,7 @@ export async function getMembers(forPublic: boolean = false): Promise<MemberWith
       const data = docSnap.data();
 
       // Exclude the official account from the members list
-      if (data.phoneNumber === OFFICIAL_ACCOUNT_PHONE) {
+      if (data.phoneNumber === `+${OFFICIAL_ACCOUNT_PHONE}`) {
           continue;
       }
       

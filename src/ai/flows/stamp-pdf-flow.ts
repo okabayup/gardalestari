@@ -44,7 +44,7 @@ const stampPdfFlow = ai.defineFlow(
     }
 
     // 2. Generate QR Code
-    const verificationUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://gardalestari.org'}/dokumen/verifikasi/${documentId}`;
+    const verificationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/dokumen/verifikasi/${documentId}`;
     const qrCodeDataUrl = await QRCode.toDataURL(verificationUrl, { errorCorrectionLevel: 'H' });
     const qrCodeImageBytes = Buffer.from(qrCodeDataUrl.split(',')[1], 'base64');
     

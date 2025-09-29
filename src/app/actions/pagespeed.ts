@@ -9,9 +9,9 @@ import type { PageSpeedReport } from '@/lib/definitions';
  * @returns A promise that resolves to the PageSpeed report.
  */
 export async function getPageSpeedReport(url: string): Promise<PageSpeedReport> {
-    const apiKey = process.env.GOOGLE_CLIENT_API_KEY; // A general API key can be used here
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_API_KEY; // A general API key can be used here
     if (!apiKey) {
-        throw new Error('GOOGLE_CLIENT_API_KEY is not set for PageSpeed Insights.');
+        throw new Error('NEXT_PUBLIC_GOOGLE_CLIENT_API_KEY is not set for PageSpeed Insights.');
     }
 
     const endpoint = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&key=${apiKey}&category=PERFORMANCE&category=ACCESSIBILITY&category=BEST_PRACTICES&category=SEO&strategy=MOBILE`;
