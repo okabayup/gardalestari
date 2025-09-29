@@ -8,7 +8,6 @@ const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  sw: 'firebase-messaging-sw.js', // Use the custom FCM service worker
   disable: process.env.NODE_ENV === 'development',
   runtimeCaching: [
     {
