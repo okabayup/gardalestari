@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
@@ -40,6 +41,8 @@ type ExtendedUser = User & {
   type?: MemberType;
   instagram?: string;
   linkedin?: string;
+  skills?: string[];
+  interests?: string[];
 };
 
 interface AuthContextType {
@@ -49,7 +52,7 @@ interface AuthContextType {
   signInWithPhone: (phoneNumber: string, appVerifierContainerId: string) => Promise<void>;
   verifyOtp: (otp: string) => Promise<void>;
   signOut: () => Promise<void>;
-  updateUserProfile: (updates: { photoFile?: File, username?: string, instagram?: string, linkedin?: string }) => Promise<void>;
+  updateUserProfile: (updates: { photoFile?: File, username?: string, instagram?: string, linkedin?: string, skills?: string[], interests?: string[] }) => Promise<void>;
   submitForVerification: (data: { fullName: string; nik: string; ktpFile: File; photoFile?: File; waNumber: string }) => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -122,6 +125,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           type: userType,
           instagram: userData.instagram,
           linkedin: userData.linkedin,
+          skills: userData.skills || [],
+          interests: userData.interests || [],
       };
       setUser(extendedUser);
     } else {
@@ -256,7 +261,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const updateUserProfile = async (updates: { photoFile?: File, username?: string, instagram?: string, linkedin?: string }) => {
+  const updateUserProfile = async (updates: { photoFile?: File, username?: string, instagram?: string, linkedin?: string, skills?: string[], interests?: string[] }) => {
     if (!auth.currentUser) throw new Error("Pengguna tidak ditemukan.");
 
     const updateData: { [key: string]: any } = {};
@@ -285,6 +290,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
      if (updates.linkedin) {
         updateData.linkedin = updates.linkedin;
+    }
+     if (updates.skills) {
+        updateData.skills = updates.skills;
+    }
+     if (updates.interests) {
+        updateData.interests = updates.interests;
     }
     
     const userDocRef = doc(db, 'users', auth.currentUser.uid);

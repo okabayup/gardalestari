@@ -1,7 +1,8 @@
 
+
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
-import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb } from 'lucide-react';
+import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon } from 'lucide-react';
 
 
 export const ALL_PERMISSIONS = [
@@ -24,6 +25,7 @@ export const ALL_PERMISSIONS = [
     { id: 'manage_letters', label: 'Kelola Surat (E-Office)'},
     { id: 'manage_recruitments', label: 'Kelola Rekrutmen' },
     { id: 'manage_achievements', label: 'Kelola Prestasi' },
+    { id: 'manage_badges', label: 'Kelola Lencana (Badges)' },
     { id: 'manage_map_data', label: 'Kelola Data Peta' },
     { id: 'manage_map_datasets', label: 'Kelola Dataset Peta' },
     { id: 'manage_evoting', label: 'Kelola E-Voting' },
@@ -333,6 +335,9 @@ export interface Member {
   isHidden?: boolean;
   instagram?: string;
   linkedin?: string;
+  skills?: string[];
+  interests?: string[];
+  assignedBadges?: string[];
 }
 
 export interface MemberWithStatus extends Member {
@@ -348,6 +353,15 @@ export interface MemberWithStatus extends Member {
     position?: string; 
     permissions: PermissionId[];
 }
+
+export interface Badge {
+  id?: string;
+  name: string;
+  description: string;
+  icon: string; // Lucide icon name
+  createdAt: Timestamp;
+}
+
 
 // --- Partners ---
 export interface Partner {
