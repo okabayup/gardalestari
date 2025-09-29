@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -21,6 +22,7 @@ import {
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { Idea, IdeaWithAuthor, IdeaAuthor, IdeaCategory, VoteType, IdeaStatus, IdeaType, Challenge } from '@/lib/definitions';
+import { checkAndAwardBadges } from './badges';
 
 const ideasCollection = collection(db, 'ideas');
 const usersCollection = collection(db, 'users');
@@ -111,6 +113,10 @@ export async function createIdea(authorId: string, title: string, description: s
         };
         const docRef = await addDoc(ideasCollection, newIdea);
         revalidatePath('/ideas');
+
+        // Check for badges after creating an idea
+        await checkAndAwardBadges(authorId);
+
         return docRef.id;
     } catch (error) {
         console.error("[createIdea Error]", error);

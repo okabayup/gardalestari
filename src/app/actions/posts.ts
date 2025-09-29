@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -22,6 +23,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import type { Mention, MediaItem, Post, Author, PostWithAuthor, Comment, CommentWithAuthor } from '@/lib/definitions';
+import { checkAndAwardBadges } from './badges';
 
 const postsCollection = collection(db, 'posts');
 const usersCollection = collection(db, 'users'); 
@@ -132,6 +134,9 @@ export async function createPost(formData: FormData) {
     };
 
     await addDoc(postsCollection, newPost);
+    
+    // Check for badges after creating the post
+    await checkAndAwardBadges(authorId);
     
     revalidatePath('/feed');
     revalidatePath('/profile/me');
@@ -393,3 +398,4 @@ export async function unarchivePost(postId: string) {
         throw new Error("Gagal memulihkan postingan.");
     }
 }
+

@@ -355,14 +355,24 @@ export interface MemberWithStatus extends Member {
     permissions: PermissionId[];
 }
 
+// --- Badges ---
+export type BadgeType = 'manual' | 'auto';
+export type BadgeMetric = 'post_count' | 'idea_count' | 'comment_count' | 'upvote_count' | 'project_completed';
+
+export interface BadgeCriterion {
+  metric: BadgeMetric;
+  value: number;
+}
+
 export interface Badge {
   id?: string;
   name: string;
   description: string;
   icon: string; // Lucide icon name
-  createdAt: Timestamp;
+  createdAt?: Timestamp;
+  type?: BadgeType;
+  criteria?: BadgeCriterion;
 }
-
 
 // --- Partners ---
 export interface Partner {
