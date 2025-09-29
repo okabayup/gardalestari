@@ -359,6 +359,15 @@ export interface MemberWithStatus extends Member {
 export type BadgeType = 'manual' | 'auto';
 export type BadgeMetric = 'post_count' | 'idea_count' | 'comment_count' | 'upvote_count' | 'project_completed';
 
+export const BADGE_METRICS: { value: BadgeMetric; label: string }[] = [
+    { value: 'post_count', label: 'Jumlah Postingan' },
+    { value: 'idea_count', label: 'Jumlah Ide Diajukan' },
+    { value: 'comment_count', label: 'Jumlah Komentar' },
+    { value: 'upvote_count', label: 'Jumlah Upvote Diterima' },
+    { value: 'project_completed', label: 'Proyek Diselesaikan' },
+];
+
+
 export interface BadgeCriterion {
   metric: BadgeMetric;
   value: number;
@@ -370,8 +379,8 @@ export interface Badge {
   description: string;
   icon: string; // Lucide icon name
   createdAt?: Timestamp;
-  type?: BadgeType;
-  criteria?: BadgeCriterion;
+  type: BadgeType;
+  criteria: BadgeCriterion;
 }
 
 // --- Partners ---
