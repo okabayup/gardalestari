@@ -2,7 +2,7 @@
 
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
-import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon } from 'lucide-react';
+import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus } from 'lucide-react';
 
 
 export const ALL_PERMISSIONS = [
@@ -49,6 +49,7 @@ export const directoryItems = [
     { href: '/documents', label: 'Dokumen', icon: FileText },
     { href: '/map', label: 'Peta', icon: Map },
     { href: '/evoting', label: 'E-Voting', icon: Vote },
+    { href: '/content/new', label: 'Kirim Konten', icon: FilePlus },
 ];
 
 

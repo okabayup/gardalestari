@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, Shield, Pencil, AlertTriangle, Loader2, Grid3x3, Archive, Tag, IdCard, Undo, History, Award, Info, PlusCircle, FilePlus } from 'lucide-react';
+import { LogOut, Shield, Pencil, AlertTriangle, Loader2, Grid3x3, Archive, Tag, IdCard, Undo, History, Award, Info, PlusCircle } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import EditProfileModal from '@/components/profile/EditProfileModal';
@@ -295,11 +295,6 @@ export default function ProfileMePage() {
         <div className="p-4 space-y-4">
             <ProfileHeader user={user} postCount={userPosts.length} />
             <VerificationStatusAlert status={user?.verificationStatus} />
-            
-            <Button className="w-full" onClick={() => router.push('/content/new')}>
-                <FilePlus className="mr-2 h-4 w-4" />
-                Kirim Konten/Berita
-            </Button>
 
             <Tabs defaultValue="posts" className="w-full">
                 <TabsList className="w-full grid grid-cols-5">
