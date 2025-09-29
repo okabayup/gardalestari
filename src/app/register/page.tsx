@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -12,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { getAppSettings } from '@/app/actions/settings';
-import { Label } from '../ui/label';
+import { Label } from '@/components/ui/label';
 
 const benefits = [
   'Akses ke jaringan pemuda inovator',
