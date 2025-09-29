@@ -11,7 +11,10 @@ const withPWA = require('next-pwa')({
   disable: process.env.NODE_ENV === 'development',
   runtimeCaching: [
     {
-      urlPattern: /^https?.*/,
+      urlPattern: ({ url }) => {
+        // Don't cache the manifest.json
+        return !url.pathname.endsWith('/manifest.json');
+      },
       handler: 'NetworkFirst',
       options: {
         cacheName: 'offlineCache',
