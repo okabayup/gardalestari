@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -16,10 +17,11 @@ import {
   orderBy,
   runTransaction,
   increment,
+  limit,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
-import type { RedeemableItem, Mission, RedemptionLog } from '@/lib/definitions';
+import type { RedeemableItem, Mission, RedemptionLog, PointLog } from '@/lib/definitions';
 
 const redeemableItemsCollection = collection(db, 'redeemableItems');
 const missionsCollection = collection(db, 'missions');
@@ -139,4 +141,35 @@ export async function getRedemptionHistory(): Promise<RedemptionLog[]> {
             redeemedAt: (data.redeemedAt as Timestamp).toDate().toISOString(),
         } as RedemptionLog
     });
+}
+
+// --- Point History Logic ---
+
+/**
+ * Gets the point history for a specific user.
+ * @param userId - The ID of the user.
+ * @returns A promise that resolves to an array of point log entries.
+ */
+export async function getPointHistory(userId: string): Promise<PointLog[]> {
+    try {
+        const userRef = doc(usersCollection, userId);
+        const logsCollection = collection(userRef, 'pointLogs');
+        const q = query(logsCollection, orderBy('createdAt', 'desc'), limit(50));
+        
+        const snapshot = await getDocs(q);
+        
+        return snapshot.docs.map(docSnap => {
+            const data = docSnap.data();
+            return {
+                id: docSnap.id,
+                points: data.points,
+                description: data.description,
+                createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
+            } as PointLog;
+        });
+
+    } catch (error) {
+        console.error(`[getPointHistory Error] for user ${userId}:`, error);
+        throw new Error('Gagal mengambil riwayat poin.');
+    }
 }

@@ -18,7 +18,7 @@ import { auth, db } from '@/lib/firebase';
 import { redirect, usePathname } from 'next/navigation';
 import { useToast } from './use-toast';
 import { checkUsernameExists } from '@/app/actions/user';
-import type { PermissionId, Position, MemberType } from '@/lib/definitions';
+import type { PermissionId, Position, MemberType, Mission } from '@/lib/definitions';
 import { ALL_PERMISSIONS } from '@/lib/definitions';
 import { logAnalyticsEvent } from '@/lib/analytics';
 import { seedInitialData } from '@/lib/seed-data';
@@ -233,41 +233,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const ownReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
         
         let referredBy: string | undefined = undefined;
+        let referrerName: string | undefined = undefined;
         if (referralCode) {
             const q = query(collection(db, 'users'), where("referralCode", "==", referralCode), limit(1));
             const referrerSnapshot = await getDocs(q);
             if (!referrerSnapshot.empty) {
-                referredBy = referrerSnapshot.docs[0].id;
+                const referrerDoc = referrerSnapshot.docs[0];
+                referredBy = referrerDoc.id;
+                referrerName = referrerDoc.data().fullName;
             }
         }
+        
+        const pointLogsCollection = collection(userDocRef, 'pointLogs');
+        const welcomePoints = 5;
 
-        await setDoc(userDocRef, {
-            uid: newUser.uid,
-            displayName: tempName,
-            fullName: tempName,
-            username: username,
-            email: newUser.email,
-            phoneNumber: newUser.phoneNumber,
-            photoURL: newUser.photoURL || `https://picsum.photos/seed/${newUser.uid}/100/100`,
-            avatarUrl: newUser.photoURL || `https://picsum.photos/seed/${newUser.uid}/100/100`,
-            createdAt: serverTimestamp(),
-            referralCode: ownReferralCode,
-            referralCount: 0,
-            greenPoints: 5, // Initial welcome points
-            referredBy: referredBy,
-            verificationStatus: 'unverified',
-        });
-
-        // Award points to referrer
-        if (referredBy) {
-            const referrerRef = doc(db, 'users', referredBy);
-            await runTransaction(db, async (transaction) => {
-                const referrerDoc = await transaction.get(referrerRef);
-                if (referrerDoc.exists()) {
-                    transaction.update(referrerRef, { greenPoints: increment(25) });
-                }
+        // Create the user and their first point log in a transaction
+        await runTransaction(db, async (transaction) => {
+            transaction.set(userDocRef, {
+                uid: newUser.uid,
+                displayName: tempName,
+                fullName: tempName,
+                username: username,
+                email: newUser.email,
+                phoneNumber: newUser.phoneNumber,
+                photoURL: newUser.photoURL || `https://picsum.photos/seed/${newUser.uid}/100/100`,
+                avatarUrl: newUser.photoURL || `https://picsum.photos/seed/${newUser.uid}/100/100`,
+                createdAt: serverTimestamp(),
+                referralCode: ownReferralCode,
+                referralCount: 0,
+                greenPoints: welcomePoints,
+                referredBy: referredBy,
+                verificationStatus: 'unverified',
             });
-        }
+            
+            const welcomeLogRef = doc(pointLogsCollection);
+            transaction.set(welcomeLogRef, {
+                points: welcomePoints,
+                description: 'Poin selamat datang!',
+                createdAt: serverTimestamp()
+            });
+
+            // Award points to referrer if they exist
+            if (referredBy) {
+                const referrerRef = doc(db, 'users', referredBy);
+                const missionsQuery = query(collection(db, 'missions'), where('type', '==', 'referral'), limit(1));
+                const missionsSnapshot = await getDocs(missionsQuery);
+                let referralPoints = 25; // Default points
+                if (!missionsSnapshot.empty) {
+                    referralPoints = (missionsSnapshot.docs[0].data() as Mission).points;
+                }
+
+                transaction.update(referrerRef, { 
+                    greenPoints: increment(referralPoints),
+                    referralCount: increment(1)
+                });
+                
+                const referrerLogRef = doc(collection(referrerRef, 'pointLogs'));
+                transaction.set(referrerLogRef, {
+                    points: referralPoints,
+                    description: `Bonus rujukan untuk ${tempName}`,
+                    createdAt: serverTimestamp()
+                });
+            }
+        });
         
         logAnalyticsEvent('sign_up', { method: 'phone', referral: !!referredBy });
     } else {

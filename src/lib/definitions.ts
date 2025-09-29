@@ -274,6 +274,13 @@ export interface RedemptionLog {
   redeemedAt: string; // ISO String
 }
 
+export interface PointLog {
+    id?: string;
+    points: number;
+    description: string;
+    createdAt: string; // ISO string
+}
+
 
 // --- Ideas & Challenges ---
 export type VoteType = 'up' | 'down';
