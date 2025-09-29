@@ -7,7 +7,8 @@
     "dev": "next dev -p 9002",
     "genkit:dev": "genkit start -- ts-node src/ai/dev.ts",
     "genkit:watch": "genkit start -- ts-node --watch src/ai/dev.ts",
-    "build": "next build",
+    "backup:env": "mkdir -p backup-env && cp .env backup-env/.env-$(date +%Y%m%d)",
+    "build": "npm run backup:env && next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
