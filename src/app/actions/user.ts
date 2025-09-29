@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -95,6 +96,10 @@ export async function getUserByUid(uid: string): Promise<(MemberWithStatus & { w
             waVerified: data.waVerified || false,
             instagram: data.instagram,
             linkedin: data.linkedin,
+            skills: data.skills || [],
+            interests: data.interests || [],
+            referralCode: data.referralCode,
+            referralCount: data.referralCount,
         };
 
     } catch (error) {
@@ -135,7 +140,6 @@ export async function getUserByUsername(username: string): Promise<PublicProfile
             name: data.fullName || data.displayName || 'Nama Tidak Diketahui',
             username: data.username,
             avatarUrl: data.avatarUrl,
-            level: data.level || 'Bronze',
             phoneNumber: data.phoneNumber || 'N/A',
             verificationStatus: data.verificationStatus || 'unverified',
             position: positionName,
@@ -146,6 +150,8 @@ export async function getUserByUsername(username: string): Promise<PublicProfile
             permissions: [], // Permissions are not needed for public profile
             instagram: data.instagram,
             linkedin: data.linkedin,
+            skills: data.skills || [],
+            interests: data.interests || [],
         };
 
     } catch (error) {
@@ -173,7 +179,6 @@ export async function getUserByWaNumber(waNumber: string): Promise<PublicUser | 
             username: data.username,
             fullName: data.fullName,
             avatarUrl: data.avatarUrl,
-            level: data.level,
         };
 
     } catch (error) {
@@ -225,7 +230,6 @@ export async function searchUsers(searchQuery: string, limitCount: number = 5): 
                     username: data.username,
                     fullName: data.fullName || data.displayName,
                     avatarUrl: data.avatarUrl,
-                    level: data.level || 'Bronze',
                 });
             }
         });
@@ -285,7 +289,7 @@ export async function verifyWaNumber(userId: string, otp: string): Promise<boole
     }
 }
 
-export async function updateUserProfile(userId: string, data: { username?: string, photoFile?: File, instagram?: string, linkedin?: string }) {
+export async function updateUserProfile(userId: string, data: { username?: string, photoFile?: File, instagram?: string, linkedin?: string, skills?: string[], interests?: string[] }) {
   try {
     const userDocRef = doc(db, 'users', userId);
     const dataToUpdate: { [key: string]: any } = {};
@@ -315,6 +319,12 @@ export async function updateUserProfile(userId: string, data: { username?: strin
     }
     if (data.linkedin) {
       dataToUpdate.linkedin = data.linkedin;
+    }
+    if (data.skills) {
+      dataToUpdate.skills = data.skills;
+    }
+    if (data.interests) {
+      dataToUpdate.interests = data.interests;
     }
     
     if (Object.keys(dataToUpdate).length > 0) {

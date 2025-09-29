@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -11,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { getAppSettings } from '@/app/actions/settings';
+import { Label } from '../ui/label';
 
 const benefits = [
   'Akses ke jaringan pemuda inovator',
@@ -25,6 +27,7 @@ export default function RegisterPage() {
     const { toast } = useToast();
     const [phone, setPhone] = useState('');
     const [otp, setOtp] = useState('');
+    const [referralCode, setReferralCode] = useState('');
     const [step, setStep] = useState<'phone' | 'otp'>('phone');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isRegistrationOpen, setRegistrationOpen] = useState<boolean | null>(null);
@@ -77,7 +80,7 @@ export default function RegisterPage() {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            await verifyOtp(otp);
+            await verifyOtp(otp, referralCode);
             // User is now signed in, the useEffect will redirect to profile
             toast({ title: 'Pendaftaran Berhasil!', description: 'Anda akan diarahkan ke halaman profil Anda.' });
         } catch (error) {
@@ -169,13 +172,27 @@ export default function RegisterPage() {
                             <CardContent>
                                 {step === 'phone' ? (
                                     <form onSubmit={handlePhoneSubmit} className="space-y-4">
-                                        <Input
-                                            type="tel"
-                                            placeholder="cth. 08123456789"
-                                            value={phone}
-                                            onChange={(e) => setPhone(e.target.value)}
-                                            required
-                                        />
+                                        <div className="space-y-2">
+                                            <Label htmlFor="phone">Nomor Telepon</Label>
+                                            <Input
+                                                id="phone"
+                                                type="tel"
+                                                placeholder="cth. 08123456789"
+                                                value={phone}
+                                                onChange={(e) => setPhone(e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                         <div className="space-y-2">
+                                            <Label htmlFor="referral">Kode Rujukan (Opsional)</Label>
+                                            <Input
+                                                id="referral"
+                                                type="text"
+                                                placeholder="Masukkan kode rujukan"
+                                                value={referralCode}
+                                                onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                                            />
+                                        </div>
                                         <Button type="submit" className="w-full" disabled={isSubmitting || countdown > 0}>
                                             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                             {isSubmitting ? 'Mengirim...' : (countdown > 0 ? `Kirim Ulang OTP dalam ${countdown}s` : 'Daftar')}

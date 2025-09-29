@@ -285,10 +285,10 @@ export interface Challenge {
     title: string;
     description: string;
     criteria: string; // What's expected from a solution
-    deadline: Timestamp;
+    deadline: string; // ISO string
     reward?: string; // Prize or incentive
     authorId: string; // The admin/partner who created it
-    createdAt: Timestamp;
+    createdAt: string; // ISO string
 }
 
 export interface IdeaCategory {
@@ -339,6 +339,9 @@ export interface Member {
   skills?: string[];
   interests?: string[];
   assignedBadges?: string[];
+  referralCode?: string;
+  referredBy?: string;
+  referralCount?: number;
 }
 
 export interface MemberWithStatus extends Member {
@@ -426,7 +429,6 @@ export interface Author {
   name: string;
   username: string;
   avatarUrl: string;
-  level: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
   type?: MemberType;
 }
 
@@ -600,7 +602,6 @@ export interface PublicUser {
   username: string;
   fullName: string;
   avatarUrl: string;
-  level: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
 }
 
 export interface PublicProfile extends MemberWithStatus {

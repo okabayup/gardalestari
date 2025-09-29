@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, Shield, Pencil, AlertTriangle, Loader2, Grid3x3, Archive, Tag, IdCard, Undo, History, Award, Info, PlusCircle } from 'lucide-react';
+import { LogOut, Shield, Pencil, AlertTriangle, Loader2, Grid3x3, Archive, Tag, IdCard, Undo, History, Award, Info, PlusCircle, Copy, Users } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import EditProfileModal from '@/components/profile/EditProfileModal';
@@ -20,55 +20,81 @@ import MembershipCardDialog from '@/components/members/MembershipCardDialog';
 import { useToast } from '@/hooks/use-toast';
 import PostCard from '@/components/feed/PostCard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { MemberLevelBadge } from '@/components/members/MemberLevelBadge';
 import { format } from 'date-fns';
 import { VerifiedBadge } from '@/components/members/VerifiedBadge';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 
 const ADMIN_PHONE_NUMBER = '+6285176752610';
 
-const ProfileHeader = ({ user, postCount }: { user: any, postCount: number }) => (
-  <Card>
-    <CardContent className="p-6 space-y-4">
-        <div className="flex items-start gap-4">
-            <Avatar className="h-24 w-24 border">
-              <AvatarImage src={user?.photoURL || ''} alt={user?.displayName || ''} />
-              <AvatarFallback className="text-3xl">{user?.displayName?.charAt(0) || 'A'}</AvatarFallback>
-            </Avatar>
-            <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                     <h1 className="text-2xl font-bold font-headline">@{user?.username}</h1>
-                     <VerifiedBadge type={user.type} />
-                </div>
-                <p className="text-muted-foreground">{user?.displayName}</p>
-                <p className="text-sm pt-1">{user?.position || 'Anggota Garda Lestari'}</p>
-                 <div className="flex items-center gap-2 pt-1">
-                    <MemberLevelBadge level={user?.level || 'Bronze'} />
-                    <span className="text-sm text-muted-foreground">{user?.points || 0} Poin</span>
-                </div>
-                 <div className="flex flex-wrap gap-2 pt-2">
-                    {user.skills?.map((skill: string) => <Badge key={skill} variant="secondary">{skill}</Badge>)}
+const ProfileHeader = ({ user, postCount }: { user: any, postCount: number }) => {
+    const { toast } = useToast();
+    
+    const copyReferralCode = () => {
+        if (!user?.referralCode) return;
+        navigator.clipboard.writeText(user.referralCode);
+        toast({ title: 'Kode Rujukan Disalin!' });
+    }
+    
+    return (
+      <Card>
+        <CardContent className="p-6 space-y-4">
+            <div className="flex items-start gap-4">
+                <Avatar className="h-24 w-24 border">
+                  <AvatarImage src={user?.photoURL || ''} alt={user?.displayName || ''} />
+                  <AvatarFallback className="text-3xl">{user?.displayName?.charAt(0) || 'A'}</AvatarFallback>
+                </Avatar>
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                         <h1 className="text-2xl font-bold font-headline">@{user?.username}</h1>
+                         <VerifiedBadge type={user.type} />
+                    </div>
+                    <p className="text-muted-foreground">{user?.displayName}</p>
+                    <p className="text-sm pt-1">{user?.position || 'Anggota Garda Lestari'}</p>
                 </div>
             </div>
-        </div>
-        <div className="flex gap-2">
-            <Button variant="outline" onClick={() => (document.getElementById('edit-profile-trigger') as HTMLButtonElement)?.click()} className="w-full">
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit Profil
-            </Button>
-            <Dialog>
-                <DialogTrigger asChild>
-                    <Button variant="outline" className="w-full" disabled={user?.verificationStatus !== 'permanent'}>
-                        <IdCard className="mr-2 h-4 w-4" />
-                        Lihat KTA
-                    </Button>
-                </DialogTrigger>
-                <MembershipCardDialog user={user} />
-            </Dialog>
-        </div>
-    </CardContent>
-  </Card>
-);
+
+            <div className="grid grid-cols-2 gap-4 text-center">
+                <div className="p-2 bg-muted/50 rounded-lg">
+                    <p className="text-xl font-bold">{user?.referralCount || 0}</p>
+                    <p className="text-xs text-muted-foreground">Anggota Direkrut</p>
+                </div>
+                <div className="p-2 bg-muted/50 rounded-lg">
+                    <p className="text-xl font-bold">{(user?.referralCount || 0) * 5}</p>
+                    <p className="text-xs text-muted-foreground">Bibit Gratis</p>
+                </div>
+            </div>
+
+            {user?.referralCode && (
+                 <div className="space-y-2">
+                    <Label>Kode Rujukan Anda</Label>
+                    <div className="flex items-center gap-2">
+                        <Input value={user.referralCode} readOnly className="font-mono" />
+                        <Button type="button" size="icon" variant="outline" onClick={copyReferralCode}>
+                            <Copy className="h-4 w-4" />
+                        </Button>
+                    </div>
+                 </div>
+            )}
+            
+            <div className="flex gap-2">
+                <Button variant="outline" onClick={() => (document.getElementById('edit-profile-trigger') as HTMLButtonElement)?.click()} className="w-full">
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit Profil
+                </Button>
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Button variant="outline" className="w-full" disabled={user?.verificationStatus !== 'permanent'}>
+                            <IdCard className="mr-2 h-4 w-4" />
+                            Lihat KTA
+                        </Button>
+                    </DialogTrigger>
+                    <MembershipCardDialog user={user} />
+                </Dialog>
+            </div>
+        </CardContent>
+      </Card>
+    )
+}
 
 const ProfilePostsGrid = ({ posts, isLoading }: { posts: PostWithAuthor[], isLoading: boolean }) => {
     if (isLoading) {

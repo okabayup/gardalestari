@@ -17,16 +17,17 @@ import { Info } from 'lucide-react';
 import ImageCropper from './ImageCropper';
 import { checkUsernameExists } from '@/app/actions/user';
 import { useDebounce } from 'use-debounce';
+import { Textarea } from '../ui/textarea';
 
 
 interface EditProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  user: User & { fullName?: string; nik?: string; username?: string, instagram?: string, linkedin?: string };
+  user: User & { fullName?: string; nik?: string; username?: string, instagram?: string, linkedin?: string, skills?: string[], interests?: string[] };
 }
 
 export default function EditProfileModal({ isOpen, onClose, user }: EditProfileModalProps) {
-  const { updateUserProfile } = useAuth();
+  const { updateUserProfile, refreshUser } = useAuth();
   const { toast } = useToast();
   
   const [username, setUsername] = useState(user.username || '');
@@ -36,6 +37,8 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
   
   const [instagram, setInstagram] = useState(user.instagram || '');
   const [linkedin, setLinkedin] = useState(user.linkedin || '');
+  const [skills, setSkills] = useState((user.skills || []).join(', '));
+  const [interests, setInterests] = useState((user.interests || []).join(', '));
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(user.photoURL);
@@ -99,8 +102,12 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
 
     setLoading(true);
     try {
-      const updates: { photoFile?: File; username?: string; instagram?: string; linkedin?: string } = {};
+      const updates: { photoFile?: File; username?: string; instagram?: string; linkedin?: string, skills?: string[], interests?: string[] } = {};
       let hasChanges = false;
+      
+      const skillsArray = skills.split(',').map(s => s.trim()).filter(Boolean);
+      const interestsArray = interests.split(',').map(i => i.trim()).filter(Boolean);
+
 
       if (photoFile) {
         updates.photoFile = photoFile;
@@ -118,9 +125,19 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
         updates.linkedin = linkedin;
         hasChanges = true;
       }
+       if (JSON.stringify(skillsArray) !== JSON.stringify(user.skills || [])) {
+        updates.skills = skillsArray;
+        hasChanges = true;
+      }
+      if (JSON.stringify(interestsArray) !== JSON.stringify(user.interests || [])) {
+        updates.interests = interestsArray;
+        hasChanges = true;
+      }
+
 
       if (hasChanges) {
         await updateUserProfile(updates);
+        await refreshUser();
         toast({
           title: 'Profil Diperbarui',
           description: 'Perubahan pada profil Anda telah berhasil disimpan.',
@@ -148,7 +165,9 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
   const hasMadeChanges = (photoFile !== null) || 
     (canEditUsername && username !== user.username) ||
     (instagram !== (user.instagram || '')) ||
-    (linkedin !== (user.linkedin || ''));
+    (linkedin !== (user.linkedin || '')) ||
+    (skills !== (user.skills || []).join(', ')) ||
+    (interests !== (user.interests || []).join(', '));
 
 
   return (
@@ -164,7 +183,7 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
         <DialogHeader>
           <DialogTitle>Edit Profil</DialogTitle>
           <DialogDescription>
-            Perbarui foto profil, nama pengguna, dan tautan media sosial Anda.
+            Perbarui foto profil, nama pengguna, keahlian, minat, dan tautan media sosial Anda.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
@@ -206,6 +225,16 @@ export default function EditProfileModal({ isOpen, onClose, user }: EditProfileM
                     "Nama pengguna tidak dapat diubah lagi."
                 )}
             </div>
+          </div>
+          
+          <div className="space-y-2">
+              <Label htmlFor="skills">Keahlian (pisahkan dengan koma)</Label>
+              <Textarea id="skills" value={skills} onChange={e => setSkills(e.target.value)} placeholder="Contoh: Ahli Hidroponik, Fasilitator Komunitas, Desain Grafis" />
+          </div>
+
+          <div className="space-y-2">
+              <Label htmlFor="interests">Minat (pisahkan dengan koma)</Label>
+              <Textarea id="interests" value={interests} onChange={e => setInterests(e.target.value)} placeholder="Contoh: Konservasi Mangrove, Pendidikan Anak" />
           </div>
 
 

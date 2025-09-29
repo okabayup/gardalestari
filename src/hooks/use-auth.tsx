@@ -13,7 +13,7 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs, Timestamp, runTransaction, increment } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { redirect, usePathname } from 'next/navigation';
 import { useToast } from './use-toast';
@@ -27,8 +27,8 @@ import { seedInitialData } from '@/lib/seed-data';
 type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected' | 'manual';
 
 type ExtendedUser = User & {
-  points?: number;
-  level?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
+  referralCount?: number;
+  referralCode?: string;
   verificationStatus?: VerificationStatus;
   fullName?: string;
   username?: string;
@@ -50,7 +50,7 @@ interface AuthContextType {
   loading: boolean;
   hasPermission: (permission: PermissionId) => boolean;
   signInWithPhone: (phoneNumber: string, appVerifierContainerId: string) => Promise<void>;
-  verifyOtp: (otp: string) => Promise<void>;
+  verifyOtp: (otp: string, referralCode?: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateUserProfile: (updates: { photoFile?: File, username?: string, instagram?: string, linkedin?: string, skills?: string[], interests?: string[] }) => Promise<void>;
   submitForVerification: (data: { fullName: string; nik: string; ktpFile: File; photoFile?: File; waNumber: string }) => Promise<void>;
@@ -109,8 +109,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const extendedUser: ExtendedUser = {
           ...user, 
-          points: userData.points || 0,
-          level: userData.level || 'Bronze',
+          referralCount: userData.referralCount || 0,
+          referralCode: userData.referralCode,
           verificationStatus: userData.verificationStatus,
           displayName: userData.fullName || user.displayName,
           photoURL: userData.avatarUrl || user.photoURL,
@@ -130,7 +130,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       setUser(extendedUser);
     } else {
-      setUser({ ...user, points: 0, level: 'Bronze', verificationStatus: 'unverified' });
+      setUser({ ...user, referralCount: 0, verificationStatus: 'unverified' });
     }
   }, []);
 
@@ -215,7 +215,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
 
-  const verifyOtp = async (otp: string) => {
+  const verifyOtp = async (otp: string, referralCode?: string) => {
     if (!confirmationResult) {
       throw new Error("No confirmation result available. Please request an OTP first.");
     }
@@ -228,6 +228,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const newUser = userCredential.user;
         const tempName = `Anggota ${String(newUser.phoneNumber).slice(-4)}`;
         const username = await generateUniqueUsername(tempName);
+        const ownReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+        
+        let referredBy: string | undefined = undefined;
+        if (referralCode) {
+            const q = query(collection(db, 'users'), where("referralCode", "==", referralCode), limit(1));
+            const referrerSnapshot = await getDocs(q);
+            if (!referrerSnapshot.empty) {
+                referredBy = referrerSnapshot.docs[0].id;
+            }
+        }
 
         await setDoc(userDocRef, {
             uid: newUser.uid,
@@ -239,11 +249,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             photoURL: newUser.photoURL || `https://picsum.photos/seed/${newUser.uid}/100/100`,
             avatarUrl: newUser.photoURL || `https://picsum.photos/seed/${newUser.uid}/100/100`,
             createdAt: serverTimestamp(),
-            points: 0,
-            level: 'Bronze',
+            referralCode: ownReferralCode,
+            referralCount: 0,
+            referredBy: referredBy,
             verificationStatus: 'unverified',
         });
-        logAnalyticsEvent('sign_up', { method: 'phone' });
+        logAnalyticsEvent('sign_up', { method: 'phone', referral: !!referredBy });
     } else {
         logAnalyticsEvent('login', { method: 'phone' });
     }
@@ -317,7 +328,6 @@ const submitForVerification = async (data: { fullName: string; nik: string; ktpF
             throw new Error("NIK ini sudah terdaftar pada akun lain.");
         }
     }
-
 
     const { uid } = auth.currentUser;
     const storage = getStorage();

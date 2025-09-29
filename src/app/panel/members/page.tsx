@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -166,6 +167,10 @@ export default function AdminMembersPage() {
       header: 'Jabatan',
     },
     {
+        accessorKey: 'referralCount',
+        header: 'Jumlah Rujukan',
+    },
+    {
       accessorKey: 'joinDate',
       header: 'Tanggal Daftar',
       cell: ({ row }) => <ClientFormattedDate dateString={row.original.joinDate} />
@@ -269,4 +274,3 @@ export default function AdminMembersPage() {
     </>
   );
 }
-

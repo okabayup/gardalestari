@@ -3,7 +3,7 @@
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, getDocs, doc, updateDoc, deleteField, query, setDoc, Timestamp, getDoc, addDoc, where,getCountFromServer, runTransaction, orderBy, limit, startAfter, endBefore } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteField, query, setDoc, Timestamp, getDoc, addDoc, where,getCountFromServer, runTransaction, orderBy, limit, startAfter, endBefore, increment } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { PermissionId, Position, MemberWithStatus, MemberType, VerificationStatus } from '@/lib/definitions';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
@@ -95,6 +95,8 @@ export async function getMembers(forPublic: boolean = false): Promise<MemberWith
         ktpImageUrl: data.ktpImageUrl,
         createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
         permissions: permissions,
+        referralCode: data.referralCode,
+        referralCount: data.referralCount,
       });
     }
     
@@ -229,6 +231,15 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
             if (verificationStatus === 'permanent') {
                 templateId = 'kta_activated';
                 notificationPayload = { title: 'Verifikasi Berhasil!', body: 'Selamat! Akun Anda telah diverifikasi secara permanen.' };
+
+                // Increment referrer's count if this user was referred
+                if (currentMemberData.referredBy) {
+                    const referrerRef = doc(db, 'users', currentMemberData.referredBy);
+                    await runTransaction(db, async (transaction) => {
+                        transaction.update(referrerRef, { referralCount: increment(1) });
+                    });
+                }
+
             } else if (verificationStatus === 'rejected') {
                 templateId = 'member_verification_rejected';
                  notificationPayload = { title: 'Verifikasi Ditolak', body: 'Pengajuan verifikasi Anda ditolak. Silakan periksa kembali data Anda.' };
@@ -317,8 +328,7 @@ export async function createManualMember(formData: FormData) {
             phoneNumber: 'N/A',
             verificationStatus: 'manual' as VerificationStatus,
             createdAt: Timestamp.now(),
-            level: 'Bronze',
-            points: 0,
+            referralCount: 0,
         };
         
         console.log("[createManualMember] Creating document in Firestore...");
