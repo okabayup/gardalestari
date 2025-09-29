@@ -22,11 +22,13 @@ import {
   limit,
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
-import type { Idea, IdeaWithAuthor, IdeaAuthor, IdeaCategory, VoteType, IdeaStatus, IdeaType } from '@/lib/definitions';
+import type { Idea, IdeaWithAuthor, IdeaAuthor, IdeaCategory, VoteType, IdeaStatus, IdeaType, Challenge } from '@/lib/definitions';
 
 const ideasCollection = collection(db, 'ideas');
 const usersCollection = collection(db, 'users');
 const ideaCategoriesCollection = collection(db, 'ideaCategories');
+const challengesCollection = collection(db, 'challenges');
+
 
 const formatTimestamp = (timestamp: Timestamp): string => {
   const date = timestamp.toDate();
@@ -89,9 +91,10 @@ export async function createIdea(authorId: string, title: string, description: s
         if (!authorId) throw new Error('Pengguna tidak terautentikasi.');
         
         let challengeTitle: string | undefined = undefined;
-        // In a real implementation, you would fetch the challenge title if challengeId is provided
-        // const challengeDoc = await getDoc(doc(db, 'challenges', challengeId));
-        // if (challengeDoc.exists()) challengeTitle = challengeDoc.data().title;
+        if (challengeId) {
+            const challengeDoc = await getDoc(doc(db, 'challenges', challengeId));
+            if (challengeDoc.exists()) challengeTitle = challengeDoc.data().title;
+        }
 
         const newIdea: Omit<Idea, 'id'> = {
             title,
@@ -361,5 +364,18 @@ export async function deleteIdeaCategory(id: string) {
     } catch (error) {
         console.error("[deleteIdeaCategory Error]", error);
         throw new Error("Gagal menghapus kategori ide.");
+    }
+}
+
+// --- Challenge Management ---
+export async function getActiveChallenges(): Promise<Challenge[]> {
+    try {
+        const now = Timestamp.now();
+        const q = query(challengesCollection, where('deadline', '>', now), orderBy('deadline', 'asc'));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Challenge));
+    } catch (error) {
+        console.error("[getActiveChallenges Error]", error);
+        throw new Error("Gagal mengambil daftar tantangan aktif.");
     }
 }

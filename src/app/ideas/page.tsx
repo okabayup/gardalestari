@@ -166,7 +166,7 @@ export default function IdeasPage() {
       <div className="p-6 space-y-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-center sm:text-left">
-                <h1 className="font-headline text-3xl font-bold">Laboratorium Ide &amp; Aksi</h1>
+                <h1 className="font-headline text-3xl font-bold">Laboratorium Ide & Aksi</h1>
                 <p className="text-muted-foreground">Wadah untuk gagasan inovatif dan solusi atas tantangan.</p>
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
@@ -174,9 +174,11 @@ export default function IdeasPage() {
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Ajukan Ide Baru
                 </Button>
-                 <Button variant="outline" className="w-full">
-                    <Eye className="mr-2 h-4 w-4" />
-                    Lihat Tantangan
+                 <Button variant="outline" className="w-full" asChild>
+                    <Link href="/ideas/challenges">
+                        <Eye className="mr-2 h-4 w-4" />
+                        Lihat Tantangan
+                    </Link>
                 </Button>
             </div>
         </div>
