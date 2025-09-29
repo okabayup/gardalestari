@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -102,7 +101,7 @@ const IndexingStatusBadge = ({ post }: { post: BeritaPost }) => {
 export default function AdminBeritaPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { hasPermission } = useAuth();
+  const { user, hasPermission } = useAuth();
   const [posts, setPosts] = useState<BeritaPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
@@ -229,9 +228,9 @@ export default function AdminBeritaPage() {
                     <Newspaper className="mr-2 h-4 w-4" />
                     AI Newsroom
                 </Button>
-                <Button onClick={() => router.push('/panel/berita/generate')}>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Generator
+                <Button onClick={() => router.push('/panel/berita/new')}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Buat Konten
                 </Button>
             </div>
           )}
@@ -276,6 +275,7 @@ export default function AdminBeritaPage() {
                       />
                    </TableHead>
                   <TableHead>Judul</TableHead>
+                   <TableHead>Author</TableHead>
                   <TableHead>Tipe</TableHead>
                   <TableHead>Status</TableHead>
                    <TableHead>Indeks Google</TableHead>
@@ -288,7 +288,7 @@ export default function AdminBeritaPage() {
               <TableBody>
                 {loading ? (
                     <TableRow>
-                        <TableCell colSpan={7} className="text-center py-10">
+                        <TableCell colSpan={8} className="text-center py-10">
                             <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                         </TableCell>
                     </TableRow>
@@ -310,6 +310,7 @@ export default function AdminBeritaPage() {
                             <span>{post.title}</span>
                         )}
                       </TableCell>
+                       <TableCell className="text-xs text-muted-foreground">{post.author}</TableCell>
                       <TableCell><Badge variant="outline">{post.type}</Badge></TableCell>
                       <TableCell>
                          <Badge variant={post.status === 'published' ? 'default' : 'secondary'}>
@@ -364,7 +365,7 @@ export default function AdminBeritaPage() {
                   ))
                 ) : (
                     <TableRow>
-                        <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
+                        <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
                             Belum ada konten.
                         </TableCell>
                     </TableRow>
