@@ -17,11 +17,13 @@ import { useAuth } from '@/hooks/use-auth';
 import { createIdea, getIdeaCategories, IdeaCategory } from '@/app/actions/ideas';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import MainLayout from '@/components/layout/MainLayout';
+import type { Challenge } from '@/lib/definitions'; // Assuming Challenge type exists
 
 const formSchema = z.object({
   title: z.string().min(5, 'Judul minimal 5 karakter').max(100, 'Judul maksimal 100 karakter'),
   description: z.string().min(20, 'Deskripsi minimal 20 karakter'),
   category: z.string({ required_error: 'Kategori wajib dipilih' }),
+  challengeId: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -32,6 +34,7 @@ export default function NewIdeaPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<IdeaCategory[]>([]);
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
   
   const {
     control,
@@ -41,6 +44,9 @@ export default function NewIdeaPage() {
   } = useForm<FormData>({ resolver: zodResolver(formSchema) });
   
   useEffect(() => {
+    // In a real app, you would fetch active challenges here
+    // For now, we'll use dummy data or assume it's empty
+    // getActiveChallenges().then(setChallenges);
     getIdeaCategories().then(setCategories);
   }, []);
 
@@ -51,7 +57,7 @@ export default function NewIdeaPage() {
     }
     setLoading(true);
     try {
-      const ideaId = await createIdea(user.uid, data.title, data.description, data.category);
+      const ideaId = await createIdea(user.uid, data.title, data.description, data.category, data.challengeId);
       toast({ title: 'Ide berhasil diajukan!', description: 'Terima kasih atas kontribusi Anda.' });
       router.push(`/ideas/${ideaId}`);
     } catch (error) {
@@ -64,22 +70,22 @@ export default function NewIdeaPage() {
     <MainLayout>
       <div className="p-6 space-y-6">
         <Button variant="outline" onClick={() => router.back()}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Kembali ke Bank Ide
+          <ArrowLeft className="mr-2 h-4 w-4" /> Kembali
         </Button>
         <form onSubmit={handleSubmit(onSubmit)}>
           <Card>
             <CardHeader>
-              <CardTitle>Ajukan Ide Baru</CardTitle>
-              <CardDescription>Bagikan gagasan cemerlang Anda untuk kemajuan organisasi.</CardDescription>
+              <CardTitle>Ajukan Ide atau Solusi Baru</CardTitle>
+              <CardDescription>Bagikan gagasan cemerlang Anda atau tawarkan solusi untuk tantangan yang ada.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="title">Judul Ide</Label>
+                <Label htmlFor="title">Judul Ide / Solusi</Label>
                 <Input id="title" {...register('title')} placeholder="Contoh: Program daur ulang sampah organik di tingkat DPC" />
                 {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="category">Kategori Ide</Label>
+                <Label htmlFor="category">Kategori</Label>
                 <Controller
                   name="category"
                   control={control}
@@ -94,9 +100,25 @@ export default function NewIdeaPage() {
                 />
                  {errors.category && <p className="text-sm text-destructive">{errors.category.message}</p>}
               </div>
+               <div className="space-y-2">
+                <Label htmlFor="challengeId">Apakah ini menjawab tantangan tertentu? (Opsional)</Label>
+                <Controller
+                  name="challengeId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger><SelectValue placeholder="Pilih tantangan jika relevan" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Tidak menjawab tantangan spesifik</SelectItem>
+                        {/* {challenges.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)} */}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Deskripsi Lengkap</Label>
-                <Textarea id="description" {...register('description')} rows={8} placeholder="Jelaskan ide Anda secara rinci. Apa masalah yang ingin diselesaikan? Bagaimana solusinya? Siapa targetnya?"/>
+                <Textarea id="description" {...register('description')} rows={8} placeholder="Jelaskan ide/solusi Anda secara rinci. Apa masalah yang ingin diselesaikan? Bagaimana solusinya? Siapa targetnya?"/>
                 {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
               </div>
             </CardContent>

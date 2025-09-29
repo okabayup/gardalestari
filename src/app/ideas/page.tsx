@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,11 +7,11 @@ import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, PlusCircle, Search, ThumbsUp, ThumbsDown, MessageSquare } from 'lucide-react';
+import { Loader2, PlusCircle, Search, ThumbsUp, ThumbsDown, MessageSquare, Lightbulb, Eye, Puzzle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { getIdeas, getIdeaCategories, IdeaWithAuthor, toggleVote, IdeaCategory } from '@/app/actions/ideas';
-import { ideaStatusMap } from '@/lib/definitions';
+import { ideaStatusMap, IdeaType } from '@/lib/definitions';
 import { useDebounce } from 'use-debounce';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -23,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 
 const IdeaCard = ({ idea, onVote }: { idea: IdeaWithAuthor, onVote: (ideaId: string, vote: 'up' | 'down') => void }) => {
   const currentStatus = ideaStatusMap[idea.status];
+  const isSolution = idea.type === 'SOLUTION';
   return (
     <Card className="flex flex-col">
       <CardHeader>
@@ -34,6 +34,11 @@ const IdeaCard = ({ idea, onVote }: { idea: IdeaWithAuthor, onVote: (ideaId: str
             </Link>
             <Badge className={cn("whitespace-nowrap", currentStatus.color)}>{currentStatus.label}</Badge>
         </div>
+         {isSolution && idea.challengeTitle && (
+            <p className="text-xs text-muted-foreground pt-1">
+                Solusi untuk: <span className="text-primary">{idea.challengeTitle}</span>
+            </p>
+        )}
         <CardDescription className="flex items-center gap-2 pt-1 text-xs">
             <Avatar className="h-5 w-5">
               <AvatarImage src={idea.author.avatarUrl} alt={idea.author.name} />
@@ -80,6 +85,7 @@ export default function IdeasPage() {
   // Filter and search state
   const [sortBy, setSortBy] = useState<'newest' | 'top'>(searchParams.get('sort') as any || 'top');
   const [category, setCategory] = useState(searchParams.get('category') || 'Semua');
+  const [typeFilter, setTypeFilter] = useState<'ALL' | IdeaType>('ALL');
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
   const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
 
@@ -101,7 +107,12 @@ export default function IdeasPage() {
     const fetchIdeas = async () => {
       try {
         const fetchedIdeas = await getIdeas(user.uid, sortBy, category, debouncedSearchTerm);
-        setIdeas(fetchedIdeas);
+        let finalIdeas = fetchedIdeas;
+        if (typeFilter !== 'ALL') {
+            finalIdeas = fetchedIdeas.filter(idea => idea.type === typeFilter);
+        }
+        setIdeas(finalIdeas);
+
       } catch (error) {
         toast({ variant: 'destructive', title: 'Gagal memuat ide' });
       } finally {
@@ -117,7 +128,7 @@ export default function IdeasPage() {
     if (debouncedSearchTerm) params.set('q', debouncedSearchTerm);
     router.replace(`${pathname}?${params.toString()}`);
 
-  }, [user, sortBy, category, debouncedSearchTerm, router, pathname, toast]);
+  }, [user, sortBy, category, debouncedSearchTerm, router, pathname, toast, typeFilter]);
 
   const handleVote = async (ideaId: string, voteType: 'up' | 'down') => {
     if (!user) return;
@@ -155,26 +166,33 @@ export default function IdeasPage() {
       <div className="p-6 space-y-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-center sm:text-left">
-                <h1 className="font-headline text-3xl font-bold">Bank Ide</h1>
-                <p className="text-muted-foreground">Ajukan, diskusikan, dan dukung ide untuk Garda Lestari.</p>
+                <h1 className="font-headline text-3xl font-bold">Laboratorium Ide &amp; Aksi</h1>
+                <p className="text-muted-foreground">Wadah untuk gagasan inovatif dan solusi atas tantangan.</p>
             </div>
-            <Button onClick={() => router.push('/ideas/new')} className="w-full sm:w-auto">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Ajukan Ide Baru
-            </Button>
+            <div className="flex gap-2 w-full sm:w-auto">
+                <Button onClick={() => router.push('/ideas/new')} className="w-full">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Ajukan Ide Baru
+                </Button>
+                 <Button variant="outline" className="w-full">
+                    <Eye className="mr-2 h-4 w-4" />
+                    Lihat Tantangan
+                </Button>
+            </div>
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <div className="relative">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+            <div className="relative lg:col-span-2">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Cari ide..." className="pl-9" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                <Input placeholder="Cari ide atau solusi..." className="pl-9" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </div>
-            <Select value={category} onValueChange={setCategory}>
+             <Select value={typeFilter} onValueChange={(val) => setTypeFilter(val as any)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="Semua">Semua Kategori</SelectItem>
-                    {categories.map(cat => <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>)}
+                    <SelectItem value="ALL">Semua Tipe</SelectItem>
+                    <SelectItem value="INNOVATIVE">Ide Inovatif</SelectItem>
+                    <SelectItem value="SOLUTION">Solusi Tantangan</SelectItem>
                 </SelectContent>
             </Select>
             <Select value={sortBy} onValueChange={(val) => setSortBy(val as any)}>
@@ -199,7 +217,7 @@ export default function IdeasPage() {
                 ))
             ) : (
                 <div className="col-span-full text-center py-20 text-muted-foreground">
-                    <p>Tidak ada ide yang ditemukan. Jadilah yang pertama!</p>
+                    <p>Tidak ada ide atau solusi yang ditemukan. Jadilah yang pertama!</p>
                 </div>
             )}
             </div>

@@ -1,5 +1,4 @@
 
-
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
 import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb } from 'lucide-react';
@@ -84,6 +83,7 @@ export interface Position {
 }
 
 export type IdeaStatus = 'diajukan' | 'ditinjau' | 'disetujui' | 'diterapkan' | 'ditolak';
+export type IdeaType = 'INNOVATIVE' | 'SOLUTION';
 
 export const ideaStatusMap: Record<IdeaStatus, { label: string, color: string }> = {
     diajukan: { label: 'Diajukan', color: 'bg-gray-500' },
@@ -241,7 +241,7 @@ export interface ProgramForm {
   fields: FormField[];
 }
 
-// --- Ideas ---
+// --- Ideas & Challenges ---
 export type VoteType = 'up' | 'down';
 
 export type MemberType = 'pusat' | 'daerah' | 'cabang' | 'pembina' | 'pengawas' | 'penasehat' | 'official';
@@ -258,6 +258,9 @@ export interface Idea {
   downvotes: string[];
   voteScore: number;
   commentCount: number;
+  type: IdeaType;
+  challengeId?: string; // Link to a challenge
+  challengeTitle?: string; // Denormalized for display
 }
 
 export interface IdeaAuthor {
@@ -272,6 +275,22 @@ export interface IdeaWithAuthor extends Omit<Idea, 'authorId' | 'upvotes' | 'dow
   author: IdeaAuthor;
   userVote?: VoteType;
   createdAt: string; 
+}
+
+export interface Challenge {
+    id: string;
+    title: string;
+    description: string;
+    criteria: string; // What's expected from a solution
+    deadline: Timestamp;
+    reward?: string; // Prize or incentive
+    authorId: string; // The admin/partner who created it
+    createdAt: Timestamp;
+}
+
+export interface IdeaCategory {
+  id?: string;
+  name: string;
 }
 
 // --- Map Data ---

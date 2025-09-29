@@ -22,7 +22,7 @@ import {
   limit,
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
-import type { Idea, IdeaWithAuthor, IdeaAuthor, IdeaCategory, VoteType, IdeaStatus } from '@/lib/definitions';
+import type { Idea, IdeaWithAuthor, IdeaAuthor, IdeaCategory, VoteType, IdeaStatus, IdeaType } from '@/lib/definitions';
 
 const ideasCollection = collection(db, 'ideas');
 const usersCollection = collection(db, 'users');
@@ -84,9 +84,14 @@ const buildIdeaWithAuthor = async (ideaDoc: any, currentUserId?: string): Promis
 
 
 // Create a new idea
-export async function createIdea(authorId: string, title: string, description: string, category: string): Promise<string> {
+export async function createIdea(authorId: string, title: string, description: string, category: string, challengeId?: string): Promise<string> {
     try {
         if (!authorId) throw new Error('Pengguna tidak terautentikasi.');
+        
+        let challengeTitle: string | undefined = undefined;
+        // In a real implementation, you would fetch the challenge title if challengeId is provided
+        // const challengeDoc = await getDoc(doc(db, 'challenges', challengeId));
+        // if (challengeDoc.exists()) challengeTitle = challengeDoc.data().title;
 
         const newIdea: Omit<Idea, 'id'> = {
             title,
@@ -99,6 +104,9 @@ export async function createIdea(authorId: string, title: string, description: s
             downvotes: [],
             voteScore: 0,
             commentCount: 0,
+            type: challengeId ? 'SOLUTION' : 'INNOVATIVE',
+            challengeId: challengeId,
+            challengeTitle: challengeTitle,
         };
         const docRef = await addDoc(ideasCollection, newIdea);
         revalidatePath('/ideas');
@@ -355,5 +363,3 @@ export async function deleteIdeaCategory(id: string) {
         throw new Error("Gagal menghapus kategori ide.");
     }
 }
-
-

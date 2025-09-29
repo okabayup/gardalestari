@@ -9,11 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, ArrowLeft, ThumbsUp, ThumbsDown, MessageSquare, Send, MoreHorizontal, Check, CircleDotDashed, FolderKanban } from 'lucide-react';
+import { Loader2, ArrowLeft, ThumbsUp, ThumbsDown, MessageSquare, Send, MoreHorizontal, Check, CircleDotDashed, FolderKanban, Lightbulb, Puzzle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { getIdeaById, getIdeaComments, addIdeaComment, toggleVote, updateIdeaStatus, IdeaWithAuthor } from '@/app/actions/ideas';
-import { ideaStatusMap, IdeaStatus } from '@/lib/definitions';
+import { ideaStatusMap, IdeaStatus, IdeaType } from '@/lib/definitions';
 import { VerifiedBadge } from '@/components/members/VerifiedBadge';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -164,6 +164,7 @@ export default function IdeaDetailPage() {
 
   const currentStatus = ideaStatusMap[idea.status];
   const canCreateProjectFromIdea = canManageProjects && (idea.status === 'disetujui' || idea.status === 'diterapkan');
+  const isSolution = idea.type === 'SOLUTION';
 
   return (
     <MainLayout>
@@ -179,8 +180,8 @@ export default function IdeaDetailPage() {
                             <FolderKanban className="h-6 w-6" />
                         </div>
                         <div className="flex-1">
-                            <CardTitle className="text-base">Ide Disetujui!</CardTitle>
-                            <CardDescription className="text-xs">Ubah ide ini menjadi proyek yang dapat ditindaklanjuti.</CardDescription>
+                            <CardTitle className="text-base">Jadikan Aksi Nyata!</CardTitle>
+                            <CardDescription className="text-xs">Ubah {isSolution ? 'solusi' : 'ide'} ini menjadi proyek yang dapat ditindaklanjuti.</CardDescription>
                         </div>
                         <Button onClick={handleCreateProject}>Buat Proyek</Button>
                     </CardHeader>
@@ -190,7 +191,13 @@ export default function IdeaDetailPage() {
             <Card>
                 <CardHeader>
                     <div className="flex justify-between items-start">
-                        <Badge className={currentStatus.color}>{currentStatus.label}</Badge>
+                        <div className="flex items-center gap-2">
+                            <Badge className={currentStatus.color}>{currentStatus.label}</Badge>
+                             <Badge variant="outline" className="flex items-center gap-1">
+                                {isSolution ? <Puzzle className="h-3 w-3" /> : <Lightbulb className="h-3 w-3" />}
+                                {isSolution ? 'Solusi' : 'Ide Inovatif'}
+                            </Badge>
+                        </div>
                         {canManageIdeas && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -205,6 +212,11 @@ export default function IdeaDetailPage() {
                             </DropdownMenu>
                         )}
                     </div>
+                     {isSolution && idea.challengeTitle && (
+                        <p className="text-sm text-muted-foreground pt-2">
+                            Untuk tantangan: <Link href={`/challenges/${idea.challengeId}`} className="text-primary hover:underline">{idea.challengeTitle}</Link>
+                        </p>
+                    )}
                     <CardTitle className="font-headline text-3xl pt-2">{idea.title}</CardTitle>
                     <div className="flex items-center gap-2 pt-2">
                         <Avatar className="h-8 w-8">
