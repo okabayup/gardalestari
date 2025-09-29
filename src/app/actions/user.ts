@@ -322,7 +322,7 @@ export async function updateUserProfile(userId: string, data: { username?: strin
     }
 
     revalidatePath(`/profile/me`);
-    revalidatePath(`/profile/${data.username || watch('username')}`);
+    revalidatePath(`/profile/${data.username}`);
 
   } catch (error) {
     console.error("[updateUserProfile Error]", error);
