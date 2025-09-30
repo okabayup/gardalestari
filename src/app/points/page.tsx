@@ -3,15 +3,27 @@
 
 import { useAuth } from '@/hooks/use-auth';
 import MainLayout from '@/components/layout/MainLayout';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Coins, Gift, History, Plus, Minus } from 'lucide-react';
+import { Loader2, Coins, Gift, History, Plus, Minus, Target } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useEffect, useState } from 'react';
-import { getPointHistory, PointLog } from '@/app/actions/points';
+import { getPointHistory, getRedeemableItems, getMissions, redeemItem, PointLog, RedeemableItem, Mission } from '@/app/actions/points';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
+import Image from 'next/image';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 const PlaceholderContent = ({ icon: Icon, title, description }: { icon: React.ElementType, title: string, description: string }) => (
     <div className="text-center text-muted-foreground py-16 border-2 border-dashed rounded-lg">
@@ -20,6 +32,128 @@ const PlaceholderContent = ({ icon: Icon, title, description }: { icon: React.El
         <p className="text-sm">{description}</p>
     </div>
 );
+
+const MissionsList = () => {
+    const { toast } = useToast();
+    const [missions, setMissions] = useState<Mission[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        getMissions()
+            .then(setMissions)
+            .catch(() => toast({ variant: 'destructive', title: 'Gagal memuat misi' }))
+            .finally(() => setLoading(false));
+    }, [toast]);
+    
+    if (loading) {
+        return <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin"/></div>
+    }
+
+    if (missions.length === 0) {
+        return <PlaceholderContent icon={Target} title="Misi Kosong" description="Saat ini belum ada misi yang tersedia untuk mendapatkan poin." />;
+    }
+
+    return (
+        <div className="space-y-4">
+            {missions.map(mission => (
+                <Card key={mission.id}>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle className="text-base">{mission.name}</CardTitle>
+                        <div className="font-bold text-lg text-primary flex items-center gap-1">
+                            <Coins className="h-5 w-5"/> +{mission.points}
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-sm text-muted-foreground">{mission.description}</p>
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+    )
+}
+
+const RedeemList = () => {
+    const { user, refreshUser } = useAuth();
+    const { toast } = useToast();
+    const [items, setItems] = useState<RedeemableItem[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [isRedeeming, setIsRedeeming] = useState<string | null>(null);
+    const [itemToConfirm, setItemToConfirm] = useState<RedeemableItem | null>(null);
+
+    useEffect(() => {
+        getRedeemableItems()
+            .then(setItems)
+            .catch(() => toast({ variant: 'destructive', title: 'Gagal memuat hadiah' }))
+            .finally(() => setLoading(false));
+    }, [toast]);
+    
+    const handleRedeem = async () => {
+        if (!user || !itemToConfirm) return;
+        setIsRedeeming(itemToConfirm.id!);
+        try {
+            await redeemItem(user.uid, itemToConfirm.id!);
+            toast({ title: 'Penukaran Berhasil!', description: `Anda telah menukar ${itemToConfirm.pointsRequired} poin untuk ${itemToConfirm.name}.`});
+            await refreshUser(); // Refresh user points
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Gagal Menukar', description: (error as Error).message });
+        } finally {
+            setIsRedeeming(null);
+            setItemToConfirm(null);
+        }
+    }
+
+    if (loading) {
+        return <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin"/></div>
+    }
+
+    if (items.length === 0) {
+        return <PlaceholderContent icon={Gift} title="Toko Hadiah Kosong" description="Saat ini belum ada hadiah yang bisa ditukar." />;
+    }
+
+    return (
+        <>
+            <div className="grid grid-cols-2 gap-4">
+                {items.map(item => (
+                    <Card key={item.id} className="flex flex-col">
+                        {item.imageUrl && (
+                            <div className="relative aspect-square w-full">
+                                <Image src={item.imageUrl} alt={item.name} fill className="object-cover rounded-t-lg" />
+                            </div>
+                        )}
+                        <div className="p-4 flex flex-col flex-grow">
+                             <h4 className="font-semibold text-sm">{item.name}</h4>
+                            <p className="text-xs text-muted-foreground flex-grow mt-1">{item.description}</p>
+                            <div className="text-xs mt-2">Stok: {item.stock}</div>
+                        </div>
+                        <CardFooter className="p-2 border-t">
+                            <Button className="w-full" size="sm" onClick={() => setItemToConfirm(item)} disabled={item.stock === 0 || (user?.greenPoints || 0) < item.pointsRequired || !!isRedeeming}>
+                                {isRedeeming === item.id ? <Loader2 className="h-4 w-4 animate-spin"/> : (
+                                    <div className="flex items-center gap-1">
+                                        <Coins className="h-4 w-4"/> {item.pointsRequired}
+                                    </div>
+                                )}
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                ))}
+            </div>
+            <AlertDialog open={!!itemToConfirm} onOpenChange={() => setItemToConfirm(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Konfirmasi Penukaran</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Anda akan menukar <span className="font-bold">{itemToConfirm?.pointsRequired} Poin Hijau</span> untuk mendapatkan <span className="font-bold">{itemToConfirm?.name}</span>. Lanjutkan?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleRedeem}>Ya, Tukar Sekarang</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
+    )
+}
 
 const PointHistoryList = () => {
     const { user } = useAuth();
@@ -52,8 +186,8 @@ const PointHistoryList = () => {
                         <p className="text-sm font-medium">{log.description}</p>
                         <p className="text-xs text-muted-foreground">{format(new Date(log.createdAt), "dd MMM yyyy, HH:mm", { locale: idLocale })}</p>
                     </div>
-                    <div className={`font-bold flex items-center gap-1 ${log.points > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {log.points > 0 ? <Plus className="h-4 w-4"/> : <Minus className="h-4 w-4"/>}
+                    <div className={`font-bold flex items-center gap-1 ${log.points >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {log.points >= 0 ? <Plus className="h-4 w-4"/> : <Minus className="h-4 w-4"/>}
                         {Math.abs(log.points)}
                     </div>
                 </div>
@@ -87,21 +221,20 @@ export default function GreenPointsPage() {
                     </CardHeader>
                     <CardContent className="flex items-center justify-between">
                         <div className="text-4xl font-bold">{user.greenPoints || 0}</div>
-                        <Button>Tukar Poin</Button>
                     </CardContent>
                 </Card>
 
-                <Tabs defaultValue="history" className="w-full">
+                <Tabs defaultValue="redeem" className="w-full">
                     <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="missions">Misi</TabsTrigger>
                         <TabsTrigger value="redeem">Tukar Hadiah</TabsTrigger>
                         <TabsTrigger value="history">Riwayat</TabsTrigger>
                     </TabsList>
                     <TabsContent value="missions" className="mt-4">
-                        <PlaceholderContent icon={Coins} title="Misi Belum Tersedia" description="Fitur untuk mendapatkan poin melalui misi akan segera hadir." />
+                        <MissionsList />
                     </TabsContent>
                     <TabsContent value="redeem" className="mt-4">
-                         <PlaceholderContent icon={Gift} title="Toko Hadiah Belum Tersedia" description="Tempat menukarkan poin dengan hadiah akan segera hadir." />
+                         <RedeemList />
                     </TabsContent>
                     <TabsContent value="history" className="mt-4">
                         <PointHistoryList />
