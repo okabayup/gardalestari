@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -14,10 +14,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, ArrowLeft, Lightbulb } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { createIdea, getIdeaCategories, IdeaCategory } from '@/app/actions/ideas';
+import { createIdea, getIdeaCategories, IdeaCategory, getActiveChallenges } from '@/app/actions/ideas';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import MainLayout from '@/components/layout/MainLayout';
-import type { Challenge } from '@/lib/definitions'; // Assuming Challenge type exists
+import type { Challenge } from '@/lib/definitions';
 
 const formSchema = z.object({
   title: z.string().min(5, 'Judul minimal 5 karakter').max(100, 'Judul maksimal 100 karakter'),
@@ -30,6 +30,7 @@ type FormData = z.infer<typeof formSchema>;
 
 export default function NewIdeaPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -40,15 +41,26 @@ export default function NewIdeaPage() {
     control,
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(formSchema) });
   
   useEffect(() => {
-    // In a real app, you would fetch active challenges here
-    // For now, we'll use dummy data or assume it's empty
-    // getActiveChallenges().then(setChallenges);
+    getActiveChallenges().then(setChallenges);
     getIdeaCategories().then(setCategories);
   }, []);
+
+  useEffect(() => {
+    const challengeId = searchParams.get('challengeId');
+    const title = searchParams.get('title');
+    if (challengeId) {
+        setValue('challengeId', challengeId);
+    }
+    if (title) {
+        setValue('title', title);
+    }
+  }, [searchParams, setValue]);
+
 
   const onSubmit = async (data: FormData) => {
     if (!user) {
@@ -57,7 +69,7 @@ export default function NewIdeaPage() {
     }
     setLoading(true);
     try {
-      const ideaId = await createIdea(user.uid, data.title, data.description, data.category, data.challengeId);
+      const ideaId = await createIdea(user.uid, data.title, data.description, data.category, data.challengeId === 'none' ? undefined : data.challengeId);
       toast({ title: 'Ide berhasil diajukan!', description: 'Terima kasih atas kontribusi Anda.' });
       router.push(`/ideas/${ideaId}`);
     } catch (error) {
@@ -109,8 +121,8 @@ export default function NewIdeaPage() {
                     <Select onValueChange={field.onChange} value={field.value}>
                       <SelectTrigger><SelectValue placeholder="Pilih tantangan jika relevan" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Tidak menjawab tantangan spesifik</SelectItem>
-                        {/* {challenges.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)} */}
+                        <SelectItem value="none">Tidak menjawab tantangan spesifik</SelectItem>
+                        {challenges.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   )}
