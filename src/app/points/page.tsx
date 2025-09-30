@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/use-auth';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Coins, Gift, History, Plus, Minus, Target, Copy } from 'lucide-react';
+import { Loader2, Coins, Gift, History, Plus, Minus, Target, Copy, Users } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useEffect, useState } from 'react';
 import { getPointHistory, getRedeemableItems, getMissions, redeemItem, PointLog, RedeemableItem, Mission } from '@/app/actions/points';
@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-
 
 const PlaceholderContent = ({ icon: Icon, title, description }: { icon: React.ElementType, title: string, description: string }) => (
     <div className="text-center text-muted-foreground py-16 border-2 border-dashed rounded-lg">

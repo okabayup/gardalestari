@@ -13,6 +13,7 @@ import { generateUniqueUsername, getUserByUid } from './user';
 import { formatFullName } from '@/lib/utils';
 import { sendNotification } from './notifications';
 import { format } from 'date-fns';
+import { awardPointsForAction } from './points';
 
 const usersCollection = collection(db, 'users');
 const positionsCollection = collection(db, 'positions');
@@ -96,7 +97,8 @@ export async function getMembers(forPublic: boolean = false): Promise<MemberWith
         createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
         permissions: permissions,
         referralCode: data.referralCode,
-        referralCount: data.referralCount,
+        referralCount: data.referralCount || 0,
+        referredBy: data.referredBy,
       });
     }
     
@@ -223,7 +225,7 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
         const memberPhoneNumber = currentMemberData.waNumber;
         const memberName = currentMemberData.fullName;
 
-        // Send WhatsApp and Push notification if verification status changes
+        // --- REFERRAL & NOTIFICATION LOGIC ---
         if (verificationStatus && verificationStatus !== currentMemberData.verificationStatus) {
             let templateId: 'kta_activated' | 'member_verification_rejected' | null = null;
             let notificationPayload: { title: string, body: string } | null = null;
@@ -232,12 +234,15 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
                 templateId = 'kta_activated';
                 notificationPayload = { title: 'Verifikasi Berhasil!', body: 'Selamat! Akun Anda telah diverifikasi secara permanen.' };
 
-                // Increment referrer's count if this user was referred
-                if (currentMemberData.referredBy) {
-                    const referrerRef = doc(db, 'users', currentMemberData.referredBy);
-                    await runTransaction(db, async (transaction) => {
-                        transaction.update(referrerRef, { referralCount: increment(1) });
-                    });
+                // --- AWARD REFERRAL POINTS ---
+                if (currentMemberData.referredBy && !currentMemberData.referralPointsAwarded) {
+                    try {
+                        await awardPointsForAction('referral', currentMemberData.referredBy, `Bonus rujukan untuk ${memberName}`);
+                        // Mark that points have been awarded to prevent duplication
+                        await updateDoc(memberDocRef, { referralPointsAwarded: true });
+                    } catch (e) {
+                        console.error(`[Referral Points Error] Failed to award points to referrer ${currentMemberData.referredBy}`, e);
+                    }
                 }
 
             } else if (verificationStatus === 'rejected') {

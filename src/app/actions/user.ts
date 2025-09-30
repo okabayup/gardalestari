@@ -101,7 +101,8 @@ export async function getUserByUid(uid: string): Promise<(MemberWithStatus & { w
             skills: data.skills || [],
             interests: data.interests || [],
             referralCode: data.referralCode,
-            referralCount: data.referralCount,
+            referralCount: data.referralCount || 0,
+            greenPoints: data.greenPoints || 0,
         };
 
     } catch (error) {

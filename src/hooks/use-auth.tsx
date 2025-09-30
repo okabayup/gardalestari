@@ -11,7 +11,7 @@ import {
   signInWithPhoneNumber,
   ConfirmationResult,
 } from 'firebase/auth';
-import { doc, getDoc, serverTimestamp, collection, query, where, getDocs, Timestamp, runTransaction, increment, limit } from 'firebase/firestore';
+import { doc, getDoc, serverTimestamp, collection, query, where, getDocs, Timestamp, runTransaction, increment, limit, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { redirect, usePathname } from 'next/navigation';
 import { useToast } from './use-toast';
@@ -233,21 +233,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const ownReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
         
         let referredBy: string | undefined = undefined;
-        let referrerName: string | undefined = undefined;
         if (referralCode) {
             const q = query(collection(db, 'users'), where("referralCode", "==", referralCode), limit(1));
             const referrerSnapshot = await getDocs(q);
             if (!referrerSnapshot.empty) {
                 const referrerDoc = referrerSnapshot.docs[0];
                 referredBy = referrerDoc.id;
-                referrerName = referrerDoc.data().fullName;
             }
         }
         
         const pointLogsCollection = collection(userDocRef, 'pointLogs');
         const welcomePoints = 5;
 
-        // Create the user and their first point log in a transaction
+        // Use a transaction to ensure all writes succeed or fail together.
         await runTransaction(db, async (transaction) => {
             transaction.set(userDocRef, {
                 uid: newUser.uid,
@@ -270,30 +268,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             transaction.set(welcomeLogRef, {
                 points: welcomePoints,
                 description: 'Poin selamat datang!',
-                createdAt: serverTimestamp()
+                createdAt: Timestamp.now()
             });
 
-            // Award points to referrer if they exist
+            // Increment referrer's count but don't award points yet.
+            // Points are awarded upon the new user's permanent verification.
             if (referredBy) {
                 const referrerRef = doc(db, 'users', referredBy);
-                const missionsQuery = query(collection(db, 'missions'), where('type', '==', 'referral'), limit(1));
-                const missionsSnapshot = await getDocs(missionsQuery);
-                let referralPoints = 25; // Default points
-                if (!missionsSnapshot.empty) {
-                    referralPoints = (missionsSnapshot.docs[0].data() as Mission).points;
-                }
-
-                transaction.update(referrerRef, { 
-                    greenPoints: increment(referralPoints),
-                    referralCount: increment(1)
-                });
-                
-                const referrerLogRef = doc(collection(referrerRef, 'pointLogs'));
-                transaction.set(referrerLogRef, {
-                    points: referralPoints,
-                    description: `Bonus rujukan untuk ${tempName}`,
-                    createdAt: serverTimestamp()
-                });
+                transaction.update(referrerRef, { referralCount: increment(1) });
             }
         });
         

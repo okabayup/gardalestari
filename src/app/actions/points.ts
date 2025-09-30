@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -21,7 +22,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
-import type { RedeemableItem, Mission, RedemptionLog, PointLog } from '@/lib/definitions';
+import type { RedeemableItem, Mission, RedemptionLog, PointLog, BadgeMetric } from '@/lib/definitions';
 
 const redeemableItemsCollection = collection(db, 'redeemableItems');
 const missionsCollection = collection(db, 'missions');
@@ -45,6 +46,7 @@ export async function createRedeemableItem(data: Omit<RedeemableItem, 'id' | 'im
   }
   await addDoc(redeemableItemsCollection, { ...data, imageUrl });
   revalidatePath('/panel/redeem');
+  revalidatePath('/points');
 }
 
 export async function updateRedeemableItem(id: string, data: Partial<Omit<RedeemableItem, 'id' | 'imageUrl'>>, imageFile?: File) {
@@ -57,12 +59,14 @@ export async function updateRedeemableItem(id: string, data: Partial<Omit<Redeem
   }
   await updateDoc(itemRef, updateData);
   revalidatePath('/panel/redeem');
+  revalidatePath('/points');
 }
 
 export async function deleteRedeemableItem(id: string) {
   await deleteDoc(doc(db, 'redeemableItems', id));
   // Note: Does not delete image from storage to prevent accidental data loss.
   revalidatePath('/panel/redeem');
+  revalidatePath('/points');
 }
 
 
@@ -76,16 +80,19 @@ export async function getMissions(): Promise<Mission[]> {
 export async function createMission(data: Omit<Mission, 'id'>) {
   await addDoc(missionsCollection, data);
   revalidatePath('/panel/missions');
+  revalidatePath('/points');
 }
 
 export async function updateMission(id: string, data: Partial<Mission>) {
   await updateDoc(doc(db, 'missions', id), data);
   revalidatePath('/panel/missions');
+  revalidatePath('/points');
 }
 
 export async function deleteMission(id: string) {
   await deleteDoc(doc(db, 'missions', id));
   revalidatePath('/panel/missions');
+  revalidatePath('/points');
 }
 
 
@@ -111,13 +118,16 @@ export async function redeemItem(userId: string, itemId: string) {
         if (itemData.stock <= 0) {
             throw new Error("Stok item habis.");
         }
+        
+        const logsCollection = collection(userRef, 'pointLogs');
+        const redemptionLogRef = doc(redemptionLogsCollection);
+        const pointLogRef = doc(logsCollection);
 
         // Deduct points, decrement stock, and log the redemption
         transaction.update(userRef, { greenPoints: increment(-itemData.pointsRequired) });
         transaction.update(itemRef, { stock: increment(-1) });
-
-        const logRef = doc(redemptionLogsCollection);
-        transaction.set(logRef, {
+        
+        transaction.set(redemptionLogRef, {
             userId: userId,
             userName: userDoc.data().fullName,
             itemId: itemId,
@@ -125,6 +135,13 @@ export async function redeemItem(userId: string, itemId: string) {
             pointsSpent: itemData.pointsRequired,
             redeemedAt: Timestamp.now(),
         });
+        
+        transaction.set(pointLogRef, {
+            points: -itemData.pointsRequired,
+            description: `Menukar item: ${itemData.name}`,
+            createdAt: Timestamp.now()
+        });
+
     });
 
     revalidatePath('/points');
@@ -172,4 +189,44 @@ export async function getPointHistory(userId: string): Promise<PointLog[]> {
         console.error(`[getPointHistory Error] for user ${userId}:`, error);
         throw new Error('Gagal mengambil riwayat poin.');
     }
+}
+
+/**
+ * Awards points to a user for a specific action and creates a log entry.
+ * @param actionType The type of mission action (e.g., 'referral').
+ * @param userId The ID of the user to award points to.
+ * @param description A description for the point log entry.
+ */
+export async function awardPointsForAction(actionType: Mission['type'], userId: string, description: string) {
+    const userRef = doc(usersCollection, userId);
+
+    await runTransaction(db, async (transaction) => {
+        const userDoc = await transaction.get(userRef);
+        if (!userDoc.exists()) {
+            console.error(`[awardPoints] User ${userId} not found.`);
+            return;
+        }
+
+        const missionsQuery = query(missionsCollection, where('type', '==', actionType), limit(1));
+        const missionsSnapshot = await getDocs(missionsQuery);
+        
+        if (missionsSnapshot.empty) {
+            console.warn(`[awardPoints] No mission found for action type: ${actionType}.`);
+            return;
+        }
+
+        const mission = missionsSnapshot.docs[0].data() as Mission;
+        const pointsToAward = mission.points;
+
+        const pointLogRef = doc(collection(userRef, 'pointLogs'));
+
+        transaction.update(userRef, { greenPoints: increment(pointsToAward) });
+        transaction.set(pointLogRef, {
+            points: pointsToAward,
+            description: description,
+            createdAt: Timestamp.now(),
+        });
+    });
+
+     revalidatePath(`/points`);
 }

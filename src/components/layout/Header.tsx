@@ -135,7 +135,7 @@ export default function Header() {
                 </SheetContent>
               </Sheet>
 
-              <Button variant="ghost" size="sm" className="h-8 gap-2" asChild>
+              <Button variant="secondary" size="sm" className="h-8 gap-2" asChild>
                   <Link href="/points">
                     <Coins className="h-4 w-4 text-yellow-500" />
                     <span className="text-sm font-bold">{user.greenPoints || 0}</span>
