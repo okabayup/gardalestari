@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
@@ -15,7 +14,7 @@ import { doc, getDoc, serverTimestamp, collection, query, where, getDocs, Timest
 import { auth, db } from '@/lib/firebase';
 import { redirect, usePathname } from 'next/navigation';
 import { useToast } from './use-toast';
-import { processVerificationSubmission } from '@/app/actions/user';
+import { processVerificationSubmission, getUserByUsername } from '@/app/actions/user';
 import type { PermissionId, Position, MemberType, Mission } from '@/lib/definitions';
 import { ALL_PERMISSIONS } from '@/lib/definitions';
 import { logAnalyticsEvent } from '@/lib/analytics';
@@ -50,7 +49,7 @@ interface AuthContextType {
   loading: boolean;
   hasPermission: (permission: PermissionId) => boolean;
   signInWithPhone: (phoneNumber: string, appVerifierContainerId: string) => Promise<void>;
-  verifyOtp: (otp: string, referralCode?: string) => Promise<void>;
+  verifyOtp: (otp: string, referrerUsername?: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateUserProfile: (updates: { photoFile?: File, username?: string, instagram?: string, linkedin?: string, skills?: string[], interests?: string[] }) => Promise<void>;
   submitForVerification: (data: { fullName: string; nik: string; ktpDataUrl: string; photoDataUrl?: string; waNumber: string; }) => Promise<void>;
@@ -96,10 +95,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
       }
       
-      // Grant all permissions if phone number matches admin, but don't override display data
       if (user.phoneNumber === ADMIN_PHONE_NUMBER) {
           permissions = ALL_PERMISSIONS.map(p => p.id);
-          // We don't override positionName here so the real position is shown
       }
 
       if (user.phoneNumber === OFFICIAL_ACCOUNT_PHONE) {
@@ -145,7 +142,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [fetchUserDetails]);
 
   useEffect(() => {
-    // This will run once when the app loads.
     seedInitialData();
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -196,7 +192,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setConfirmationResult(result);
         } catch (error) {
             console.error("signInWithPhoneNumber error:", error);
-            // Don't clear verifier here so user can retry without new recaptcha
             throw error;
         }
     }
@@ -217,7 +212,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
 
-  const verifyOtp = async (otp: string, referralCode?: string) => {
+  const verifyOtp = async (otp: string, referrerUsername?: string) => {
     if (!confirmationResult) {
       throw new Error("No confirmation result available. Please request an OTP first.");
     }
@@ -233,19 +228,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const ownReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
         
         let referredBy: string | undefined = undefined;
-        if (referralCode) {
-            const q = query(collection(db, 'users'), where("referralCode", "==", referralCode), limit(1));
-            const referrerSnapshot = await getDocs(q);
-            if (!referrerSnapshot.empty) {
-                const referrerDoc = referrerSnapshot.docs[0];
-                referredBy = referrerDoc.id;
+        if (referrerUsername) {
+            const referrerUser = await getUserByUsername(referrerUsername);
+            if(referrerUser) {
+                referredBy = referrerUser.id;
             }
         }
         
         const pointLogsCollection = collection(userDocRef, 'pointLogs');
         const welcomePoints = 5;
 
-        // Use a transaction to ensure all writes succeed or fail together.
         await runTransaction(db, async (transaction) => {
             transaction.set(userDocRef, {
                 uid: newUser.uid,
@@ -271,8 +263,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 createdAt: Timestamp.now()
             });
 
-            // Increment referrer's count but don't award points yet.
-            // Points are awarded upon the new user's permanent verification.
             if (referredBy) {
                 const referrerRef = doc(db, 'users', referredBy);
                 transaction.update(referrerRef, { referralCount: increment(1) });
@@ -298,14 +288,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateUserProfile = async (updates: { photoFile?: File, username?: string, instagram?: string, linkedin?: string, skills?: string[], interests?: string[] }) => {
-    // This function will now be a wrapper around the server action
-    if (!user) throw new Error("Pengguna tidak ditemukan.");
-    
-    // Server action can't accept File object directly, it must be handled differently
-    // if client-side upload is required, or a server-action specific upload flow is needed.
-    // For now, let's assume we handle this with a specific server action for file uploads.
-    // This client-side implementation seems to be trying to do too much. Let's simplify.
-    // The server action `updateUserProfile` in `actions/user.ts` will handle this logic.
   };
 
 const submitForVerification = async (data: { fullName: string; nik: string; ktpDataUrl: string; photoDataUrl?: string; waNumber: string; }) => {

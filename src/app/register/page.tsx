@@ -1,7 +1,7 @@
 
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2, ShieldOff, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,10 +23,11 @@ const benefits = [
 export default function RegisterPage() {
     const { user, loading, signInWithPhone, verifyOtp } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { toast } = useToast();
     const [phone, setPhone] = useState('');
     const [otp, setOtp] = useState('');
-    const [referralCode, setReferralCode] = useState('');
+    const [referrerUsername, setReferrerUsername] = useState('');
     const [step, setStep] = useState<'phone' | 'otp'>('phone');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isRegistrationOpen, setRegistrationOpen] = useState<boolean | null>(null);
@@ -41,9 +42,14 @@ export default function RegisterPage() {
     }, []);
 
     useEffect(() => {
+        const ref = searchParams.get('ref');
+        if (ref) {
+            setReferrerUsername(ref);
+        }
+    }, [searchParams]);
+
+    useEffect(() => {
         if (user) {
-            // After user is created, redirect them to their profile page
-            // where they will be prompted to verify.
             router.push('/profile/me');
         }
     }, [user, router]);
@@ -79,8 +85,7 @@ export default function RegisterPage() {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            await verifyOtp(otp, referralCode);
-            // User is now signed in, the useEffect will redirect to profile
+            await verifyOtp(otp, referrerUsername);
             toast({ title: 'Pendaftaran Berhasil!', description: 'Anda akan diarahkan ke halaman profil Anda.' });
         } catch (error) {
             console.error(error);
@@ -169,6 +174,11 @@ export default function RegisterPage() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
+                                {referrerUsername && step === 'phone' && (
+                                    <div className="mb-4 text-center text-sm p-2 bg-primary/10 text-primary rounded-md">
+                                        Anda dirujuk oleh <span className="font-bold">{referrerUsername}</span>
+                                    </div>
+                                )}
                                 {step === 'phone' ? (
                                     <form onSubmit={handlePhoneSubmit} className="space-y-4">
                                         <div className="space-y-2">
@@ -180,16 +190,6 @@ export default function RegisterPage() {
                                                 value={phone}
                                                 onChange={(e) => setPhone(e.target.value)}
                                                 required
-                                            />
-                                        </div>
-                                         <div className="space-y-2">
-                                            <Label htmlFor="referral">Kode Rujukan (Opsional)</Label>
-                                            <Input
-                                                id="referral"
-                                                type="text"
-                                                placeholder="Masukkan kode rujukan"
-                                                value={referralCode}
-                                                onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
                                             />
                                         </div>
                                         <Button type="submit" className="w-full" disabled={isSubmitting || countdown > 0}>

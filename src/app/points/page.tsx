@@ -200,11 +200,12 @@ const PointHistoryList = () => {
 export default function GreenPointsPage() {
     const { user, loading } = useAuth();
     const { toast } = useToast();
+    const referralLink = user?.username ? `${process.env.NEXT_PUBLIC_BASE_URL || window.location.origin}/register?ref=${user.username}` : '';
     
-    const copyReferralCode = () => {
-        if (!user?.referralCode) return;
-        navigator.clipboard.writeText(user.referralCode);
-        toast({ title: 'Kode Rujukan Disalin!' });
+    const copyReferralLink = () => {
+        if (!referralLink) return;
+        navigator.clipboard.writeText(referralLink);
+        toast({ title: 'Tautan Rujukan Disalin!' });
     }
 
     if (loading || !user) {
@@ -238,22 +239,19 @@ export default function GreenPointsPage() {
                         <CardDescription>Ajak teman bergabung dan dapatkan poin untuk setiap rujukan yang berhasil!</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4 text-center">
-                            <div className="p-2 bg-muted rounded-lg">
-                                <p className="text-xl font-bold">{user?.referralCount || 0}</p>
-                                <p className="text-xs text-muted-foreground">Anggota Direkrut</p>
+                        <div className="p-4 bg-muted rounded-lg flex items-center justify-between">
+                            <div>
+                                <p className="text-muted-foreground">Anggota Direkrut</p>
+                                <p className="text-2xl font-bold">{user.referralCount || 0}</p>
                             </div>
-                            <div className="p-2 bg-muted rounded-lg">
-                                <p className="text-xl font-bold">{(user?.referralCount || 0) * 25}</p>
-                                <p className="text-xs text-muted-foreground">Poin dari Rujukan</p>
-                            </div>
+                            <Users className="h-8 w-8 text-primary" />
                         </div>
-                        {user?.referralCode && (
+                        {user.username && (
                             <div className="space-y-2">
-                                <Label>Kode Rujukan Anda</Label>
+                                <Label>Tautan Rujukan Anda</Label>
                                 <div className="flex items-center gap-2">
-                                    <Input value={user.referralCode} readOnly className="font-mono" />
-                                    <Button type="button" size="icon" variant="outline" onClick={copyReferralCode}>
+                                    <Input value={referralLink} readOnly className="font-mono text-xs" />
+                                    <Button type="button" size="icon" variant="outline" onClick={copyReferralLink}>
                                         <Copy className="h-4 w-4" />
                                     </Button>
                                 </div>
