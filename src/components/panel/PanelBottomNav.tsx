@@ -38,7 +38,10 @@ import {
   Lightbulb,
   TrendingUp,
   Layers,
-  Database
+  Database,
+  Target,
+  Gift,
+  Coins,
 } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
@@ -81,6 +84,7 @@ const groupedNavItems: {
       { href: '/panel/notifications', icon: Bell, label: 'Notifikasi', permission: 'send_notifications' },
       { href: '/panel/evoting', icon: Vote, label: 'E-Voting', permission: 'manage_evoting' },
       { href: '/panel/achievements', icon: Award, label: 'Prestasi', permission: 'manage_achievements' },
+      { href: '/panel/badges', icon: Award, label: 'Lencana', permission: 'manage_badges' },
     ],
   },
   {
@@ -88,6 +92,14 @@ const groupedNavItems: {
     items: [
        { href: '/panel/recruitments', icon: Briefcase, label: 'Rekrutmen', permission: 'manage_recruitments' },
        { href: '/panel/partners', icon: Handshake, label: 'Mitra', permission: 'manage_partners' },
+    ]
+  },
+  {
+    group: 'Poin Hijau',
+    items: [
+       { href: '/panel/redeem', icon: Gift, label: 'Item Hadiah', permission: 'manage_settings' },
+       { href: '/panel/missions', icon: Target, label: 'Misi', permission: 'manage_settings' },
+       { href: '/panel/redeem/history', icon: BookCopy, label: 'Riwayat Penukaran', permission: 'manage_settings' },
     ]
   },
   {

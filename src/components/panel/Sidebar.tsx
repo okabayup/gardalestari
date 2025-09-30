@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -31,7 +32,7 @@ import {
   Database,
   Target,
   Gift,
-  Coins
+  Coins,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
@@ -94,9 +95,9 @@ const navGroups: {
     group: 'Poin Hijau',
     icon: Coins,
     items: [
-       { href: '/panel/redeem', icon: Gift, label: 'Item Hadiah' },
-       { href: '/panel/missions', icon: Target, label: 'Misi' },
-       { href: '/panel/redeem/history', icon: BookCopy, label: 'Riwayat Penukaran' },
+       { href: '/panel/redeem', icon: Gift, label: 'Item Hadiah', permission: 'manage_settings' },
+       { href: '/panel/missions', icon: Target, label: 'Misi', permission: 'manage_settings' },
+       { href: '/panel/redeem/history', icon: BookCopy, label: 'Riwayat Penukaran', permission: 'manage_settings' },
     ]
   },
   {
