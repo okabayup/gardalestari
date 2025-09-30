@@ -11,15 +11,41 @@ const withPWA = require('next-pwa')({
   disable: process.env.NODE_ENV === 'development',
   runtimeCaching: [
     {
+      urlPattern: /\/manifest\.json$/,
+      handler: 'NetworkOnly',
+    },
+    {
       urlPattern: ({ url }) => {
-        // Don't cache the manifest.json
-        return !url.pathname.endsWith('/manifest.json');
+        return url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/logo.png') || url.pathname.startsWith('/favicon.ico');
       },
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'static-assets',
+        expiration: {
+          maxEntries: 60,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+        },
+      },
+    },
+    {
+      urlPattern: ({ request }) => request.destination === 'image',
+      handler: 'StaleWhileRevalidate',
+      options: {
+        cacheName: 'images',
+        expiration: {
+          maxEntries: 60,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+        },
+      },
+    },
+    {
+      urlPattern: ({ request }) => request.mode === 'navigate',
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'offlineCache',
+        cacheName: 'pages',
         expiration: {
-          maxEntries: 200,
+          maxEntries: 60,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
         },
       },
     },

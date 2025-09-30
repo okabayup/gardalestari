@@ -8,7 +8,7 @@ import { Loader2 } from 'lucide-react';
 import InstallPWA from './InstallPWA';
 import { useFcm } from '@/hooks/use-fcm';
 import { usePathname } from 'next/navigation';
-import VerificationFlow from '@/app/auth/VerificationFlow';
+import VerificationFlow from '@/components/auth/VerificationFlow';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useRequireAuth();
@@ -24,7 +24,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }
   
   // If user is unverified, force them into the verification flow.
-  if (user.verificationStatus === 'unverified') {
+  if (user.verificationStatus === 'unverified' && pathname !== '/auth/VerificationFlow') {
     return <VerificationFlow />;
   }
   
@@ -34,7 +34,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const showBottomNav = !isMapPage && !isAssistantPage;
   
   return (
-    <div className="relative flex h-screen w-full flex-col bg-background">
+    <div className="relative mx-auto flex h-screen w-full max-w-lg flex-col bg-background">
         <>
           {showHeader && <Header />}
           <main className="flex-1 overflow-auto">{children}</main>

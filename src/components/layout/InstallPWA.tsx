@@ -1,9 +1,21 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -52,7 +64,7 @@ export default function InstallPWA() {
   }
 
   return (
-    <div className="fixed bottom-20 z-50 w-full max-w-lg px-4">
+      <div className="fixed bottom-20 z-50 w-full max-w-lg px-4 left-1/2 -translate-x-1/2">
         <div className="flex items-center justify-between rounded-lg bg-card p-3 shadow-lg border">
             <p className="text-sm font-medium">Instal aplikasi untuk akses cepat.</p>
             <Button size="sm" onClick={handleInstallClick}>
