@@ -3,11 +3,13 @@
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, query, where, getDocs, DocumentData, limit, getDoc, doc, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, DocumentData, limit, getDoc, doc, setDoc, Timestamp, updateDoc, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import type { MemberWithStatus } from '@/lib/definitions';
-import type { Position, PermissionId, PublicUser, PublicProfile } from '@/lib/definitions';
+import type { Position, PermissionId, PublicUser, PublicProfile, VerificationStatus, Mission } from '@/lib/definitions';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
+import { getAuth as getAdminAuth } from 'firebase-admin/auth';
+import { initializeAdminApp } from '@/lib/firebase-admin';
 
 
 /**
@@ -337,5 +339,73 @@ export async function updateUserProfile(userId: string, data: { username?: strin
   } catch (error) {
     console.error("[updateUserProfile Error]", error);
     throw new Error(`Gagal memperbarui profil: ${(error as Error).message}`);
+  }
+}
+
+// Server action to handle file uploads and verification submission
+export async function processVerificationSubmission(
+  userId: string,
+  data: { fullName: string; nik: string; ktpDataUrl: string; photoDataUrl?: string; waNumber: string; }
+) {
+  try {
+    await initializeAdminApp();
+    
+    // Check for duplicate NIK
+    const nikQuery = query(collection(db, 'users'), where("nik", "==", data.nik));
+    const nikSnapshot = await getDocs(nikQuery);
+    if (!nikSnapshot.empty && nikSnapshot.docs[0].id !== userId) {
+        throw new Error("NIK ini sudah terdaftar pada akun lain.");
+    }
+    
+    // Convert data URLs to buffers
+    const ktpBuffer = Buffer.from(data.ktpDataUrl.split(',')[1], 'base64');
+    
+    // Upload KTP to storage
+    const ktpRef = ref(storage, `kyc/${userId}/ktp.jpg`);
+    await uploadBytes(ktpRef, ktpBuffer, { contentType: 'image/jpeg' });
+    const ktpImageUrl = await getDownloadURL(ktpRef);
+    
+    let newPhotoURL = null;
+    if (data.photoDataUrl) {
+        const photoBuffer = Buffer.from(data.photoDataUrl.split(',')[1], 'base64');
+        const profilePicRef = ref(storage, `profile-pictures/${userId}`);
+        await uploadBytes(profilePicRef, photoBuffer, { contentType: 'image/jpeg' });
+        newPhotoURL = await getDownloadURL(profilePicRef);
+    }
+    
+    const username = await generateUniqueUsername(data.fullName);
+
+    const verificationData: { [key: string]: any } = {
+        fullName: data.fullName,
+        displayName: data.fullName,
+        username: username,
+        nik: data.nik,
+        waNumber: data.waNumber,
+        waVerified: true,
+        verificationStatus: 'temporary' as VerificationStatus,
+        ktpImageUrl,
+        submittedAt: serverTimestamp()
+    };
+
+    if (newPhotoURL) {
+      verificationData.avatarUrl = newPhotoURL;
+      verificationData.photoURL = newPhotoURL;
+    }
+    
+    // Update user document in Firestore and Auth
+    const userDocRef = doc(db, 'users', userId);
+    await setDoc(userDocRef, verificationData, { merge: true });
+    
+    const adminAuth = getAdminAuth();
+    await adminAuth.updateUser(userId, {
+      displayName: data.fullName,
+      ...(newPhotoURL && { photoURL: newPhotoURL }),
+    });
+
+    return { success: true };
+
+  } catch (error) {
+    console.error("[processVerificationSubmission Error]", error);
+    throw new Error(`Gagal memproses pengajuan: ${(error as Error).message}`);
   }
 }

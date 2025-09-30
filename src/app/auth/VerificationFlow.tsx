@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useRef, useEffect, ChangeEvent } from 'react';
@@ -12,16 +13,18 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Camera, User, Fingerprint, CheckCircle, MessageSquare } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { readKtp } from '@/ai/flows/ocr-ktp-flow';
-import { saveWaNumber, verifyWaNumber } from '@/app/actions/user';
+import { saveWaNumber, verifyWaNumber, processVerificationSubmission } from '@/app/actions/user';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ImageCropper from '@/components/profile/ImageCropper';
 import Image from 'next/image';
 import { Progress } from '@/components/ui/progress';
+import Link from 'next/link';
 
 type Step = 'welcome' | 'data' | 'whatsapp' | 'ktp' | 'confirm' | 'submitting';
 
 const STEPS_COUNT = 4;
+const ADMIN_CONTACT_WA = "https://wa.me/6285176752610?text=Halo%20Admin%2C%20saya%20butuh%20bantuan%20terkait%20verifikasi%20akun.";
 
 export default function VerificationFlow() {
   const { user, submitForVerification, refreshUser, signOut } = useAuth();
@@ -234,23 +237,18 @@ export default function VerificationFlow() {
       setStep('confirm');
     }
   };
-
-  const dataURLtoFile = (dataurl: string, filename: string): File => {
-    const arr = dataurl.split(',');
-    const mimeMatch = arr[0].match(/:(.*?);/);
-    if (!mimeMatch) throw new Error("Invalid data URL");
-    const mime = mimeMatch[1];
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while(n--){
-        u8arr[n] = bstr.charCodeAt(n);
-    }
-    return new File([u8arr], filename, {type:mime});
-  }
+  
+  const fileToDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
 
   const handleSubmit = async () => {
-    if (!ktpDataUrl || !fullName || !nik) {
+    if (!ktpDataUrl || !fullName || !nik || !user) {
       toast({ variant: 'destructive', title: 'Data Tidak Lengkap' });
       setStep('data'); 
       return;
@@ -283,23 +281,25 @@ export default function VerificationFlow() {
 
 
       toast({ title: 'KTP Terverifikasi!', description: 'Data cocok. Mengirimkan pengajuan Anda...' });
+      
+      const photoDataUrl = photoFile ? await fileToDataUrl(photoFile) : undefined;
 
       const verificationData = {
         fullName,
         nik,
-        ktpFile: dataURLtoFile(ktpDataUrl, 'ktp.jpg'),
-        ...(photoFile && { photoFile: photoFile }),
+        ktpDataUrl,
+        photoDataUrl,
         waNumber: waNumber,
       };
 
-      await submitForVerification(verificationData);
+      await processVerificationSubmission(user.uid, verificationData);
       
       toast({
         title: 'Pengajuan Terkirim!',
         description: 'Pengajuan verifikasi Anda telah berhasil dikirim. Tim kami akan segera meninjaunya.',
         duration: 8000,
       });
-      // The user state will be updated by the auth provider, and MainLayout will re-render to show the app.
+      await refreshUser();
     } catch (error) {
       console.error(error);
       const errorMessage = (error as Error).message || 'Terjadi kesalahan. Silakan coba lagi.';
@@ -514,7 +514,13 @@ export default function VerificationFlow() {
                 {renderContent()}
               </CardContent>
             </Card>
-            <Button variant="link" size="sm" className="mt-4 text-muted-foreground" onClick={signOut}>Keluar</Button>
+            <div className="mt-4 text-center text-xs">
+                <Button variant="link" size="sm" asChild className="text-muted-foreground">
+                    <Link href={ADMIN_CONTACT_WA} target="_blank">Butuh bantuan? Hubungi Admin</Link>
+                </Button>
+                <span className="mx-1 text-muted-foreground">|</span>
+                <Button variant="link" size="sm" className="text-muted-foreground" onClick={signOut}>Keluar</Button>
+            </div>
           </div>
       </div>
   );
