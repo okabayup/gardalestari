@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/use-auth';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Coins, Gift, History, Plus, Minus, Target } from 'lucide-react';
+import { Loader2, Coins, Gift, History, Plus, Minus, Target, Copy } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useEffect, useState } from 'react';
 import { getPointHistory, getRedeemableItems, getMissions, redeemItem, PointLog, RedeemableItem, Mission } from '@/app/actions/points';
@@ -23,6 +23,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 
 const PlaceholderContent = ({ icon: Icon, title, description }: { icon: React.ElementType, title: string, description: string }) => (
@@ -198,6 +200,13 @@ const PointHistoryList = () => {
 
 export default function GreenPointsPage() {
     const { user, loading } = useAuth();
+    const { toast } = useToast();
+    
+    const copyReferralCode = () => {
+        if (!user?.referralCode) return;
+        navigator.clipboard.writeText(user.referralCode);
+        toast({ title: 'Kode Rujukan Disalin!' });
+    }
 
     if (loading || !user) {
         return (
@@ -221,6 +230,36 @@ export default function GreenPointsPage() {
                     </CardHeader>
                     <CardContent className="flex items-center justify-between">
                         <div className="text-4xl font-bold">{user.greenPoints || 0}</div>
+                    </CardContent>
+                </Card>
+
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Program Ambasador Lestari</CardTitle>
+                        <CardDescription>Ajak teman bergabung dan dapatkan poin untuk setiap rujukan yang berhasil!</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4 text-center">
+                            <div className="p-2 bg-muted rounded-lg">
+                                <p className="text-xl font-bold">{user?.referralCount || 0}</p>
+                                <p className="text-xs text-muted-foreground">Anggota Direkrut</p>
+                            </div>
+                            <div className="p-2 bg-muted rounded-lg">
+                                <p className="text-xl font-bold">{(user?.referralCount || 0) * 25}</p>
+                                <p className="text-xs text-muted-foreground">Poin dari Rujukan</p>
+                            </div>
+                        </div>
+                        {user?.referralCode && (
+                            <div className="space-y-2">
+                                <Label>Kode Rujukan Anda</Label>
+                                <div className="flex items-center gap-2">
+                                    <Input value={user.referralCode} readOnly className="font-mono" />
+                                    <Button type="button" size="icon" variant="outline" onClick={copyReferralCode}>
+                                        <Copy className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
