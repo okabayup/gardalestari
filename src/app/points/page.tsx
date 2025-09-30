@@ -200,12 +200,12 @@ const PointHistoryList = () => {
 export default function GreenPointsPage() {
     const { user, loading } = useAuth();
     const { toast } = useToast();
-    const referralLink = user?.username ? `${process.env.NEXT_PUBLIC_BASE_URL || window.location.origin}/register?ref=${user.username}` : '';
+    const invitationLink = user?.username ? `${process.env.NEXT_PUBLIC_BASE_URL || window.location.origin}/register?ref=${user.username}` : '';
     
-    const copyReferralLink = () => {
-        if (!referralLink) return;
-        navigator.clipboard.writeText(referralLink);
-        toast({ title: 'Tautan Rujukan Disalin!' });
+    const copyInvitationLink = () => {
+        if (!invitationLink) return;
+        navigator.clipboard.writeText(invitationLink);
+        toast({ title: 'Tautan Undangan Disalin!' });
     }
 
     if (loading || !user) {
@@ -223,42 +223,32 @@ export default function GreenPointsPage() {
             <div className="p-6 space-y-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Coins className="h-6 w-6 text-primary" />
-                            <span>Poin Hijau Anda</span>
-                        </CardTitle>
+                        <CardTitle>Statistik Poin</CardTitle>
                     </CardHeader>
-                    <CardContent className="flex items-center justify-between">
-                        <div className="text-4xl font-bold">{user.greenPoints || 0}</div>
+                    <CardContent className="grid grid-cols-2 gap-4 text-center">
+                         <div className="p-4 bg-muted rounded-lg">
+                            <p className="text-3xl font-bold">{user.greenPoints || 0}</p>
+                            <p className="text-xs text-muted-foreground flex items-center justify-center gap-1"><Coins className="h-3 w-3"/> Poin Hijau</p>
+                        </div>
+                        <div className="p-4 bg-muted rounded-lg">
+                            <p className="text-3xl font-bold">{user.referralCount || 0}</p>
+                            <p className="text-xs text-muted-foreground flex items-center justify-center gap-1"><Users className="h-3 w-3"/> Anggota Diajak</p>
+                        </div>
                     </CardContent>
                 </Card>
 
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Program Ambasador Lestari</CardTitle>
-                        <CardDescription>Ajak teman bergabung dan dapatkan poin untuk setiap rujukan yang berhasil!</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="p-4 bg-muted rounded-lg flex items-center justify-between">
-                            <div>
-                                <p className="text-muted-foreground">Anggota Direkrut</p>
-                                <p className="text-2xl font-bold">{user.referralCount || 0}</p>
-                            </div>
-                            <Users className="h-8 w-8 text-primary" />
+                {user.username && (
+                    <div className="space-y-2">
+                        <Label>Tautan Undangan Anda</Label>
+                        <p className="text-xs text-muted-foreground">Ajak teman bergabung dan dapatkan poin untuk setiap rujukan yang berhasil!</p>
+                        <div className="flex items-center gap-2">
+                            <Input value={invitationLink} readOnly className="font-mono text-xs" />
+                            <Button type="button" size="icon" variant="outline" onClick={copyInvitationLink}>
+                                <Copy className="h-4 w-4" />
+                            </Button>
                         </div>
-                        {user.username && (
-                            <div className="space-y-2">
-                                <Label>Tautan Rujukan Anda</Label>
-                                <div className="flex items-center gap-2">
-                                    <Input value={referralLink} readOnly className="font-mono text-xs" />
-                                    <Button type="button" size="icon" variant="outline" onClick={copyReferralLink}>
-                                        <Copy className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                    </div>
+                )}
 
                 <Tabs defaultValue="redeem" className="w-full">
                     <TabsList className="grid w-full grid-cols-3">
