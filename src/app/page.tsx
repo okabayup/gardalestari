@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Leaf, Users, Sprout, Ship, TreePine, Handshake, HandHeart, Target, Newspaper, Calendar, Heart, ArrowRight, Briefcase, Award, TrendingUp, Lightbulb, BadgeCheck, FileCheck, Video } from 'lucide-react';
+import { Leaf, Users, Sprout, Ship, TreePine, Handshake, HandHeart, Target, Newspaper, Calendar, Heart, ArrowRight, Briefcase, Award, TrendingUp, Lightbulb, BadgeCheck, FileCheck, Video, Coins } from 'lucide-react';
 import LandingHeader from '@/components/layout/LandingHeader';
 import { getAppSettings } from './actions/settings';
 import { getEvents } from './actions/events';
