@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useRef, useEffect, ChangeEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,14 +19,18 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import ImageCropper from '@/components/profile/ImageCropper';
 import Image from 'next/image';
 import { Progress } from '@/components/ui/progress';
+import Link from 'next/link';
+import { logError } from '@/app/actions/errors';
 
 type Step = 'welcome' | 'data' | 'whatsapp' | 'ktp' | 'confirm' | 'submitting';
 
-const STEPS_COUNT = 5;
+const STEPS_COUNT = 4;
+const ADMIN_CONTACT_WA = "https://wa.me/6285937010409?text=Halo%20Admin%2C%20saya%20butuh%20bantuan%20terkait%20verifikasi%20akun.";
 
 export default function VerificationFlow() {
   const { user, submitForVerification, refreshUser, signOut } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
   
   const [step, setStep] = useState<Step>('welcome');
@@ -183,9 +187,17 @@ export default function VerificationFlow() {
         throw new Error(result.error || 'Gagal mengirim pesan.');
       }
     } catch (error) {
-      const errorMessage = (error as Error).message || 'Terjadi kesalahan pada sisi klien.';
-      console.error("Error from handleSendOtp:", error);
-      toast({ variant: 'destructive', title: 'Gagal mengirim OTP', description: errorMessage, duration: 7000 });
+      const err = error as Error;
+      toast({ variant: 'destructive', title: 'Gagal mengirim OTP', description: err.message, duration: 7000 });
+      logError({ 
+        context: 'verification-wa-send', 
+        message: err.message, 
+        stack: err.stack, 
+        userId: user?.uid,
+        userName: user?.displayName || undefined,
+        userPhone: waNumber,
+        path: pathname,
+      });
       setCountdown(0);
     } finally {
       setLoadingSendOtp(false);
@@ -208,7 +220,17 @@ export default function VerificationFlow() {
         throw new Error('Kode OTP yang Anda masukkan salah.');
       }
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Verifikasi Gagal', description: (error as Error).message });
+      const err = error as Error;
+      toast({ variant: 'destructive', title: 'Verifikasi Gagal', description: err.message });
+      logError({ 
+        context: 'verification-wa-verify', 
+        message: err.message, 
+        stack: err.stack, 
+        userId: user?.uid,
+        userName: user?.displayName || undefined,
+        userPhone: waNumber,
+        path: pathname,
+       });
     } finally {
       setLoadingVerifyOtp(false);
     }
@@ -235,23 +257,9 @@ export default function VerificationFlow() {
       setStep('confirm');
     }
   };
-
-  const dataURLtoFile = (dataurl: string, filename: string): File => {
-    const arr = dataurl.split(',');
-    const mimeMatch = arr[0].match(/:(.*?);/);
-    if (!mimeMatch) throw new Error("Invalid data URL");
-    const mime = mimeMatch[1];
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while(n--){
-        u8arr[n] = bstr.charCodeAt(n);
-    }
-    return new File([u8arr], filename, {type:mime});
-  }
-
+  
   const handleSubmit = async () => {
-    if (!ktpDataUrl || !fullName || !nik) {
+    if (!ktpDataUrl || !fullName || !nik || !user) {
       toast({ variant: 'destructive', title: 'Data Tidak Lengkap' });
       setStep('data'); 
       return;
@@ -284,12 +292,18 @@ export default function VerificationFlow() {
 
 
       toast({ title: 'KTP Terverifikasi!', description: 'Data cocok. Mengirimkan pengajuan Anda...' });
+      
+      const photoDataUrl = photoFile ? await new Promise<string>(resolve => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target?.result as string);
+        reader.readAsDataURL(photoFile);
+      }) : undefined;
 
       const verificationData = {
         fullName,
         nik,
-        ktpFile: dataURLtoFile(ktpDataUrl, 'ktp.jpg'),
-        ...(photoFile && { photoFile: photoFile }),
+        ktpDataUrl,
+        photoDataUrl,
         waNumber: waNumber,
       };
 
@@ -300,15 +314,24 @@ export default function VerificationFlow() {
         description: 'Pengajuan verifikasi Anda telah berhasil dikirim. Tim kami akan segera meninjaunya.',
         duration: 8000,
       });
-      // The user state will be updated by the auth provider, and MainLayout will re-render to show the app.
+      await refreshUser();
     } catch (error) {
-      console.error(error);
-      const errorMessage = (error as Error).message || 'Terjadi kesalahan. Silakan coba lagi.';
+      const err = error as Error;
+      const errorMessage = err.message || 'Terjadi kesalahan. Silakan coba lagi.';
       toast({
         variant: 'destructive',
         title: 'Verifikasi Gagal',
         description: errorMessage,
         duration: 8000,
+      });
+      logError({ 
+          context: 'verification-submit', 
+          message: errorMessage, 
+          stack: err.stack, 
+          userId: user?.uid,
+          userName: fullName,
+          userPhone: waNumber,
+          path: pathname,
       });
       setStep('data'); 
       setKtpDataUrl(null);
@@ -515,7 +538,13 @@ export default function VerificationFlow() {
                 {renderContent()}
               </CardContent>
             </Card>
-            <Button variant="link" size="sm" className="mt-4 text-muted-foreground" onClick={signOut}>Keluar</Button>
+            <div className="mt-4 text-center text-xs">
+                <Button variant="link" size="sm" asChild className="text-muted-foreground">
+                    <Link href={ADMIN_CONTACT_WA} target="_blank">Butuh bantuan? Hubungi Admin</Link>
+                </Button>
+                <span className="mx-1 text-muted-foreground">|</span>
+                <Button variant="link" size="sm" className="text-muted-foreground" onClick={signOut}>Keluar</Button>
+            </div>
           </div>
       </div>
   );

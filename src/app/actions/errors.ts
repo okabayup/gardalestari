@@ -18,6 +18,9 @@ export async function logError(errorData: {
   stack?: string;
   context: string;
   userId?: string;
+  userName?: string;
+  userPhone?: string;
+  path?: string;
 }) {
   try {
     // Log to Firestore
@@ -28,7 +31,7 @@ export async function logError(errorData: {
     });
     
     // Send WhatsApp Alert
-    const alertMessage = `Context: ${errorData.context}\nUser: ${errorData.userId || 'N/A'}\nError: ${errorData.message}`;
+    const alertMessage = `Context: ${errorData.context}\nUser: ${errorData.userName || 'N/A'} (${errorData.userPhone || errorData.userId || 'N/A'})\nPath: ${errorData.path || 'N/A'}\nError: ${errorData.message}\n\nStack: ${errorData.stack || 'No stack'}`;
     await sendDevAlert(alertMessage);
     
   } catch (loggingError) {
@@ -48,8 +51,8 @@ export async function getErrorLogs(): Promise<ErrorLog[]> {
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => {
             const data = doc.data();
-            // Ensure timestamp is serializable
-            const timestamp = data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString();
+            // Ensure timestamp is serializable. Convert if it's a Firestore Timestamp.
+            const timestamp = data.timestamp?.toDate ? data.timestamp.toDate().toISOString() : new Date(data.timestamp).toISOString();
             return {
                 id: doc.id,
                 ...data,

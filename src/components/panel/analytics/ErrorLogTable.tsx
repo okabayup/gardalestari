@@ -50,8 +50,8 @@ const columns: ColumnDef<ErrorLog>[] = [
       )
     },
     cell: ({ row }) => {
-      // The timestamp might be a Firestore Timestamp object or an ISO string after serialization
-      const date = row.original.timestamp.toDate ? row.original.timestamp.toDate() : new Date(row.original.timestamp as any);
+      // The timestamp is already serialized as a string from the server action
+      const date = new Date(row.original.timestamp);
       return format(date, "dd MMM, HH:mm", { locale: id });
     },
     sortingFn: 'datetime',
@@ -60,7 +60,7 @@ const columns: ColumnDef<ErrorLog>[] = [
       id: "actions",
       cell: ({ row }) => {
         const log = row.original
-        const date = log.timestamp.toDate ? log.timestamp.toDate() : new Date(log.timestamp as any);
+        const date = new Date(log.timestamp);
         return (
           <Dialog>
             <DialogTrigger asChild>

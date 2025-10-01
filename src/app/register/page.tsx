@@ -15,6 +15,7 @@ import { getAppSettings } from '@/app/actions/settings';
 import { Label } from '@/components/ui/label';
 import { logError } from '@/app/actions/errors';
 import Cookies from 'js-cookie';
+import { usePathname } from 'next/navigation';
 
 const benefits = [
   'Akses ke jaringan pemuda inovator',
@@ -26,6 +27,7 @@ const benefits = [
 export default function RegisterPage() {
     const { user, loading, signInWithPhone, verifyOtp } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
     const searchParams = useSearchParams();
     const { toast } = useToast();
     const [phone, setPhone] = useState('');
@@ -78,15 +80,21 @@ export default function RegisterPage() {
         e.preventDefault();
         setIsSubmitting(true);
         setCountdown(60);
+        const phoneNumber = phone.startsWith('+') ? phone : `+62${phone.replace(/^0/, '')}`;
         try {
-            const phoneNumber = phone.startsWith('+') ? phone : `+62${phone.replace(/^0/, '')}`;
             await signInWithPhone(phoneNumber, 'recaptcha-container');
             setStep('otp');
             toast({ title: 'OTP Terkirim', description: 'Silakan periksa ponsel Anda untuk kode verifikasi.' });
         } catch (error) {
             const err = error as Error;
             toast({ variant: 'destructive', title: 'Error', description: 'Gagal mengirim OTP. Pastikan nomor valid dan coba lagi.' });
-            logError({ message: err.message, stack: err.stack, context: 'register-otp-send', userId: `phone:${phone}` });
+            logError({ 
+                message: err.message, 
+                stack: err.stack, 
+                context: 'register-otp-send', 
+                userPhone: phoneNumber,
+                path: pathname,
+            });
             setCountdown(0);
         } finally {
             setIsSubmitting(false);
@@ -103,7 +111,13 @@ export default function RegisterPage() {
         } catch (error) {
             const err = error as Error;
             toast({ variant: 'destructive', title: 'Error', description: 'OTP tidak valid. Silakan coba lagi.' });
-            logError({ message: err.message, stack: err.stack, context: 'register-otp-verify', userId: `phone:${phone}` });
+            logError({ 
+                message: err.message, 
+                stack: err.stack, 
+                context: 'register-otp-verify', 
+                userPhone: phone,
+                path: pathname,
+            });
         } finally {
             setIsSubmitting(false);
         }
@@ -113,14 +127,20 @@ export default function RegisterPage() {
         if (countdown > 0) return;
         setIsSubmitting(true);
         setCountdown(60);
-        try {
         const phoneNumber = phone.startsWith('+') ? phone : `+62${phone.replace(/^0/, '')}`;
+        try {
         await signInWithPhone(phoneNumber, 'recaptcha-container');
         toast({ title: 'OTP Terkirim Kembali', description: 'Silakan periksa kembali ponsel Anda.' });
         } catch (error) {
         const err = error as Error;
         toast({ variant: 'destructive', title: 'Gagal Mengirim Ulang OTP', description: 'Silakan coba lagi beberapa saat.' });
-        logError({ message: err.message, stack: err.stack, context: 'register-otp-resend', userId: `phone:${phone}` });
+        logError({ 
+            message: err.message, 
+            stack: err.stack, 
+            context: 'register-otp-resend', 
+            userPhone: phoneNumber,
+            path: pathname,
+        });
         setCountdown(0);
         } finally {
         setIsSubmitting(false);

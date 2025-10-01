@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect } from 'react';
@@ -7,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { logError } from './actions/errors';
+import { usePathname } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
 
 const ADMIN_CONTACT_WA = "https://wa.me/6285937010409?text=Halo%20Admin%2C%20saya%20mengalami%20error%20di%20aplikasi.";
 
@@ -17,6 +18,8 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const pathname = usePathname();
+  const { user } = useAuth();
 
   useEffect(() => {
     // Log the error to your error reporting service
@@ -24,9 +27,12 @@ export default function Error({
       message: error.message,
       stack: error.stack,
       context: 'global-error-boundary',
-      userId: 'N/A' // Hard to get user ID here, but can be added if available in a session context
+      path: pathname,
+      userId: user?.uid,
+      userName: user?.displayName || undefined,
+      userPhone: user?.phoneNumber || undefined,
     });
-  }, [error]);
+  }, [error, pathname, user]);
 
 
   return (
