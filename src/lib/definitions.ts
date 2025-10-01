@@ -418,11 +418,13 @@ export interface MemberWithStatus extends Member {
 
 // --- Badges ---
 export type BadgeType = 'manual' | 'auto';
-export type BadgeMetric = 'post_count' | 'idea_count' | 'comment_count' | 'upvote_count' | 'project_completed';
+export type BadgeMetric = 'post_count' | 'idea_count' | 'comment_count' | 'upvote_count' | 'project_completed' | 'achievement_added' | 'vote_casted';
 
 export const BADGE_METRICS: { value: BadgeMetric; label: string }[] = [
     { value: 'post_count', label: 'Jumlah Postingan' },
     { value: 'idea_count', label: 'Jumlah Ide Diajukan' },
+    { value: 'achievement_added', label: 'Jumlah Prestasi Dicatat' },
+    { value: 'vote_casted', label: 'Jumlah Suara E-Voting' },
     { value: 'comment_count', label: 'Jumlah Komentar' },
     { value: 'upvote_count', label: 'Jumlah Upvote Diterima' },
     { value: 'project_completed', label: 'Proyek Diselesaikan' },

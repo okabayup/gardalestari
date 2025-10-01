@@ -9,6 +9,7 @@ import type { Achievement } from '@/lib/definitions';
 import { auth } from 'firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
 import { initializeAdminApp } from '@/lib/firebase-admin';
+import { checkAndAwardBadges } from './badges';
 
 const achievementsCollection = collection(db, 'achievements');
 
@@ -107,6 +108,9 @@ export async function createAchievement(data: Omit<Achievement, 'id' | 'date'> &
     await addDoc(achievementsCollection, achievementData);
     revalidatePath('/panel/achievements');
     revalidatePath('/achievements');
+
+    // Trigger badge/mission check
+    await checkAndAwardBadges(data.userId, 'achievement_added');
   } catch (error) {
     console.error("[createAchievement Error]", error);
     throw new Error(`Gagal membuat data prestasi: ${(error as Error).message}`);
@@ -147,6 +151,9 @@ export async function createMyAchievement(
         
         revalidatePath('/achievements');
         revalidatePath('/profile/me');
+
+        // Trigger badge/mission check
+        await checkAndAwardBadges(userId, 'achievement_added');
     } catch (error) {
         console.error("[createMyAchievement Error]", error);
         throw new Error(`Gagal menambahkan prestasi Anda: ${(error as Error).message}`);

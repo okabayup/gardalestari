@@ -96,6 +96,13 @@ async function getUserMetric(userId: string, metric: BadgeMetric): Promise<numbe
         case 'idea_count':
              const ideaQuery = query(collection(db, 'ideas'), where('authorId', '==', userId));
             return (await getCountFromServer(ideaQuery)).data().count;
+        case 'achievement_added':
+            const achievementQuery = query(collection(db, 'achievements'), where('userId', '==', userId));
+            return (await getCountFromServer(achievementQuery)).data().count;
+        case 'vote_casted':
+            // This requires querying all voting topics, which is inefficient.
+            // For now, we'll return 0. A better implementation would be a counter on the user document.
+            return 0;
         case 'comment_count':
             // This is more complex and would require aggregating across posts/ideas.
             // For now, we'll return 0. A more scalable solution (e.g., Cloud Functions) is needed.

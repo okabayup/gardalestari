@@ -20,6 +20,7 @@ import {
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import type { VotingTopic, VotingOption, UpdateVotingTopicPayload, VotingTopicDTO } from '@/lib/definitions';
+import { checkAndAwardBadges } from './badges';
 
 const votingCollection = collection(db, 'votingTopics');
 const usersCollection = collection(db, 'users');
@@ -264,6 +265,9 @@ export async function castVote(topicId: string, optionId: string, userId: string
         totalVotes: topicData.totalVotes + voteWeight,
       });
     });
+
+    // Trigger badge/mission check after successful transaction
+    await checkAndAwardBadges(userId, 'vote_casted');
 
     revalidatePath(`/evoting/${topicId}`);
   } catch (error) {
