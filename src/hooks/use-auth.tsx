@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
@@ -42,6 +43,7 @@ type ExtendedUser = User & {
   skills?: string[];
   interests?: string[];
   assignedBadges?: string[];
+  uplineStructure?: Record<string, number>;
 };
 
 interface AuthContextType {
@@ -228,10 +230,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const ownReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
         
         let referredBy: string | undefined = undefined;
+        let upline: string[] = [];
+
         if (referrerUsername) {
-            const referrerUser = await getUserByUsername(referrerUsername);
-            if(referrerUser) {
-                referredBy = referrerUser.id;
+            const referrerUserDoc = await getDocs(query(collection(db, 'users'), where('username', '==', referrerUsername), limit(1)));
+            if(!referrerUserDoc.empty) {
+                const referrerData = referrerUserDoc.docs[0].data();
+                referredBy = referrerUserDoc.docs[0].id;
+                upline = [referredBy, ...(referrerData.upline || [])];
             }
         }
         
@@ -253,6 +259,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 referralCount: 0,
                 greenPoints: welcomePoints,
                 referredBy: referredBy,
+                upline: upline.slice(0, 10), // Limit upline to 10 levels
                 verificationStatus: 'unverified',
             });
             

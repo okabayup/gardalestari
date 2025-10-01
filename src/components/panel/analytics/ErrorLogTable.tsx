@@ -1,3 +1,4 @@
+
 'use client';
 
 import { ColumnDef } from "@tanstack/react-table"
@@ -48,13 +49,18 @@ const columns: ColumnDef<ErrorLog>[] = [
         </Button>
       )
     },
-    cell: ({ row }) => format(row.original.timestamp.toDate(), "dd MMM, HH:mm", { locale: id }),
+    cell: ({ row }) => {
+      // The timestamp might be a Firestore Timestamp object or an ISO string after serialization
+      const date = row.original.timestamp.toDate ? row.original.timestamp.toDate() : new Date(row.original.timestamp as any);
+      return format(date, "dd MMM, HH:mm", { locale: id });
+    },
     sortingFn: 'datetime',
   },
   {
       id: "actions",
       cell: ({ row }) => {
         const log = row.original
+        const date = log.timestamp.toDate ? log.timestamp.toDate() : new Date(log.timestamp as any);
         return (
           <Dialog>
             <DialogTrigger asChild>
@@ -64,7 +70,7 @@ const columns: ColumnDef<ErrorLog>[] = [
               <DialogHeader>
                 <DialogTitle>Detail Error: {log.context}</DialogTitle>
                 <DialogDescription>
-                  {format(log.timestamp.toDate(), "dd MMMM yyyy, HH:mm:ss", { locale: id })}
+                  {format(date, "dd MMMM yyyy, HH:mm:ss", { locale: id })}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">

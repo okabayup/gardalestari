@@ -410,3 +410,35 @@ export async function processVerificationSubmission(
     throw new Error(`Gagal memproses pengajuan: ${(error as Error).message}`);
   }
 }
+
+export async function getUserUplineStructure(userId: string): Promise<Record<string, number>> {
+    const structure: Record<string, number> = {};
+
+    try {
+        const q = query(collection(db, 'users'), where('upline', 'array-contains', userId));
+        const snapshot = await getDocs(q);
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const upline: string[] = data.upline || [];
+            const index = upline.indexOf(userId);
+
+            if (index !== -1) {
+                const level = index + 1; // Level 1 is the direct referral
+                const levelKey = `Level ${level}`;
+                structure[levelKey] = (structure[levelKey] || 0) + 1;
+            }
+        });
+
+        // Add Level 1 explicitly from referralCount for direct referrals
+        const userDoc = await getDoc(doc(db, 'users', userId));
+        if (userDoc.exists()) {
+             structure['Level 1'] = userDoc.data().referralCount || 0;
+        }
+
+    } catch (error) {
+        console.error('[getUserUplineStructure Error]', error);
+    }
+
+    return structure;
+}

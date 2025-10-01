@@ -1,7 +1,8 @@
+
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { sendDevAlert } from '@/services/whatsapp';
 import type { ErrorLog } from '@/lib/definitions';
 
@@ -45,10 +46,16 @@ export async function getErrorLogs(): Promise<ErrorLog[]> {
     try {
         const q = query(errorLogsCollection, orderBy('timestamp', 'desc'), limit(50));
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        } as ErrorLog));
+        return snapshot.docs.map(doc => {
+            const data = doc.data();
+            // Ensure timestamp is serializable
+            const timestamp = data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : new Date().toISOString();
+            return {
+                id: doc.id,
+                ...data,
+                timestamp: timestamp
+            } as unknown as ErrorLog;
+        });
     } catch (error) {
         console.error("Failed to fetch error logs:", error);
         return [];

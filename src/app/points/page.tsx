@@ -1,14 +1,16 @@
 
+
 'use client';
 
 import { useAuth } from '@/hooks/use-auth';
 import MainLayout from '@/components/layout/MainLayout';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Coins, Gift, History, Plus, Minus, Target, Copy, Users } from 'lucide-react';
+import { Loader2, Coins, Gift, History, Plus, Minus, Target, Copy, Users, BarChart } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useEffect, useState } from 'react';
 import { getPointHistory, getRedeemableItems, getMissions, redeemItem, PointLog, RedeemableItem, Mission } from '@/app/actions/points';
+import { getUserUplineStructure } from '@/app/actions/user';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
@@ -25,6 +27,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { ChartContainer, ChartConfig, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { Bar, XAxis, YAxis, CartesianGrid } from "recharts"
+
 
 const PlaceholderContent = ({ icon: Icon, title, description }: { icon: React.ElementType, title: string, description: string }) => (
     <div className="text-center text-muted-foreground py-16 border-2 border-dashed rounded-lg">
@@ -61,7 +66,7 @@ const MissionsList = () => {
                     <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle className="text-base">{mission.name}</CardTitle>
                         <div className="font-bold text-lg text-primary flex items-center gap-1">
-                            <Coins className="h-5 w-5"/> +{mission.points}
+                            <Coins className="h-5 w-5"/> +{mission.pointsPerLevel ? mission.pointsPerLevel[0] : mission.points}
                         </div>
                     </CardHeader>
                     <CardContent>
@@ -197,10 +202,62 @@ const PointHistoryList = () => {
     )
 }
 
+const UplineChart = ({ structure }: { structure: Record<string, number>}) => {
+    const chartData = Object.entries(structure).map(([name, value]) => ({ name, value }));
+
+    const chartConfig = {
+      value: {
+        label: "Anggota",
+        color: "hsl(var(--primary))",
+      },
+    } satisfies ChartConfig;
+    
+    if (chartData.length === 0) {
+        return <PlaceholderContent icon={Users} title="Data Rujukan Kosong" description="Ajak teman untuk mulai membangun jaringan Anda." />;
+    }
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="text-base">Struktur Jaringan</CardTitle>
+                <CardDescription className="text-xs">Jumlah anggota yang berhasil Anda rekrut per level.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={chartConfig} className="h-[200px] w-full">
+                    <BarChart accessibilityLayer data={chartData} layout="vertical" margin={{ left: 10, right: 30 }}>
+                        <CartesianGrid horizontal={false} />
+                        <YAxis dataKey="name" type="category" tickLine={false} tickMargin={10} axisLine={false} />
+                        <XAxis dataKey="value" type="number" hide />
+                        <ChartTooltip
+                            cursor={false}
+                            content={<ChartTooltipContent indicator="line" />}
+                        />
+                        <Bar dataKey="value" fill="var(--color-value)" radius={4} layout="vertical">
+                             {chartData.map((entry, index) => (
+                                <div key={`label-${index}`} />
+                            ))}
+                        </Bar>
+                    </BarChart>
+                </ChartContainer>
+            </CardContent>
+        </Card>
+    );
+}
+
+
 export default function GreenPointsPage() {
     const { user, loading } = useAuth();
     const { toast } = useToast();
-    const invitationLink = user?.username ? `${process.env.NEXT_PUBLIC_BASE_URL || window.location.origin}/register?ref=${user.username}` : '';
+    const [uplineStructure, setUplineStructure] = useState<Record<string, number>>({});
+    
+    const invitationLink = user?.username ? `${window.location.origin}/register?ref=${user.username}` : '';
+    
+    useEffect(() => {
+        if (user) {
+            getUserUplineStructure(user.uid).then(setUplineStructure);
+        }
+    }, [user]);
+
     
     const copyInvitationLink = () => {
         if (!invitationLink) return;
@@ -221,9 +278,9 @@ export default function GreenPointsPage() {
     return (
         <MainLayout>
             <div className="p-6 space-y-6">
-                <Card>
+                 <Card>
                     <CardHeader>
-                        <CardTitle>Statistik Poin</CardTitle>
+                        <CardTitle>Poin & Rujukan Anda</CardTitle>
                     </CardHeader>
                     <CardContent className="grid grid-cols-2 gap-4 text-center">
                          <div className="p-4 bg-muted rounded-lg">
@@ -238,17 +295,23 @@ export default function GreenPointsPage() {
                 </Card>
 
                 {user.username && (
-                    <div className="space-y-2">
-                        <Label>Tautan Undangan Anda</Label>
-                        <p className="text-xs text-muted-foreground">Ajak teman bergabung dan dapatkan poin untuk setiap rujukan yang berhasil!</p>
-                        <div className="flex items-center gap-2">
-                            <Input value={invitationLink} readOnly className="font-mono text-xs" />
-                            <Button type="button" size="icon" variant="outline" onClick={copyInvitationLink}>
-                                <Copy className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    </div>
+                     <Card>
+                        <CardHeader>
+                            <CardTitle className="text-base">Ajak Teman</CardTitle>
+                            <CardDescription className="text-xs">Bagikan tautan ini dan dapatkan poin untuk setiap teman yang bergabung dan terverifikasi!</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center gap-2">
+                                <Input value={invitationLink} readOnly className="font-mono text-xs" />
+                                <Button type="button" size="icon" variant="outline" onClick={copyInvitationLink}>
+                                    <Copy className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </CardContent>
+                     </Card>
                 )}
+                
+                <UplineChart structure={uplineStructure} />
 
                 <Tabs defaultValue="redeem" className="w-full">
                     <TabsList className="grid w-full grid-cols-3">
