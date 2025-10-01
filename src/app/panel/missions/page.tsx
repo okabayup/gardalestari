@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -10,7 +11,7 @@ import { getMissions, createMission, updateMission, deleteMission, Mission } fro
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Trash2, PlusCircle, Edit, Target, MinusCircle } from 'lucide-react';
+import { Loader2, Trash2, PlusCircle, Edit, Target, MinusCircle, Coins } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -22,30 +23,38 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { BADGE_METRICS } from '@/lib/definitions';
 
 const missionSchema = z.object({
   name: z.string().min(3, 'Nama minimal 3 karakter'),
   description: z.string().min(10, 'Deskripsi minimal 10 karakter'),
   points: z.coerce.number().optional(),
   pointsPerLevel: z.array(z.coerce.number().min(0)).optional(),
-  type: z.enum(['referral', 'content', 'event', 'social']),
-  action: z.string().optional(),
+  type: z.enum(['referral', 'auto']),
+  criteria: z.object({
+      metric: z.string().optional(),
+      value: z.coerce.number().optional(),
+  }).optional(),
 }).refine(data => {
     if (data.type === 'referral') {
         return (data.pointsPerLevel?.length || 0) > 0 && (data.pointsPerLevel || []).every(p => p > 0);
     }
-    return (data.points || 0) > 0;
+    if (data.type === 'auto') {
+        return !!data.criteria?.metric && (data.criteria.value || 0) > 0 && (data.points || 0) > 0;
+    }
+    return false;
 }, {
-    message: 'Poin atau Poin per Level harus diisi dan lebih dari 0.',
+    message: 'Detail poin, metrik, dan nilai target harus diisi dengan benar.',
     path: ['points'],
 });
+
 
 type MissionFormData = z.infer<typeof missionSchema>;
 
 const MissionFormDialog = ({ mission, onSave, isSaving, onClose }: { mission?: Mission | null; onSave: (data: MissionFormData) => void; isSaving: boolean; onClose: () => void }) => {
   const { register, handleSubmit, control, reset, watch, formState: { errors } } = useForm<MissionFormData>({
     resolver: zodResolver(missionSchema),
-    defaultValues: mission || { name: '', description: '', points: 5, type: 'content', pointsPerLevel: [100, 50, 25] },
+    defaultValues: mission || { name: '', description: '', points: 5, type: 'auto', pointsPerLevel: [100, 50, 25], criteria: { metric: 'post_count', value: 1 } },
   });
   
   const { fields, append, remove } = useFieldArray({
@@ -59,10 +68,10 @@ const MissionFormDialog = ({ mission, onSave, isSaving, onClose }: { mission?: M
     const defaultValues: MissionFormData = {
         name: mission?.name || '',
         description: mission?.description || '',
-        type: mission?.type || 'content',
-        action: mission?.action || '',
+        type: mission?.type || 'auto',
         points: mission?.points || 10,
         pointsPerLevel: mission?.pointsPerLevel || [100, 50, 25],
+        criteria: mission?.criteria || { metric: 'post_count', value: 1 },
     };
     reset(defaultValues);
   }, [mission, reset]);
@@ -91,17 +100,44 @@ const MissionFormDialog = ({ mission, onSave, isSaving, onClose }: { mission?: M
                 <Select onValueChange={field.onChange} value={field.value}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="referral">Rujukan</SelectItem>
-                    <SelectItem value="content">Konten</SelectItem>
-                    <SelectItem value="event">Acara</SelectItem>
-                    <SelectItem value="social">Sosial</SelectItem>
+                    <SelectItem value="auto">Otomatis (berdasarkan aksi)</SelectItem>
+                    <SelectItem value="referral">Rujukan (bertingkat)</SelectItem>
                   </SelectContent>
                 </Select>
               )} />
               {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
           </div>
           
-          {missionType === 'referral' ? (
+          {missionType === 'auto' && (
+            <Card className="bg-muted/50 p-4 space-y-2">
+                 <div className="space-y-2">
+                    <Label>Poin Diberikan</Label>
+                    <Input type="number" {...register('points')} />
+                    {errors.points && <p className="text-sm text-destructive">{errors.points.message}</p>}
+                 </div>
+                 <div className="space-y-2">
+                    <Label>Metrik Pencapaian</Label>
+                    <Controller name="criteria.metric" control={control} render={({ field }) => (
+                         <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger><SelectValue placeholder="Pilih metrik..."/></SelectTrigger>
+                            <SelectContent>
+                                {BADGE_METRICS.map(m => (
+                                    <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )} />
+                </div>
+                 <div className="space-y-2">
+                    <Label>Nilai Target</Label>
+                    <Input type="number" {...register('criteria.value')} placeholder="Contoh: 10"/>
+                    <p className="text-xs text-muted-foreground">Poin akan diberikan setiap kali anggota mencapai kelipatan nilai ini.</p>
+                </div>
+                {errors.criteria && <p className="text-sm text-destructive">{errors.criteria.message}</p>}
+            </Card>
+          )}
+
+          {missionType === 'referral' && (
               <div className="space-y-2 rounded-md border p-4">
                   <Label>Poin per Level Rujukan</Label>
                   <p className="text-xs text-muted-foreground">Level 1 adalah perujuk langsung, Level 2 adalah perujuk dari perujuk, dst.</p>
@@ -115,19 +151,8 @@ const MissionFormDialog = ({ mission, onSave, isSaving, onClose }: { mission?: M
                   <Button type="button" variant="outline" size="sm" onClick={() => append(0)}><PlusCircle className="mr-2 h-4 w-4"/> Tambah Level</Button>
                   {errors.pointsPerLevel && <p className="text-sm text-destructive">{errors.pointsPerLevel.message || errors.pointsPerLevel.root?.message}</p>}
               </div>
-          ) : (
-             <div className="space-y-2">
-              <Label htmlFor="points">Poin Diberikan</Label>
-              <Input id="points" type="number" {...register('points')} />
-              {errors.points && <p className="text-sm text-destructive">{errors.points.message}</p>}
-            </div>
           )}
 
-           <div className="space-y-2">
-            <Label htmlFor="action">Tindakan (Action Hook)</Label>
-            <Input id="action" {...register('action')} placeholder="Contoh: create_post" />
-            <p className="text-xs text-muted-foreground">Opsional. Untuk developer, ini adalah kunci untuk memicu pemberian poin secara otomatis.</p>
-          </div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={onClose}>Batal</Button>
             <Button type="submit" disabled={isSaving}>
@@ -169,11 +194,19 @@ export default function MissionsPage() {
   const handleSave = async (data: MissionFormData) => {
     setIsSaving(true);
     try {
+        const payload = { ...data };
+        if(data.type === 'auto') {
+            payload.pointsPerLevel = undefined;
+        } else if (data.type === 'referral') {
+            payload.points = undefined;
+            payload.criteria = undefined;
+        }
+
       if (selectedMission?.id) {
-        await updateMission(selectedMission.id, data);
+        await updateMission(selectedMission.id, payload);
         toast({ title: 'Misi berhasil diperbarui!' });
       } else {
-        await createMission(data);
+        await createMission(payload);
         toast({ title: 'Misi baru berhasil ditambahkan!' });
       }
       fetchMissions();
@@ -229,7 +262,10 @@ export default function MissionsPage() {
                     <CardDescription>{mission.description}</CardDescription>
                   </CardHeader>
                   <CardContent className="flex justify-between items-center">
-                    <div className="font-bold text-lg text-primary">{mission.points || mission.pointsPerLevel?.[0]} Poin</div>
+                     <div className="font-bold text-lg text-primary flex items-center gap-1">
+                        <Coins className="h-5 w-5"/>
+                        <span>{mission.pointsPerLevel ? `${mission.pointsPerLevel[0]} (Lvl 1)` : mission.points}</span>
+                    </div>
                     <div className="flex gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setSelectedMission(mission); setIsDialogOpen(true); }}><Edit className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(mission.id!)}><Trash2 className="h-4 w-4" /></Button>
@@ -249,3 +285,4 @@ export default function MissionsPage() {
     </>
   );
 }
+

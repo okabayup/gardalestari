@@ -22,7 +22,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
-import type { RedeemableItem, Mission, RedemptionLog, PointLog } from '@/lib/definitions';
+import type { RedeemableItem, Mission, RedemptionLog, PointLog, BadgeMetric } from '@/lib/definitions';
 import { getUserByUid } from './user';
 
 const redeemableItemsCollection = collection(db, 'redeemableItems');
@@ -86,7 +86,7 @@ export async function deleteRedeemableItem(id: string) {
 // --- Missions Management (Admin) ---
 
 export async function getMissions(): Promise<Mission[]> {
-  const snapshot = await getDocs(query(missionsCollection, orderBy('points', 'asc')));
+  const snapshot = await getDocs(query(missionsCollection, orderBy('name', 'asc')));
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Mission));
 }
 
@@ -211,7 +211,7 @@ export async function getPointHistory(userId: string): Promise<PointLog[]> {
  * @param description A description for the point log entry.
  * @param level The referral level for multi-level referral missions.
  */
-export async function awardPointsForAction(actionType: Mission['type'] | Mission['criteria.metric'], userId: string, description: string, level: number = 1) {
+export async function awardPointsForAction(actionType: Mission['type'] | BadgeMetric, userId: string, description: string, level: number = 1) {
     const userRef = doc(usersCollection, userId);
 
     await runTransaction(db, async (transaction) => {
@@ -221,7 +221,7 @@ export async function awardPointsForAction(actionType: Mission['type'] | Mission
             return;
         }
 
-        const missionsQuery = query(missionsCollection, where('type', '==', actionType), limit(1));
+        const missionsQuery = query(missionsCollection, where(actionType === 'referral' ? 'type' : 'criteria.metric', '==', actionType), limit(1));
         const missionsSnapshot = await getDocs(missionsQuery);
         
         if (missionsSnapshot.empty) {
@@ -233,12 +233,11 @@ export async function awardPointsForAction(actionType: Mission['type'] | Mission
         let pointsToAward = 0;
         
         if (actionType === 'referral' && mission.pointsPerLevel) {
-            // For multi-level, level is 1-based, array is 0-based.
             if (level > 0 && level <= mission.pointsPerLevel.length) {
                 pointsToAward = mission.pointsPerLevel[level - 1] || 0;
             }
-        } else {
-            pointsToAward = mission.points || 0;
+        } else if (mission.points) {
+            pointsToAward = mission.points;
         }
 
 

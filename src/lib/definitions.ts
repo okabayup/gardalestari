@@ -271,9 +271,12 @@ export interface Mission {
   name: string;
   description: string;
   points?: number;
-  pointsPerLevel?: number[]; // For multi-level referral
-  type: 'referral' | 'content' | 'event' | 'social';
-  action?: string; // e.g., 'create_post_with_hashtag_#lestari'
+  pointsPerLevel?: number[];
+  type: 'referral' | 'auto';
+  criteria?: {
+    metric: BadgeMetric;
+    value: number;
+  };
 }
 
 
