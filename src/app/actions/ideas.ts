@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -114,8 +115,8 @@ export async function createIdea(authorId: string, title: string, description: s
         const docRef = await addDoc(ideasCollection, newIdea);
         revalidatePath('/ideas');
 
-        // Check for badges after creating an idea
-        await checkAndAwardBadges(authorId);
+        // Check for badges and missions after creating an idea
+        await checkAndAwardBadges(authorId, 'idea_count');
 
         return docRef.id;
     } catch (error) {

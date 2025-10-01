@@ -5,10 +5,12 @@
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, arrayUnion, arrayRemove, where, getCountFromServer } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
-import type { Badge, BadgeMetric } from '@/lib/definitions';
+import type { Badge, BadgeMetric, Mission } from '@/lib/definitions';
 import { getUserByUid } from './user';
+import { awardPointsForAction } from './points';
 
 const badgesCollection = collection(db, 'badges');
+const missionsCollection = collection(db, 'missions');
 const usersCollection = collection(db, 'users');
 
 export async function getBadges(): Promise<Badge[]> {
@@ -82,7 +84,7 @@ export async function removeBadgeFromUser(userId: string, badgeId: string) {
 }
 
 
-// --- Automatic Badge Awarding Logic ---
+// --- Automatic Badge & Mission Awarding Logic ---
 
 async function getUserMetric(userId: string, metric: BadgeMetric): Promise<number> {
     const userRef = doc(usersCollection, userId);
@@ -109,13 +111,16 @@ async function getUserMetric(userId: string, metric: BadgeMetric): Promise<numbe
     }
 }
 
-export async function checkAndAwardBadges(userId: string) {
-    console.log(`[checkAndAwardBadges] Starting check for user: ${userId}`);
+export async function checkAndAwardBadges(userId: string, triggeredMetric: BadgeMetric) {
+    console.log(`[checkAndAwardBadges] Starting check for user: ${userId} on metric: ${triggeredMetric}`);
     try {
         const user = await getUserByUid(userId);
         if (!user) throw new Error("User not found");
 
-        const badgesSnapshot = await getDocs(query(badgesCollection, where('type', '==', 'auto')));
+        const userValue = await getUserMetric(userId, triggeredMetric);
+        
+        // --- Badge Awarding ---
+        const badgesSnapshot = await getDocs(query(badgesCollection, where('type', '==', 'auto'), where('criteria.metric', '==', triggeredMetric)));
         const autoBadges = badgesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Badge));
         
         const userAssignedBadges = user.assignedBadges || [];
@@ -124,13 +129,26 @@ export async function checkAndAwardBadges(userId: string) {
             if (!badge.id || !badge.criteria) continue;
             if (userAssignedBadges.includes(badge.id)) continue; // Already has the badge
 
-            const userValue = await getUserMetric(userId, badge.criteria.metric);
-            
             if (userValue >= badge.criteria.value) {
                 console.log(`[checkAndAwardBadges] Awarding badge '${badge.name}' to user ${userId} for metric '${badge.criteria.metric}' (${userValue} >= ${badge.criteria.value})`);
                 await assignBadgeToUser(userId, badge.id);
             }
         }
+        
+        // --- Mission Point Awarding ---
+        const missionsSnapshot = await getDocs(query(missionsCollection, where('type', '==', 'auto'), where('criteria.metric', '==', triggeredMetric)));
+        const autoMissions = missionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Mission));
+
+        for (const mission of autoMissions) {
+            if (!mission.id || !mission.criteria || !mission.points) continue;
+            
+            // Check if the current user value is a multiple of the mission's target value
+            if (userValue > 0 && userValue % mission.criteria.value === 0) {
+                 console.log(`[checkAndAwardBadges] Awarding points for mission '${mission.name}' to user ${userId} for metric '${mission.criteria.metric}' (value ${userValue} is multiple of ${mission.criteria.value})`);
+                 await awardPointsForAction(mission.id, userId);
+            }
+        }
+
     } catch (error) {
         console.error(`[checkAndAwardBadges] Error processing for user ${userId}:`, error);
         // We don't re-throw here to not block the main operation (e.g., creating a post).

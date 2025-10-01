@@ -135,8 +135,8 @@ export async function createPost(formData: FormData) {
 
     await addDoc(postsCollection, newPost);
     
-    // Check for badges after creating the post
-    await checkAndAwardBadges(authorId);
+    // Check for badges and missions after creating the post
+    await checkAndAwardBadges(authorId, 'post_count');
     
     revalidatePath('/feed');
     revalidatePath('/profile/me');
