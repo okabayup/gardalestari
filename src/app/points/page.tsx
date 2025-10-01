@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useAuth } from '@/hooks/use-auth';
@@ -28,7 +27,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { ChartContainer, ChartConfig, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { Bar, XAxis, YAxis, CartesianGrid } from "recharts"
+import { Bar, XAxis, YAxis, CartesianGrid, BarChart as RechartsBarChart } from "recharts"
 
 
 const PlaceholderContent = ({ icon: Icon, title, description }: { icon: React.ElementType, title: string, description: string }) => (
@@ -224,7 +223,7 @@ const UplineChart = ({ structure }: { structure: Record<string, number>}) => {
             </CardHeader>
             <CardContent>
                 <ChartContainer config={chartConfig} className="h-[200px] w-full">
-                    <BarChart accessibilityLayer data={chartData} layout="vertical" margin={{ left: 10, right: 30 }}>
+                    <RechartsBarChart accessibilityLayer data={chartData} layout="vertical" margin={{ left: 10, right: 30 }}>
                         <CartesianGrid horizontal={false} />
                         <YAxis dataKey="name" type="category" tickLine={false} tickMargin={10} axisLine={false} />
                         <XAxis dataKey="value" type="number" hide />
@@ -232,12 +231,8 @@ const UplineChart = ({ structure }: { structure: Record<string, number>}) => {
                             cursor={false}
                             content={<ChartTooltipContent indicator="line" />}
                         />
-                        <Bar dataKey="value" fill="var(--color-value)" radius={4} layout="vertical">
-                             {chartData.map((entry, index) => (
-                                <div key={`label-${index}`} />
-                            ))}
-                        </Bar>
-                    </BarChart>
+                        <Bar dataKey="value" fill="var(--color-value)" radius={4} layout="vertical" />
+                    </RechartsBarChart>
                 </ChartContainer>
             </CardContent>
         </Card>
@@ -250,7 +245,13 @@ export default function GreenPointsPage() {
     const { toast } = useToast();
     const [uplineStructure, setUplineStructure] = useState<Record<string, number>>({});
     
-    const invitationLink = user?.username ? `${window.location.origin}/register?ref=${user.username}` : '';
+    const [invitationLink, setInvitationLink] = useState('');
+
+    useEffect(() => {
+        if (user?.username) {
+            setInvitationLink(`${window.location.origin}/register?ref=${user.username}`);
+        }
+    }, [user?.username]);
     
     useEffect(() => {
         if (user) {
