@@ -5,7 +5,7 @@
 import { db, storage } from '@/lib/firebase';
 import { collection, getDocs, doc, updateDoc, deleteField, query, setDoc, Timestamp, getDoc, addDoc, where,getCountFromServer, runTransaction, orderBy, limit, startAfter, endBefore, increment } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
-import type { PermissionId, Position, MemberWithStatus, MemberType, VerificationStatus } from '@/lib/definitions';
+import type { PermissionId, Position, MemberWithStatus, MemberType, VerificationStatus, UserLevel } from '@/lib/definitions';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getWhatsappTemplate } from './whatsapp';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
@@ -99,6 +99,7 @@ export async function getMembers(forPublic: boolean = false): Promise<MemberWith
         referralCode: data.referralCode,
         referralCount: data.referralCount || 0,
         referredBy: data.referredBy,
+        level: data.level || 'bronze',
       });
     }
     
@@ -173,6 +174,7 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
         const isHidden = formData.get('isHidden') === 'true';
         const titlePrefix = formData.get('titlePrefix') as string;
         const titlePostfix = formData.get('titlePostfix') as string;
+        const level = formData.get('level') as UserLevel;
         const photoFile = formData.get('photoFile') as File | null;
         
         // Handle file upload first
@@ -201,6 +203,7 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
         dataToUpdate.isSpecialMember = isSpecialMember;
         dataToUpdate.isHidden = isHidden;
         dataToUpdate.verificationStatus = verificationStatus;
+        dataToUpdate.level = level;
 
         if (positionId === 'no-position') {
             dataToUpdate.positionId = deleteField();
@@ -334,6 +337,7 @@ export async function createManualMember(formData: FormData) {
             verificationStatus: 'manual' as VerificationStatus,
             createdAt: Timestamp.now(),
             referralCount: 0,
+            level: 'bronze',
         };
         
         console.log("[createManualMember] Creating document in Firestore...");

@@ -20,9 +20,10 @@ import {
   increment,
   limit,
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject, uploadString } from 'firebase/storage';
+import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
-import type { RedeemableItem, Mission, RedemptionLog, PointLog, BadgeMetric } from '@/lib/definitions';
+import type { RedeemableItem, Mission, RedemptionLog, PointLog, UserLevel } from '@/lib/definitions';
+import { getUserByUid } from './user';
 
 const redeemableItemsCollection = collection(db, 'redeemableItems');
 const missionsCollection = collection(db, 'missions');
@@ -51,7 +52,7 @@ export async function createRedeemableItem(data: Omit<RedeemableItem, 'id' | 'im
 }
 
 export async function updateRedeemableItem(id: string, data: Partial<Omit<RedeemableItem, 'id' | 'imageUrl'>>, imageDataUri?: string) {
-  const itemRef = doc(db, 'redeemableItems', id);
+  const itemRef = doc(redeemableItemsCollection, id);
   const updateData: { [key: string]: any } = { ...data };
   if (imageDataUri) {
     const imageRef = ref(storage, `redeem-items/${Date.now()}_${id}.jpg`);
@@ -64,7 +65,7 @@ export async function updateRedeemableItem(id: string, data: Partial<Omit<Redeem
 }
 
 export async function deleteRedeemableItem(id: string) {
-  const docRef = doc(db, 'redeemableItems', id);
+  const docRef = doc(redeemableItemsCollection, id);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists() && docSnap.data().imageUrl) {
       try {
@@ -228,8 +229,19 @@ export async function awardPointsForAction(actionType: Mission['type'], userId: 
         }
 
         const mission = missionsSnapshot.docs[0].data() as Mission;
-        const pointsToAward = mission.points;
+        let pointsToAward = mission.points || 0;
+        
+        // Handle tiered referral points
+        if (actionType === 'referral' && mission.pointsByLevel) {
+            const referrerLevel = (userDoc.data().level || 'bronze').toLowerCase() as UserLevel;
+            pointsToAward = mission.pointsByLevel[referrerLevel] || mission.pointsByLevel.bronze || 0;
+        }
 
+        if (pointsToAward <= 0) {
+            console.warn(`[awardPoints] No points to award for mission ${mission.name} to user ${userId}.`);
+            return;
+        }
+        
         const pointLogRef = doc(collection(userRef, 'pointLogs'));
 
         transaction.update(userRef, { greenPoints: increment(pointsToAward) });

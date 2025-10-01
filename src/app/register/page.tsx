@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getAppSettings } from '@/app/actions/settings';
 import { Label } from '@/components/ui/label';
 import { logError } from '@/app/actions/errors';
+import Cookies from 'js-cookie';
 
 const benefits = [
   'Akses ke jaringan pemuda inovator',
@@ -46,7 +47,15 @@ export default function RegisterPage() {
     useEffect(() => {
         const ref = searchParams.get('ref');
         if (ref) {
+            // Save referrer to cookie for 7 days
+            Cookies.set('referrer', ref, { expires: 7 });
             setReferrerUsername(ref);
+        } else {
+            // Check if a cookie already exists
+            const cookieRef = Cookies.get('referrer');
+            if (cookieRef) {
+                setReferrerUsername(cookieRef);
+            }
         }
     }, [searchParams]);
 
@@ -89,6 +98,7 @@ export default function RegisterPage() {
         setIsSubmitting(true);
         try {
             await verifyOtp(otp, referrerUsername);
+            Cookies.remove('referrer'); // Clear cookie after successful registration
             toast({ title: 'Pendaftaran Berhasil!', description: 'Anda akan diarahkan ke halaman profil Anda.' });
         } catch (error) {
             const err = error as Error;
@@ -181,7 +191,7 @@ export default function RegisterPage() {
                             <CardContent>
                                 {referrerUsername && step === 'phone' && (
                                     <div className="mb-4 text-center text-sm p-2 bg-primary/10 text-primary rounded-md">
-                                        Anda dirujuk oleh <span className="font-bold">{referrerUsername}</span>
+                                        Anda diundang oleh <span className="font-bold">{referrerUsername}</span>
                                     </div>
                                 )}
                                 {step === 'phone' ? (
