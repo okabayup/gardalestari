@@ -234,12 +234,12 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
             let templateId: 'kta_activated' | 'member_verification_rejected' | null = null;
             let notificationPayload: { title: string, body: string } | null = null;
             
-            if (verificationStatus === 'permanent') {
+            if (verificationStatus === 'permanent' && !currentMemberData.referralPointsAwarded) {
                 templateId = 'kta_activated';
                 notificationPayload = { title: 'Verifikasi Berhasil!', body: 'Selamat! Akun Anda telah diverifikasi secara permanen.' };
 
                 // --- AWARD MULTI-LEVEL REFERRAL POINTS ---
-                if (currentMemberData.upline && currentMemberData.upline.length > 0 && !currentMemberData.referralPointsAwarded) {
+                if (currentMemberData.upline && currentMemberData.upline.length > 0) {
                     for (let i = 0; i < currentMemberData.upline.length; i++) {
                         const referrerId = currentMemberData.upline[i];
                         const referralLevel = i + 1; // Level 1 for direct referrer, 2 for their referrer, etc.

@@ -211,7 +211,7 @@ export async function getPointHistory(userId: string): Promise<PointLog[]> {
  * @param description A description for the point log entry.
  * @param level The referral level for multi-level referral missions.
  */
-export async function awardPointsForAction(actionType: Mission['type'], userId: string, description: string, level: number = 1) {
+export async function awardPointsForAction(actionType: Mission['type'] | Mission['criteria.metric'], userId: string, description: string, level: number = 1) {
     const userRef = doc(usersCollection, userId);
 
     await runTransaction(db, async (transaction) => {
