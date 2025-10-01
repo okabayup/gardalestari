@@ -20,11 +20,12 @@ import ImageCropper from '@/components/profile/ImageCropper';
 import Image from 'next/image';
 import { Progress } from '@/components/ui/progress';
 import Link from 'next/link';
+import { sendDevAlert } from '@/services/whatsapp';
 
 type Step = 'welcome' | 'data' | 'whatsapp' | 'ktp' | 'confirm' | 'submitting';
 
 const STEPS_COUNT = 4;
-const ADMIN_CONTACT_WA = "https://wa.me/6285176752610?text=Halo%20Admin%2C%20saya%20butuh%20bantuan%20terkait%20verifikasi%20akun.";
+const ADMIN_CONTACT_WA = "https://wa.me/6285937010409?text=Halo%20Admin%2C%20saya%20butuh%20bantuan%20terkait%20verifikasi%20akun.";
 
 export default function VerificationFlow() {
   const { user, submitForVerification, refreshUser, signOut } = useAuth();
@@ -188,6 +189,7 @@ export default function VerificationFlow() {
       const errorMessage = (error as Error).message || 'Terjadi kesalahan pada sisi klien.';
       console.error("Error from handleSendOtp:", error);
       toast({ variant: 'destructive', title: 'Gagal mengirim OTP', description: errorMessage, duration: 7000 });
+      sendDevAlert(`[VerificationFlow Error] Gagal kirim OTP ke ${waNumber}. Error: ${errorMessage}`);
       setCountdown(0);
     } finally {
       setLoadingSendOtp(false);
@@ -210,7 +212,9 @@ export default function VerificationFlow() {
         throw new Error('Kode OTP yang Anda masukkan salah.');
       }
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Verifikasi Gagal', description: (error as Error).message });
+      const err = error as Error;
+      toast({ variant: 'destructive', title: 'Verifikasi Gagal', description: err.message });
+      sendDevAlert(`[VerificationFlow Error] Gagal verifikasi OTP untuk user ${user.uid}. Error: ${err.message}`);
     } finally {
       setLoadingVerifyOtp(false);
     }
@@ -302,13 +306,15 @@ export default function VerificationFlow() {
       await refreshUser();
     } catch (error) {
       console.error(error);
-      const errorMessage = (error as Error).message || 'Terjadi kesalahan. Silakan coba lagi.';
+      const err = error as Error;
+      const errorMessage = err.message || 'Terjadi kesalahan. Silakan coba lagi.';
       toast({
         variant: 'destructive',
         title: 'Verifikasi Gagal',
         description: errorMessage,
         duration: 8000,
       });
+      sendDevAlert(`[VerificationFlow Error] Gagal submit verifikasi untuk user ${user.uid}. Error: ${errorMessage}`);
       setStep('data'); 
       setKtpDataUrl(null);
     }

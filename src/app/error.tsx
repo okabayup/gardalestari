@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 
-const ADMIN_CONTACT_WA = "https://wa.me/6285176752610?text=Halo%20Admin%2C%20saya%20mengalami%20error%20di%20aplikasi.";
+const ADMIN_CONTACT_WA = "https://wa.me/6285937010409?text=Halo%20Admin%2C%20saya%20mengalami%20error%20di%20aplikasi.";
 
 export default function Error({
   error,

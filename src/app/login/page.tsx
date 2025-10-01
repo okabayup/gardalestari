@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -10,6 +11,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { sendDevAlert } from '@/services/whatsapp';
 
 export default function LoginPage() {
   const { user, loading, signInWithPhone, verifyOtp } = useAuth();
@@ -47,7 +49,9 @@ export default function LoginPage() {
       toast({ title: 'OTP Terkirim', description: 'Silakan periksa ponsel Anda untuk kode verifikasi.' });
     } catch (error) {
       console.error(error);
+      const err = error as Error;
       toast({ variant: 'destructive', title: 'Error', description: 'Gagal mengirim OTP. Pastikan nomor valid dan coba lagi.' });
+      sendDevAlert(`[Login Error] Gagal kirim OTP ke ${phone}. Error: ${err.message}`);
       setCountdown(0);
     } finally {
       setIsSubmitting(false);
@@ -63,7 +67,9 @@ export default function LoginPage() {
       router.push('/feed');
     } catch (error) {
       console.error(error);
+      const err = error as Error;
       toast({ variant: 'destructive', title: 'Error', description: 'OTP tidak valid. Silakan coba lagi.' });
+      sendDevAlert(`[Login Error] Gagal verifikasi OTP untuk nomor ${phone}. Error: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -79,7 +85,9 @@ export default function LoginPage() {
       toast({ title: 'OTP Terkirim Kembali', description: 'Silakan periksa kembali ponsel Anda.' });
     } catch (error) {
       console.error(error);
+      const err = error as Error;
       toast({ variant: 'destructive', title: 'Gagal Mengirim Ulang OTP', description: 'Silakan coba lagi beberapa saat.' });
+      sendDevAlert(`[Login Error] Gagal kirim ulang OTP ke ${phone}. Error: ${err.message}`);
       setCountdown(0);
     } finally {
       setIsSubmitting(false);

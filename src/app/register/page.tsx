@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -12,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { getAppSettings } from '@/app/actions/settings';
 import { Label } from '@/components/ui/label';
+import { sendDevAlert } from '@/services/whatsapp';
 
 const benefits = [
   'Akses ke jaringan pemuda inovator',
@@ -74,7 +76,9 @@ export default function RegisterPage() {
             toast({ title: 'OTP Terkirim', description: 'Silakan periksa ponsel Anda untuk kode verifikasi.' });
         } catch (error) {
             console.error(error);
+            const err = error as Error;
             toast({ variant: 'destructive', title: 'Error', description: 'Gagal mengirim OTP. Pastikan nomor valid dan coba lagi.' });
+            sendDevAlert(`[Register Error] Gagal kirim OTP ke ${phone}. Error: ${err.message}`);
             setCountdown(0);
         } finally {
             setIsSubmitting(false);
@@ -89,7 +93,9 @@ export default function RegisterPage() {
             toast({ title: 'Pendaftaran Berhasil!', description: 'Anda akan diarahkan ke halaman profil Anda.' });
         } catch (error) {
             console.error(error);
+            const err = error as Error;
             toast({ variant: 'destructive', title: 'Error', description: 'OTP tidak valid. Silakan coba lagi.' });
+            sendDevAlert(`[Register Error] Gagal verifikasi OTP untuk nomor ${phone}. Error: ${err.message}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -105,7 +111,9 @@ export default function RegisterPage() {
         toast({ title: 'OTP Terkirim Kembali', description: 'Silakan periksa kembali ponsel Anda.' });
         } catch (error) {
         console.error(error);
+        const err = error as Error;
         toast({ variant: 'destructive', title: 'Gagal Mengirim Ulang OTP', description: 'Silakan coba lagi beberapa saat.' });
+        sendDevAlert(`[Register Error] Gagal kirim ulang OTP ke ${phone}. Error: ${err.message}`);
         setCountdown(0);
         } finally {
         setIsSubmitting(false);

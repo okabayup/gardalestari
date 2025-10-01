@@ -18,7 +18,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -43,7 +42,7 @@ const formSchema = z.object({
 });
 type FormData = z.infer<typeof formSchema>;
 
-const ItemFormDialog = ({ item, onSave, isSaving, onClose }: { item?: RedeemableItem | null; onSave: (data: FormData, imageFile?: File) => void; isSaving: boolean; onClose: () => void }) => {
+const ItemFormDialog = ({ item, onSave, isSaving, onClose }: { item?: RedeemableItem | null; onSave: (data: FormData, imageDataUri?: string) => void; isSaving: boolean; onClose: () => void }) => {
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: item || { name: '', description: '', pointsRequired: 10, stock: 0 },
@@ -64,12 +63,24 @@ const ItemFormDialog = ({ item, onSave, isSaving, onClose }: { item?: Redeemable
   
   useEffect(() => {
     if (imageFile && imageFile[0]) {
-      setPreview(URL.createObjectURL(imageFile[0]));
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result as string);
+      };
+      reader.readAsDataURL(imageFile[0]);
     }
   }, [imageFile]);
 
-  const handleFormSubmit = (data: FormData) => {
-    onSave(data, data.imageFile?.[0]);
+  const handleFormSubmit = async (data: FormData) => {
+    let imageDataUri: string | undefined = undefined;
+    if (data.imageFile && data.imageFile[0]) {
+      imageDataUri = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(data.imageFile[0]);
+      });
+    }
+    onSave(data, imageDataUri);
   };
 
   return (
@@ -145,14 +156,15 @@ export default function RedeemItemsPage() {
     fetchItems();
   }, [fetchItems]);
 
-  const handleSave = async (data: FormData, imageFile?: File) => {
+  const handleSave = async (data: FormData, imageDataUri?: string) => {
     setIsSaving(true);
     try {
+      const { imageFile, ...payload } = data;
       if (selectedItem?.id) {
-        await updateRedeemableItem(selectedItem.id, data, imageFile);
+        await updateRedeemableItem(selectedItem.id, payload, imageDataUri);
         toast({ title: 'Item berhasil diperbarui!' });
       } else {
-        await createRedeemableItem(data, imageFile);
+        await createRedeemableItem(payload, imageDataUri);
         toast({ title: 'Item baru berhasil ditambahkan!' });
       }
       fetchItems();

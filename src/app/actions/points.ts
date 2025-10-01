@@ -20,7 +20,7 @@ import {
   increment,
   limit,
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject, uploadString } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import type { RedeemableItem, Mission, RedemptionLog, PointLog, BadgeMetric } from '@/lib/definitions';
 
@@ -37,24 +37,25 @@ export async function getRedeemableItems(): Promise<RedeemableItem[]> {
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RedeemableItem));
 }
 
-export async function createRedeemableItem(data: Omit<RedeemableItem, 'id' | 'imageUrl'>, imageFile?: File) {
-  let imageUrl: string | undefined = undefined;
-  if (imageFile) {
-    const imageRef = ref(storage, `redeem-items/${Date.now()}_${imageFile.name}`);
-    await uploadBytes(imageRef, imageFile);
-    imageUrl = await getDownloadURL(imageRef);
+export async function createRedeemableItem(data: Omit<RedeemableItem, 'id' | 'imageUrl'>, imageDataUri?: string) {
+  const dataToCreate: { [key: string]: any } = { ...data };
+  
+  if (imageDataUri) {
+    const imageRef = ref(storage, `redeem-items/${Date.now()}_item.jpg`);
+    await uploadString(imageRef, imageDataUri, 'data_url', { contentType: 'image/jpeg' });
+    dataToCreate.imageUrl = await getDownloadURL(imageRef);
   }
-  await addDoc(redeemableItemsCollection, { ...data, imageUrl });
+  await addDoc(redeemableItemsCollection, dataToCreate);
   revalidatePath('/panel/redeem');
   revalidatePath('/points');
 }
 
-export async function updateRedeemableItem(id: string, data: Partial<Omit<RedeemableItem, 'id' | 'imageUrl'>>, imageFile?: File) {
+export async function updateRedeemableItem(id: string, data: Partial<Omit<RedeemableItem, 'id' | 'imageUrl'>>, imageDataUri?: string) {
   const itemRef = doc(db, 'redeemableItems', id);
   const updateData: { [key: string]: any } = { ...data };
-  if (imageFile) {
-    const imageRef = ref(storage, `redeem-items/${Date.now()}_${imageFile.name}`);
-    await uploadBytes(imageRef, imageFile);
+  if (imageDataUri) {
+    const imageRef = ref(storage, `redeem-items/${Date.now()}_${id}.jpg`);
+    await uploadString(imageRef, imageDataUri, 'data_url', { contentType: 'image/jpeg' });
     updateData.imageUrl = await getDownloadURL(imageRef);
   }
   await updateDoc(itemRef, updateData);
@@ -63,8 +64,19 @@ export async function updateRedeemableItem(id: string, data: Partial<Omit<Redeem
 }
 
 export async function deleteRedeemableItem(id: string) {
-  await deleteDoc(doc(db, 'redeemableItems', id));
-  // Note: Does not delete image from storage to prevent accidental data loss.
+  const docRef = doc(db, 'redeemableItems', id);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists() && docSnap.data().imageUrl) {
+      try {
+        const imageRef = ref(storage, docSnap.data().imageUrl);
+        await deleteObject(imageRef);
+      } catch (error: any) {
+          if (error.code !== 'storage/object-not-found') {
+              console.warn(`[deleteRedeemableItem] Failed to delete image for item ${id}:`, error);
+          }
+      }
+  }
+  await deleteDoc(docRef);
   revalidatePath('/panel/redeem');
   revalidatePath('/points');
 }

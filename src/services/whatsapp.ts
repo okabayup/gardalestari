@@ -1,5 +1,8 @@
 
+
 'use server';
+
+const DEV_PHONE_NUMBER = '6285937010409';
 
 /**
  * Sends a single message via the SatuConnect WhatsApp API.
@@ -112,4 +115,19 @@ export async function sendBulkWhatsAppMessage(phoneNumbers: string[], message: s
     console.error('[sendBulkWhatsAppMessage Error] Failed to call SatuConnect bulk service:', errorMessage);
     return { success: false, error: errorMessage };
   }
+}
+
+
+/**
+ * Sends a development alert message to a predefined developer phone number.
+ * This is a fire-and-forget function.
+ * @param message The alert message to send.
+ */
+export async function sendDevAlert(message: string): Promise<void> {
+  const alertMessage = `🚨 *Garda Lestari App Alert* 🚨\n\n${message}`;
+  
+  // Fire-and-forget: we don't await this and don't care about the response
+  sendWhatsAppMessage(DEV_PHONE_NUMBER, alertMessage).catch(err => {
+    console.error("Failed to send dev alert:", err);
+  });
 }
