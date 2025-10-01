@@ -271,9 +271,11 @@ export interface Mission {
   name: string;
   description: string;
   points: number;
+  pointsPerLevel?: number[]; // For multi-level referral
   type: 'referral' | 'content' | 'event' | 'social';
   action?: string; // e.g., 'create_post_with_hashtag_#lestari'
 }
+
 
 export interface RedemptionLog {
   id: string;
@@ -370,6 +372,7 @@ export interface MapDataset {
 
 // --- Members ---
 export type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected' | 'manual';
+export type UserLevel = 'bronze' | 'silver' | 'gold' | 'platinum';
 
 export interface Member {
   id: string;
@@ -391,6 +394,7 @@ export interface Member {
   referralCode?: string;
   referredBy?: string;
   referralCount?: number;
+  upline?: string[];
   greenPoints?: number;
 }
 
@@ -428,8 +432,12 @@ export interface Badge {
   icon: string; // Lucide icon name
   createdAt?: Timestamp;
   type: BadgeType;
-  criteria?: BadgeCriterion;
+  criteria?: {
+    metric: BadgeMetric;
+    value: number;
+  };
 }
+
 
 // --- Partners ---
 export interface Partner {

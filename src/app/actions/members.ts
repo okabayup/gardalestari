@@ -99,6 +99,7 @@ export async function getMembers(forPublic: boolean = false): Promise<MemberWith
         referralCode: data.referralCode,
         referralCount: data.referralCount || 0,
         referredBy: data.referredBy,
+        upline: data.upline || [],
         level: data.level || 'bronze',
       });
     }
@@ -237,15 +238,19 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
                 templateId = 'kta_activated';
                 notificationPayload = { title: 'Verifikasi Berhasil!', body: 'Selamat! Akun Anda telah diverifikasi secara permanen.' };
 
-                // --- AWARD REFERRAL POINTS ---
-                if (currentMemberData.referredBy && !currentMemberData.referralPointsAwarded) {
-                    try {
-                        await awardPointsForAction('referral', currentMemberData.referredBy, `Bonus rujukan untuk ${memberName}`);
-                        // Mark that points have been awarded to prevent duplication
-                        await updateDoc(memberDocRef, { referralPointsAwarded: true });
-                    } catch (e) {
-                        console.error(`[Referral Points Error] Failed to award points to referrer ${currentMemberData.referredBy}`, e);
+                // --- AWARD MULTI-LEVEL REFERRAL POINTS ---
+                if (currentMemberData.upline && currentMemberData.upline.length > 0 && !currentMemberData.referralPointsAwarded) {
+                    for (let i = 0; i < currentMemberData.upline.length; i++) {
+                        const referrerId = currentMemberData.upline[i];
+                        const referralLevel = i + 1; // Level 1 for direct referrer, 2 for their referrer, etc.
+                        try {
+                            await awardPointsForAction('referral', referrerId, `Bonus rujukan Lvl. ${referralLevel} dari ${memberName}`, referralLevel);
+                        } catch (e) {
+                             console.error(`[Referral Points Error] Gagal memberikan poin Level ${referralLevel} ke ${referrerId}`, e);
+                        }
                     }
+                    // Mark that points have been awarded to prevent duplication
+                    await updateDoc(memberDocRef, { referralPointsAwarded: true });
                 }
 
             } else if (verificationStatus === 'rejected') {
@@ -337,6 +342,7 @@ export async function createManualMember(formData: FormData) {
             verificationStatus: 'manual' as VerificationStatus,
             createdAt: Timestamp.now(),
             referralCount: 0,
+            upline: [],
             level: 'bronze',
         };
         

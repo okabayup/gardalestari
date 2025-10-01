@@ -22,7 +22,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
-import type { RedeemableItem, Mission, RedemptionLog, PointLog, UserLevel } from '@/lib/definitions';
+import type { RedeemableItem, Mission, RedemptionLog, PointLog } from '@/lib/definitions';
 import { getUserByUid } from './user';
 
 const redeemableItemsCollection = collection(db, 'redeemableItems');
@@ -209,8 +209,9 @@ export async function getPointHistory(userId: string): Promise<PointLog[]> {
  * @param actionType The type of mission action (e.g., 'referral').
  * @param userId The ID of the user to award points to.
  * @param description A description for the point log entry.
+ * @param level The referral level for multi-level referral missions.
  */
-export async function awardPointsForAction(actionType: Mission['type'], userId: string, description: string) {
+export async function awardPointsForAction(actionType: Mission['type'], userId: string, description: string, level: number = 1) {
     const userRef = doc(usersCollection, userId);
 
     await runTransaction(db, async (transaction) => {
@@ -229,13 +230,17 @@ export async function awardPointsForAction(actionType: Mission['type'], userId: 
         }
 
         const mission = missionsSnapshot.docs[0].data() as Mission;
-        let pointsToAward = mission.points || 0;
+        let pointsToAward = 0;
         
-        // Handle tiered referral points
-        if (actionType === 'referral' && mission.pointsByLevel) {
-            const referrerLevel = (userDoc.data().level || 'bronze').toLowerCase() as UserLevel;
-            pointsToAward = mission.pointsByLevel[referrerLevel] || mission.pointsByLevel.bronze || 0;
+        if (actionType === 'referral' && mission.pointsPerLevel) {
+            // For multi-level, level is 1-based, array is 0-based.
+            if (level > 0 && level <= mission.pointsPerLevel.length) {
+                pointsToAward = mission.pointsPerLevel[level - 1] || 0;
+            }
+        } else {
+            pointsToAward = mission.points || 0;
         }
+
 
         if (pointsToAward <= 0) {
             console.warn(`[awardPoints] No points to award for mission ${mission.name} to user ${userId}.`);
