@@ -31,7 +31,7 @@ export async function logError(errorData: {
     });
     
     // Send WhatsApp Alert
-    const alertMessage = `Context: ${errorData.context}\nUser: ${errorData.userName || 'N/A'} (${errorData.userPhone || errorData.userId || 'N/A'})\nPath: ${errorData.path || 'N/A'}\nError: ${errorData.message}\n\nStack: ${errorData.stack || 'No stack'}`;
+    const alertMessage = `🚨 *Garda App Error* 🚨\n\n*Context:* ${errorData.context}\n*User:* ${errorData.userName || 'N/A'} (${errorData.userPhone || errorData.userId || 'N/A'})\n*Path:* ${errorData.path || 'N/A'}\n*Error:* ${errorData.message}\n\n*Stack:* ${errorData.stack || 'No stack'}`;
     await sendDevAlert(alertMessage);
     
   } catch (loggingError) {

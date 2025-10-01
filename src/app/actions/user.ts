@@ -5,6 +5,7 @@
 import { db, storage } from '@/lib/firebase';
 import { collection, query, where, getDocs, DocumentData, limit, getDoc, doc, setDoc, Timestamp, updateDoc, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { revalidatePath } from 'next/cache';
 import type { MemberWithStatus } from '@/lib/definitions';
 import type { Position, PermissionId, PublicUser, PublicProfile, VerificationStatus, Mission } from '@/lib/definitions';
 import { sendWhatsAppMessage } from '@/services/whatsapp';

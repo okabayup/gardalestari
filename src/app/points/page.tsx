@@ -29,6 +29,7 @@ import { Input } from '@/components/ui/input';
 import { ChartContainer, ChartConfig, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Bar, XAxis, YAxis, CartesianGrid, BarChart as RechartsBarChart } from "recharts"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const PlaceholderContent = ({ icon: Icon, title, description }: { icon: React.ElementType, title: string, description: string }) => (
     <div className="text-center text-muted-foreground py-16 border-2 border-dashed rounded-lg">
@@ -239,31 +240,15 @@ const UplineChart = ({ structure }: { structure: Record<string, number>}) => {
     );
 }
 
-const ReferralDialogContent = ({ user, uplineStructure, invitationLink, onCopy }: { user: any, uplineStructure: Record<string, number>, invitationLink: string, onCopy: () => void }) => (
-    <DialogContent>
+const ReferralDialogContent = ({ uplineStructure }: { uplineStructure: Record<string, number> }) => (
+    <DialogContent className="max-h-[90vh]">
         <DialogHeader>
-            <DialogTitle>Rujukan & Jaringan Anda</DialogTitle>
-            <DialogDescription>Ajak teman dan pantau pertumbuhan jaringan Anda di sini.</DialogDescription>
+            <DialogTitle>Struktur Jaringan Anda</DialogTitle>
+            <DialogDescription>Pantau pertumbuhan jaringan rujukan Anda di sini.</DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
-             {user.username && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-base">Ajak Teman</CardTitle>
-                        <CardDescription className="text-xs">Bagikan tautan ini dan dapatkan poin untuk setiap teman yang bergabung dan terverifikasi!</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-center gap-2">
-                            <Input value={invitationLink} readOnly className="font-mono text-xs" />
-                            <Button type="button" size="icon" variant="outline" onClick={onCopy}>
-                                <Copy className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-            <UplineChart structure={uplineStructure} />
-        </div>
+        <ScrollArea className="max-h-[60vh] p-1">
+             <UplineChart structure={uplineStructure} />
+        </ScrollArea>
     </DialogContent>
 )
 
@@ -323,15 +308,23 @@ export default function GreenPointsPage() {
                                     <p className="text-xs text-muted-foreground flex items-center justify-center gap-1"><Users className="h-3 w-3"/> Anggota Diajak</p>
                                 </div>
                             </DialogTrigger>
-                             <ReferralDialogContent
-                                user={user}
-                                uplineStructure={uplineStructure}
-                                invitationLink={invitationLink}
-                                onCopy={copyInvitationLink}
-                            />
+                             <ReferralDialogContent uplineStructure={uplineStructure} />
                         </Dialog>
                     </CardContent>
                 </Card>
+
+                 {user.username && (
+                    <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">Tautan Rujukan Anda</Label>
+                        <div className="flex items-center gap-2">
+                            <Input value={invitationLink} readOnly className="h-9 font-mono text-xs" />
+                            <Button type="button" size="icon" variant="outline" className="h-9 w-9" onClick={copyInvitationLink}>
+                                <Copy className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
 
                 <Tabs defaultValue="redeem" className="w-full">
                     <TabsList className="grid w-full grid-cols-3">
