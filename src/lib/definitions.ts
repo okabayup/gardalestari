@@ -111,6 +111,17 @@ export interface Achievement {
   imageUrl?: string;
 }
 
+// --- Analytics ---
+export interface ErrorLog {
+    id: string;
+    message: string;
+    stack?: string;
+    context: string;
+    userId?: string;
+    timestamp: Timestamp;
+    resolved: boolean;
+}
+
 // --- Announcements ---
 export interface Announcement {
   id?: string;
@@ -323,10 +334,10 @@ export interface Challenge {
     title: string;
     description: string;
     criteria: string; // What's expected from a solution
-    deadline: string; // ISO string
+    deadline: Timestamp;
     reward?: string; // Prize or incentive
     authorId: string; // The admin/partner who created it
-    createdAt: string; // ISO string
+    createdAt: Timestamp;
 }
 
 export interface IdeaCategory {
@@ -409,11 +420,6 @@ export const BADGE_METRICS: { value: BadgeMetric; label: string }[] = [
     { value: 'project_completed', label: 'Proyek Diselesaikan' },
 ];
 
-
-export interface BadgeCriterion {
-  metric: BadgeMetric;
-  value: number;
-}
 
 export interface Badge {
   id?: string;

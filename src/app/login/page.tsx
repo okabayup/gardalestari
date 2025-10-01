@@ -11,7 +11,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { sendDevAlert } from '@/services/whatsapp';
+import { logError } from '@/app/actions/errors';
 
 export default function LoginPage() {
   const { user, loading, signInWithPhone, verifyOtp } = useAuth();
@@ -48,10 +48,9 @@ export default function LoginPage() {
       setStep('otp');
       toast({ title: 'OTP Terkirim', description: 'Silakan periksa ponsel Anda untuk kode verifikasi.' });
     } catch (error) {
-      console.error(error);
       const err = error as Error;
       toast({ variant: 'destructive', title: 'Error', description: 'Gagal mengirim OTP. Pastikan nomor valid dan coba lagi.' });
-      sendDevAlert(`[Login Error] Gagal kirim OTP ke ${phone}. Error: ${err.message}`);
+      logError({ message: err.message, stack: err.stack, context: 'login-otp-send', userId: `phone:${phone}` });
       setCountdown(0);
     } finally {
       setIsSubmitting(false);
@@ -66,10 +65,9 @@ export default function LoginPage() {
       toast({ title: 'Sukses', description: 'Anda berhasil masuk!' });
       router.push('/feed');
     } catch (error) {
-      console.error(error);
       const err = error as Error;
       toast({ variant: 'destructive', title: 'Error', description: 'OTP tidak valid. Silakan coba lagi.' });
-      sendDevAlert(`[Login Error] Gagal verifikasi OTP untuk nomor ${phone}. Error: ${err.message}`);
+      logError({ message: err.message, stack: err.stack, context: 'login-otp-verify', userId: `phone:${phone}` });
     } finally {
       setIsSubmitting(false);
     }
@@ -84,10 +82,9 @@ export default function LoginPage() {
       await signInWithPhone(phoneNumber, 'recaptcha-container');
       toast({ title: 'OTP Terkirim Kembali', description: 'Silakan periksa kembali ponsel Anda.' });
     } catch (error) {
-      console.error(error);
       const err = error as Error;
       toast({ variant: 'destructive', title: 'Gagal Mengirim Ulang OTP', description: 'Silakan coba lagi beberapa saat.' });
-      sendDevAlert(`[Login Error] Gagal kirim ulang OTP ke ${phone}. Error: ${err.message}`);
+      logError({ message: err.message, stack: err.stack, context: 'login-otp-resend', userId: `phone:${phone}` });
       setCountdown(0);
     } finally {
       setIsSubmitting(false);

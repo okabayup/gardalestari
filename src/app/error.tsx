@@ -2,9 +2,11 @@
 
 'use client';
 
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
+import { logError } from './actions/errors';
 
 const ADMIN_CONTACT_WA = "https://wa.me/6285937010409?text=Halo%20Admin%2C%20saya%20mengalami%20error%20di%20aplikasi.";
 
@@ -15,6 +17,18 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+
+  useEffect(() => {
+    // Log the error to your error reporting service
+    logError({
+      message: error.message,
+      stack: error.stack,
+      context: 'global-error-boundary',
+      userId: 'N/A' // Hard to get user ID here, but can be added if available in a session context
+    });
+  }, [error]);
+
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background text-center p-6">
       <AlertTriangle className="h-24 w-24 text-destructive mb-6" />

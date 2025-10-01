@@ -20,7 +20,7 @@ import ImageCropper from '@/components/profile/ImageCropper';
 import Image from 'next/image';
 import { Progress } from '@/components/ui/progress';
 import Link from 'next/link';
-import { sendDevAlert } from '@/services/whatsapp';
+import { logError } from '@/app/actions/errors';
 
 type Step = 'welcome' | 'data' | 'whatsapp' | 'ktp' | 'confirm' | 'submitting';
 
@@ -186,10 +186,9 @@ export default function VerificationFlow() {
         throw new Error(result.error || 'Gagal mengirim pesan.');
       }
     } catch (error) {
-      const errorMessage = (error as Error).message || 'Terjadi kesalahan pada sisi klien.';
-      console.error("Error from handleSendOtp:", error);
-      toast({ variant: 'destructive', title: 'Gagal mengirim OTP', description: errorMessage, duration: 7000 });
-      sendDevAlert(`[VerificationFlow Error] Gagal kirim OTP ke ${waNumber}. Error: ${errorMessage}`);
+      const err = error as Error;
+      toast({ variant: 'destructive', title: 'Gagal mengirim OTP', description: err.message, duration: 7000 });
+      logError({ context: 'verification-wa-send', message: err.message, stack: err.stack, userId: user?.uid });
       setCountdown(0);
     } finally {
       setLoadingSendOtp(false);
@@ -214,7 +213,7 @@ export default function VerificationFlow() {
     } catch (error) {
       const err = error as Error;
       toast({ variant: 'destructive', title: 'Verifikasi Gagal', description: err.message });
-      sendDevAlert(`[VerificationFlow Error] Gagal verifikasi OTP untuk user ${user.uid}. Error: ${err.message}`);
+      logError({ context: 'verification-wa-verify', message: err.message, stack: err.stack, userId: user?.uid });
     } finally {
       setLoadingVerifyOtp(false);
     }
@@ -305,7 +304,6 @@ export default function VerificationFlow() {
       });
       await refreshUser();
     } catch (error) {
-      console.error(error);
       const err = error as Error;
       const errorMessage = err.message || 'Terjadi kesalahan. Silakan coba lagi.';
       toast({
@@ -314,7 +312,7 @@ export default function VerificationFlow() {
         description: errorMessage,
         duration: 8000,
       });
-      sendDevAlert(`[VerificationFlow Error] Gagal submit verifikasi untuk user ${user.uid}. Error: ${errorMessage}`);
+      logError({ context: 'verification-submit', message: errorMessage, stack: err.stack, userId: user?.uid });
       setStep('data'); 
       setKtpDataUrl(null);
     }

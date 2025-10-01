@@ -42,6 +42,7 @@ import {
   Target,
   Gift,
   Coins,
+  Bug,
 } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
@@ -67,6 +68,7 @@ const groupedNavItems: {
     group: 'Analitik',
     items: [
       { href: '/panel/performance', icon: TrendingUp, label: 'Performa', permission: 'manage_settings' },
+      { href: '/panel/analytics/errors', icon: Bug, label: 'Log Error', permission: 'manage_settings' },
     ]
   },
   {

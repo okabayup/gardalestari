@@ -33,6 +33,7 @@ import {
   Target,
   Gift,
   Coins,
+  Bug,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
@@ -58,6 +59,7 @@ const navGroups: {
     icon: TrendingUp,
     items: [
       { href: '/panel/performance', icon: TrendingUp, label: 'Performa', permission: 'manage_settings' },
+      { href: '/panel/analytics/errors', icon: Bug, label: 'Log Error', permission: 'manage_settings' },
     ]
   },
   {
