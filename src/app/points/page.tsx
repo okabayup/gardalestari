@@ -28,7 +28,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { ChartContainer, ChartConfig, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Bar, XAxis, YAxis, CartesianGrid, BarChart as RechartsBarChart } from "recharts"
-
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 const PlaceholderContent = ({ icon: Icon, title, description }: { icon: React.ElementType, title: string, description: string }) => (
     <div className="text-center text-muted-foreground py-16 border-2 border-dashed rounded-lg">
@@ -231,13 +231,41 @@ const UplineChart = ({ structure }: { structure: Record<string, number>}) => {
                             cursor={false}
                             content={<ChartTooltipContent indicator="line" />}
                         />
-                        <Bar dataKey="value" fill="var(--color-value)" radius={4} layout="vertical" />
+                         <Bar dataKey="value" fill="var(--color-value)" radius={4} layout="vertical" />
                     </RechartsBarChart>
                 </ChartContainer>
             </CardContent>
         </Card>
     );
 }
+
+const ReferralDialogContent = ({ user, uplineStructure, invitationLink, onCopy }: { user: any, uplineStructure: Record<string, number>, invitationLink: string, onCopy: () => void }) => (
+    <DialogContent>
+        <DialogHeader>
+            <DialogTitle>Rujukan & Jaringan Anda</DialogTitle>
+            <DialogDescription>Ajak teman dan pantau pertumbuhan jaringan Anda di sini.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+             {user.username && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-base">Ajak Teman</CardTitle>
+                        <CardDescription className="text-xs">Bagikan tautan ini dan dapatkan poin untuk setiap teman yang bergabung dan terverifikasi!</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex items-center gap-2">
+                            <Input value={invitationLink} readOnly className="font-mono text-xs" />
+                            <Button type="button" size="icon" variant="outline" onClick={onCopy}>
+                                <Copy className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+            <UplineChart structure={uplineStructure} />
+        </div>
+    </DialogContent>
+)
 
 
 export default function GreenPointsPage() {
@@ -288,31 +316,22 @@ export default function GreenPointsPage() {
                             <p className="text-3xl font-bold">{user.greenPoints || 0}</p>
                             <p className="text-xs text-muted-foreground flex items-center justify-center gap-1"><Coins className="h-3 w-3"/> Poin Hijau</p>
                         </div>
-                        <div className="p-4 bg-muted rounded-lg">
-                            <p className="text-3xl font-bold">{user.referralCount || 0}</p>
-                            <p className="text-xs text-muted-foreground flex items-center justify-center gap-1"><Users className="h-3 w-3"/> Anggota Diajak</p>
-                        </div>
+                         <Dialog>
+                            <DialogTrigger asChild>
+                                <div className="p-4 bg-muted rounded-lg cursor-pointer hover:bg-secondary">
+                                    <p className="text-3xl font-bold">{user.referralCount || 0}</p>
+                                    <p className="text-xs text-muted-foreground flex items-center justify-center gap-1"><Users className="h-3 w-3"/> Anggota Diajak</p>
+                                </div>
+                            </DialogTrigger>
+                             <ReferralDialogContent
+                                user={user}
+                                uplineStructure={uplineStructure}
+                                invitationLink={invitationLink}
+                                onCopy={copyInvitationLink}
+                            />
+                        </Dialog>
                     </CardContent>
                 </Card>
-
-                {user.username && (
-                     <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">Ajak Teman</CardTitle>
-                            <CardDescription className="text-xs">Bagikan tautan ini dan dapatkan poin untuk setiap teman yang bergabung dan terverifikasi!</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex items-center gap-2">
-                                <Input value={invitationLink} readOnly className="font-mono text-xs" />
-                                <Button type="button" size="icon" variant="outline" onClick={copyInvitationLink}>
-                                    <Copy className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </CardContent>
-                     </Card>
-                )}
-                
-                <UplineChart structure={uplineStructure} />
 
                 <Tabs defaultValue="redeem" className="w-full">
                     <TabsList className="grid w-full grid-cols-3">
@@ -334,3 +353,4 @@ export default function GreenPointsPage() {
         </MainLayout>
     );
 }
+

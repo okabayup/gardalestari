@@ -52,7 +52,9 @@ export async function getErrorLogs(): Promise<ErrorLog[]> {
         return snapshot.docs.map(doc => {
             const data = doc.data();
             // Ensure timestamp is serializable. Convert if it's a Firestore Timestamp.
-            const timestamp = data.timestamp?.toDate ? data.timestamp.toDate().toISOString() : new Date(data.timestamp).toISOString();
+            const timestamp = data.timestamp instanceof Timestamp 
+                ? data.timestamp.toDate().toISOString() 
+                : new Date().toISOString();
             return {
                 id: doc.id,
                 ...data,

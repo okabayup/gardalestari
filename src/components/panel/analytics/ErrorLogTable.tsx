@@ -50,7 +50,7 @@ const columns: ColumnDef<ErrorLog>[] = [
       )
     },
     cell: ({ row }) => {
-      // The timestamp is already serialized as a string from the server action
+      // The timestamp is now reliably a serialized string from the server action
       const date = new Date(row.original.timestamp);
       return format(date, "dd MMM, HH:mm", { locale: id });
     },
