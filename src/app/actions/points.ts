@@ -91,7 +91,7 @@ export async function getMissions(): Promise<Mission[]> {
 }
 
 export async function createMission(data: Omit<Mission, 'id'>) {
-  await addDoc(missionsCollection, data);
+  await addDoc(missionsCollection, { ...data });
   revalidatePath('/panel/missions');
   revalidatePath('/points');
 }

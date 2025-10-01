@@ -270,7 +270,7 @@ export interface Mission {
   id?: string;
   name: string;
   description: string;
-  points: number;
+  points?: number;
   pointsPerLevel?: number[]; // For multi-level referral
   type: 'referral' | 'content' | 'event' | 'social';
   action?: string; // e.g., 'create_post_with_hashtag_#lestari'
@@ -396,6 +396,7 @@ export interface Member {
   referralCount?: number;
   upline?: string[];
   greenPoints?: number;
+  level?: UserLevel;
 }
 
 export interface MemberWithStatus extends Member {
@@ -483,6 +484,7 @@ export interface Author {
   username: string;
   avatarUrl: string;
   type?: MemberType;
+  level?: UserLevel;
 }
 
 export interface PostWithAuthor {

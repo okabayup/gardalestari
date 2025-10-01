@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
@@ -10,7 +10,7 @@ import { getMissions, createMission, updateMission, deleteMission, Mission } fro
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Trash2, PlusCircle, Edit, Target } from 'lucide-react';
+import { Loader2, Trash2, PlusCircle, Edit, Target, MinusCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -26,26 +26,50 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const missionSchema = z.object({
   name: z.string().min(3, 'Nama minimal 3 karakter'),
   description: z.string().min(10, 'Deskripsi minimal 10 karakter'),
-  points: z.coerce.number().min(1, 'Poin harus lebih dari 0'),
+  points: z.coerce.number().optional(),
+  pointsPerLevel: z.array(z.coerce.number().min(0)).optional(),
   type: z.enum(['referral', 'content', 'event', 'social']),
   action: z.string().optional(),
+}).refine(data => {
+    if (data.type === 'referral') {
+        return (data.pointsPerLevel?.length || 0) > 0 && (data.pointsPerLevel || []).every(p => p > 0);
+    }
+    return (data.points || 0) > 0;
+}, {
+    message: 'Poin atau Poin per Level harus diisi dan lebih dari 0.',
+    path: ['points'],
 });
 
 type MissionFormData = z.infer<typeof missionSchema>;
 
 const MissionFormDialog = ({ mission, onSave, isSaving, onClose }: { mission?: Mission | null; onSave: (data: MissionFormData) => void; isSaving: boolean; onClose: () => void }) => {
-  const { register, handleSubmit, control, reset, formState: { errors } } = useForm<MissionFormData>({
+  const { register, handleSubmit, control, reset, watch, formState: { errors } } = useForm<MissionFormData>({
     resolver: zodResolver(missionSchema),
-    defaultValues: mission || { name: '', description: '', points: 5, type: 'content' },
+    defaultValues: mission || { name: '', description: '', points: 5, type: 'content', pointsPerLevel: [100, 50, 25] },
+  });
+  
+  const { fields, append, remove } = useFieldArray({
+      control,
+      name: "pointsPerLevel",
   });
 
+  const missionType = watch('type');
+
   useEffect(() => {
-    reset(mission || { name: '', description: '', points: 5, type: 'content' });
+    const defaultValues: MissionFormData = {
+        name: mission?.name || '',
+        description: mission?.description || '',
+        type: mission?.type || 'content',
+        action: mission?.action || '',
+        points: mission?.points || 10,
+        pointsPerLevel: mission?.pointsPerLevel || [100, 50, 25],
+    };
+    reset(defaultValues);
   }, [mission, reset]);
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>{mission ? 'Edit Misi' : 'Tambah Misi Baru'}</DialogTitle>
           <DialogDescription>Atur tugas yang dapat diselesaikan anggota untuk mendapatkan poin.</DialogDescription>
@@ -61,13 +85,7 @@ const MissionFormDialog = ({ mission, onSave, isSaving, onClose }: { mission?: M
             <Textarea id="description" {...register('description')} />
             {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="points">Poin Diberikan</Label>
-              <Input id="points" type="number" {...register('points')} />
-              {errors.points && <p className="text-sm text-destructive">{errors.points.message}</p>}
-            </div>
-            <div className="space-y-2">
+          <div className="space-y-2">
               <Label htmlFor="type">Tipe Misi</Label>
               <Controller name="type" control={control} render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value}>
@@ -81,11 +99,33 @@ const MissionFormDialog = ({ mission, onSave, isSaving, onClose }: { mission?: M
                 </Select>
               )} />
               {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
-            </div>
           </div>
+          
+          {missionType === 'referral' ? (
+              <div className="space-y-2 rounded-md border p-4">
+                  <Label>Poin per Level Rujukan</Label>
+                  <p className="text-xs text-muted-foreground">Level 1 adalah perujuk langsung, Level 2 adalah perujuk dari perujuk, dst.</p>
+                  {fields.map((field, index) => (
+                      <div key={field.id} className="flex items-center gap-2">
+                          <Label className="w-20">Level {index + 1}</Label>
+                          <Input type="number" {...register(`pointsPerLevel.${index}` as const)} />
+                          <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><MinusCircle className="h-4 w-4"/></Button>
+                      </div>
+                  ))}
+                  <Button type="button" variant="outline" size="sm" onClick={() => append(0)}><PlusCircle className="mr-2 h-4 w-4"/> Tambah Level</Button>
+                  {errors.pointsPerLevel && <p className="text-sm text-destructive">{errors.pointsPerLevel.message || errors.pointsPerLevel.root?.message}</p>}
+              </div>
+          ) : (
+             <div className="space-y-2">
+              <Label htmlFor="points">Poin Diberikan</Label>
+              <Input id="points" type="number" {...register('points')} />
+              {errors.points && <p className="text-sm text-destructive">{errors.points.message}</p>}
+            </div>
+          )}
+
            <div className="space-y-2">
             <Label htmlFor="action">Tindakan (Action Hook)</Label>
-            <Input id="action" {...register('action')} placeholder="Contoh: create_post_with_hashtag_#lestari" />
+            <Input id="action" {...register('action')} placeholder="Contoh: create_post" />
             <p className="text-xs text-muted-foreground">Opsional. Untuk developer, ini adalah kunci untuk memicu pemberian poin secara otomatis.</p>
           </div>
           <DialogFooter>
@@ -189,7 +229,7 @@ export default function MissionsPage() {
                     <CardDescription>{mission.description}</CardDescription>
                   </CardHeader>
                   <CardContent className="flex justify-between items-center">
-                    <div className="font-bold text-lg text-primary">{mission.points} Poin</div>
+                    <div className="font-bold text-lg text-primary">{mission.points || mission.pointsPerLevel?.[0]} Poin</div>
                     <div className="flex gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setSelectedMission(mission); setIsDialogOpen(true); }}><Edit className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(mission.id!)}><Trash2 className="h-4 w-4" /></Button>
