@@ -78,7 +78,7 @@ const ExternalDataLayers = ({ datasets }: { datasets: MapDataset[] }) => {
     const map = useMap();
 
     useEffect(() => {
-        if (!map) return;
+        if (!map || !datasets) return;
 
         const dataLayers: google.maps.Data[] = [];
 
@@ -155,7 +155,7 @@ export default function MapComponent() {
     }, [internalData, selectedCategories]);
 
     const activeExternalDatasets = useMemo(() => {
-        return externalDatasets.filter(d => selectedDatasetIds.includes(d.id!));
+        return (externalDatasets || []).filter(d => selectedDatasetIds.includes(d.id!));
     }, [externalDatasets, selectedDatasetIds]);
 
     return (
