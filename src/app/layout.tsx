@@ -66,6 +66,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
         <meta name="theme-color" content="#347C45" />
+        <link rel="manifest" href="/manifest.json" />
       </head>
       <body className="font-body antialiased">
         <AuthProvider>
