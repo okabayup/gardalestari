@@ -9,10 +9,19 @@ const withPWA = require('next-pwa')({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
+  fallbacks: {
+    document: '/offline.html',
+  },
   runtimeCaching: [
     {
       urlPattern: /\/manifest\.json$/,
       handler: 'NetworkFirst',
+      options: {
+        cacheName: 'manifest-cache',
+        expiration: {
+          maxAgeSeconds: 60 * 60 * 24 * 7, // 1 week
+        },
+      },
     },
     {
       urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
