@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Menu } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Separator } from '../ui/separator';
+import VerificationFlow from '../auth/VerificationFlow';
 
 const navItems = [
   { href: '/berita', label: 'Berita' },
@@ -22,6 +23,11 @@ interface LandingHeaderProps {
 
 export default function LandingHeader({ isRegistrationOpen = true }: LandingHeaderProps) {
   const { user, loading } = useAuth();
+  
+  // If user is logged in but has not completed KTP verification, show the flow.
+  if (user && user.verificationStatus === 'unverified') {
+    return <VerificationFlow />;
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

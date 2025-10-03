@@ -25,7 +25,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }
   
   // If user is unverified, force them into the verification flow.
-  if (user.verificationStatus === 'unverified' && !pathname.startsWith('/auth/VerificationFlow')) {
+  if (user.verificationStatus === 'unverified') {
     return <VerificationFlow />;
   }
 

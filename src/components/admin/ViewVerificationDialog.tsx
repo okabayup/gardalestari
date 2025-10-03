@@ -34,11 +34,11 @@ export default function ViewVerificationDialog({ member, isOpen, onClose }: View
                     </div>
                     <div>
                         <Label>NIK</Label>
-                        <p className="font-mono">{member.nik}</p>
+                        <p className="font-mono">{member.nik || 'Tidak ada'}</p>
                     </div>
                     <div>
                         <Label>Nomor Telepon</Label>
-                        <p className="font-mono">{member.phoneNumber}</p>
+                        <p className="font-mono">{member.phoneNumber || 'Tidak ada'}</p>
                     </div>
                 </div>
                 <div className="space-y-4">
