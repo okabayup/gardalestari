@@ -75,7 +75,6 @@ const OFFICIAL_ACCOUNT_PHONE = '+6285144904161';
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const { toast } = useToast();
 
   const fetchUserDetails = useCallback(async (user: User) => {
@@ -164,8 +163,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
  const signInWithPhone = async (phoneNumber: string, appVerifier: RecaptchaVerifier) => {
     try {
-        const result = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-        setConfirmationResult(result);
+        window.confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
     } catch (error) {
         console.error("signInWithPhoneNumber error:", error);
         throw error;
@@ -188,10 +186,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 
   const verifyOtp = async (otp: string, referrerUsername?: string) => {
-    if (!confirmationResult) {
+    if (!window.confirmationResult) {
       throw new Error("No confirmation result available. Please request an OTP first.");
     }
-    const userCredential = await confirmationResult.confirm(otp);
+    const userCredential = await window.confirmationResult.confirm(otp);
     
     const userDocRef = doc(db, 'users', userCredential.user.uid);
     const userDoc = await getDoc(userDocRef);

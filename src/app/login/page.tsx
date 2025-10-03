@@ -1,8 +1,7 @@
 
-
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { logError } from '@/app/actions/errors';
-import { usePathname } from 'next/navigation';
+import { RecaptchaVerifier } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+
+// Function to normalize phone number to +62 format
+const normalizePhoneNumber = (phone: string): string => {
+    let normalized = phone.replace(/\D/g, ''); // Remove non-digit characters
+    if (normalized.startsWith('0')) {
+        normalized = '62' + normalized.substring(1);
+    } else if (normalized.startsWith('62')) {
+        // Already in correct format prefix, do nothing
+    } else {
+        normalized = '62' + normalized;
+    }
+    return `+${normalized}`;
+};
+
 
 export default function LoginPage() {
   const { user, loading, signInWithPhone, verifyOtp } = useAuth();
@@ -24,6 +38,17 @@ export default function LoginPage() {
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [countdown, setCountdown] = useState(0);
+
+  useEffect(() => {
+    // Initialize reCAPTCHA on mount
+    if (typeof window !== 'undefined' && !window.recaptchaVerifier) {
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            'size': 'invisible',
+            'callback': () => {}, // this callback is required.
+        });
+    }
+  }, []);
+
 
   useEffect(() => {
     if (!loading && user) {
@@ -43,9 +68,18 @@ export default function LoginPage() {
     e.preventDefault();
     setIsSubmitting(true);
     setCountdown(60);
-    const phoneNumber = phone.startsWith('+') ? phone : `+62${phone.replace(/^0/, '')}`;
+    const phoneNumber = normalizePhoneNumber(phone);
+    const appVerifier = window.recaptchaVerifier;
+
+    if (!appVerifier) {
+        toast({ variant: 'destructive', title: 'Error', description: 'reCAPTCHA verifier not initialized.' });
+        setIsSubmitting(false);
+        setCountdown(0);
+        return;
+    }
+
     try {
-      await signInWithPhone(phoneNumber, 'recaptcha-container');
+      await signInWithPhone(phoneNumber, appVerifier);
       setStep('otp');
       toast({ title: 'OTP Terkirim', description: 'Silakan periksa ponsel Anda untuk kode verifikasi.' });
     } catch (error) {
@@ -59,6 +93,12 @@ export default function LoginPage() {
         path: pathname,
       });
       setCountdown(0);
+       // Reset reCAPTCHA on failure
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.clear();
+         window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            'size': 'invisible', 'callback': () => {}});
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -90,9 +130,18 @@ export default function LoginPage() {
     if (countdown > 0) return;
     setIsSubmitting(true);
     setCountdown(60);
-    const phoneNumber = phone.startsWith('+') ? phone : `+62${phone.replace(/^0/, '')}`;
+    const phoneNumber = normalizePhoneNumber(phone);
+    const appVerifier = window.recaptchaVerifier;
+
+    if (!appVerifier) {
+        toast({ variant: 'destructive', title: 'Error', description: 'reCAPTCHA verifier not initialized.' });
+        setIsSubmitting(false);
+        setCountdown(0);
+        return;
+    }
+
     try {
-      await signInWithPhone(phoneNumber, 'recaptcha-container');
+      await signInWithPhone(phoneNumber, appVerifier);
       toast({ title: 'OTP Terkirim Kembali', description: 'Silakan periksa kembali ponsel Anda.' });
     } catch (error) {
       const err = error as Error;
@@ -105,6 +154,12 @@ export default function LoginPage() {
         path: pathname,
       });
       setCountdown(0);
+      // Reset reCAPTCHA on failure
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.clear();
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            'size': 'invisible', 'callback': () => {}});
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -183,5 +238,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
