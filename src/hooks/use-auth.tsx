@@ -50,7 +50,7 @@ interface AuthContextType {
   user: ExtendedUser | null;
   loading: boolean;
   hasPermission: (permission: PermissionId) => boolean;
-  signInWithPhone: (phoneNumber: string, appVerifierContainerId: string) => Promise<void>;
+  signInWithPhone: (phoneNumber: string, appVerifier: RecaptchaVerifier) => Promise<void>;
   verifyOtp: (otp: string, referrerUsername?: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateUserProfile: (updates: { photoFile?: File, username?: string, instagram?: string, linkedin?: string, skills?: string[], interests?: string[] }) => Promise<void>;
@@ -162,40 +162,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return user.permissions.includes(permission);
   }
 
- const signInWithPhone = async (phoneNumber: string, appVerifierContainerId: string) => {
-    if (typeof window !== 'undefined') {
-        if (!window.recaptchaVerifier) {
-            const verifier = new RecaptchaVerifier(auth, appVerifierContainerId, {
-                'size': 'invisible',
-                'callback': () => {},
-                'expired-callback': () => {
-                    if (window.recaptchaVerifier) {
-                        window.recaptchaVerifier.clear();
-                        window.recaptchaVerifier = undefined;
-                    }
-                    toast({
-                        variant: 'destructive',
-                        title: 'reCAPTCHA Kedaluwarsa',
-                        description: 'Silakan coba lagi.',
-                    });
-                },
-                customParameters: {
-                    sitekey: process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
-                }
-            });
-            window.recaptchaVerifier = verifier;
-            await verifier.render();
-        }
-
-        const appVerifier = window.recaptchaVerifier;
-        
-        try {
-            const result = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-            setConfirmationResult(result);
-        } catch (error) {
-            console.error("signInWithPhoneNumber error:", error);
-            throw error;
-        }
+ const signInWithPhone = async (phoneNumber: string, appVerifier: RecaptchaVerifier) => {
+    try {
+        const result = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+        setConfirmationResult(result);
+    } catch (error) {
+        console.error("signInWithPhoneNumber error:", error);
+        throw error;
     }
   };
   

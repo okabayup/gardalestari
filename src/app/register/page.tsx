@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -16,6 +15,8 @@ import { Label } from '@/components/ui/label';
 import { logError } from '@/app/actions/errors';
 import Cookies from 'js-cookie';
 import { usePathname } from 'next/navigation';
+import { RecaptchaVerifier } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 const benefits = [
   'Akses ke jaringan pemuda inovator',
@@ -23,6 +24,20 @@ const benefits = [
   'Pengembangan diri dan portofolio',
   'Terlibat langsung dalam proyek berdampak',
 ];
+
+// Function to normalize phone number to +62 format
+const normalizePhoneNumber = (phone: string): string => {
+    let normalized = phone.replace(/\D/g, ''); // Remove non-digit characters
+    if (normalized.startsWith('0')) {
+        normalized = '62' + normalized.substring(1);
+    } else if (normalized.startsWith('62')) {
+        // Already in correct format prefix, do nothing
+    } else {
+        normalized = '62' + normalized;
+    }
+    return `+${normalized}`;
+};
+
 
 export default function RegisterPage() {
     const { user, loading, signInWithPhone, verifyOtp } = useAuth();
@@ -45,6 +60,36 @@ export default function RegisterPage() {
         };
         checkRegistrationStatus();
     }, []);
+
+    useEffect(() => {
+        // Initialize reCAPTCHA on mount
+        if (typeof window !== 'undefined' && !window.recaptchaVerifier) {
+            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                'size': 'invisible',
+                'callback': () => {},
+                'expired-callback': () => {
+                    if (window.recaptchaVerifier) {
+                        window.recaptchaVerifier.clear();
+                        window.recaptchaVerifier = undefined;
+                    }
+                    toast({
+                        variant: 'destructive',
+                        title: 'reCAPTCHA Kedaluwarsa',
+                        description: 'Silakan coba lagi.',
+                    });
+                },
+            });
+            window.recaptchaVerifier.render().catch(err => {
+                console.error("reCAPTCHA render error:", err);
+                toast({
+                    variant: 'destructive',
+                    title: 'Gagal memuat reCAPTCHA',
+                    description: 'Mohon segarkan halaman dan coba lagi.',
+                });
+            });
+        }
+    }, [toast]);
+
 
     useEffect(() => {
         const ref = searchParams.get('ref');
@@ -80,11 +125,19 @@ export default function RegisterPage() {
         e.preventDefault();
         setIsSubmitting(true);
         setCountdown(60);
-        const phoneNumber = phone.startsWith('+') ? phone : `+62${phone.replace(/^0/, '')}`;
+        const phoneNumber = normalizePhoneNumber(phone);
+        
+        if (!window.recaptchaVerifier) {
+            toast({ variant: 'destructive', title: 'Error', description: 'reCAPTCHA belum siap. Mohon tunggu atau segarkan halaman.' });
+            setIsSubmitting(false);
+            setCountdown(0);
+            return;
+        }
+
         try {
-            await signInWithPhone(phoneNumber, 'recaptcha-container');
+            await signInWithPhone(phoneNumber, window.recaptchaVerifier);
             setStep('otp');
-            toast({ title: 'OTP Terkirim', description: 'Silakan periksa ponsel Anda untuk kode verifikasi.' });
+            toast({ title: 'OTP Terkirim', description: `Silakan periksa ponsel Anda di nomor ${phoneNumber}.` });
         } catch (error) {
             const err = error as Error;
             toast({ variant: 'destructive', title: 'Error', description: 'Gagal mengirim OTP. Pastikan nomor valid dan coba lagi.' });
@@ -127,23 +180,31 @@ export default function RegisterPage() {
         if (countdown > 0) return;
         setIsSubmitting(true);
         setCountdown(60);
-        const phoneNumber = phone.startsWith('+') ? phone : `+62${phone.replace(/^0/, '')}`;
+        const phoneNumber = normalizePhoneNumber(phone);
+        
+        if (!window.recaptchaVerifier) {
+            toast({ variant: 'destructive', title: 'Error', description: 'reCAPTCHA belum siap. Mohon tunggu atau segarkan halaman.' });
+            setIsSubmitting(false);
+            setCountdown(0);
+            return;
+        }
+        
         try {
-        await signInWithPhone(phoneNumber, 'recaptcha-container');
-        toast({ title: 'OTP Terkirim Kembali', description: 'Silakan periksa kembali ponsel Anda.' });
+            await signInWithPhone(phoneNumber, window.recaptchaVerifier);
+            toast({ title: 'OTP Terkirim Kembali', description: 'Silakan periksa kembali ponsel Anda.' });
         } catch (error) {
-        const err = error as Error;
-        toast({ variant: 'destructive', title: 'Gagal Mengirim Ulang OTP', description: 'Silakan coba lagi beberapa saat.' });
-        logError({ 
-            message: err.message, 
-            stack: err.stack, 
-            context: 'register-otp-resend', 
-            userPhone: phoneNumber,
-            path: pathname,
-        });
-        setCountdown(0);
+            const err = error as Error;
+            toast({ variant: 'destructive', title: 'Gagal Mengirim Ulang OTP', description: 'Silakan coba lagi beberapa saat.' });
+            logError({ 
+                message: err.message, 
+                stack: err.stack, 
+                context: 'register-otp-resend', 
+                userPhone: phoneNumber,
+                path: pathname,
+            });
+            setCountdown(0);
         } finally {
-        setIsSubmitting(false);
+            setIsSubmitting(false);
         }
     }
 
@@ -221,7 +282,7 @@ export default function RegisterPage() {
                                             <Input
                                                 id="phone"
                                                 type="tel"
-                                                placeholder="cth. 08123456789"
+                                                placeholder="cth: 08123456789"
                                                 value={phone}
                                                 onChange={(e) => setPhone(e.target.value)}
                                                 required
