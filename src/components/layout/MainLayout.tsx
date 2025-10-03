@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useRequireAuth } from '@/hooks/use-auth';
+import { useRequireAuth } from '@/hooks/use-require-auth';
 import Header from './Header';
 import BottomNav from './BottomNav';
 import { Loader2 } from 'lucide-react';
@@ -34,8 +34,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   
   const isMapPage = pathname === '/map';
   const isAssistantPage = pathname === '/assistant';
-  const showHeader = !isMapPage && !isAssistantPage;
-  const showBottomNav = !isMapPage && !isAssistantPage;
+  const showHeader = !isMapPage;
+  const showBottomNav = !isMapPage;
   
   return (
     <div className="relative mx-auto flex h-screen w-full max-w-lg flex-col bg-background">

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -25,6 +24,7 @@ import { VerifiedBadge } from '@/components/members/VerifiedBadge';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import VerificationFlow from '@/components/auth/VerificationFlow';
 
 const ADMIN_PHONE_NUMBER = '+6285176752610';
 
@@ -205,8 +205,7 @@ const PlaceholderTab = ({ icon: Icon, title, description }: { icon: React.Elemen
 )
 
 
-const VerificationStatusAlert = ({ status }: { status?: 'unverified' | 'temporary' | 'permanent' | 'rejected' }) => {
-    const router = useRouter();
+const VerificationStatusAlert = ({ status, onStartVerification }: { status?: 'unverified' | 'temporary' | 'permanent' | 'rejected', onStartVerification: () => void }) => {
     if (!status || status === 'unverified') {
         return (
             <Alert>
@@ -214,7 +213,7 @@ const VerificationStatusAlert = ({ status }: { status?: 'unverified' | 'temporar
                 <AlertTitle>Verifikasi Akun</AlertTitle>
                 <AlertDescription>
                     Akun Anda belum terverifikasi. Silakan lengkapi proses verifikasi untuk mendapatkan Kartu Tanda Anggota (KTA).
-                    <Button className="mt-2 w-full" onClick={() => router.push('/auth/VerificationFlow')}>Mulai Verifikasi</Button>
+                    <Button className="mt-2 w-full" onClick={onStartVerification}>Mulai Verifikasi</Button>
                 </AlertDescription>
             </Alert>
         )
@@ -237,7 +236,7 @@ const VerificationStatusAlert = ({ status }: { status?: 'unverified' | 'temporar
                 <AlertTitle>Verifikasi Ditolak</AlertTitle>
                 <AlertDescription>
                     Sayangnya, verifikasi Anda ditolak. Silakan coba lagi dengan data yang valid.
-                    <Button variant="destructive" className="mt-2 w-full" onClick={() => router.push('/auth/VerificationFlow')}>Ulangi Verifikasi</Button>
+                    <Button variant="destructive" className="mt-2 w-full" onClick={onStartVerification}>Ulangi Verifikasi</Button>
                 </AlertDescription>
             </Alert>
         )
@@ -251,6 +250,7 @@ export default function ProfileMePage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isVerificationFlowOpen, setIsVerificationFlowOpen] = useState(false);
   
   const [userPosts, setUserPosts] = useState<PostWithAuthor[]>([]);
   const [archivedPosts, setArchivedPosts] = useState<PostWithAuthor[]>([]);
@@ -327,9 +327,10 @@ export default function ProfileMePage() {
 
   return (
     <MainLayout>
+        {isVerificationFlowOpen && <VerificationFlow />}
         <div className="p-4 space-y-4">
             <ProfileHeader user={user} postCount={userPosts.length} />
-            <VerificationStatusAlert status={user?.verificationStatus} />
+            <VerificationStatusAlert status={user?.verificationStatus} onStartVerification={() => setIsVerificationFlowOpen(true)} />
 
             <Tabs defaultValue="posts" className="w-full">
                 <TabsList className="w-full grid grid-cols-5">
