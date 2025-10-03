@@ -9,6 +9,7 @@ import InstallPWA from './InstallPWA';
 import { useFcm } from '@/hooks/use-fcm';
 import { usePathname } from 'next/navigation';
 import VerificationFlow from '@/components/auth/VerificationFlow';
+import WhatsAppVerificationDialog from '@/components/whatsapp/WhatsAppVerificationDialog';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useRequireAuth();
@@ -24,9 +25,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }
   
   // If user is unverified, force them into the verification flow.
-  if (user.verificationStatus === 'unverified' && pathname !== '/auth/VerificationFlow') {
+  if (user.verificationStatus === 'unverified' && !pathname.startsWith('/auth/VerificationFlow')) {
     return <VerificationFlow />;
   }
+
+  // If user is verified but WA number is not, show the dialog.
+  const showWaVerification = user.verificationStatus !== 'unverified' && !user.waVerified;
   
   const isMapPage = pathname === '/map';
   const isAssistantPage = pathname === '/assistant';
@@ -44,6 +48,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               <InstallPWA />
             </>
           )}
+          {showWaVerification && <WhatsAppVerificationDialog user={user} />}
         </>
     </div>
   );

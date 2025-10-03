@@ -216,7 +216,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const welcomePoints = 5;
 
         await runTransaction(db, async (transaction) => {
-            transaction.set(userDocRef, {
+            const userData: any = {
                 uid: newUser.uid,
                 displayName: tempName,
                 fullName: tempName,
@@ -229,10 +229,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 referralCode: ownReferralCode,
                 referralCount: 0,
                 greenPoints: welcomePoints,
-                referredBy: referredBy,
                 upline: upline.slice(0, 10), // Limit upline to 10 levels
                 verificationStatus: 'unverified',
-            });
+                ...(referredBy && { referredBy: referredBy }),
+            };
+            transaction.set(userDocRef, userData);
             
             const welcomeLogRef = doc(pointLogsCollection);
             transaction.set(welcomeLogRef, {
