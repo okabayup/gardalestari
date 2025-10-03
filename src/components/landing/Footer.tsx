@@ -15,7 +15,7 @@ type Settings = {
 };
 
 export default function Footer() {
-    const [settings, setSettings] = useState<Settings>({});
+    const [settings, setSettings] = useState<Settings | null>(null);
 
     useEffect(() => {
         getAppSettings().then(setSettings);
@@ -49,9 +49,9 @@ export default function Footer() {
                            <p>Telepon: <a href="https://wa.me/6285144904161" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">0851-4490-4161 (WhatsApp)</a></p>
                         </div>
                         <div className="flex items-center gap-4 mt-2">
-                           <Link href={settings.instagram || '#'} target="_blank" aria-label="Instagram" className="text-muted-foreground hover:text-primary"><Heart size={20} /></Link>
-                           <Link href={settings.linkedin || '#'} target="_blank" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary"><Handshake size={20} /></Link>
-                           <Link href={settings.facebook || '#'} target="_blank" aria-label="Facebook" className="text-muted-foreground hover:text-primary"><Users size={20} /></Link>
+                           <Link href={settings?.instagram || '#'} target="_blank" aria-label="Instagram" className="text-muted-foreground hover:text-primary"><Heart size={20} /></Link>
+                           <Link href={settings?.linkedin || '#'} target="_blank" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary"><Handshake size={20} /></Link>
+                           <Link href={settings?.facebook || '#'} target="_blank" aria-label="Facebook" className="text-muted-foreground hover:text-primary"><Users size={20} /></Link>
                         </div>
                     </div>
                 </div>
