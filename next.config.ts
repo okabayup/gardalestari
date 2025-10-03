@@ -12,6 +12,7 @@ const withPWA = require('next-pwa')({
   fallbacks: {
     document: '/offline.html',
   },
+  publicExcludes: ['!manifest.json', '!icon.png', '!logo.png', '!offline.html'],
   runtimeCaching: [
     {
       urlPattern: /\/manifest\.json$/,
