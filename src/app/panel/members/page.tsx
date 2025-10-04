@@ -1,8 +1,7 @@
 
-
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   getMembers,
   updateMemberDetails,
@@ -21,7 +20,6 @@ import { Loader2, MoreHorizontal, Edit, ShieldCheck, PlusCircle, RotateCcw } fro
 import EditMemberDialog from '@/components/admin/EditMemberDialog';
 import ViewVerificationDialog from '@/components/admin/ViewVerificationDialog';
 import { useRouter } from 'next/navigation';
-import { formatFullName } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,22 +33,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/panel/DataTable';
-import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
-
-
-function ClientFormattedDate({ dateString }: { dateString?: string }) {
-    const [formattedDate, setFormattedDate] = useState('');
-    useEffect(() => {
-        if (!dateString) return;
-        const formatDate = async () => {
-            const { id } = await import('date-fns/locale/id');
-            setFormattedDate(format(new Date(dateString), 'dd MMM yyyy', { locale: id }));
-        };
-        formatDate();
-    }, [dateString]);
-    return <>{formattedDate || '-'}</>;
-}
+import { columns } from './columns';
 
 export default function AdminMembersPage() {
   const { toast } = useToast();
@@ -130,81 +113,38 @@ export default function AdminMembersPage() {
     }
   }
 
-
-  const getStatusBadge = (status: MemberWithStatus['verificationStatus']) => {
-    switch (status) {
-      case 'permanent':
-        return <Badge variant="default">Permanen</Badge>;
-      case 'temporary':
-        return <Badge variant="secondary">Menunggu</Badge>;
-      case 'rejected':
-        return <Badge variant="destructive">Ditolak</Badge>;
-      case 'manual':
-        return <Badge className="bg-blue-500 text-white">Manual</Badge>;
-      case 'unverified':
-      default:
-        return <Badge variant="outline">Belum Terverifikasi</Badge>;
-    }
-  };
-
-  const columns: ColumnDef<MemberWithStatus>[] = [
-    {
-      accessorKey: 'name',
-      header: 'Nama',
-      cell: ({ row }) => formatFullName(row.original.name, row.original.titlePrefix, row.original.titlePostfix),
-    },
-    {
-      accessorKey: 'phoneNumber',
-      header: 'No. Telepon',
-    },
-    {
-      accessorKey: 'verificationStatus',
-      header: 'Status',
-      cell: ({ row }) => getStatusBadge(row.original.verificationStatus),
-    },
-    {
-      accessorKey: 'position',
-      header: 'Jabatan',
-    },
-    {
-        accessorKey: 'referralCount',
-        header: 'Jumlah Rujukan',
-    },
-    {
-      accessorKey: 'joinDate',
-      header: 'Tanggal Daftar',
-      cell: ({ row }) => <ClientFormattedDate dateString={row.original.joinDate} />
-    },
-    {
-      id: 'actions',
-      cell: ({ row }) => {
-        const member = row.original;
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button aria-haspopup="true" size="icon" variant="ghost">
-                <MoreHorizontal className="h-4 w-4" />
-                <span className="sr-only">Toggle menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleOpenDialog(member, 'edit')}>
-                <Edit className="mr-2 h-4 w-4" /> Edit Detail & Status
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleOpenDialog(member, 'verify')}>
-                  <ShieldCheck className="mr-2 h-4 w-4" /> Tinjau Verifikasi
-              </DropdownMenuItem>
-              {(member.verificationStatus === 'temporary' || member.verificationStatus === 'rejected') && (
-                <DropdownMenuItem className="text-destructive" onClick={() => handleOpenResetDialog(member)}>
-                  <RotateCcw className="mr-2 h-4 w-4" /> Reset Verifikasi
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      },
-    },
-  ];
+  const memoizedColumns = useMemo<ColumnDef<MemberWithStatus>[]>(() => [
+        ...columns,
+        {
+          id: 'actions',
+          cell: ({ row }) => {
+            const member = row.original;
+            return (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button aria-haspopup="true" size="icon" variant="ghost">
+                    <MoreHorizontal className="h-4 w-4" />
+                    <span className="sr-only">Toggle menu</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleOpenDialog(member, 'edit')}>
+                    <Edit className="mr-2 h-4 w-4" /> Edit Detail & Status
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleOpenDialog(member, 'verify')}>
+                      <ShieldCheck className="mr-2 h-4 w-4" /> Tinjau Verifikasi
+                  </DropdownMenuItem>
+                  {(member.verificationStatus === 'temporary' || member.verificationStatus === 'rejected') && (
+                    <DropdownMenuItem className="text-destructive" onClick={() => handleOpenResetDialog(member)}>
+                      <RotateCcw className="mr-2 h-4 w-4" /> Reset Verifikasi
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            );
+          },
+        },
+  ], []);
 
   return (
     <>
@@ -224,7 +164,7 @@ export default function AdminMembersPage() {
                 <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
             </div>
         ) : (
-            <DataTable columns={columns} data={members} />
+            <DataTable columns={memoizedColumns} data={members} />
         )}
       </div>
       {selectedMember && (
@@ -272,3 +212,4 @@ export default function AdminMembersPage() {
     </>
   );
 }
+

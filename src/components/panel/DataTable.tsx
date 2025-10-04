@@ -1,11 +1,18 @@
 
 'use client';
 
+import { useState } from 'react';
 import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
   getPaginationRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  SortingState,
+  ColumnFiltersState,
   useReactTable,
 } from '@tanstack/react-table';
 
@@ -17,88 +24,101 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+import { DataTableToolbar } from './DataTableToolbar';
+import { DataTablePagination } from './DataTablePagination';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  rowSelection?: Record<string, boolean>;
+  setRowSelection?: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  rowSelection,
+  setRowSelection,
 }: DataTableProps<TData, TValue>) {
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = useState('');
+
   const table = useReactTable({
     data,
     columns,
+    state: {
+      sorting,
+      columnFilters,
+      globalFilter,
+      ...(rowSelection && { rowSelection }),
+    },
+    onRowSelectionChange: setRowSelection,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
   return (
-    <div>
-        <div className="rounded-md border">
+    <div className="space-y-4">
+      <DataTableToolbar table={table} />
+      <div className="rounded-md border">
         <Table>
-            <TableHeader>
+          <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
-                    return (
+                  return (
                     <TableHead key={header.id}>
-                        {header.isPlaceholder
+                      {header.isPlaceholder
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
                             header.getContext()
-                            )}
+                          )}
                     </TableHead>
-                    );
+                  );
                 })}
-                </TableRow>
+              </TableRow>
             ))}
-            </TableHeader>
-            <TableBody>
+          </TableHeader>
+          <TableBody>
             {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
+              table.getRowModel().rows.map((row) => (
                 <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && 'selected'}
+                  key={row.id}
+                  data-state={row.getIsSelected() && 'selected'}
                 >
-                    {row.getVisibleCells().map((cell) => (
+                  {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
-                    ))}
+                  ))}
                 </TableRow>
-                ))
+              ))
             ) : (
-                <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                    No results.
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  Tidak ada hasil.
                 </TableCell>
-                </TableRow>
+              </TableRow>
             )}
-            </TableBody>
+          </TableBody>
         </Table>
-        </div>
-        <div className="flex items-center justify-end space-x-2 py-4">
-            <Button
-                variant="outline"
-                size="sm"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-            >
-                Previous
-            </Button>
-            <Button
-                variant="outline"
-                size="sm"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-            >
-                Next
-            </Button>
-        </div>
+      </div>
+      <DataTablePagination table={table} />
     </div>
   );
 }
