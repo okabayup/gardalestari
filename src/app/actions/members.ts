@@ -14,6 +14,11 @@ import { formatFullName } from '@/lib/utils';
 import { sendNotification } from './notifications';
 import { format } from 'date-fns';
 import { awardPointsForAction } from './points';
+import admin from 'firebase-admin';
+
+if (admin.apps.length === 0) {
+  admin.initializeApp();
+}
 
 const usersCollection = collection(db, 'users');
 const positionsCollection = collection(db, 'positions');

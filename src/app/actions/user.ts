@@ -10,8 +10,11 @@ import type { MemberWithStatus } from '@/lib/definitions';
 import type { Position, PermissionId, PublicUser, PublicProfile, VerificationStatus, Mission } from '@/lib/definitions';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getAuth as getAdminAuth } from 'firebase-admin/auth';
-import { initializeAdminApp } from '@/lib/firebase-admin';
+import admin from 'firebase-admin';
 
+if (admin.apps.length === 0) {
+  admin.initializeApp();
+}
 
 /**
  * Checks if a username already exists in the database.
@@ -350,7 +353,6 @@ export async function processVerificationSubmission(
   data: { fullName: string; nik: string; ktpDataUrl: string; photoDataUrl?: string; waNumber: string; }
 ) {
   try {
-    await initializeAdminApp();
     
     // Check for duplicate NIK
     const nikQuery = query(collection(db, 'users'), where("nik", "==", data.nik));

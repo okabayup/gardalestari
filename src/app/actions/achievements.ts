@@ -6,10 +6,13 @@ import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timesta
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import type { Achievement } from '@/lib/definitions';
-import { auth } from 'firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
-import { initializeAdminApp } from '@/lib/firebase-admin';
+import admin from 'firebase-admin';
 import { checkAndAwardBadges } from './badges';
+
+if (admin.apps.length === 0) {
+  admin.initializeApp();
+}
 
 const achievementsCollection = collection(db, 'achievements');
 
@@ -124,7 +127,6 @@ export async function createMyAchievement(
   imageFile?: File,
 ) {
     try {
-        await initializeAdminApp();
         const auth = getAuth();
         const user = await auth.getUser(userId);
 

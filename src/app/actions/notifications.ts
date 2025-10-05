@@ -1,11 +1,16 @@
 
+
 'use server';
 
 import { db } from '@/lib/firebase';
 import { getMessaging } from 'firebase-admin/messaging';
 import { collection, addDoc, query, where, getDocs, serverTimestamp, updateDoc, doc, FieldPath, orderBy, limit, writeBatch, getCountFromServer } from 'firebase/firestore';
-import { initializeAdminApp } from '@/lib/firebase-admin';
 import type { MemberType, Notification } from '@/lib/definitions';
+import admin from 'firebase-admin';
+
+if (admin.apps.length === 0) {
+  admin.initializeApp();
+}
 
 const subscriptionsCollection = collection(db, 'pushSubscriptions');
 const usersCollection = collection(db, 'users');
@@ -67,7 +72,6 @@ interface NotificationTarget {
 
 export async function sendNotification(payload: NotificationPayload, target: NotificationTarget) {
     try {
-        await initializeAdminApp();
         const batch = writeBatch(db);
         let targetUserIds: string[] = [];
 
