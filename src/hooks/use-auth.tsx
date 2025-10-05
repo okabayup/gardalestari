@@ -216,7 +216,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const welcomePoints = 5;
 
         await runTransaction(db, async (transaction) => {
-            const userData: any = {
+            const userData: { [key: string]: any } = {
                 uid: newUser.uid,
                 displayName: tempName,
                 fullName: tempName,
@@ -231,7 +231,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 greenPoints: welcomePoints,
                 upline: upline.slice(0, 10), // Limit upline to 10 levels
                 verificationStatus: 'unverified',
-                ...(referredBy && { referredBy: referredBy }),
+                ...(referredBy && { referredBy }),
             };
             transaction.set(userDocRef, userData);
             

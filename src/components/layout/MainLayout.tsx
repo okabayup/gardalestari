@@ -33,7 +33,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const showWaVerification = user.verificationStatus !== 'unverified' && !user.waVerified;
   
   const isMapPage = pathname === '/map';
-  const isAssistantPage = pathname === '/assistant';
   const showHeader = !isMapPage;
   const showBottomNav = !isMapPage;
   

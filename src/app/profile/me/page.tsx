@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -323,6 +324,11 @@ export default function ProfileMePage() {
          </div>
        </MainLayout>
      );
+  }
+
+  // If user is unverified, show verification flow instead of profile
+  if (user.verificationStatus === 'unverified') {
+      return <VerificationFlow />;
   }
 
   return (
