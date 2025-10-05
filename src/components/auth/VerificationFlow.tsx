@@ -271,7 +271,7 @@ export default function VerificationFlow() {
       const ocrResult = await readKtp({ photoDataUri: ktpDataUrl });
 
       if (!ocrResult || !ocrResult.nik || !ocrResult.name) {
-          throw new Error('Gagal membaca KTP. Pastikan foto jelas dan tidak buram.');
+          throw new Error('Gagal membaca KTP. Pastikan foto jelas, terang, dan tidak buram.');
       }
       
       const normalizedOcrNik = ocrResult.nik.replace(/\D/g, '');

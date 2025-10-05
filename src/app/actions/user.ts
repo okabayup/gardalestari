@@ -354,11 +354,14 @@ export async function processVerificationSubmission(
 ) {
   try {
     
-    // Check for duplicate NIK
+    // Check for duplicate NIK against other users
     const nikQuery = query(collection(db, 'users'), where("nik", "==", data.nik));
     const nikSnapshot = await getDocs(nikQuery);
-    if (!nikSnapshot.empty && nikSnapshot.docs[0].id !== userId) {
-        throw new Error("NIK ini sudah terdaftar pada akun lain.");
+    if (!nikSnapshot.empty) {
+        const isOwnNik = nikSnapshot.docs.some(doc => doc.id === userId);
+        if (!isOwnNik) {
+             throw new Error("NIK ini sudah terdaftar pada akun lain.");
+        }
     }
     
     // Convert data URLs to buffers

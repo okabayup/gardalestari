@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -40,12 +41,16 @@ export default function LoginPage() {
   const [countdown, setCountdown] = useState(0);
 
   useEffect(() => {
-    // Initialize reCAPTCHA on mount
     if (typeof window !== 'undefined' && !window.recaptchaVerifier) {
+      try {
         window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
             'size': 'invisible',
-            'callback': () => {}, // this callback is required.
+            'callback': () => {},
         });
+        window.recaptchaVerifier.render();
+      } catch (error) {
+        console.error("reCAPTCHA render error:", error);
+      }
     }
   }, []);
 
@@ -69,17 +74,16 @@ export default function LoginPage() {
     setIsSubmitting(true);
     setCountdown(60);
     const phoneNumber = normalizePhoneNumber(phone);
-    const appVerifier = window.recaptchaVerifier;
-
-    if (!appVerifier) {
-        toast({ variant: 'destructive', title: 'Error', description: 'reCAPTCHA verifier not initialized.' });
+    
+    if (!window.recaptchaVerifier) {
+        toast({ variant: 'destructive', title: 'Error', description: 'reCAPTCHA belum siap. Mohon segarkan halaman.' });
         setIsSubmitting(false);
         setCountdown(0);
         return;
     }
 
     try {
-      await signInWithPhone(phoneNumber, appVerifier);
+      await signInWithPhone(phoneNumber, window.recaptchaVerifier);
       setStep('otp');
       toast({ title: 'OTP Terkirim', description: 'Silakan periksa ponsel Anda untuk kode verifikasi.' });
     } catch (error) {
@@ -95,9 +99,7 @@ export default function LoginPage() {
       setCountdown(0);
        // Reset reCAPTCHA on failure
       if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.clear();
-         window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            'size': 'invisible', 'callback': () => {}});
+        window.recaptchaVerifier.render().catch(console.error); // Re-render silently
       }
     } finally {
       setIsSubmitting(false);
@@ -113,7 +115,7 @@ export default function LoginPage() {
       router.push('/feed');
     } catch (error) {
       const err = error as Error;
-      toast({ variant: 'destructive', title: 'Error', description: 'OTP tidak valid. Silakan coba lagi.' });
+      toast({ variant: 'destructive', title: 'Error', description: err.message || 'OTP tidak valid. Silakan coba lagi.' });
       logError({ 
         message: err.message, 
         stack: err.stack, 
@@ -131,17 +133,16 @@ export default function LoginPage() {
     setIsSubmitting(true);
     setCountdown(60);
     const phoneNumber = normalizePhoneNumber(phone);
-    const appVerifier = window.recaptchaVerifier;
-
-    if (!appVerifier) {
-        toast({ variant: 'destructive', title: 'Error', description: 'reCAPTCHA verifier not initialized.' });
+    
+    if (!window.recaptchaVerifier) {
+        toast({ variant: 'destructive', title: 'Error', description: 'reCAPTCHA belum siap. Mohon segarkan halaman.' });
         setIsSubmitting(false);
         setCountdown(0);
         return;
     }
 
     try {
-      await signInWithPhone(phoneNumber, appVerifier);
+      await signInWithPhone(phoneNumber, window.recaptchaVerifier);
       toast({ title: 'OTP Terkirim Kembali', description: 'Silakan periksa kembali ponsel Anda.' });
     } catch (error) {
       const err = error as Error;
@@ -154,11 +155,8 @@ export default function LoginPage() {
         path: pathname,
       });
       setCountdown(0);
-      // Reset reCAPTCHA on failure
       if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.clear();
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            'size': 'invisible', 'callback': () => {}});
+        window.recaptchaVerifier.render().catch(console.error);
       }
     } finally {
       setIsSubmitting(false);
