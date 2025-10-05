@@ -1,18 +1,100 @@
 
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import LandingHeader from '@/components/layout/LandingHeader';
 import Footer from '@/components/landing/Footer';
-import { ShieldAlert } from 'lucide-react';
+import { ShieldAlert, Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
+import { requestDataDeletion } from '@/app/actions/user';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function DeleteDataPage() {
-  const WHATSAPP_LINK = "https://wa.me/6285144904161?text=Saya%20ingin%20mengajukan%20penghapusan%20data%20akun%20Garda%20Lestari%20saya.";
-  const EMAIL_LINK = "mailto:halo@gardalestari.org?subject=Permintaan%20Penghapusan%20Data%20Akun";
+  const { user, loading: authLoading } = useAuth();
+  const { toast } = useToast();
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
+
+  const handleRequestDeletion = async () => {
+    if (!user) return;
+    setIsSubmitting(true);
+    try {
+      await requestDataDeletion(user.uid);
+      setRequestSent(true);
+      toast({
+        title: 'Permintaan Terkirim',
+        description: 'Permintaan penghapusan data Anda telah dikirim ke admin untuk ditinjau.',
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Gagal Mengirim Permintaan',
+        description: (error as Error).message,
+      });
+    } finally {
+      setIsSubmitting(false);
+      setShowConfirmDialog(false);
+    }
+  };
+  
+  const renderContent = () => {
+    if (authLoading) {
+      return <div className="flex justify-center p-10"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    }
+
+    if (requestSent) {
+       return (
+          <div className="text-center space-y-4">
+              <h3 className="font-semibold">Permintaan Anda Telah Diterima</h3>
+              <p className="text-sm text-muted-foreground">
+                Tim kami akan meninjau permintaan Anda. Proses penghapusan data akan diselesaikan dalam 7-14 hari kerja. Anda dapat keluar dari akun Anda sekarang.
+              </p>
+          </div>
+       );
+    }
+
+    if (!user) {
+      return (
+        <div className="text-center space-y-4">
+            <p className="text-sm text-muted-foreground">
+                Anda harus masuk untuk dapat mengajukan permintaan penghapusan data.
+            </p>
+            <Button asChild>
+                <Link href="/login">Masuk ke Akun Anda</Link>
+            </Button>
+        </div>
+      );
+    }
+    
+    return (
+        <div className="text-center space-y-4">
+            <p className="text-sm text-muted-foreground">
+                Klik tombol di bawah untuk memulai proses pengajuan penghapusan akun dan semua data terkait Anda. Tindakan ini tidak dapat diurungkan setelah disetujui oleh admin.
+            </p>
+             <Button variant="destructive" onClick={() => setShowConfirmDialog(true)} disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                Ajukan Penghapusan Data Saya
+            </Button>
+        </div>
+    );
+  }
 
   return (
+    <>
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       <LandingHeader />
       <main className="flex-1">
@@ -25,17 +107,14 @@ export default function DeleteDataPage() {
           
           <Card>
             <CardHeader>
-              <CardTitle>Hak Anda Atas Data Anda</CardTitle>
+              <CardTitle>Prosedur Penghapusan</CardTitle>
               <CardDescription>
-                Kami menghormati privasi Anda dan memberikan Anda kontrol penuh atas data pribadi Anda. Anda berhak untuk meminta penghapusan total akun dan semua data yang terkait dengannya dari sistem kami.
+                Kami menghormati privasi Anda. Ikuti langkah di bawah ini untuk mengajukan penghapusan akun dan data Anda secara permanen dari sistem kami.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div>
                 <h3 className="font-semibold mb-2">Data Apa yang Akan Dihapus?</h3>
-                <p className="text-sm text-muted-foreground">
-                  Ketika Anda mengajukan permintaan penghapusan, kami akan menghapus semua informasi pribadi Anda secara permanen, termasuk namun tidak terbatas pada:
-                </p>
                 <ul className="list-disc list-inside text-sm text-muted-foreground mt-2 space-y-1">
                   <li>Informasi profil (Nama, NIK, nomor telepon, foto profil).</li>
                   <li>Data verifikasi (Foto KTP dan selfie).</li>
@@ -45,25 +124,8 @@ export default function DeleteDataPage() {
               </div>
 
               <div>
-                <h3 className="font-semibold mb-2">Prosedur Penghapusan</h3>
-                <p className="text-sm text-muted-foreground">
-                  Untuk memulai proses penghapusan data, silakan hubungi kami melalui salah satu metode di bawah ini. Tim kami akan memverifikasi identitas Anda untuk memastikan keamanan sebelum melanjutkan proses penghapusan.
-                </p>
-                 <div className="mt-4 flex flex-col sm:flex-row gap-4">
-                  <Button asChild className="w-full">
-                    <Link href={EMAIL_LINK}>
-                      Kirim Permintaan via Email
-                    </Link>
-                  </Button>
-                  <Button asChild variant="secondary" className="w-full">
-                     <Link href={WHATSAPP_LINK} target="_blank">
-                      Hubungi via WhatsApp
-                    </Link>
-                  </Button>
-                </div>
-                 <p className="text-xs text-muted-foreground mt-4">
-                  Proses penghapusan data akan diselesaikan dalam waktu 7-14 hari kerja setelah verifikasi kepemilikan akun berhasil dilakukan. Setelah data dihapus, tindakan ini tidak dapat diurungkan.
-                </p>
+                <h3 className="font-semibold mb-2">Langkah Pengajuan</h3>
+                {renderContent()}
               </div>
 
             </CardContent>
@@ -72,5 +134,23 @@ export default function DeleteDataPage() {
       </main>
       <Footer />
     </div>
+
+    <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Anda Yakin Sepenuhnya?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ini adalah langkah terakhir. Setelah Anda mengajukan, permintaan akan dikirim ke admin. Jika disetujui, semua data Anda, termasuk akun login Anda, akan <span className="font-bold text-destructive">dihapus secara permanen</span> dan tidak dapat dipulihkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRequestDeletion} className="bg-destructive hover:bg-destructive/90">
+              Ya, Saya Mengerti & Ingin Melanjutkan
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

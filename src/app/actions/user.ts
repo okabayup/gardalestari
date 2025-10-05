@@ -3,13 +3,12 @@
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, query, where, getDocs, DocumentData, limit, getDoc, doc, setDoc, Timestamp, updateDoc, serverTimestamp, runTransaction, increment } from 'firebase/firestore';
+import { collection, query, where, getDocs, DocumentData, limit, getDoc, doc, setDoc, Timestamp, updateDoc, serverTimestamp, runTransaction, increment, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import type { MemberWithStatus } from '@/lib/definitions';
 import type { Position, PermissionId, PublicUser, PublicProfile, VerificationStatus, Mission } from '@/lib/definitions';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
-import { getAuth as getAdminAuth } from 'firebase-admin/auth';
 import admin from 'firebase-admin';
 
 if (admin.apps.length === 0) {
@@ -403,8 +402,8 @@ export async function processVerificationSubmission(
     const userDocRef = doc(db, 'users', userId);
     await setDoc(userDocRef, verificationData, { merge: true });
     
-    const adminAuth = getAdminAuth();
-    await adminAuth.updateUser(userId, {
+    const auth = admin.auth();
+    await auth.updateUser(userId, {
       displayName: data.fullName,
       ...(newPhotoURL && { photoURL: newPhotoURL }),
     });
@@ -447,4 +446,58 @@ export async function getUserUplineStructure(userId: string): Promise<Record<str
     }
 
     return structure;
+}
+
+
+// --- Data Deletion Flow ---
+
+export async function requestDataDeletion(userId: string) {
+    if (!userId) throw new Error("ID pengguna dibutuhkan.");
+
+    const userRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userRef);
+    if (!userDoc.exists()) throw new Error("Pengguna tidak ditemukan.");
+
+    const userData = userDoc.data();
+
+    // Set deletion request timestamp
+    await updateDoc(userRef, {
+        deletionRequestedAt: Timestamp.now(),
+    });
+
+    // Notify admin
+    const adminPhoneNumber = '6285937010409';
+    const message = `🚨 PERMINTAAN HAPUS DATA 🚨\n\nPengguna:\n- Nama: ${userData.fullName}\n- Username: ${userData.username}\n- UID: ${userId}\n\nTelah mengajukan permintaan penghapusan data. Mohon tinjau di panel admin.`;
+    
+    try {
+        await sendWhatsAppMessage(adminPhoneNumber, message);
+    } catch (e) {
+        console.error("Failed to send WhatsApp alert for deletion request:", e);
+        // Don't fail the whole operation if WhatsApp fails
+    }
+
+    revalidatePath('/panel/members');
+}
+
+
+export async function deleteUserAccount(userId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+        const auth = admin.auth();
+        const userRef = doc(db, 'users', userId);
+
+        // Delete from Firebase Auth
+        await auth.deleteUser(userId);
+
+        // Delete from Firestore
+        await deleteDoc(userRef);
+        
+        // TODO: In the future, add logic here to delete user's posts, comments, etc.
+
+        revalidatePath('/panel/members');
+
+        return { success: true };
+    } catch (error) {
+        console.error(`[deleteUserAccount Error] Failed to delete user ${userId}:`, error);
+        return { success: false, error: (error as Error).message };
+    }
 }

@@ -6,6 +6,7 @@ import {
   getMembers,
   updateMemberDetails,
   resetVerificationData,
+  deleteUserAccount,
   MemberWithStatus,
 } from '@/app/actions/members';
 import { useToast } from '@/hooks/use-toast';
@@ -15,8 +16,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { Loader2, MoreHorizontal, Edit, ShieldCheck, PlusCircle, RotateCcw } from 'lucide-react';
+import { Loader2, MoreHorizontal, Edit, ShieldCheck, PlusCircle, RotateCcw, Trash2 } from 'lucide-react';
 import EditMemberDialog from '@/components/admin/EditMemberDialog';
 import ViewVerificationDialog from '@/components/admin/ViewVerificationDialog';
 import { useRouter } from 'next/navigation';
@@ -34,6 +36,7 @@ import { Input } from '@/components/ui/input';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/panel/DataTable';
 import { columns } from './columns';
+import { Badge } from '@/components/ui/badge';
 
 export default function AdminMembersPage() {
   const { toast } = useToast();
@@ -46,8 +49,9 @@ export default function AdminMembersPage() {
   const [selectedMember, setSelectedMember] = useState<MemberWithStatus | null>(null);
   
   const [showResetAlert, setShowResetAlert] = useState(false);
-  const [resetConfirmationInput, setResetConfirmationInput] = useState("");
-
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [confirmationInput, setConfirmationInput] = useState("");
+  const [actionToConfirm, setActionToConfirm] = useState<'reset' | 'delete' | null>(null);
 
   const fetchMembers = useCallback(async () => {
     setLoading(true);
@@ -89,32 +93,79 @@ export default function AdminMembersPage() {
     }
   };
 
-  const handleOpenResetDialog = (member: MemberWithStatus) => {
+  const handleOpenConfirmationDialog = (member: MemberWithStatus, action: 'reset' | 'delete') => {
     setSelectedMember(member);
+    setActionToConfirm(action);
     setShowResetAlert(true);
   };
 
-  const handleResetVerification = async () => {
-    if (!selectedMember || resetConfirmationInput !== 'RESET') {
-        toast({variant: 'destructive', title: 'Konfirmasi salah', description: 'Anda harus mengetik "RESET" untuk melanjutkan.'});
-        return;
-    }
-    setIsSavingDetails(true);
-    try {
-        await resetVerificationData(selectedMember.id);
-        toast({title: 'Data Verifikasi Direset', description: `Data verifikasi untuk ${selectedMember.name} telah dihapus.`});
-        fetchMembers();
-        setShowResetAlert(false);
-    } catch (error) {
-        toast({variant: 'destructive', title: 'Gagal Mereset', description: (error as Error).message });
-    } finally {
-        setIsSavingDetails(false);
-        setResetConfirmationInput("");
+  const handleConfirmation = async () => {
+    if (!selectedMember) return;
+
+    if (actionToConfirm === 'reset') {
+        if (confirmationInput !== 'RESET') {
+            toast({variant: 'destructive', title: 'Konfirmasi salah', description: 'Anda harus mengetik "RESET" untuk melanjutkan.'});
+            return;
+        }
+        await executeReset();
+    } else if (actionToConfirm === 'delete') {
+         if (confirmationInput !== 'HAPUS') {
+            toast({variant: 'destructive', title: 'Konfirmasi salah', description: 'Anda harus mengetik "HAPUS" untuk melanjutkan.'});
+            return;
+        }
+        await executeDelete();
     }
   }
 
+  const executeReset = async () => {
+      if (!selectedMember) return;
+      setIsSavingDetails(true);
+      try {
+          await resetVerificationData(selectedMember.id);
+          toast({title: 'Data Verifikasi Direset', description: `Data verifikasi untuk ${selectedMember.name} telah dihapus.`});
+          fetchMembers();
+          setShowResetAlert(false);
+      } catch (error) {
+          toast({variant: 'destructive', title: 'Gagal Mereset', description: (error as Error).message });
+      } finally {
+          setIsSavingDetails(false);
+          setConfirmationInput("");
+      }
+  }
+
+   const executeDelete = async () => {
+      if (!selectedMember) return;
+      setIsSavingDetails(true);
+      try {
+          const result = await deleteUserAccount(selectedMember.id);
+          if (result.success) {
+            toast({title: 'Akun Dihapus', description: `Akun ${selectedMember.name} telah dihapus permanen.`});
+            fetchMembers();
+            setShowResetAlert(false);
+          } else {
+            throw new Error(result.error);
+          }
+      } catch (error) {
+          toast({variant: 'destructive', title: 'Gagal Menghapus Akun', description: (error as Error).message });
+      } finally {
+          setIsSavingDetails(false);
+          setConfirmationInput("");
+      }
+  }
+
+
   const memoizedColumns = useMemo<ColumnDef<MemberWithStatus>[]>(() => [
         ...columns,
+         {
+          accessorKey: "deletionRequestedAt",
+          header: "Permintaan Hapus",
+          cell: ({ row }) => {
+            const member = row.original as MemberWithStatus & { deletionRequestedAt?: Timestamp };
+            return member.deletionRequestedAt ? (
+              <Badge variant="destructive">Diminta</Badge>
+            ) : null;
+          },
+        },
         {
           id: 'actions',
           cell: ({ row }) => {
@@ -134,11 +185,13 @@ export default function AdminMembersPage() {
                   <DropdownMenuItem onClick={() => handleOpenDialog(member, 'verify')}>
                       <ShieldCheck className="mr-2 h-4 w-4" /> Tinjau Verifikasi
                   </DropdownMenuItem>
-                  {(member.verificationStatus === 'temporary' || member.verificationStatus === 'rejected') && (
-                    <DropdownMenuItem className="text-destructive" onClick={() => handleOpenResetDialog(member)}>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="text-orange-600 focus:text-orange-600 focus:bg-orange-50" onClick={() => handleOpenConfirmationDialog(member, 'reset')}>
                       <RotateCcw className="mr-2 h-4 w-4" /> Reset Verifikasi
-                    </DropdownMenuItem>
-                  )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-red-50" onClick={() => handleOpenConfirmationDialog(member, 'delete')}>
+                      <Trash2 className="mr-2 h-4 w-4" /> Hapus Akun Permanen
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             );
@@ -183,28 +236,33 @@ export default function AdminMembersPage() {
             />
         </>
       )}
-       <AlertDialog open={showResetAlert} onOpenChange={setShowResetAlert}>
+      <AlertDialog open={showResetAlert} onOpenChange={setShowResetAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Anda Yakin Ingin Mereset Verifikasi?</AlertDialogTitle>
+            <AlertDialogTitle>Anda Yakin?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini akan menghapus NIK dan foto KTP untuk anggota <span className="font-bold">{selectedMember?.name}</span>. Mereka harus melakukan verifikasi ulang. Untuk melanjutkan, ketik "RESET" di bawah ini.
+              {actionToConfirm === 'reset' && (
+                <>Tindakan ini akan menghapus NIK dan foto KTP untuk anggota <span className="font-bold">{selectedMember?.name}</span>. Mereka harus melakukan verifikasi ulang. Untuk melanjutkan, ketik "RESET" di bawah ini.</>
+              )}
+               {actionToConfirm === 'delete' && (
+                <>Tindakan ini akan <span className="font-bold text-destructive">menghapus akun dan semua data</span> terkait anggota <span className="font-bold">{selectedMember?.name}</span> secara permanen. Ini tidak dapat dibatalkan. Untuk melanjutkan, ketik "HAPUS" di bawah ini.</>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <Input 
-            value={resetConfirmationInput}
-            onChange={(e) => setResetConfirmationInput(e.target.value)}
-            placeholder='Ketik "RESET" untuk konfirmasi'
+            value={confirmationInput}
+            onChange={(e) => setConfirmationInput(e.target.value)}
+            placeholder={`Ketik "${actionToConfirm === 'reset' ? 'RESET' : 'HAPUS'}" untuk konfirmasi`}
           />
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90"
-              disabled={resetConfirmationInput !== 'RESET' || isSavingDetails}
-              onClick={handleResetVerification}
+              disabled={(actionToConfirm === 'reset' && confirmationInput !== 'RESET') || (actionToConfirm === 'delete' && confirmationInput !== 'HAPUS') || isSavingDetails}
+              onClick={handleConfirmation}
             >
               {isSavingDetails && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-              Ya, Reset Data
+              Ya, Lanjutkan
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

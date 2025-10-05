@@ -414,6 +414,7 @@ export interface MemberWithStatus extends Member {
     createdAt?: string; // ISO string
     position?: string; 
     permissions: PermissionId[];
+    deletionRequestedAt?: Timestamp;
 }
 
 // --- Badges ---
