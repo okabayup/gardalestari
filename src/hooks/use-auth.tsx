@@ -14,7 +14,7 @@ import {
 import { doc, getDoc, serverTimestamp, collection, query, where, getDocs, Timestamp, runTransaction, increment, limit, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { redirect, usePathname } from 'next/navigation';
-import { useToast } from './use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { processVerificationSubmission, getUserByUsername } from '@/app/actions/user';
 import type { PermissionId, Position, MemberType, Mission } from '@/lib/definitions';
 import { ALL_PERMISSIONS } from '@/lib/definitions';
