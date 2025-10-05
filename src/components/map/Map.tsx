@@ -131,9 +131,9 @@ export default function MapComponent() {
             getMapDatasets()
         ]).then(([internal, external]) => {
             setInternalData(internal);
-            const visibleExternal = external.filter(d => d.isVisible);
-            setExternalDatasets(visibleExternal);
-            setSelectedDatasetIds(visibleExternal.map(d => d.id!));
+            setExternalDatasets(external);
+            const visibleExternalIds = external.filter(d => d.isVisible).map(d => d.id!);
+            setSelectedDatasetIds(visibleExternalIds);
         }).catch(() => toast({ variant: 'destructive', title: 'Gagal memuat data peta' }))
         .finally(() => setLoading(false));
     }, [toast]);
