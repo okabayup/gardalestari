@@ -1,11 +1,11 @@
 {
   "name": "Garda Lestari",
-  "short_name": "GardaLestari",
+  "short_name": "Garda Lestari",
+  "description": "Inovasi pemuda untuk kelestarian agro-maritim dan kehutanan Indonesia.",
   "start_url": "/feed",
   "display": "standalone",
   "background_color": "#E8F0E5",
   "theme_color": "#347C45",
-  "description": "Inovasi pemuda untuk kelestarian agro-maritim dan kehutanan Indonesia.",
   "icons": [
     {
       "src": "/logo.png",
