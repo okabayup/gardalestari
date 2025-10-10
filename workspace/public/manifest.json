@@ -1,11 +1,12 @@
 {
+  "theme_color": "#347C45",
+  "background_color": "#E8F0E5",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/feed",
   "name": "Garda Lestari",
   "short_name": "GardaLestari",
-  "start_url": "/feed",
-  "display": "standalone",
-  "background_color": "#E8F0E5",
-  "theme_color": "#347C45",
-  "description": "Inovasi pemuda untuk kelestarian agro-maritim dan kehutanan Indonesia.",
+  "description": "Aplikasi komunitas untuk inovator muda di sektor agro-maritim dan kehutanan Indonesia.",
   "icons": [
     {
       "src": "/logo.png",
@@ -15,15 +16,15 @@
     },
     {
       "src": "/logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/logo.png",
