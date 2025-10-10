@@ -1,6 +1,6 @@
 
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2, ShieldOff, CheckCircle } from 'lucide-react';
@@ -53,6 +53,9 @@ export default function RegisterPage() {
     const [isRegistrationOpen, setRegistrationOpen] = useState<boolean | null>(null);
     const [countdown, setCountdown] = useState(0);
 
+    const recaptchaContainerRef = useRef<HTMLDivElement>(null);
+    const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
+
     useEffect(() => {
         const checkRegistrationStatus = async () => {
             const settings = await getAppSettings();
@@ -62,34 +65,23 @@ export default function RegisterPage() {
     }, []);
 
     useEffect(() => {
-        // Initialize reCAPTCHA on mount
-        if (typeof window !== 'undefined' && !window.recaptchaVerifier) {
-            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                'size': 'invisible',
-                'callback': () => {},
-                'expired-callback': () => {
-                    if (window.recaptchaVerifier) {
-                        window.recaptchaVerifier.clear();
-                        window.recaptchaVerifier = undefined;
-                    }
-                    toast({
-                        variant: 'destructive',
-                        title: 'reCAPTCHA Kedaluwarsa',
-                        description: 'Silakan coba lagi.',
-                    });
-                },
-            });
-            window.recaptchaVerifier.render().catch(err => {
-                console.error("reCAPTCHA render error:", err);
-                toast({
+        if (!loading && !user && recaptchaContainerRef.current && !recaptchaVerifierRef.current) {
+            try {
+                const verifier = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
+                    'size': 'invisible',
+                    'callback': () => {},
+                });
+                recaptchaVerifierRef.current = verifier;
+            } catch (error) {
+                 console.error("reCAPTCHA initialization error:", error);
+                 toast({
                     variant: 'destructive',
                     title: 'Gagal memuat reCAPTCHA',
                     description: 'Mohon segarkan halaman dan coba lagi.',
                 });
-            });
+            }
         }
-    }, [toast]);
-
+    }, [loading, user, toast]);
 
     useEffect(() => {
         const ref = searchParams.get('ref');
@@ -127,7 +119,7 @@ export default function RegisterPage() {
         setCountdown(60);
         const phoneNumber = normalizePhoneNumber(phone);
         
-        if (!window.recaptchaVerifier) {
+        if (!recaptchaVerifierRef.current) {
             toast({ variant: 'destructive', title: 'Error', description: 'reCAPTCHA belum siap. Mohon tunggu atau segarkan halaman.' });
             setIsSubmitting(false);
             setCountdown(0);
@@ -135,7 +127,7 @@ export default function RegisterPage() {
         }
 
         try {
-            await signInWithPhone(phoneNumber, window.recaptchaVerifier);
+            await signInWithPhone(phoneNumber, recaptchaVerifierRef.current);
             setStep('otp');
             toast({ title: 'OTP Terkirim', description: `Silakan periksa ponsel Anda di nomor ${phoneNumber}.` });
         } catch (error) {
@@ -163,7 +155,7 @@ export default function RegisterPage() {
             toast({ title: 'Pendaftaran Berhasil!', description: 'Anda akan diarahkan ke halaman profil Anda.' });
         } catch (error) {
             const err = error as Error;
-            toast({ variant: 'destructive', title: 'Error', description: 'OTP tidak valid. Silakan coba lagi.' });
+            toast({ variant: 'destructive', title: 'Error', description: err.message || 'OTP tidak valid. Silakan coba lagi.' });
             logError({ 
                 message: err.message, 
                 stack: err.stack, 
@@ -182,7 +174,7 @@ export default function RegisterPage() {
         setCountdown(60);
         const phoneNumber = normalizePhoneNumber(phone);
         
-        if (!window.recaptchaVerifier) {
+        if (!recaptchaVerifierRef.current) {
             toast({ variant: 'destructive', title: 'Error', description: 'reCAPTCHA belum siap. Mohon tunggu atau segarkan halaman.' });
             setIsSubmitting(false);
             setCountdown(0);
@@ -190,7 +182,7 @@ export default function RegisterPage() {
         }
         
         try {
-            await signInWithPhone(phoneNumber, window.recaptchaVerifier);
+            await signInWithPhone(phoneNumber, recaptchaVerifierRef.current);
             toast({ title: 'OTP Terkirim Kembali', description: 'Silakan periksa kembali ponsel Anda.' });
         } catch (error) {
             const err = error as Error;
@@ -219,7 +211,7 @@ export default function RegisterPage() {
 
     return (
         <div className="flex min-h-screen flex-col items-center justify-center bg-secondary p-4 relative overflow-hidden">
-            <div id="recaptcha-container"></div>
+            <div ref={recaptchaContainerRef} />
             <div className="absolute inset-0 -z-0">
                 <Image src="https://picsum.photos/seed/community-gathering/1920/1080" alt="Community gathering" fill className="object-cover opacity-10" />
                  <div className="absolute inset-0 bg-gradient-to-t from-secondary via-secondary/80 to-secondary"></div>

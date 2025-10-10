@@ -1,7 +1,6 @@
 
-
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
@@ -39,21 +38,28 @@ export default function LoginPage() {
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  
+  const recaptchaContainerRef = useRef<HTMLDivElement>(null);
+  const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && !window.recaptchaVerifier) {
-      try {
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            'size': 'invisible',
-            'callback': () => {},
-        });
-        window.recaptchaVerifier.render();
-      } catch (error) {
-        console.error("reCAPTCHA render error:", error);
-      }
+    if (!loading && !user && recaptchaContainerRef.current && !recaptchaVerifierRef.current) {
+        try {
+            const verifier = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
+                'size': 'invisible',
+                'callback': () => {},
+            });
+            recaptchaVerifierRef.current = verifier;
+        } catch (error) {
+             console.error("reCAPTCHA initialization error:", error);
+             toast({
+                variant: 'destructive',
+                title: 'Gagal memuat reCAPTCHA',
+                description: 'Mohon segarkan halaman dan coba lagi.',
+            });
+        }
     }
-  }, []);
-
+  }, [loading, user, toast]);
 
   useEffect(() => {
     if (!loading && user) {
@@ -75,7 +81,7 @@ export default function LoginPage() {
     setCountdown(60);
     const phoneNumber = normalizePhoneNumber(phone);
     
-    if (!window.recaptchaVerifier) {
+    if (!recaptchaVerifierRef.current) {
         toast({ variant: 'destructive', title: 'Error', description: 'reCAPTCHA belum siap. Mohon segarkan halaman.' });
         setIsSubmitting(false);
         setCountdown(0);
@@ -83,7 +89,7 @@ export default function LoginPage() {
     }
 
     try {
-      await signInWithPhone(phoneNumber, window.recaptchaVerifier);
+      await signInWithPhone(phoneNumber, recaptchaVerifierRef.current);
       setStep('otp');
       toast({ title: 'OTP Terkirim', description: 'Silakan periksa ponsel Anda untuk kode verifikasi.' });
     } catch (error) {
@@ -97,10 +103,6 @@ export default function LoginPage() {
         path: pathname,
       });
       setCountdown(0);
-       // Reset reCAPTCHA on failure
-      if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.render().catch(console.error); // Re-render silently
-      }
     } finally {
       setIsSubmitting(false);
     }
@@ -134,7 +136,7 @@ export default function LoginPage() {
     setCountdown(60);
     const phoneNumber = normalizePhoneNumber(phone);
     
-    if (!window.recaptchaVerifier) {
+    if (!recaptchaVerifierRef.current) {
         toast({ variant: 'destructive', title: 'Error', description: 'reCAPTCHA belum siap. Mohon segarkan halaman.' });
         setIsSubmitting(false);
         setCountdown(0);
@@ -142,7 +144,7 @@ export default function LoginPage() {
     }
 
     try {
-      await signInWithPhone(phoneNumber, window.recaptchaVerifier);
+      await signInWithPhone(phoneNumber, recaptchaVerifierRef.current);
       toast({ title: 'OTP Terkirim Kembali', description: 'Silakan periksa kembali ponsel Anda.' });
     } catch (error) {
       const err = error as Error;
@@ -155,9 +157,6 @@ export default function LoginPage() {
         path: pathname,
       });
       setCountdown(0);
-      if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.render().catch(console.error);
-      }
     } finally {
       setIsSubmitting(false);
     }
@@ -174,7 +173,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-secondary p-4">
-       <div id="recaptcha-container"></div>
+       <div ref={recaptchaContainerRef} />
       <div className="w-full max-w-sm">
         <div className="text-center mb-6">
           <Link href="/" className="inline-block">
