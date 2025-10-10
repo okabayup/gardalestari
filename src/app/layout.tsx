@@ -22,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
     manifest: '/manifest.json',
     icons: {
       icon: '/favicon.ico',
-      shortcut: '/favicon-16x16.png',
+      shortcut: '/favicon.ico',
       apple: '/apple-touch-icon.png',
     },
     openGraph: {
@@ -67,6 +67,7 @@ export default function RootLayout({
         />
         <meta name="theme-color" content="#347C45" />
         <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png"></link>
       </head>
       <body className="font-body antialiased">
         <AuthProvider>
