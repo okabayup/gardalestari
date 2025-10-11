@@ -1,0 +1,26 @@
+
+import { MetadataRoute } from 'next';
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: 'Garda Lestari',
+    short_name: 'Garda',
+    description: 'Aplikasi Garda Lestari untuk inovasi agro-maritim dan kehutanan.',
+    start_url: '/feed',
+    display: 'standalone',
+    background_color: '#E8F0E5',
+    theme_color: '#347C45',
+    icons: [
+      {
+        src: '/logo.png',
+        sizes: '192x192',
+        type: 'image/png',
+      },
+      {
+        src: '/logo.png',
+        sizes: '512x512',
+        type: 'image/png',
+      },
+    ],
+  };
+}
