@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { collection, getDocs, doc, updateDoc, deleteField, query, setDoc, Timestamp, getDoc, addDoc, where,getCountFromServer, runTransaction, orderBy, limit, startAfter, endBefore, increment, writeBatch } from 'firebase/firestore';
@@ -13,7 +12,7 @@ import { generateUniqueUsername, getUserByUid } from './user';
 import { formatFullName } from '@/lib/utils';
 import { sendNotification } from './notifications';
 import { format } from 'date-fns';
-import { awardPointsForAction } from './points';
+import { awardPointsForAction } from '@/app/actions/points';
 import admin from 'firebase-admin';
 
 if (admin.apps.length === 0) {
