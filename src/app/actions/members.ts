@@ -7,7 +7,7 @@ import { collection, getDocs, doc, updateDoc, deleteField, query, setDoc, Timest
 import { revalidatePath } from 'next/cache';
 import type { PermissionId, Position, MemberWithStatus, MemberType, VerificationStatus, UserLevel } from '@/lib/definitions';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
-import { getWhatsappTemplate } from './whatsapp';
+import { getWhatsappTemplate } from '@/app/actions/whatsapp';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { generateUniqueUsername, getUserByUid } from './user';
 import { formatFullName } from '@/lib/utils';
@@ -17,7 +17,11 @@ import { awardPointsForAction } from './points';
 import admin from 'firebase-admin';
 
 if (admin.apps.length === 0) {
-  admin.initializeApp();
+  try {
+    admin.initializeApp();
+  } catch (e) {
+    console.error('Firebase admin initialization error', e);
+  }
 }
 
 const usersCollection = collection(db, 'users');
@@ -106,6 +110,7 @@ export async function getMembers(forPublic: boolean = false): Promise<MemberWith
         referredBy: data.referredBy,
         upline: data.upline || [],
         level: data.level || 'bronze',
+        deletionRequestedAt: data.deletionRequestedAt,
       });
     }
     
