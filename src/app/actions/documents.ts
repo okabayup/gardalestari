@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -9,7 +10,7 @@ import { stampPdfWithQrCode } from '@/ai/flows/stamp-pdf-flow';
 import { sendNotification } from './notifications';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from './user';
-import { getWhatsappTemplate } from './whatsapp';
+import { getWhatsappTemplate } from './settings';
 import type { LetterStatus } from '@/lib/definitions';
 
 export interface ImportantDocument {

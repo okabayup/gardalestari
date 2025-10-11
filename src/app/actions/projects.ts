@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -21,7 +22,7 @@ import {
 import { revalidatePath } from 'next/cache';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from './user';
-import { getWhatsappTemplate } from './whatsapp';
+import { getWhatsappTemplate } from './settings';
 import type { Project, ProjectColumn, ProjectTask, CommentWithAuthor, IdeaAuthor } from '@/lib/definitions';
 import { sendNotification } from './notifications';
 

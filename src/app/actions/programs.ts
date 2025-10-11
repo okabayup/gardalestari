@@ -6,7 +6,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, query, orderBy, limit, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
-import { getWhatsappTemplate } from './whatsapp';
+import { getWhatsappTemplate } from './settings';
 import { sendBulkWhatsAppMessage } from '@/services/whatsapp';
 import type { Program, ProgramFormData, ProgramTag } from '@/lib/definitions';
 import { generateImage } from '@/ai/flows/image-generate-flow';
