@@ -7,11 +7,7 @@ import { doc, getDoc, setDoc, getDocs, collection, query, where, getCountFromSer
 import { sendWhatsAppMessage as sendWhatsAppMessageSatuConnect, sendBulkWhatsAppMessage as sendBulkWhatsAppMessageSatuConnect } from '@/services/whatsapp';
 import { revalidatePath } from 'next/cache';
 import { getPrograms } from './programs';
-import type { NotificationType, WhatsAppTemplate } from '@/lib/definitions';
 import { getMembers } from './members';
-import { getWhatsappTemplate } from './settings';
-
-const settingsDocRef = doc(db, 'settings', 'whatsappTemplates');
 
 export async function sendTestMessage(phoneNumber: string, message: string) {
     try {

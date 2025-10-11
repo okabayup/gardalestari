@@ -22,7 +22,7 @@ import {
 import { revalidatePath } from 'next/cache';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from './user';
-import { getWhatsappTemplate } from './settings';
+import { getWhatsappTemplate } from '@/app/actions/settings';
 import type { Project, ProjectColumn, ProjectTask, CommentWithAuthor, IdeaAuthor } from '@/lib/definitions';
 import { sendNotification } from './notifications';
 

@@ -3,6 +3,7 @@
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
 import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins } from 'lucide-react';
+import type { NotificationType } from '@/app/actions/settings';
 
 
 export const ALL_PERMISSIONS = [
@@ -656,74 +657,6 @@ export interface AppSettings {
   dummyNews: number;
   isTestimonialsEnabled?: boolean;
 }
-
-// --- User ---
-export interface PublicUser {
-  id: string;
-  username: string;
-  fullName: string;
-  avatarUrl: string;
-}
-
-export interface PublicProfile extends MemberWithStatus {
-    // This interface just combines the existing types for clarity.
-}
-
-// --- Voting ---
-export interface VotingOption {
-  id: string;
-  name: string;
-  voteCount: number;
-  imageUrl?: string;
-}
-
-export interface VotingTopic {
-  id?: string;
-  title: string;
-  description: string;
-  options: VotingOption[];
-  startDate: Timestamp;
-  endDate: Timestamp;
-  createdAt: Timestamp;
-  totalVotes: number;
-  voterIds: string[];
-  coverImageUrl?: string;
-}
-
-export interface UpdateVotingTopicPayload {
-  title: string;
-  description: string;
-  options: VotingOption[];
-  startDate: Date;
-  endDate: Date;
-  coverImageUrl?: string;
-}
-
-export interface VotingTopicDTO {
-  id: string;
-  title: string;
-  description: string;
-  options: VotingOption[];
-  startDate: string; // ISO string
-  endDate: string; // ISO string
-  createdAt: string; // ISO string
-  totalVotes: number;
-  voterIds: string[];
-  coverImageUrl?: string;
-}
-
-// --- WhatsApp ---
-export type NotificationType = 
-    | 'document_submission' 
-    | 'document_approved'
-    | 'document_rejected'
-    | 'new_task_assigned'
-    | 'member_verified_permanent'
-    | 'member_verification_rejected'
-    | 'member_position_updated'
-    | 'event_reminder'
-    | 'new_program_announcement'
-    | 'kta_activated';
 
 export interface WhatsAppTemplate {
     id: NotificationType;

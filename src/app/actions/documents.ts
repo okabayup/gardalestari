@@ -10,7 +10,7 @@ import { stampPdfWithQrCode } from '@/ai/flows/stamp-pdf-flow';
 import { sendNotification } from './notifications';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from './user';
-import { getWhatsappTemplate } from './settings';
+import { getWhatsappTemplate } from '@/app/actions/settings';
 import type { LetterStatus } from '@/lib/definitions';
 
 export interface ImportantDocument {

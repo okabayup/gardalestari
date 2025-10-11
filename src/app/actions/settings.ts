@@ -6,10 +6,30 @@ import { db, storage } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
-import type { AppSettings, WhatsAppTemplate, NotificationType } from '@/lib/definitions';
+import type { AppSettings } from '@/lib/definitions';
 
 const settingsDocRef = doc(db, 'settings', 'global');
 const whatsappTemplatesDocRef = doc(db, 'settings', 'whatsappTemplates');
+
+export type NotificationType = 
+    | 'document_submission' 
+    | 'document_approved'
+    | 'document_rejected'
+    | 'new_task_assigned'
+    | 'member_verified_permanent'
+    | 'member_verification_rejected'
+    | 'member_position_updated'
+    | 'event_reminder'
+    | 'new_program_announcement'
+    | 'kta_activated';
+
+export interface WhatsAppTemplate {
+    id: NotificationType;
+    label: string;
+    message: string;
+    isActive: boolean;
+    placeholders: string[];
+}
 
 export async function getAppSettings(): Promise<AppSettings> {
   try {
