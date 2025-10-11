@@ -1,13 +1,12 @@
 
-
 'use server';
 
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, getDocs, collection, query, where, getCountFromServer, orderBy, limit } from 'firebase/firestore';
 import { sendWhatsAppMessage as sendWhatsAppMessageSatuConnect, sendBulkWhatsAppMessage as sendBulkWhatsAppMessageSatuConnect } from '@/services/whatsapp';
 import { revalidatePath } from 'next/cache';
-import { getPrograms } from './programs';
-import { getMembers } from './members';
+import { getPrograms } from '@/app/actions/programs';
+import { getMembers } from '@/app/actions/members';
 
 export async function sendTestMessage(phoneNumber: string, message: string) {
     try {
