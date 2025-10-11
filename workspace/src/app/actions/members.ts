@@ -2,13 +2,13 @@
 
 'use server';
 
-import { db, storage } from '@/lib/firebase';
 import { collection, getDocs, doc, updateDoc, deleteField, query, setDoc, Timestamp, getDoc, addDoc, where,getCountFromServer, runTransaction, orderBy, limit, startAfter, endBefore, increment } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { db, storage } from '@/lib/firebase';
 import type { PermissionId, Position, MemberWithStatus, MemberType, VerificationStatus, UserLevel } from '@/lib/definitions';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
-import { getWhatsappTemplate } from './whatsapp';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { getWhatsappTemplate } from '@/app/actions/settings';
 import { generateUniqueUsername, getUserByUid } from './user';
 import { formatFullName } from '@/lib/utils';
 import { sendNotification } from './notifications';
@@ -110,6 +110,7 @@ export async function getMembers(forPublic: boolean = false): Promise<MemberWith
         referredBy: data.referredBy,
         upline: data.upline || [],
         level: data.level || 'bronze',
+        deletionRequestedAt: data.deletionRequestedAt,
       });
     }
     
