@@ -2,7 +2,7 @@
 
 'use server';
 
-import { collection, getDocs, doc, updateDoc, deleteField, query, setDoc, Timestamp, getDoc, addDoc, where,getCountFromServer, runTransaction, orderBy, limit, startAfter, endBefore, increment } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteField, query, setDoc, Timestamp, getDoc, addDoc, where,getCountFromServer, runTransaction, orderBy, limit, startAfter, endBefore, increment, writeBatch } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
@@ -13,7 +13,7 @@ import { generateUniqueUsername, getUserByUid } from './user';
 import { formatFullName } from '@/lib/utils';
 import { sendNotification } from './notifications';
 import { format } from 'date-fns';
-import { awardPointsForAction } from './points';
+import { awardPointsForAction } from '@/app/actions/points';
 import admin from 'firebase-admin';
 
 if (admin.apps.length === 0) {
@@ -250,6 +250,7 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
 
                 // --- AWARD MULTI-LEVEL REFERRAL POINTS ---
                 if (currentMemberData.upline && currentMemberData.upline.length > 0) {
+                    const batch = writeBatch(db);
                     for (let i = 0; i < currentMemberData.upline.length; i++) {
                         const referrerId = currentMemberData.upline[i];
                         const referralLevel = i + 1; // Level 1 for direct referrer, 2 for their referrer, etc.
@@ -260,7 +261,8 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
                         }
                     }
                     // Mark that points have been awarded to prevent duplication
-                    await updateDoc(memberDocRef, { referralPointsAwarded: true });
+                    batch.update(memberDocRef, { referralPointsAwarded: true });
+                    await batch.commit();
                 }
 
             } else if (verificationStatus === 'rejected') {
