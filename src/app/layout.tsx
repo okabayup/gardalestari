@@ -1,11 +1,10 @@
-
 import type { Metadata } from 'next';
 import { AuthProvider } from '@/hooks/use-auth';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import FirebaseAnalytics from '@/components/FirebaseAnalytics';
 import { Suspense } from 'react';
-import { getAppSettings } from './actions/settings';
+import { getAppSettings } from '@/app/actions/settings';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://gardalestari.org';
 
@@ -21,7 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description: 'Garda Lestari adalah organisasi kepemudaan yang berfokus pada inovasi di sektor agro-maritim dan kehutanan untuk pembangunan berkelanjutan di Indonesia.',
     manifest: '/manifest.json',
     icons: {
-      icon: '/favicon.ico',
+      icon: '/logo.png',
       shortcut: '/favicon.ico',
       apple: '/logo.png',
     },

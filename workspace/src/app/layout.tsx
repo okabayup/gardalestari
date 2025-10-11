@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description: 'Garda Lestari adalah organisasi kepemudaan yang berfokus pada inovasi di sektor agro-maritim dan kehutanan untuk pembangunan berkelanjutan di Indonesia.',
     manifest: '/manifest.json',
     icons: {
-      icon: '/favicon.ico',
+      icon: '/logo.png',
       shortcut: '/favicon.ico',
       apple: '/logo.png',
     },
