@@ -6,7 +6,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, runTransaction, where } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
-import { stampPdfWithQrCode } from '@/ai/flows/stamp-pdf-flow';
+import { stampPdf } from '@/ai/flows/stamp-pdf-flow';
 import { sendNotification } from './notifications';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from './user';
@@ -15,6 +15,8 @@ import type { LetterStatus, ImportantDocument, DocumentCategory } from '@/lib/de
 
 const documentsCollection = collection(db, 'importantDocuments');
 const categoriesCollection = collection(db, 'documentCategories');
+const KETUA_UMUM_UID = process.env.KETUA_UMUM_UID || 'KETUM_UID_PLACEHOLDER'; 
+
 
 // --- Document Management ---
 
@@ -117,13 +119,18 @@ export async function deleteDocument(id: string) {
 }
 
 
-export async function submitForApproval(documentId: string, authorId: string, approverId: string) {
+export async function submitForApproval(documentId: string, authorId: string) {
   try {
     const docRef = doc(db, 'importantDocuments', documentId);
     const document = await getDocument(documentId);
     if (!document || document.authorId !== authorId) {
       throw new Error("Hanya pembuat dokumen yang bisa mengajukan persetujuan.");
     }
+    if (document.status !== 'Draft' && document.status !== 'Ditolak') {
+      throw new Error("Dokumen ini tidak dalam status yang bisa diajukan.");
+    }
+
+    const approverId = KETUA_UMUM_UID; // Always send to Ketua Umum
 
     await updateDoc(docRef, {
       status: 'Menunggu Persetujuan',
@@ -132,23 +139,27 @@ export async function submitForApproval(documentId: string, authorId: string, ap
     
     // Send notifications
     const approver = await getUserByUid(approverId);
-    const template = await getWhatsappTemplate('document_submission');
-    if (template.isActive && approver?.waNumber) {
-      const message = template.message
-        .replace('{namaPenerima}', approver.name)
-        .replace('{judulDokumen}', document.title)
-        .replace('{namaPengirim}', document.authorName);
-      await sendWhatsAppMessage(approver.waNumber, message);
-    }
+    if (approver) {
+        const template = await getWhatsappTemplate('document_submission');
+        if (template.isActive && approver.waNumber) {
+        const message = template.message
+            .replace('{namaPenerima}', approver.name)
+            .replace('{judulDokumen}', document.title)
+            .replace('{namaPengirim}', document.authorName);
+        await sendWhatsAppMessage(approver.waNumber, message);
+        }
 
-    await sendNotification(
-      {
-        title: 'Permintaan Persetujuan Dokumen',
-        body: `Dokumen "${document.title}" dari ${document.authorName} memerlukan persetujuan Anda.`,
-        link: `/panel/documents`
-      },
-      { type: 'users', userIds: [approverId] }
-    );
+        await sendNotification(
+        {
+            title: 'Permintaan Persetujuan Dokumen',
+            body: `Dokumen "${document.title}" dari ${document.authorName} memerlukan persetujuan Anda.`,
+            link: `/panel/documents`
+        },
+        { type: 'users', userIds: [approverId] }
+        );
+    } else {
+        console.warn(`[submitForApproval Warn] Approver with UID ${approverId} not found. Cannot send notification.`);
+    }
 
     revalidatePath('/panel/documents');
   } catch (error) {
@@ -168,39 +179,48 @@ export async function approveDocument(documentId: string, approverId: string) {
     if (document.approverId !== approverId) throw new Error("Anda tidak memiliki izin untuk menyetujui dokumen ini.");
     if (document.status !== 'Menunggu Persetujuan') throw new Error("Dokumen ini tidak sedang dalam status menunggu persetujuan.");
 
-    const approver = await getUserByUid(approverId);
-
+    // Signatory is always Ketua Umum
+    const approvedByName = "L. Andri Saputro, S.I.Kom";
+    const approvedByPosition = "Ketua Umum";
+    
     await runTransaction(db, async (transaction) => {
-      await stampPdfWithQrCode(documentId);
+      // AI Flow to stamp the PDF
+      await stampPdf({ documentId });
+      
+      // Update document status in Firestore
       transaction.update(docRef, {
         status: 'Disetujui',
         approvedById: approverId,
-        approvedByName: approver?.name || 'Admin',
+        approvedByName: approvedByName,
+        approvedByPosition: approvedByPosition,
         approvedAt: Timestamp.now(),
       });
     });
 
     const author = await getUserByUid(document.authorId);
-    const template = await getWhatsappTemplate('document_approved');
-    if (template.isActive && author?.waNumber) {
-      const message = template.message
-          .replace('{namaPengguna}', author.name)
-          .replace('{judulDokumen}', document.title);
-      await sendWhatsAppMessage(author.waNumber, message);
+    if (author) {
+        const template = await getWhatsappTemplate('document_approved');
+        if (template.isActive && author.waNumber) {
+        const message = template.message
+            .replace('{namaPengguna}', author.name)
+            .replace('{judulDokumen}', document.title);
+        await sendWhatsAppMessage(author.waNumber, message);
+        }
+        await sendNotification(
+        {
+            title: 'Dokumen Disetujui',
+            body: `Dokumen Anda "${document.title}" telah disetujui dan disahkan.`,
+            link: `/panel/documents`
+        },
+        { type: 'users', userIds: [document.authorId] }
+        );
     }
-    await sendNotification(
-      {
-        title: 'Dokumen Disetujui',
-        body: `Dokumen Anda "${document.title}" telah disetujui dan disahkan.`,
-        link: `/panel/documents`
-      },
-      { type: 'users', userIds: [document.authorId] }
-    );
+
 
     revalidatePath('/panel/documents');
   } catch (error) {
     console.error("[approveDocument Error]", error);
-    throw new Error("Gagal menyetujui dokumen.");
+    throw new Error(`Gagal menyetujui dokumen: ${(error as Error).message}`);
   }
 }
 
@@ -225,24 +245,27 @@ export async function rejectDocument(documentId: string, rejectorId: string, rea
     });
 
     const author = await getUserByUid(document.authorId);
-    const template = await getWhatsappTemplate('document_rejected');
-    if (template.isActive && author?.waNumber) {
-      const message = template.message
-        .replace('{namaPengguna}', author.name)
-        .replace('{judulDokumen}', document.title)
-        .replace('{namaPenolak}', rejector?.name || 'Admin')
-        .replace('{alasanPenolakan}', reason);
-      await sendWhatsAppMessage(author.waNumber, message);
+    if (author) {
+        const template = await getWhatsappTemplate('document_rejected');
+        if (template.isActive && author.waNumber) {
+        const message = template.message
+            .replace('{namaPengguna}', author.name)
+            .replace('{judulDokumen}', document.title)
+            .replace('{namaPenolak}', rejector?.name || 'Admin')
+            .replace('{alasanPenolakan}', reason);
+        await sendWhatsAppMessage(author.waNumber, message);
+        }
+
+        await sendNotification(
+        {
+            title: 'Dokumen Ditolak',
+            body: `Dokumen Anda "${document.title}" telah ditolak. Alasan: ${reason}`,
+            link: `/panel/documents`
+        },
+        { type: 'users', userIds: [document.authorId] }
+        );
     }
 
-    await sendNotification(
-      {
-        title: 'Dokumen Ditolak',
-        body: `Dokumen Anda "${document.title}" telah ditolak.`,
-        link: `/panel/documents`
-      },
-      { type: 'users', userIds: [document.authorId] }
-    );
 
     revalidatePath('/panel/documents');
   } catch (error) {
@@ -299,9 +322,8 @@ export async function generateDocumentNumber(category: string): Promise<string> 
       let maxNumber = 0;
       snapshot.forEach(doc => {
         const num = doc.data().documentNumber;
-        const parts = num.split('/');
-        const lastPart = parts[0];
-        const numericPart = parseInt(lastPart.split('-')[0], 10);
+        const lastPart = num.split('/')[0];
+        const numericPart = parseInt(lastPart, 10);
         if (!isNaN(numericPart) && numericPart > maxNumber) {
           maxNumber = numericPart;
         }

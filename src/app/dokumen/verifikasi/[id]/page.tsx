@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -101,6 +102,7 @@ export default function DocumentVerificationPage() {
                                 <div>
                                     <p className="text-sm text-muted-foreground">Disahkan oleh</p>
                                     <p className="font-semibold">{document.approvedByName}</p>
+                                    <p className="text-xs text-muted-foreground">{document.approvedByPosition}</p>
                                 </div>
                                 <div>
                                     <p className="text-sm text-muted-foreground">Tanggal Pengesahan</p>

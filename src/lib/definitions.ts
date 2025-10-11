@@ -208,6 +208,7 @@ export interface ImportantDocument {
   approverId?: string; // UID of the user who needs to approve
   approvedById?: string; // UID of the user who approved
   approvedByName?: string; // denormalized
+  approvedByPosition?: string; // denormalized
   approvedAt?: Timestamp;
   rejectionReason?: string;
   rejectedById?: string;
@@ -658,12 +659,24 @@ export interface AppSettings {
   isTestimonialsEnabled?: boolean;
 }
 
+export type NotificationType =
+  | 'document_submission'
+  | 'document_approved'
+  | 'document_rejected'
+  | 'new_task_assigned'
+  | 'member_verified_permanent'
+  | 'member_verification_rejected'
+  | 'member_position_updated'
+  | 'event_reminder'
+  | 'new_program_announcement'
+  | 'kta_activated';
+
 export interface WhatsAppTemplate {
-    id: NotificationType;
-    label: string;
-    message: string;
-    isActive: boolean;
-    placeholders: string[];
+  id: NotificationType;
+  label: string;
+  message: string;
+  isActive: boolean;
+  placeholders: string[];
 }
 
 // --- Assistant ---
