@@ -46,11 +46,14 @@ export default function DocumentVerificationPage() {
     if (docId) {
       getDocument(docId)
         .then(async (doc) => {
-          if (doc) {
+          if (doc && doc.status === 'Disetujui' && doc.approvedAt) {
             setDocument(doc);
             const { id } = await import('date-fns/locale/id');
-            setFormattedDate(format(doc.createdAt.toDate(), 'dd MMMM yyyy, HH:mm', { locale: id }));
-          } else {
+            setFormattedDate(format(doc.approvedAt.toDate(), 'dd MMMM yyyy, HH:mm', { locale: id }));
+          } else if (doc) {
+             setError('Dokumen ini belum disahkan atau statusnya tidak valid.');
+          }
+          else {
             setError('Dokumen dengan ID ini tidak ditemukan.');
           }
         })
@@ -96,8 +99,8 @@ export default function DocumentVerificationPage() {
                                     </div>
                                 )}
                                 <div>
-                                    <p className="text-sm text-muted-foreground">Kategori</p>
-                                    <p className="font-semibold">{document.category}</p>
+                                    <p className="text-sm text-muted-foreground">Disahkan oleh</p>
+                                    <p className="font-semibold">{document.approvedByName}</p>
                                 </div>
                                 <div>
                                     <p className="text-sm text-muted-foreground">Tanggal Pengesahan</p>

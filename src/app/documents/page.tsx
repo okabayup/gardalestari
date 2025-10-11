@@ -49,7 +49,7 @@ export default async function PublicDocumentsPage() {
           <div className="space-y-4">
             {approvedDocuments.length > 0 ? (
               approvedDocuments.map((item) => (
-                <DocumentItem key={item.id} document={item} />
+                <DocumentItem key={item.id!} document={item} />
               ))
             ) : (
               <div className="text-center py-20 text-muted-foreground">

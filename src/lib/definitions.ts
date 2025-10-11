@@ -203,11 +203,11 @@ export interface ImportantDocument {
   fileUrl: string;
   fileName: string;
   authorId: string;
-  authorName: string;
+  authorName: string; // denormalized
   status: LetterStatus;
-  approverId?: string;
-  approvedById?: string;
-  approvedByName?: string;
+  approverId?: string; // UID of the user who needs to approve
+  approvedById?: string; // UID of the user who approved
+  approvedByName?: string; // denormalized
   approvedAt?: Timestamp;
   rejectionReason?: string;
   rejectedById?: string;
@@ -719,4 +719,62 @@ export interface PageSpeedReport {
             seo: { score: number };
         };
     };
+}
+// --- Voting ---
+export interface VotingOption {
+    id: string;
+    name: string;
+    voteCount: number;
+    imageUrl?: string;
+}
+
+export interface VotingTopic {
+    id: string;
+    title: string;
+    description: string;
+    options: VotingOption[];
+    voterIds: string[];
+    totalVotes: number;
+    startDate: Timestamp;
+    endDate: Timestamp;
+    createdAt: Timestamp;
+    coverImageUrl?: string;
+}
+
+export interface VotingTopicDTO extends Omit<VotingTopic, 'startDate' | 'endDate' | 'createdAt'> {
+    startDate: string;
+    endDate: string;
+    createdAt: string;
+}
+
+
+export interface UpdateVotingTopicPayload {
+    title: string;
+    description: string;
+    startDate: Date;
+    endDate: Date;
+    options: VotingOption[];
+    coverImageUrl?: string;
+}
+
+export interface PublicUser {
+    id: string;
+    username: string;
+    fullName: string;
+    avatarUrl?: string;
+}
+
+export interface PublicProfile extends PublicUser {
+  phoneNumber: string;
+  verificationStatus: VerificationStatus;
+  position: string;
+  positionId?: string;
+  type?: MemberType;
+  region?: string;
+  joinDate?: string;
+  permissions: PermissionId[];
+  instagram?: string;
+  linkedin?: string;
+  skills?: string[];
+  interests?: string[];
 }

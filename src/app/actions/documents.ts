@@ -11,28 +11,7 @@ import { sendNotification } from './notifications';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from './user';
 import { getWhatsappTemplate } from '@/app/actions/settings';
-import type { LetterStatus } from '@/lib/definitions';
-
-export interface ImportantDocument {
-  id?: string;
-  title: string;
-  description?: string;
-  documentNumber: string;
-  category: string;
-  createdAt: Timestamp;
-  fileUrl: string;
-  fileName: string;
-  authorId: string;
-  authorName: string; // denormalized
-  status: LetterStatus;
-  approverId?: string; // UID of the user who needs to approve
-  approvedById?: string; // UID of the user who approved
-  approvedByName?: string; // denormalized
-  approvedAt?: Timestamp;
-  rejectionReason?: string;
-  rejectedById?: string;
-  rejectedByName?: string;
-}
+import type { LetterStatus, ImportantDocument, DocumentCategory } from '@/lib/definitions';
 
 const documentsCollection = collection(db, 'importantDocuments');
 const categoriesCollection = collection(db, 'documentCategories');
@@ -274,11 +253,6 @@ export async function rejectDocument(documentId: string, rejectorId: string, rea
 
 
 // --- Category Management ---
-
-export interface DocumentCategory {
-    id?: string;
-    name: string;
-}
 
 export async function getDocumentCategories(): Promise<DocumentCategory[]> {
     try {
