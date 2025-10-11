@@ -7,7 +7,7 @@
     "dev": "next dev -p 9002",
     "genkit:dev": "genkit start -- ts-node src/ai/dev.ts",
     "genkit:watch": "genkit start -- ts-node --watch src/ai/dev.ts",
-    "build": "next build",
+    "build": "next build && node scripts/check-build.js",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
