@@ -5,7 +5,7 @@
       "namespace": "android_app",
       "package_name": "org.gardalestari.twa",
       "sha256_cert_fingerprints":
-      ["GANTI_DENGAN_FINGERPRINT_SERTIFIKAT_SHA256_ANDA"]
+      ["GANTI_DENGAN_SHA256_FINGERPRINT_ANDA"]
     }
   }
 ]]
