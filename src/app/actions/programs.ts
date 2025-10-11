@@ -116,7 +116,16 @@ export async function createProgram(
         } else if (programData.imageSource === 'ai' && typeof programData.imageHint === 'string' && programData.imageHint) {
             const result = await generateImage({ prompt: programData.imageHint });
             if (!result.imageUrl) throw new Error("AI gagal membuat URL gambar.");
-            dataToCreate.imageUrl = result.imageUrl;
+            
+            // If it's a data URI, upload it to storage first
+            if (result.imageUrl.startsWith('data:')) {
+                const storageRef = ref(storage, `program-images/${Date.now()}_ai_generated.png`);
+                await uploadBytes(storageRef, Buffer.from(result.imageUrl.split(',')[1], 'base64'), { contentType: 'image/png' });
+                dataToCreate.imageUrl = await getDownloadURL(storageRef);
+            } else {
+                dataToCreate.imageUrl = result.imageUrl;
+            }
+
         } else if (programData.imageSource === 'url' && typeof programData.imageUrl === 'string' && programData.imageUrl) {
              dataToCreate.imageUrl = programData.imageUrl;
         } else {
