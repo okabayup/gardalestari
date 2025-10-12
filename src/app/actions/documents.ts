@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -200,6 +201,13 @@ export async function approveDocument(
     const document = docSnap.data() as ImportantDocument;
 
     // Authorization is now primarily handled by the UI (if the user can see the button, they can approve).
+    // This is a server-side double check.
+    const approverUser = await getUserByUid(approverId);
+    if (!approverUser || !approverUser.permissions?.includes('manage_documents')) {
+        console.error(`[approveDocument] Unauthorized attempt by UID: ${approverId}`);
+        throw new Error("Anda tidak memiliki izin untuk menyetujui dokumen ini.");
+    }
+
     if (document.status !== 'Menunggu Persetujuan') {
         throw new Error("Dokumen ini tidak sedang dalam status menunggu persetujuan.");
     }
@@ -220,8 +228,8 @@ export async function approveDocument(
       stamp
     });
 
-    const approvedByName = "L. Andri Saputro";
-    const approvedByPosition = "Ketua Umum";
+    const approvedByName = approverUser.name;
+    const approvedByPosition = approverUser.position || "Admin";
     
     await runTransaction(db, async (transaction) => {
       transaction.update(docRef, {

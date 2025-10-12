@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -28,8 +29,6 @@ import { getDocuments, deleteDocument, ImportantDocument, submitForApproval, app
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import QRCode from 'qrcode.react';
-import { toPng } from 'html-to-image';
 import { useAuth } from '@/hooks/use-auth';
 import { Textarea } from '@/components/ui/textarea';
 import DocumentStampingDialog from '@/components/panel/documents/DocumentStampingDialog';
@@ -59,7 +58,7 @@ const RejectDialog = ({ document, isOpen, onClose, onConfirm }: { document: Impo
 export default function DocumentsPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   const [documents, setDocuments] = useState<ImportantDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -70,6 +69,7 @@ export default function DocumentsPage() {
   const [rejectDialogItem, setRejectDialogItem] = useState<ImportantDocument | null>(null);
   const [stampingDialogItem, setStampingDialogItem] = useState<ImportantDocument | null>(null);
 
+  const canManageDocuments = hasPermission('manage_documents');
 
   useEffect(() => {
     fetchDocuments();
@@ -100,6 +100,7 @@ export default function DocumentsPage() {
       toast({ title: successMessage });
       fetchDocuments();
     } catch (error) {
+      console.error(`Action failed for doc ${docId}:`, error);
       toast({ variant: 'destructive', title: errorMessage, description: (error as Error).message });
     } finally {
       setActionLoading(null);
@@ -110,7 +111,7 @@ export default function DocumentsPage() {
     if (!stampingDialogItem?.id || !user?.uid) return;
     setStampingDialogItem(null); // Close dialog immediately
     handleAction(
-      () => approveDocument(stampingDialogItem.id!, user.uid, stamp),
+      () => approveDocument(stampingDialogItem!.id!, user.uid, stamp),
       stampingDialogItem.id!,
       'Dokumen disetujui!',
       'Gagal Menyetujui'
@@ -119,7 +120,7 @@ export default function DocumentsPage() {
 
   const handleRejectConfirm = (reason: string) => {
     if (!rejectDialogItem?.id || !user?.uid) return;
-    handleAction(() => rejectDocument(rejectDialogItem.id!, user.uid, reason), rejectDialogItem.id, 'Dokumen ditolak.', 'Gagal Menolak');
+    handleAction(() => rejectDocument(rejectDialogItem!.id!, user.uid, reason), rejectDialogItem.id!, 'Dokumen ditolak.', 'Gagal Menolak');
     setRejectDialogItem(null);
   }
 
@@ -215,7 +216,7 @@ export default function DocumentsPage() {
                                     <Send className="mr-2 h-4 w-4" /> Ajukan Persetujuan
                                 </DropdownMenuItem>
                             )}
-                            {item.status === 'Menunggu Persetujuan' && user?.uid === KETUA_UMUM_UID && (
+                             {item.status === 'Menunggu Persetujuan' && canManageDocuments && (
                                 <>
                                 <DropdownMenuItem onClick={() => setStampingDialogItem(item)}>
                                     <Check className="mr-2 h-4 w-4" /> Setujui Dokumen

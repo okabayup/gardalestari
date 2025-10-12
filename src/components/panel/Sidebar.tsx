@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -74,7 +75,7 @@ const navGroups: {
     group: 'Keterlibatan Anggota',
     icon: Lightbulb,
     items: [
-      { href: '/panel/ideas', icon: Lightbulb, label: 'Lab Ide &amp; Aksi', permission: 'manage_ideas'},
+      { href: '/panel/ideas', icon: Lightbulb, label: 'Lab Ide & Aksi', permission: 'manage_ideas'},
       { href: '/panel/announcements', icon: Megaphone, label: 'Pengumuman', permission: 'manage_announcements'},
       { href: '/panel/notifications', icon: Bell, label: 'Notifikasi', permission: 'send_notifications' },
       { href: '/panel/evoting', icon: Vote, label: 'E-Voting', permission: 'manage_evoting' },
@@ -83,7 +84,7 @@ const navGroups: {
     ],
   },
    {
-    group: 'Program &amp; Peluang',
+    group: 'Program & Peluang',
     icon: Briefcase,
     items: [
        { href: '/panel/programs', icon: Megaphone, label: 'Program', permission: 'manage_programs' },
@@ -104,7 +105,7 @@ const navGroups: {
     group: 'Persuratan',
     icon: Building2,
     items: [
-        { href: '/panel/documents', icon: BookCopy, label: 'Surat &amp; Dokumen', permission: 'manage_documents'},
+        { href: '/panel/documents', icon: BookCopy, label: 'Surat & Dokumen', permission: 'manage_documents'},
         { href: '/panel/projects', icon: KanbanSquare, label: 'Manajemen Proyek', permission: 'manage_projects' },
         { href: '/panel/whatsapp', icon: MessageCircle, label: 'Manajemen WhatsApp', permission: 'manage_whatsapp' },
     ]
