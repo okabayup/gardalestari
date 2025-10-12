@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -248,7 +249,8 @@ export async function approveDocument(
         if (template.isActive && author.waNumber) {
             const message = template.message
                 .replace('{namaPengguna}', author.name)
-                .replace('{judulDokumen}', document.title);
+                .replace('{judulDokumen}', document.title)
+                .replace('{nomorDokumen}', documentNumber);
             await sendWhatsAppMessage(author.waNumber, message);
         }
         await sendNotification(

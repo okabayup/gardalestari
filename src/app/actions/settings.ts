@@ -119,9 +119,9 @@ const defaultTemplates: Record<NotificationType, WhatsAppTemplate> = {
     document_approved: {
         id: 'document_approved',
         label: 'Dokumen Disetujui',
-        message: 'Kabar baik, {namaPengguna}! Dokumen Anda *"{judulDokumen}"* telah *disetujui dan disahkan* secara digital. Anda dapat mengunduhnya di aplikasi.',
+        message: 'Kabar baik, {namaPengguna}! Dokumen Anda *"{judulDokumen}"* telah *disetujui dan disahkan* secara digital. Anda dapat mengunduhnya di aplikasi. Nomor surat: {nomorDokumen}',
         isActive: true,
-        placeholders: ['{namaPengguna}', '{judulDokumen}']
+        placeholders: ['{namaPengguna}', '{judulDokumen}', '{nomorDokumen}']
     },
     document_rejected: {
         id: 'document_rejected',

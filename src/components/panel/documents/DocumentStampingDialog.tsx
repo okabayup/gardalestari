@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -8,6 +9,8 @@ import { Check, Loader2, Grab, Maximize, RotateCw } from 'lucide-react';
 import PdfViewer from '@/components/utils/PdfViewer';
 import QRCode from 'qrcode.react';
 import { Rnd } from 'react-rnd';
+import { generateDocumentNumber } from '@/app/actions/documents';
+import { useToast } from '@/hooks/use-toast';
 
 interface DocumentStampingDialogProps {
   document: ImportantDocument | null;
@@ -21,27 +24,42 @@ export default function DocumentStampingDialog({ document, isOpen, onClose, onCo
     x: 100,
     y: 500,
     width: 120,
-    height: 120,
+    height: 140, // Increase height to accommodate text
     rotation: 0,
   });
   const [loading, setLoading] = useState(false);
+  const [documentNumber, setDocumentNumber] = useState<string | null>(null);
+  const { toast } = useToast();
   const pdfContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Reset stamp position when a new document is opened
-    if (isOpen) {
-      setStamp({ x: 100, y: 500, width: 120, height: 120, rotation: 0 });
+    // Reset stamp position and fetch document number when a new document is opened
+    if (isOpen && document) {
+      setStamp({ x: 100, y: 500, width: 120, height: 140, rotation: 0 });
+      const fetchDocNumber = async () => {
+          try {
+              const number = await generateDocumentNumber(document.type);
+              setDocumentNumber(number);
+          } catch (e) {
+              toast({ variant: 'destructive', title: 'Gagal Membuat Nomor Surat' });
+          }
+      };
+      fetchDocNumber();
     }
-  }, [isOpen]);
+  }, [isOpen, document, toast]);
 
   if (!document) return null;
   
   const verificationUrl = typeof window !== 'undefined' ? `${window.location.origin}/dokumen/verifikasi/${document.id}` : '';
 
   const handleConfirm = () => {
+    if (!documentNumber) {
+        toast({variant: 'destructive', title: 'Nomor surat belum dibuat. Coba lagi.'});
+        return;
+    }
     setLoading(true);
+    // Pass the final stamp state to the parent
     onConfirm(stamp);
-    // The parent component will close the dialog on success/failure
   };
 
   return (
@@ -63,7 +81,7 @@ export default function DocumentStampingDialog({ document, isOpen, onClose, onCo
               alignItems: 'center',
               justifyContent: 'center',
               border: '1px dashed hsl(var(--primary))',
-              background: 'rgba(255,255,255,0.3)',
+              background: 'rgba(255,255,255,0.8)',
             }}
             size={{ width: stamp.width, height: stamp.height }}
             position={{ x: stamp.x, y: stamp.y }}
@@ -78,8 +96,11 @@ export default function DocumentStampingDialog({ document, isOpen, onClose, onCo
             }}
             bounds="parent"
           >
-            <div className="relative w-full h-full p-2">
-              <QRCode value={verificationUrl} size={Math.min(stamp.width, stamp.height) - 16} bgColor="transparent" fgColor="#000" />
+            <div className="relative w-full h-full p-2 flex flex-col items-center justify-center gap-1 text-center">
+              {verificationUrl && <QRCode value={verificationUrl} size={Math.min(stamp.width, stamp.height) - 40} bgColor="transparent" fgColor="#000" />}
+              <p className="text-[6px] font-mono leading-tight break-all">
+                {documentNumber || 'Memuat nomor...'}
+              </p>
             </div>
              <div className="absolute -top-6 -right-6 text-primary opacity-50 p-1 cursor-grab" title="Pindahkan">
                 <Grab className="h-4 w-4" />
@@ -92,7 +113,7 @@ export default function DocumentStampingDialog({ document, isOpen, onClose, onCo
             </div>
             <div className="flex gap-2">
                  <Button variant="outline" onClick={onClose}>Batal</Button>
-                <Button onClick={handleConfirm} disabled={loading}>
+                <Button onClick={handleConfirm} disabled={loading || !documentNumber}>
                     {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Check className="mr-2 h-4 w-4" />}
                     Selesaikan &amp; Sahkan
                 </Button>
