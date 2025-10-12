@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,8 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, Paperclip, Download } from 'lucide-react';
-import { createDocument, generateDocumentNumber, DocumentCategory, ImportantDocument } from '@/app/actions/documents';
-import { getDocumentCategories } from '@/app/actions/documents';
+import { createDocument, generateDocumentNumber, DocumentCategory, DocumentType, ImportantDocument } from '@/app/actions/documents';
+import { getDocumentCategories, getDocumentTypes } from '@/app/actions/documents';
 import { useAuth } from '@/hooks/use-auth';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
@@ -25,7 +26,9 @@ export default function NewDocumentPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<DocumentCategory[]>([]);
+  const [docTypes, setDocTypes] = useState<DocumentType[]>([]);
   const [isGeneratingNumber, setIsGeneratingNumber] = useState(false);
+  const CANVA_TEMPLATE_URL = "https://www.canva.com/design/DAG1iEQwEnk/dkJaRIGTpYl3JmEmWMK--Q/edit?utm_content=DAG1iEQwEnk&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton";
 
   const {
     control,
@@ -36,20 +39,29 @@ export default function NewDocumentPage() {
     formState: { errors },
   } = useForm<FormData>();
   
-  const selectedCategory = watch("category");
+  const selectedType = watch("type");
   const uploadedFile = watch("file");
   const uploadedFileName = uploadedFile?.[0]?.name;
 
   useEffect(() => {
-    getDocumentCategories().then(setCategories);
+    Promise.all([
+      getDocumentCategories(),
+      getDocumentTypes()
+    ]).then(([cats, types]) => {
+      setCategories(cats);
+      setDocTypes(types);
+    })
   }, []);
   
    useEffect(() => {
-    if (selectedCategory) {
+    if (selectedType) {
+      const docTypeCode = docTypes.find(t => t.name === selectedType)?.code;
+      if (!docTypeCode) return;
+
       const generateNumber = async () => {
         setIsGeneratingNumber(true);
         try {
-          const number = await generateDocumentNumber(selectedCategory);
+          const number = await generateDocumentNumber(docTypeCode);
           setValue('documentNumber', number);
         } catch (error) {
           toast({ variant: 'destructive', title: 'Gagal membuat nomor dokumen' });
@@ -59,7 +71,7 @@ export default function NewDocumentPage() {
       };
       generateNumber();
     }
-  }, [selectedCategory, setValue, toast]);
+  }, [selectedType, docTypes, setValue, toast]);
 
 
   const onSubmit = async (data: FormData) => {
@@ -109,12 +121,12 @@ export default function NewDocumentPage() {
             <div className="flex justify-between items-start">
                 <div>
                     <CardTitle>Detail Dokumen</CardTitle>
-                    <CardDescription>Informasi utama mengenai dokumen yang akan dibuat.</CardDescription>
+                    <CardDescription>Gunakan template, isi, lalu unggah sebagai PDF.</CardDescription>
                 </div>
                 <Button variant="secondary" asChild>
-                    <Link href="/templates/surat_resmi_template.docx" download>
+                    <Link href={CANVA_TEMPLATE_URL} target="_blank">
                         <Download className="mr-2 h-4 w-4" />
-                        Unduh Template
+                        Buka Template di Canva
                     </Link>
                 </Button>
             </div>
@@ -122,44 +134,43 @@ export default function NewDocumentPage() {
         <CardContent className="space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="title">Perihal Dokumen</Label>
-                <Input id="title" {...register('title')} placeholder="Contoh: Surat Permohonan Audiensi" />
+                <Input id="title" {...register('title')} placeholder="Contoh: Permohonan Audiensi dengan Kementerian" />
                  {errors.title && <p className="text-sm text-destructive">{errors.title?.message}</p>}
             </div>
-             <div className="space-y-2">
-                <Label htmlFor="documentNumber">Nomor Dokumen</Label>
-                <div className="flex items-center gap-2">
-                    <Input id="documentNumber" {...register('documentNumber')} disabled={isGeneratingNumber} placeholder="Pilih kategori untuk generate nomor..." />
-                    {isGeneratingNumber && <Loader2 className="h-4 w-4 animate-spin" />}
-                </div>
-                {errors.documentNumber && <p className="text-sm text-destructive">{errors.documentNumber?.message}</p>}
-            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="category">Kategori Dokumen</Label>
+                    <Label htmlFor="type">Jenis Dokumen</Label>
                     <Controller
-                    name="category"
+                    name="type"
                     control={control}
-                    rules={{ required: "Kategori wajib dipilih" }}
+                    rules={{ required: "Jenis wajib dipilih" }}
                     render={({ field }) => (
                         <Select onValueChange={field.onChange} value={field.value}>
-                            <SelectTrigger><SelectValue placeholder="Pilih kategori dokumen" /></SelectTrigger>
+                            <SelectTrigger><SelectValue placeholder="Pilih jenis dokumen" /></SelectTrigger>
                             <SelectContent>
-                            {categories.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                            {docTypes.map(t => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     )}
                     />
-                    {errors.category && <p className="text-sm text-destructive">{errors.category?.message}</p>}
+                    {errors.type && <p className="text-sm text-destructive">{errors.type?.message}</p>}
                 </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="description">Tujuan Dokumen</Label>
-                    <Input id="description" {...register('description')} placeholder="Contoh: Yth. Menteri Pertanian" />
-                    {errors.description && <p className="text-sm text-destructive">{errors.description?.message}</p>}
-                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="attachments">Jumlah Lampiran</Label>
+                  <Input id="attachments" {...register('attachments')} placeholder="Contoh: 1 Berkas" />
+              </div>
             </div>
+
             <div className="space-y-2">
-                <Label htmlFor="file">File Dokumen (DOCX)</Label>
-                <Input id="file" type="file" {...register('file')} accept=".docx" />
+              <Label htmlFor="description">Tujuan Dokumen</Label>
+              <Input id="description" {...register('description')} placeholder="Contoh: Yth. Menteri Pertanian Republik Indonesia" />
+              {errors.description && <p className="text-sm text-destructive">{errors.description?.message}</p>}
+            </div>
+
+            <div className="space-y-2">
+                <Label htmlFor="file">File Dokumen (PDF)</Label>
+                <Input id="file" type="file" {...register('file')} accept=".pdf" />
                  {uploadedFileName && <p className="text-sm text-muted-foreground flex items-center gap-2"><Paperclip className="h-4 w-4"/> {uploadedFileName}</p>}
                  {errors.file && <p className="text-sm text-destructive">File wajib diunggah</p>}
             </div>

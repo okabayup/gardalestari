@@ -4,21 +4,15 @@
  * @fileOverview A flow to stamp a PDF document with a QR code and document number.
  *
  * - stampPdfWithQrCode - Stamps a PDF with QR code and number.
- * - generateDocxTemplateBuffer - Generates a DOCX template file in memory.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getDocument } from '@/app/actions/documents';
 import { storage } from '@/lib/firebase';
-import { ref, getBytes, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, getBytes, uploadBytes } from 'firebase/storage';
 import { PDFDocument, rgb, StandardFonts, PDFPage } from 'pdf-lib';
-import { Packer, Document as DocxDocument, Paragraph, TextRun, AlignmentType } from 'docx';
 import QRCode from 'qrcode';
-import fs from 'fs';
-import path from 'path';
-import { fromBuffer } from 'pdf2pic';
-import { Readable } from 'stream';
 
 const StampPdfInputSchema = z.string().describe('The ID of the document in Firestore to be stamped.');
 export type StampPdfInput = z.infer<typeof StampPdfInputSchema>;
@@ -27,38 +21,51 @@ export async function stampPdfWithQrCode(input: StampPdfInput): Promise<void> {
   return stampPdfFlow(input);
 }
 
-// Helper function to read the logo file
-async function getLogoImage(): Promise<Buffer> {
-    const logoPath = path.resolve('./public', 'logo.png');
-    return fs.promises.readFile(logoPath);
-}
-
-// Helper function to find a placeholder and replace it with an image
-async function findAndReplaceImage(page: PDFPage, placeholder: string, imageBytes: Buffer, qrSize: number) {
+// Helper function to find a placeholder and replace it.
+// This is very basic and relies on the placeholder being on its own line.
+async function findAndReplacePlaceholder(page: PDFPage, placeholder: string, replacement: { type: 'qr', data: Buffer, size: number } | { type: 'text', text: string, font: any, size: number }) {
     const textContent = await page.getTextContent();
+    const { width, height } = page.getSize();
+    
     for (const item of textContent.items) {
         if ('str' in item && item.str.includes(placeholder)) {
-            // Simple approximation of position. This is not very accurate.
-            // A more robust solution would involve parsing PDF content streams.
             const x = item.transform[4];
-            const y = item.transform[5] - qrSize; // Adjust Y to place below the placeholder text line
+            let y = height - item.transform[5]; // pdf-lib y is from bottom, textContent y is from top
 
-            // Draw a white rectangle to cover the placeholder text
-             page.drawRectangle({
+            page.drawRectangle({
                 x: x - 5,
-                y: y + qrSize,
-                width: 100,
+                y: y - 5,
+                width: 100, // Assume placeholder is not wider than this
                 height: 20,
-                color: rgb(1, 1, 1),
+                color: rgb(1, 1, 1), // Cover with white
             });
+            
+            if (replacement.type === 'qr') {
+                const qrImage = await page.doc.embedPng(replacement.data);
+                const qrX = width - replacement.size - 50;
+                const qrY = 80;
+                page.drawImage(qrImage, { x: qrX, y: qrY, width: replacement.size, height: replacement.size });
+                 
+                // Also add signature text below the QR
+                const signatureTextLine1 = "a.n. Ketua Umum";
+                const signatureTextLine2 = "L. Andri Saputro, S.I.Kom";
+                const signatureFont = await page.doc.embedFont(StandardFonts.Helvetica);
+                const textWidth1 = signatureFont.widthOfTextAtSize(signatureTextLine1, 8);
+                const textWidth2 = signatureFont.widthOfTextAtSize(signatureTextLine2, 8);
 
-            const image = await page.doc.embedPng(imageBytes);
-            page.drawImage(image, { x, y, width: qrSize, height: qrSize });
-            return true;
+                page.drawText(signatureTextLine1, { x: qrX + (replacement.size - textWidth1) / 2, y: qrY - 10, font: signatureFont, size: 8, color: rgb(0, 0, 0) });
+                page.drawText(signatureTextLine2, { x: qrX + (replacement.size - textWidth2) / 2, y: qrY - 20, font: signatureFont, size: 8, color: rgb(0, 0, 0) });
+
+
+            } else if (replacement.type === 'text') {
+                page.drawText(replacement.text, { x, y: y-3, font: replacement.font, size: replacement.size, color: rgb(0, 0, 0) });
+            }
+            return;
         }
     }
-    return false;
+     console.warn(`Placeholder "${placeholder}" not found in PDF.`);
 }
+
 
 const stampPdfFlow = ai.defineFlow(
   {
@@ -82,35 +89,23 @@ const stampPdfFlow = ai.defineFlow(
     const pdfRef = ref(storage, document.fileUrl);
     const pdfBytes = await getBytes(pdfRef);
 
-    // 4. Load PDF and Embed QR Code & Signature
+    // 4. Load PDF
     const pdfDoc = await PDFDocument.load(pdfBytes);
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const firstPage = pdfDoc.getPages()[0];
-    const { width, height } = firstPage.getSize();
+    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+    // 5. Replace Placeholders
+    // Replace TTD placeholder with QR Code
+    await findAndReplacePlaceholder(firstPage, '[TTD_QR]', { type: 'qr', data: qrCodeImageBytes, size: 80 });
     
-    const qrSize = 60;
-    const qrX = width - qrSize - 50; // Position from right
-    const qrY = 80; // Position from bottom
+    // Replace Nomor Surat placeholder with actual number
+    await findAndReplacePlaceholder(firstPage, '[NOMOR_SURAT]', { type: 'text', text: document.documentNumber, font: helveticaFont, size: 12 });
 
-    // Embed QR Code
-    const qrImage = await pdfDoc.embedPng(qrCodeImageBytes);
-    firstPage.drawImage(qrImage, { x: qrX, y: qrY, width: qrSize, height: qrSize });
-    
-    // Embed Text for Signature
-    const textOptions = { font, size: 8, color: rgb(0, 0, 0) };
-    const signatureTextLine1 = "a.n. Ketua Umum";
-    const signatureTextLine2 = "L. Andri Saputro, S.I.Kom";
 
-    const textWidth1 = font.widthOfTextAtSize(signatureTextLine1, 8);
-    const textWidth2 = font.widthOfTextAtSize(signatureTextLine2, 8);
-
-    firstPage.drawText(signatureTextLine1, { x: qrX + (qrSize - textWidth1) / 2, y: qrY - 10, ...textOptions });
-    firstPage.drawText(signatureTextLine2, { x: qrX + (qrSize - textWidth2) / 2, y: qrY - 20, ...textOptions });
-
-    // 5. Save the modified PDF
+    // 6. Save the modified PDF
     const modifiedPdfBytes = await pdfDoc.save();
 
-    // 6. Upload a new version to storage
+    // 7. Upload a new version to storage
     const stampedPdfRef = ref(storage, document.fileUrl); // Overwrite the original file
     await uploadBytes(stampedPdfRef, modifiedPdfBytes, {
         contentType: 'application/pdf',
@@ -119,38 +114,3 @@ const stampPdfFlow = ai.defineFlow(
     console.log(`Successfully stamped and re-uploaded PDF for document ${documentId}`);
   }
 );
-
-
-export async function generateDocxTemplateBuffer(): Promise<Buffer> {
-    const doc = new DocxDocument({
-        sections: [{
-            properties: {},
-            children: [
-                new Paragraph({
-                    children: [new TextRun("KOP SURAT ANDA DI SINI")],
-                    alignment: AlignmentType.CENTER,
-                    spacing: { after: 400 },
-                }),
-                 new Paragraph({
-                    children: [new TextRun({ text: "Nomor: [NOMOR_SURAT]", bold: true })],
-                    alignment: AlignmentType.LEFT,
-                }),
-                new Paragraph({
-                    text: "Isi surat Anda di sini...",
-                    spacing: { after: 800 },
-                }),
-                new Paragraph({
-                    text: "Hormat kami,",
-                    spacing: { after: 200 },
-                }),
-                 new Paragraph({
-                    children: [new TextRun("[TTD_QR]")],
-                     spacing: { top: 1200 },
-                }),
-            ],
-        }],
-    });
-
-    const buffer = await Packer.toBuffer(doc);
-    return buffer;
-}

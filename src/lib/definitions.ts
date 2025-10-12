@@ -3,8 +3,6 @@
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
 import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins } from 'lucide-react';
-import type { NotificationType } from '@/app/actions/settings';
-
 
 export const ALL_PERMISSIONS = [
     { id: 'manage_users', label: 'Kelola Anggota & Verifikasi' },
@@ -195,10 +193,12 @@ export interface DataBankEntry {
 // --- Documents ---
 export interface ImportantDocument {
   id?: string;
-  title: string;
-  description?: string;
+  title: string; // Perihal
+  description?: string; // Tujuan (penerima)
   documentNumber: string;
   category: string;
+  type: string; // Jenis Dokumen
+  attachments: string; // Jumlah Lampiran
   createdAt: Timestamp;
   fileUrl: string;
   fileName: string;
@@ -219,6 +219,13 @@ export interface DocumentCategory {
     id?: string;
     name: string;
 }
+
+export interface DocumentType {
+    id?: string;
+    name: string;
+    code: string;
+}
+
 
 // --- Events ---
 export interface Event {
