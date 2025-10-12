@@ -12,6 +12,7 @@ import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from './user';
 import { getWhatsappTemplate } from '@/app/actions/settings';
 import type { LetterStatus, ImportantDocument, DocumentCategory, DocumentType } from '@/lib/definitions';
+import admin from 'firebase-admin';
 
 const documentsCollection = collection(db, 'importantDocuments');
 const categoriesCollection = collection(db, 'documentCategories');
@@ -191,38 +192,45 @@ export async function submitForApproval(documentId: string, authorId: string) {
 
 export async function approveDocument(documentId: string, approverId: string) {
   try {
+    // Check if the user performing the action is a superadmin
+    if (admin.apps.length === 0) admin.initializeApp();
+    const approverAuth = await admin.auth().getUser(approverId);
+    const isAdmin = approverAuth.phoneNumber === process.env.ADMIN_PHONE_NUMBER;
+
     const docRef = doc(db, 'importantDocuments', documentId);
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) throw new Error("Dokumen tidak ditemukan.");
 
     const document = docSnap.data() as ImportantDocument;
-    if (document.approverId !== approverId) throw new Error("Anda tidak memiliki izin untuk menyetujui dokumen ini.");
+
+    // Allow approval if the user is the designated approver OR if they are a superadmin
+    if (document.approverId !== approverId && !isAdmin) {
+      throw new Error("Anda tidak memiliki izin untuk menyetujui dokumen ini.");
+    }
     if (document.status !== 'Menunggu Persetujuan') throw new Error("Dokumen ini tidak sedang dalam status menunggu persetujuan.");
     
     const docTypeDoc = await getDoc(doc(docTypesCollection, document.type));
     if (!docTypeDoc.exists()) throw new Error("Jenis dokumen tidak valid.");
     const docTypeCode = docTypeDoc.data().code;
     
-    // Generate document number right before approval
     const documentNumber = await generateDocumentNumber(docTypeCode);
 
+    // Signature is always on behalf of the Chairman
     const approvedByName = "L. Andri Saputro, S.I.Kom";
     const approvedByPosition = "Ketua Umum";
     
     await runTransaction(db, async (transaction) => {
-      // First, update the document with the new number and approval status
       transaction.update(docRef, {
         documentNumber: documentNumber,
         status: 'Disetujui',
-        approvedById: approverId,
-        approvedByName: approvedByName,
+        approvedById: approverId, // The user who actually clicked approve
+        approvedByName: approvedByName, // But the name on the doc is the chairman
         approvedByPosition: approvedByPosition,
         approvedAt: Timestamp.now(),
       });
     });
 
-    // Then, stamp the PDF with the confirmed data. This runs after the transaction.
     await stampPdfWithQrCode(documentId);
 
     const author = await getUserByUid(document.authorId);
@@ -253,13 +261,21 @@ export async function approveDocument(documentId: string, approverId: string) {
 
 export async function rejectDocument(documentId: string, rejectorId: string, reason: string) {
   try {
+    if (admin.apps.length === 0) admin.initializeApp();
+    const rejectorAuth = await admin.auth().getUser(rejectorId);
+    const isAdmin = rejectorAuth.phoneNumber === process.env.ADMIN_PHONE_NUMBER;
+
     const docRef = doc(db, 'importantDocuments', documentId);
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) throw new Error("Dokumen tidak ditemukan.");
 
     const document = docSnap.data() as ImportantDocument;
-    if (document.approverId !== rejectorId) throw new Error("Anda tidak memiliki izin untuk menolak dokumen ini.");
+
+    if (document.approverId !== rejectorId && !isAdmin) {
+        throw new Error("Anda tidak memiliki izin untuk menolak dokumen ini.");
+    }
+    
     if (document.status !== 'Menunggu Persetujuan') throw new Error("Dokumen ini tidak bisa ditolak.");
 
     const rejector = await getUserByUid(rejectorId);
@@ -349,5 +365,3 @@ export async function generateDocumentNumber(typeCode: string): Promise<string> 
       throw new Error("Gagal membuat nomor dokumen.");
   }
 }
-
-    
