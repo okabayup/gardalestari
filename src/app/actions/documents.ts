@@ -7,7 +7,7 @@ import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timesta
 import { ref, uploadBytes, getDownloadURL, deleteObject, getBlob } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import { stampDocxAndConvertToPdf } from '@/ai/flows/stamp-docx-flow';
-import { sendNotification } from './notifications';
+import { sendNotification } from '@/app/actions/notifications';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from './user';
 import { getWhatsappTemplate } from '@/app/actions/settings';
