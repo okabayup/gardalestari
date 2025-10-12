@@ -3,7 +3,7 @@
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, runTransaction, where } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, runTransaction, where, getCountFromServer } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import { stampPdfWithQrCode } from '@/ai/flows/stamp-pdf-flow';
@@ -203,8 +203,14 @@ export async function approveDocument(
 
     // Authorization is now primarily handled by the UI (if the user can see the button, they can approve).
     // This is a server-side double check.
-    const approverUser = await getUserByUid(approverId);
-    if (!approverUser || !approverUser.permissions?.includes('manage_documents')) {
+    const approverUserDoc = await getDoc(doc(db, 'users', approverId));
+    if (!approverUserDoc.exists()) {
+        console.error(`[approveDocument] Approving user with UID: ${approverId} not found in Firestore.`);
+        throw new Error("Anda tidak memiliki izin untuk menyetujui dokumen ini.");
+    }
+
+    const approverUser = approverUserDoc.data();
+    if (!approverUser.permissions?.includes('manage_documents')) {
         console.error(`[approveDocument] Unauthorized attempt by UID: ${approverId}`);
         throw new Error("Anda tidak memiliki izin untuk menyetujui dokumen ini.");
     }
@@ -229,7 +235,7 @@ export async function approveDocument(
       stamp
     });
 
-    const approvedByName = approverUser.name;
+    const approvedByName = approverUser.fullName || "Admin";
     const approvedByPosition = approverUser.position || "Admin";
     
     await runTransaction(db, async (transaction) => {
@@ -350,19 +356,25 @@ export async function generateDocumentNumber(typeCode: string): Promise<string> 
   try {
       const year = new Date().getFullYear();
       const month = new Date().getMonth() + 1;
-      const romanMonth = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'][month - 1];
+      
+      const romanMonthMap: { [key: number]: string } = {
+        1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI',
+        7: 'VII', 8: 'VIII', 9: 'IX', 10: 'X', 11: 'XI', 12: 'XII'
+      };
+      const romanMonth = romanMonthMap[month];
 
-      const prefix = `GL/${typeCode}/${romanMonth}/${year}`;
+      const prefix = `${typeCode}/GL/DPP`;
+      const queryPrefix = `/GL/${typeCode}/${romanMonth}/${year}`;
       
       const q = query(documentsCollection, 
-        where('documentNumber', '>=', `000/${prefix}`), 
-        where('documentNumber', '<', `999/${prefix}`)
+        where('documentNumber', '>=', `001${queryPrefix}`), 
+        where('documentNumber', '<=', `999${queryPrefix}`)
       );
-      const snapshot = await getDocs(q);
+
+      const countSnapshot = await getCountFromServer(q);
+      const nextNumber = (countSnapshot.data().count + 1).toString().padStart(3, '0');
       
-      const nextNumber = (snapshot.size + 1).toString().padStart(3, '0');
-      
-      return `${nextNumber}/${prefix}`;
+      return `${nextNumber}/${prefix}/${romanMonth}/${year}`;
   } catch (error) {
       console.error("[generateDocumentNumber Error]", error);
       throw new Error("Gagal membuat nomor dokumen.");
