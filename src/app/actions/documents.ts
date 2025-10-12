@@ -217,7 +217,7 @@ export async function approveDocument(documentId: string, approverId: string) {
     const documentNumber = await generateDocumentNumber(docTypeCode);
 
     // Signature is always on behalf of the Chairman
-    const approvedByName = "L. Andri Saputro, S.I.Kom";
+    const approvedByName = "L. Andri Saputro";
     const approvedByPosition = "Ketua Umum";
     
     await runTransaction(db, async (transaction) => {
