@@ -200,18 +200,18 @@ export async function approveDocument(documentId: string, approverId: string) {
     if (document.approverId !== approverId) throw new Error("Anda tidak memiliki izin untuk menyetujui dokumen ini.");
     if (document.status !== 'Menunggu Persetujuan') throw new Error("Dokumen ini tidak sedang dalam status menunggu persetujuan.");
     
+    const docTypeDoc = await getDoc(doc(docTypesCollection, document.type));
+    if (!docTypeDoc.exists()) throw new Error("Jenis dokumen tidak valid.");
+    const docTypeCode = docTypeDoc.data().code;
+    
     // Generate document number right before approval
-    const docType = await getDoc(doc(docTypesCollection, document.type));
-    if (!docType.exists()) throw new Error("Jenis dokumen tidak valid.");
-    const docTypeCode = docType.data().code;
     const documentNumber = await generateDocumentNumber(docTypeCode);
-
 
     const approvedByName = "L. Andri Saputro, S.I.Kom";
     const approvedByPosition = "Ketua Umum";
     
     await runTransaction(db, async (transaction) => {
-      // First, update the document with the new number
+      // First, update the document with the new number and approval status
       transaction.update(docRef, {
         documentNumber: documentNumber,
         status: 'Disetujui',
@@ -222,7 +222,7 @@ export async function approveDocument(documentId: string, approverId: string) {
       });
     });
 
-    // Then, stamp the PDF with the confirmed data
+    // Then, stamp the PDF with the confirmed data. This runs after the transaction.
     await stampPdfWithQrCode(documentId);
 
     const author = await getUserByUid(document.authorId);

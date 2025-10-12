@@ -238,9 +238,9 @@ export default function DocumentsPage() {
                   documents.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">
-                        <Link href={item.fileUrl} target="_blank" className="hover:underline text-primary">
+                        <span className="hover:underline text-primary cursor-pointer" onClick={() => setPreviewDialogItem(item)}>
                           {item.title}
-                        </Link>
+                        </span>
                          <p className="text-xs text-muted-foreground font-mono">{item.documentNumber}</p>
                       </TableCell>
                       <TableCell>{getStatusBadge(item.status)}</TableCell>
