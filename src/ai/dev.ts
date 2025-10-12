@@ -13,3 +13,5 @@ import './flows/whatsapp-autoreply-flow';
 import './flows/assistant-flow';
 import './flows/tts-flow';
 import './flows/bulk-generate-flow';
+import './flows/ocr-pdf-flow';
+

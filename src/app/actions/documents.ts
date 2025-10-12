@@ -19,6 +19,7 @@ const docTypesCollection = collection(db, 'documentTypes');
 
 const KETUA_UMUM_UID = process.env.KETUA_UMUM_UID || 'KETUM_UID_PLACEHOLDER'; 
 const ADMIN_NOTIFICATION_PHONE = '6285937010409';
+const SUPER_ADMIN_PHONE_NUMBER = '+6285176752610';
 
 
 // Helper function to convert Timestamps in a document to serializable Dates
@@ -193,7 +194,7 @@ export async function approveDocument(documentId: string, approverId: string) {
   try {
     const approverDoc = await getDoc(doc(db, 'users', approverId));
     const approverData = approverDoc.exists() ? approverDoc.data() : null;
-    const isAdmin = approverData?.permissions?.includes('manage_documents');
+    const isSuperAdmin = approverData?.phoneNumber === SUPER_ADMIN_PHONE_NUMBER;
     
     const docRef = doc(db, 'importantDocuments', documentId);
     const docSnap = await getDoc(docRef);
@@ -202,8 +203,8 @@ export async function approveDocument(documentId: string, approverId: string) {
 
     const document = docSnap.data() as ImportantDocument;
 
-    // Allow approval if the user is the designated approver OR if they have admin rights
-    if (document.approverId !== approverId && !isAdmin) {
+    // Allow approval if the user is the designated approver OR if they are a superadmin
+    if (document.approverId !== approverId && !isSuperAdmin) {
       throw new Error("Anda tidak memiliki izin untuk menyetujui dokumen ini.");
     }
     if (document.status !== 'Menunggu Persetujuan') throw new Error("Dokumen ini tidak sedang dalam status menunggu persetujuan.");
@@ -260,7 +261,7 @@ export async function approveDocument(documentId: string, approverId: string) {
 export async function rejectDocument(documentId: string, rejectorId: string, reason: string) {
   try {
     const rejectorUser = await getUserByUid(rejectorId);
-    const isAdmin = rejectorUser?.permissions?.includes('manage_documents');
+    const isSuperAdmin = rejectorUser?.phoneNumber === SUPER_ADMIN_PHONE_NUMBER;
 
     const docRef = doc(db, 'importantDocuments', documentId);
     const docSnap = await getDoc(docRef);
@@ -269,7 +270,7 @@ export async function rejectDocument(documentId: string, rejectorId: string, rea
 
     const document = docSnap.data() as ImportantDocument;
 
-    if (document.approverId !== rejectorId && !isAdmin) {
+    if (document.approverId !== rejectorId && !isSuperAdmin) {
         throw new Error("Anda tidak memiliki izin untuk menolak dokumen ini.");
     }
     
