@@ -65,7 +65,7 @@ export async function getDocument(id: string): Promise<ImportantDocument | null>
 }
 
 export async function createDocument(
-    data: Omit<ImportantDocument, 'id' | 'createdAt' | 'fileUrl' | 'fileName' | 'status'>, 
+    data: Omit<ImportantDocument, 'id' | 'createdAt' | 'fileUrl' | 'fileName' | 'status' | 'documentNumber'>, 
     file: File
 ) {
   try {
@@ -75,6 +75,7 @@ export async function createDocument(
 
     const docData = {
         ...data,
+        documentNumber: '', // Will be generated on approval
         fileUrl,
         fileName: file.name,
         createdAt: Timestamp.now(),
@@ -198,14 +199,21 @@ export async function approveDocument(documentId: string, approverId: string) {
     const document = docSnap.data() as ImportantDocument;
     if (document.approverId !== approverId) throw new Error("Anda tidak memiliki izin untuk menyetujui dokumen ini.");
     if (document.status !== 'Menunggu Persetujuan') throw new Error("Dokumen ini tidak sedang dalam status menunggu persetujuan.");
+    
+    // Generate document number right before approval
+    const docType = await getDoc(doc(docTypesCollection, document.type));
+    if (!docType.exists()) throw new Error("Jenis dokumen tidak valid.");
+    const docTypeCode = docType.data().code;
+    const documentNumber = await generateDocumentNumber(docTypeCode);
+
 
     const approvedByName = "L. Andri Saputro, S.I.Kom";
     const approvedByPosition = "Ketua Umum";
     
     await runTransaction(db, async (transaction) => {
-      await stampPdfWithQrCode(documentId);
-      
+      // First, update the document with the new number
       transaction.update(docRef, {
+        documentNumber: documentNumber,
         status: 'Disetujui',
         approvedById: approverId,
         approvedByName: approvedByName,
@@ -213,6 +221,9 @@ export async function approveDocument(documentId: string, approverId: string) {
         approvedAt: Timestamp.now(),
       });
     });
+
+    // Then, stamp the PDF with the confirmed data
+    await stampPdfWithQrCode(documentId);
 
     const author = await getUserByUid(document.authorId);
     if (author) {

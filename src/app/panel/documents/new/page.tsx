@@ -11,13 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, Paperclip, Download } from 'lucide-react';
-import { createDocument, generateDocumentNumber, DocumentCategory, DocumentType, ImportantDocument } from '@/app/actions/documents';
+import { createDocument, DocumentCategory, DocumentType, ImportantDocument } from '@/app/actions/documents';
 import { getDocumentCategories, getDocumentTypes } from '@/app/actions/documents';
 import { useAuth } from '@/hooks/use-auth';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 
-type FormData = Omit<ImportantDocument, 'id' | 'createdAt' | 'authorId' | 'authorName' | 'status' | 'fileUrl' | 'fileName' | 'approvedAt' | 'approvedById' | 'approvedByName' | 'approverId' | 'rejectionReason'> & { file: FileList };
+type FormData = Omit<ImportantDocument, 'id' | 'createdAt' | 'authorId' | 'authorName' | 'status' | 'fileUrl' | 'fileName' | 'approvedAt' | 'approvedById' | 'approvedByName' | 'approverId' | 'rejectionReason' | 'documentNumber'> & { file: FileList };
 
 
 export default function NewDocumentPage() {
@@ -27,7 +27,6 @@ export default function NewDocumentPage() {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<DocumentCategory[]>([]);
   const [docTypes, setDocTypes] = useState<DocumentType[]>([]);
-  const [isGeneratingNumber, setIsGeneratingNumber] = useState(false);
   const CANVA_TEMPLATE_URL = "https://www.canva.com/design/DAG1iEQwEnk/dkJaRIGTpYl3JmEmWMK--Q/edit?utm_content=DAG1iEQwEnk&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton";
 
   const {
@@ -39,7 +38,6 @@ export default function NewDocumentPage() {
     formState: { errors },
   } = useForm<FormData>();
   
-  const selectedType = watch("type");
   const uploadedFile = watch("file");
   const uploadedFileName = uploadedFile?.[0]?.name;
 
@@ -52,27 +50,6 @@ export default function NewDocumentPage() {
       setDocTypes(types);
     })
   }, []);
-  
-   useEffect(() => {
-    if (selectedType) {
-      const docTypeCode = docTypes.find(t => t.name === selectedType)?.code;
-      if (!docTypeCode) return;
-
-      const generateNumber = async () => {
-        setIsGeneratingNumber(true);
-        try {
-          const number = await generateDocumentNumber(docTypeCode);
-          setValue('documentNumber', number);
-        } catch (error) {
-          toast({ variant: 'destructive', title: 'Gagal membuat nomor dokumen' });
-        } finally {
-          setIsGeneratingNumber(false);
-        }
-      };
-      generateNumber();
-    }
-  }, [selectedType, docTypes, setValue, toast]);
-
 
   const onSubmit = async (data: FormData) => {
     if (!user) {
@@ -86,7 +63,7 @@ export default function NewDocumentPage() {
     setLoading(true);
     try {
       const { file, ...documentData } = data;
-      const payload: Omit<ImportantDocument, 'id' | 'fileUrl' | 'fileName' | 'status' | 'createdAt'> = {
+      const payload: Omit<ImportantDocument, 'id' | 'fileUrl' | 'fileName' | 'status' | 'createdAt' | 'documentNumber'> = {
           ...documentData,
           authorId: user.uid,
           authorName: user.displayName || 'Pengguna',
@@ -156,14 +133,10 @@ export default function NewDocumentPage() {
                     />
                     {errors.type && <p className="text-sm text-destructive">{errors.type?.message}</p>}
                 </div>
-                <div className="space-y-2">
-                    <Label htmlFor="documentNumber">Nomor Surat</Label>
-                    <div className="flex items-center gap-2">
-                        <Input id="documentNumber" {...register('documentNumber')} disabled={isGeneratingNumber} placeholder="Dibuat otomatis..." />
-                        {isGeneratingNumber && <Loader2 className="h-4 w-4 animate-spin" />}
-                    </div>
-                    {errors.documentNumber && <p className="text-sm text-destructive">{errors.documentNumber?.message}</p>}
-                </div>
+                 <div className="space-y-2">
+                  <Label htmlFor="attachments">Jumlah Lampiran</Label>
+                  <Input id="attachments" {...register('attachments')} placeholder="Contoh: 1 Berkas" />
+              </div>
             </div>
 
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -185,17 +158,12 @@ export default function NewDocumentPage() {
                     {errors.category && <p className="text-sm text-destructive">{errors.category?.message}</p>}
                 </div>
                  <div className="space-y-2">
-                  <Label htmlFor="attachments">Jumlah Lampiran</Label>
-                  <Input id="attachments" {...register('attachments')} placeholder="Contoh: 1 Berkas" />
-              </div>
+                  <Label htmlFor="description">Tujuan Dokumen</Label>
+                  <Input id="description" {...register('description')} placeholder="Contoh: Yth. Menteri Pertanian Republik Indonesia" />
+                  {errors.description && <p className="text-sm text-destructive">{errors.description?.message}</p>}
+                </div>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Tujuan Dokumen</Label>
-              <Input id="description" {...register('description')} placeholder="Contoh: Yth. Menteri Pertanian Republik Indonesia" />
-              {errors.description && <p className="text-sm text-destructive">{errors.description?.message}</p>}
-            </div>
-
+            
             <div className="space-y-2">
                 <Label htmlFor="file">File Dokumen (PDF)</Label>
                 <Input id="file" type="file" {...register('file')} accept=".pdf" />
