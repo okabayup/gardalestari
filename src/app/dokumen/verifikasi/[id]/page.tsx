@@ -50,7 +50,7 @@ export default function DocumentVerificationPage() {
           if (doc && doc.status === 'Disetujui' && doc.approvedAt) {
             setDocument(doc);
             const { id } = await import('date-fns/locale/id');
-            setFormattedDate(format(doc.approvedAt.toDate(), 'dd MMMM yyyy, HH:mm', { locale: id }));
+            setFormattedDate(format(doc.approvedAt as Date, 'dd MMMM yyyy, HH:mm', { locale: id }));
           } else if (doc) {
              setError('Dokumen ini belum disahkan atau statusnya tidak valid.');
           }
@@ -87,6 +87,17 @@ export default function DocumentVerificationPage() {
                 ) : document ? (
                     <div className="space-y-4">
                         <VerificationStatus icon={CheckCircle} title="Dokumen Terverifikasi" description="Dokumen ini adalah asli dan tercatat dalam sistem kami." variant="success" />
+                        
+                        {document.fileUrl && (
+                            <div className="aspect-[4/5] w-full bg-gray-200 rounded-lg overflow-hidden border">
+                                <iframe 
+                                    src={`${document.fileUrl}#toolbar=0`} 
+                                    className="w-full h-full border-0"
+                                    title={`Pratinjau Dokumen: ${document.title}`}
+                                ></iframe>
+                            </div>
+                        )}
+                        
                         <Card className="bg-background">
                             <CardContent className="p-4 space-y-3">
                                 <div>
@@ -113,7 +124,7 @@ export default function DocumentVerificationPage() {
                         <Button asChild size="lg" className="w-full">
                             <Link href={document.fileUrl} target="_blank">
                                 <Download className="mr-2 h-4 w-4" />
-                                Unduh Dokumen Digital untuk Membandingkan
+                                Unduh Salinan Dokumen
                             </Link>
                         </Button>
                     </div>

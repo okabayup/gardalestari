@@ -21,6 +21,18 @@ const KETUA_UMUM_UID = process.env.KETUA_UMUM_UID || 'KETUM_UID_PLACEHOLDER';
 const ADMIN_NOTIFICATION_PHONE = '6285937010409';
 
 
+// Helper function to convert Timestamps in a document to serializable Dates
+const convertTimestamps = (docData: { [key: string]: any }): any => {
+    const data = { ...docData };
+    for (const key in data) {
+        if (data[key] instanceof Timestamp) {
+            data[key] = data[key].toDate();
+        }
+    }
+    return data;
+};
+
+
 // --- Document Management ---
 
 export async function getDocuments(): Promise<ImportantDocument[]> {
@@ -29,7 +41,7 @@ export async function getDocuments(): Promise<ImportantDocument[]> {
     const snapshot = await getDocs(q);
     const documents: ImportantDocument[] = [];
     snapshot.forEach(doc => {
-      documents.push({ id: doc.id, ...doc.data() } as ImportantDocument);
+      documents.push({ id: doc.id, ...convertTimestamps(doc.data()) } as ImportantDocument);
     });
     return documents;
   } catch(error) {
@@ -43,7 +55,7 @@ export async function getDocument(id: string): Promise<ImportantDocument | null>
         const docRef = doc(db, 'importantDocuments', id);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-            return { id: docSnap.id, ...docSnap.data() } as ImportantDocument;
+            return { id: docSnap.id, ...convertTimestamps(docSnap.data()) } as ImportantDocument;
         }
         return null;
     } catch(error) {
