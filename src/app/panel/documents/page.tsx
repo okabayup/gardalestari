@@ -5,7 +5,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, MoreHorizontal, Loader2, Trash2, Tags, QrCode, Send, Check, X, Eye } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Loader2, Trash2, Tags, Send, Check, Eye } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,7 +23,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { getDocuments, deleteDocument, ImportantDocument, submitForApproval, approveDocument, rejectDocument } from '@/app/actions/documents';
@@ -31,7 +30,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
-import { Textarea } from '@/components/ui/textarea';
 import DocumentPreviewDialog from '@/components/panel/documents/DocumentPreviewDialog';
 
 
@@ -40,19 +38,19 @@ const RejectDialog = ({ document, isOpen, onClose, onConfirm }: { document: Impo
     if (!document) return null;
 
     return (
-         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Tolak Dokumen</DialogTitle>
-                    <DialogDescription>Berikan alasan penolakan untuk dokumen "{document.title}".</DialogDescription>
-                </DialogHeader>
-                 <Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Alasan penolakan..." />
-                <DialogFooter>
-                    <Button variant="ghost" onClick={onClose}>Batal</Button>
-                    <Button variant="destructive" onClick={() => onConfirm(reason)} disabled={!reason.trim()}>Tolak Dokumen</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+         <AlertDialog open={isOpen} onOpenChange={onClose}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Tolak Dokumen</AlertDialogTitle>
+                    <AlertDialogDescription>Berikan alasan penolakan untuk dokumen "{document.title}".</AlertDialogDescription>
+                </AlertDialogHeader>
+                 <textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Alasan penolakan..." className="w-full p-2 border rounded-md min-h-[100px]" />
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => onConfirm(reason)} disabled={!reason.trim()}>Tolak Dokumen</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     )
 }
 
@@ -112,7 +110,7 @@ export default function DocumentsPage() {
   const handleApproveConfirm = async () => {
     if (!previewDialogItem?.id || !user?.uid) return;
     const docToApprove = previewDialogItem;
-    setPreviewDialogItem(null); // Close dialog immediately
+    setPreviewDialogItem(null); 
     handleAction(
       () => approveDocument(docToApprove.id!, user.uid),
       docToApprove.id!,
@@ -205,9 +203,9 @@ export default function DocumentsPage() {
                   documents.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">
-                        <Link href={item.fileUrl} target="_blank" className="hover:underline text-primary cursor-pointer">
+                        <span onClick={() => setPreviewDialogItem(item)} className="hover:underline text-primary cursor-pointer">
                           {item.title}
-                        </Link>
+                        </span>
                          <p className="text-xs text-muted-foreground font-mono">{item.documentNumber || 'Belum ada nomor'}</p>
                       </TableCell>
                       <TableCell>{getStatusBadge(item.status)}</TableCell>
@@ -220,6 +218,9 @@ export default function DocumentsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                             <DropdownMenuItem onClick={() => setPreviewDialogItem(item)}>
+                                <Eye className="mr-2 h-4 w-4" /> Tinjau Dokumen
+                            </DropdownMenuItem>
                             {(item.status === 'Draft' || item.status === 'Ditolak') && item.authorId === user?.uid && (
                                 <DropdownMenuItem onClick={() => handleApprovalSubmit(item)}>
                                     <Send className="mr-2 h-4 w-4" /> Ajukan Persetujuan
@@ -227,17 +228,13 @@ export default function DocumentsPage() {
                             )}
                              {item.status === 'Menunggu Persetujuan' && canManageDocuments && (
                                 <>
-                                <DropdownMenuItem onClick={() => setPreviewDialogItem(item)}>
-                                    <Check className="mr-2 h-4 w-4" /> Tinjau & Setujui
+                                <DropdownMenuItem onClick={() => handleApproveConfirm()}>
+                                    <Check className="mr-2 h-4 w-4" /> Setujui
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setRejectDialogItem(item)} className="text-destructive">
+                                    <X className="mr-2 h-4 w-4" /> Tolak
                                 </DropdownMenuItem>
                                 </>
-                            )}
-                            {item.status === 'Disetujui' && (
-                               <DropdownMenuItem asChild>
-                                    <Link href={`/dokumen/verifikasi/${item.id}`} target="_blank">
-                                        <QrCode className="mr-2 h-4 w-4" /> Lihat Halaman Verifikasi
-                                    </Link>
-                                </DropdownMenuItem>
                             )}
                             {(item.authorId === user?.uid) && <DropdownMenuSeparator />}
                             <DropdownMenuItem onClick={() => router.push(`/panel/documents/edit/${item.id}`)} disabled={item.status !== 'Draft' && item.authorId !== user?.uid}>Edit</DropdownMenuItem>
@@ -280,13 +277,15 @@ export default function DocumentsPage() {
       
       <RejectDialog document={rejectDialogItem} isOpen={!!rejectDialogItem} onClose={() => setRejectDialogItem(null)} onConfirm={handleRejectConfirm} />
       
-      <DocumentPreviewDialog 
-        document={previewDialogItem}
-        isOpen={!!previewDialogItem}
-        onClose={() => setPreviewDialogItem(null)}
-        onApprove={handleApproveConfirm}
-        onReject={handleRejectFromPreview}
-      />
+      {previewDialogItem && (
+        <DocumentPreviewDialog 
+            document={previewDialogItem}
+            isOpen={!!previewDialogItem}
+            onClose={() => setPreviewDialogItem(null)}
+            onApprove={handleApproveConfirm}
+            onReject={handleRejectFromPreview}
+        />
+      )}
     </>
   );
 }

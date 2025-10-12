@@ -4,8 +4,19 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ImportantDocument } from '@/lib/definitions';
-import { Check, X } from 'lucide-react';
-import DocxViewer from '@/components/utils/DocxViewer'; // Updated import
+import { Check, X, Loader2 } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+// Dynamically import the DocxViewer only on the client side
+const DocxViewer = dynamic(() => import('@/components/utils/DocxViewer.client'), {
+  loading: () => (
+    <div className="flex items-center justify-center h-full">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  ),
+  ssr: false, // This is crucial
+});
+
 
 interface DocumentPreviewDialogProps {
   document: ImportantDocument | null;

@@ -95,7 +95,7 @@ const nextConfig: NextConfig = {
     // It also excludes heavy server-side libraries from the client bundle.
     if (!isServer) {
         config.externals.push({
-            'handlebars': 'commonjs handlebars'
+            'handlebars': 'commonjs handlebars',
         });
     }
     return config;

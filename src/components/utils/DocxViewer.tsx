@@ -1,60 +1,57 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
-import mammoth from 'mammoth';
-import { Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { ImportantDocument } from '@/lib/definitions';
+import { Check, X, Loader2 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 
-interface DocxViewerProps {
-  fileUrl: string;
+// Dynamically import the DocxViewer only on the client side
+const DocxViewer = dynamic(() => import('@/components/utils/DocxViewer.client'), {
+  loading: () => (
+    <div className="flex items-center justify-center h-full">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  ),
+  ssr: false, // This is crucial
+});
+
+
+interface DocumentPreviewDialogProps {
+  document: ImportantDocument | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onApprove: () => void;
+  onReject: () => void;
 }
 
-export default function DocxViewer({ fileUrl }: DocxViewerProps) {
-  const [html, setHtml] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchAndRenderDocx = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(fileUrl);
-        if (!response.ok) {
-          throw new Error(`Gagal mengambil file: ${response.statusText}`);
-        }
-        const arrayBuffer = await response.arrayBuffer();
-        const result = await mammoth.convertToHtml({ arrayBuffer });
-        setHtml(result.value);
-      } catch (err) {
-        console.error('Error rendering DOCX:', err);
-        setError('Gagal menampilkan pratinjau dokumen.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAndRenderDocx();
-  }, [fileUrl]);
+export default function DocumentPreviewDialog({ document, isOpen, onClose, onApprove, onReject }: DocumentPreviewDialogProps) {
+  if (!document) return null;
 
   return (
-    <div className="w-full h-full bg-white p-6 overflow-auto">
-      {loading && (
-        <div className="flex items-center justify-center h-full">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-0">
+          <DialogTitle>Tinjau Dokumen: {document.title}</DialogTitle>
+          <DialogDescription>
+            Periksa konten dokumen di bawah ini sebelum memberikan persetujuan.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex-1 border-t border-b overflow-hidden">
+             <DocxViewer fileUrl={document.fileUrl} />
         </div>
-      )}
-      {error && (
-        <div className="text-center text-destructive">
-          <p>{error}</p>
-        </div>
-      )}
-      {!loading && !error && (
-        <div
-          className="prose max-w-none"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
-      )}
-    </div>
+        <DialogFooter className="sm:justify-between p-6 pt-4">
+            <Button variant="destructive" onClick={onReject}>
+                <X className="mr-2 h-4 w-4" /> Tolak
+            </Button>
+            <div className="flex gap-2">
+                 <Button variant="outline" onClick={onClose}>Tutup</Button>
+                <Button onClick={onApprove}>
+                    <Check className="mr-2 h-4 w-4" /> Setujui
+                </Button>
+            </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
