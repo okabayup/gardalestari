@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, MoreHorizontal, Loader2, Trash2, Tags, QrCode, Send, Check } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Loader2, Trash2, Tags, QrCode, Send, Check, X, Eye } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +33,8 @@ import QRCode from 'qrcode.react';
 import { toPng } from 'html-to-image';
 import { useAuth } from '@/hooks/use-auth';
 import { Textarea } from '@/components/ui/textarea';
+import DocumentPreviewDialog from '@/components/panel/documents/DocumentPreviewDialog';
+
 
 const QRDialog = ({ document, isOpen, onClose }: { document: ImportantDocument | null, isOpen: boolean, onClose: () => void }) => {
     const qrRef = useRef<HTMLDivElement>(null);
@@ -115,6 +117,7 @@ export default function DocumentsPage() {
 
   const [qrDialogItem, setQrDialogItem] = useState<ImportantDocument | null>(null);
   const [rejectDialogItem, setRejectDialogItem] = useState<ImportantDocument | null>(null);
+  const [previewDialogItem, setPreviewDialogItem] = useState<ImportantDocument | null>(null);
 
 
   useEffect(() => {
@@ -257,8 +260,8 @@ export default function DocumentsPage() {
                             )}
                             {item.status === 'Menunggu Persetujuan' && item.approverId === user?.uid && (
                                 <>
-                                <DropdownMenuItem onClick={() => handleApproveClick(item)}>
-                                    <Check className="mr-2 h-4 w-4" /> Setujui Dokumen
+                                <DropdownMenuItem onClick={() => setPreviewDialogItem(item)}>
+                                    <Eye className="mr-2 h-4 w-4" /> Tinjau & Setujui
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => setRejectDialogItem(item)} className="text-destructive">
                                     <X className="mr-2 h-4 w-4" /> Tolak Dokumen
@@ -270,7 +273,7 @@ export default function DocumentsPage() {
                                     <QrCode className="mr-2 h-4 w-4" /> Lihat QR Pengesahan
                                 </DropdownMenuItem>
                             )}
-                            {(item.authorId === user?.uid || user?.uid === KETUA_UMUM_UID) && <DropdownMenuSeparator />}
+                            {(item.authorId === user?.uid || user?.uid === process.env.KETUA_UMUM_UID) && <DropdownMenuSeparator />}
                             <DropdownMenuItem onClick={() => router.push(`/panel/documents/edit/${item.id}`)} disabled={item.status !== 'Draft' && item.authorId !== user?.uid}>Edit</DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(item)}>
                               <Trash2 className="mr-2 h-4 w-4" /> Hapus
@@ -310,6 +313,19 @@ export default function DocumentsPage() {
       </AlertDialog>
       <QRDialog document={qrDialogItem} isOpen={!!qrDialogItem} onClose={() => setQrDialogItem(null)} />
       <RejectDialog document={rejectDialogItem} isOpen={!!rejectDialogItem} onClose={() => setRejectDialogItem(null)} onConfirm={handleRejectConfirm} />
+      <DocumentPreviewDialog 
+        document={previewDialogItem}
+        isOpen={!!previewDialogItem}
+        onClose={() => setPreviewDialogItem(null)}
+        onApprove={() => {
+            if (previewDialogItem) handleApproveClick(previewDialogItem);
+            setPreviewDialogItem(null);
+        }}
+        onReject={() => {
+            setRejectDialogItem(previewDialogItem);
+            setPreviewDialogItem(null);
+        }}
+      />
     </>
   );
 }
