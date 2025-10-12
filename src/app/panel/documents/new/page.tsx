@@ -9,11 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Paperclip } from 'lucide-react';
+import { Loader2, Paperclip, Download } from 'lucide-react';
 import { createDocument, generateDocumentNumber, DocumentCategory, ImportantDocument } from '@/app/actions/documents';
 import { getDocumentCategories } from '@/app/actions/documents';
 import { useAuth } from '@/hooks/use-auth';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Link from 'next/link';
 
 type FormData = Omit<ImportantDocument, 'id' | 'createdAt' | 'authorId' | 'authorName' | 'status' | 'fileUrl' | 'fileName' | 'approvedAt' | 'approvedById' | 'approvedByName' | 'approverId' | 'rejectionReason'> & { file: FileList };
 
@@ -105,8 +106,18 @@ export default function NewDocumentPage() {
       
       <Card>
         <CardHeader>
-            <CardTitle>Detail Dokumen</CardTitle>
-            <CardDescription>Informasi utama mengenai dokumen yang akan dibuat.</CardDescription>
+            <div className="flex justify-between items-start">
+                <div>
+                    <CardTitle>Detail Dokumen</CardTitle>
+                    <CardDescription>Informasi utama mengenai dokumen yang akan dibuat.</CardDescription>
+                </div>
+                <Button variant="secondary" asChild>
+                    <Link href="/templates/surat_resmi_template.docx" download>
+                        <Download className="mr-2 h-4 w-4" />
+                        Unduh Template
+                    </Link>
+                </Button>
+            </div>
         </CardHeader>
         <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -117,7 +128,7 @@ export default function NewDocumentPage() {
              <div className="space-y-2">
                 <Label htmlFor="documentNumber">Nomor Dokumen</Label>
                 <div className="flex items-center gap-2">
-                    <Input id="documentNumber" {...register('documentNumber')} disabled={isGeneratingNumber} placeholder="Nomor dokumen akan dibuat otomatis..." />
+                    <Input id="documentNumber" {...register('documentNumber')} disabled={isGeneratingNumber} placeholder="Pilih kategori untuk generate nomor..." />
                     {isGeneratingNumber && <Loader2 className="h-4 w-4 animate-spin" />}
                 </div>
                 {errors.documentNumber && <p className="text-sm text-destructive">{errors.documentNumber?.message}</p>}
@@ -147,8 +158,8 @@ export default function NewDocumentPage() {
                 </div>
             </div>
             <div className="space-y-2">
-                <Label htmlFor="file">File Dokumen (PDF)</Label>
-                <Input id="file" type="file" {...register('file')} accept=".pdf" />
+                <Label htmlFor="file">File Dokumen (DOCX)</Label>
+                <Input id="file" type="file" {...register('file')} accept=".docx" />
                  {uploadedFileName && <p className="text-sm text-muted-foreground flex items-center gap-2"><Paperclip className="h-4 w-4"/> {uploadedFileName}</p>}
                  {errors.file && <p className="text-sm text-destructive">File wajib diunggah</p>}
             </div>

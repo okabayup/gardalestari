@@ -6,7 +6,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, runTransaction, where } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
-import { stampPdf } from '@/ai/flows/stamp-pdf-flow';
+import { stampPdfWithQrCode } from '@/ai/flows/stamp-pdf-flow';
 import { sendNotification } from './notifications';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from './user';
@@ -185,7 +185,7 @@ export async function approveDocument(documentId: string, approverId: string) {
     
     await runTransaction(db, async (transaction) => {
       // AI Flow to stamp the PDF
-      await stampPdf({ documentId });
+      await stampPdfWithQrCode(documentId);
       
       // Update document status in Firestore
       transaction.update(docRef, {
