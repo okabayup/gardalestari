@@ -10,11 +10,10 @@ import { z } from 'zod';
 import { getDocument } from '@/app/actions/documents';
 import { storage } from '@/lib/firebase';
 import { ref, getBytes, uploadBytes } from 'firebase/storage';
-import { PDFDocument, rgb, StandardFonts, PDFPage, PageSizes } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts, PDFPage } from 'pdf-lib';
 import QRCode from 'qrcode';
 import admin from 'firebase-admin';
 import { ai } from '@/ai/genkit';
-import { openSansBold } from '@/lib/fonts';
 
 if (admin.apps.length === 0) {
   admin.initializeApp();
@@ -64,7 +63,7 @@ async function findAndReplacePlaceholder(page: PDFPage, placeholder: string, rep
         // Calculate size and position based on markers
         const topY = height - startMarker.transform[5];
         const bottomY = height - endMarker.transform[5];
-        const qrSize = Math.abs(topY - bottomY);
+        const qrSize = 80;
         
         const qrX = startMarker.transform[4];
         const qrY = bottomY;
@@ -110,13 +109,14 @@ const stampPdfFlow = ai.defineFlow(
 
     // 4. Load PDF and Font
     const pdfDoc = await PDFDocument.load(pdfBytes);
-    const openSansBoldBytes = Buffer.from(openSansBold, 'base64');
-    const customFont = await pdfDoc.embedFont(openSansBoldBytes);
+    const standardFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
     // 5. Replace Placeholders on the first page
     const firstPage = pdfDoc.getPages()[0];
     
-    await findAndReplacePlaceholder(firstPage, '[NOMOR_SURAT]', { type: 'text', text: document.documentNumber, font: customFont, size: 12 });
+    if (document.documentNumber) {
+        await findAndReplacePlaceholder(firstPage, '[NOMOR_SURAT]', { type: 'text', text: document.documentNumber, font: standardFont, size: 12 });
+    }
     await findAndReplacePlaceholder(firstPage, '[TTD_QR]', { type: 'qr', data: qrCodeImageBytes });
 
 
