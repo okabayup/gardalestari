@@ -85,7 +85,9 @@ export async function updateDocument(id: string, data: Partial<Omit<ImportantDoc
         const currentDoc = await getDocument(id);
         if (currentDoc?.fileUrl) {
             try {
-                await deleteObject(ref(storage, currentDoc.fileUrl));
+                if (currentDoc.fileUrl.includes('firebasestorage.googleapis.com')) {
+                    await deleteObject(ref(storage, currentDoc.fileUrl));
+                }
             } catch (storageError: any) {
                  if (storageError.code !== 'storage/object-not-found') {
                     console.warn("[updateDocument Warn] Could not delete old file", storageError);
@@ -111,7 +113,9 @@ export async function deleteDocument(id: string) {
   try {
     const docToDelete = await getDocument(id);
     if (docToDelete?.fileUrl) {
-        await deleteObject(ref(storage, docToDelete.fileUrl));
+        if (docToDelete.fileUrl.includes('firebasestorage.googleapis.com')) {
+            await deleteObject(ref(storage, docToDelete.fileUrl));
+        }
     }
     await deleteDoc(doc(db, 'importantDocuments', id));
     revalidatePath('/panel/documents');
@@ -286,26 +290,6 @@ export async function getDocumentCategories(): Promise<DocumentCategory[]> {
     }
 }
 
-export async function addDocumentCategory(name: string) {
-    try {
-        await addDoc(categoriesCollection, { name });
-        revalidatePath('/panel/documents/categories');
-    } catch (error) {
-        console.error("[addDocumentCategory Error]", error);
-        throw new Error("Gagal menambahkan kategori.");
-    }
-}
-
-export async function deleteDocumentCategory(id: string) {
-    try {
-        await deleteDoc(doc(db, 'documentCategories', id));
-        revalidatePath('/panel/documents/categories');
-    } catch (error) {
-        console.error("[deleteDocumentCategory Error]", error);
-        throw new Error("Gagal menghapus kategori.");
-    }
-}
-
 export async function getDocumentTypes(): Promise<DocumentType[]> {
     try {
         const q = query(docTypesCollection, orderBy('name', 'asc'));
@@ -314,26 +298,6 @@ export async function getDocumentTypes(): Promise<DocumentType[]> {
     } catch (error) {
         console.error("[getDocumentTypes Error]", error);
         throw new Error("Gagal memuat jenis dokumen.");
-    }
-}
-
-export async function addDocumentType(data: Omit<DocumentType, 'id'>) {
-    try {
-        await addDoc(docTypesCollection, data);
-        revalidatePath('/panel/documents/categories');
-    } catch (error) {
-        console.error("[addDocumentType Error]", error);
-        throw new Error("Gagal menambahkan jenis dokumen.");
-    }
-}
-
-export async function deleteDocumentType(id: string) {
-    try {
-        await deleteDoc(doc(db, 'documentTypes', id));
-        revalidatePath('/panel/documents/categories');
-    } catch (error) {
-        console.error("[deleteDocumentType Error]", error);
-        throw new Error("Gagal menghapus jenis dokumen.");
     }
 }
 

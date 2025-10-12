@@ -1,5 +1,4 @@
 
-
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
 import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins } from 'lucide-react';
@@ -78,6 +77,20 @@ export const initialPositions = [
     "Data & Analisis (Data Analyst Unit)",
     "Penelitian & Inovasi",
 ];
+
+export const initialDocumentTypes = [
+    { name: 'Surat Permohonan', code: 'SPm' },
+    { name: 'Surat Keputusan', code: 'SKep' },
+    { name: 'Surat Kuasa', code: 'SK' },
+    { name: 'Surat Perintah', code: 'SP' },
+    { name: 'Surat Pengantar', code: 'SPeng' },
+    { name: 'Surat Edaran', code: 'SE' },
+    { name: 'Surat Undangan', code: 'SU' },
+    { name: 'Laporan', code: 'Lap' },
+    { name: 'Nota Kesepahaman', code: 'MoU' },
+    { name: 'Lainnya', code: 'Lain' },
+];
+
 
 export interface Position {
   id?: string;
