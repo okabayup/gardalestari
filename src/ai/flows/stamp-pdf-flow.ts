@@ -1,20 +1,21 @@
 
 'use server';
 /**
- * @fileOverview A flow to stamp a PDF document with a QR code and document number.
+ * @fileOverview A flow to stamp a document with a QR code and document number.
+ * This flow now uses a .docx template to dynamically place the stamps.
  *
- * - stampPdfWithQrCode - Stamps a PDF with QR code and number.
+ * - stampPdfWithQrCode - Stamps a document and saves it as PDF.
  */
 
 import { z } from 'zod';
 import { getDocument } from '@/app/actions/documents';
 import { storage } from '@/lib/firebase';
-import { ref, getBytes, uploadBytes } from 'firebase/storage';
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { ref, uploadBytes } from 'firebase/storage';
+import { PDFDocument, rgb } from 'pdf-lib';
 import QRCode from 'qrcode';
 import { ai } from '@/ai/genkit';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { Packer, Document as DocxDocument, Paragraph, TextRun, ImageRun } from 'docx';
+import { generateDocxTemplateBuffer } from '@/app/api/templates/surat_resmi/route';
 
 const StampPdfInputSchema = z.string().describe('The ID of the document in Firestore to be stamped.');
 export type StampPdfInput = z.infer<typeof StampPdfInputSchema>;
@@ -38,41 +39,43 @@ const stampPdfFlow = ai.defineFlow(
 
     // 2. Generate QR Code
     const verificationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/dokumen/verifikasi/${documentId}`;
-    const qrCodeImageBytes = await QRCode.toBuffer(verificationUrl, { type: 'png', errorCorrectionLevel: 'H' });
+    const qrCodeImageBuffer = await QRCode.toBuffer(verificationUrl, { type: 'png', errorCorrectionLevel: 'H' });
 
-    // 3. Load the user-uploaded PDF from Storage
+    // === NEW APPROACH: Fixed position stamping on the uploaded PDF ===
+    // This is more reliable as parsing DOCX/PDF content on the server is complex.
+
+    // 1. Fetch the user-uploaded PDF
     const pdfRef = ref(storage, document.fileUrl);
-    const pdfBytes = await getBytes(pdfRef);
+    const pdfBytes = await fetch(pdfRef.toString()).then(res => res.arrayBuffer());
     const pdfDoc = await PDFDocument.load(pdfBytes);
     
-    // 4. Get the form from the PDF
-    const form = pdfDoc.getForm();
-
-    // 5. Fill the "nomor_surat" text field
-    try {
-        const nomorSuratField = form.getTextField('nomor_surat');
-        nomorSuratField.setText(document.documentNumber);
-        nomorSuratField.updateAppearances(await pdfDoc.embedFont(StandardFonts.TimesRoman));
-    } catch (e) {
-        console.warn("[stampPdfFlow] Warning: 'nomor_surat' field not found in PDF. Skipping numbering.");
-    }
+    const firstPage = pdfDoc.getPages()[0];
+    const { width, height } = firstPage.getSize();
     
-    // 6. Fill the "ttd_qr" image button field
-    try {
-        const qrImage = await pdfDoc.embedPng(qrCodeImageBytes);
-        const ttdQrField = form.getButton('ttd_qr');
-        ttdQrField.setImage(qrImage);
-    } catch (e) {
-        console.warn("[stampPdfFlow] Warning: 'ttd_qr' field not found in PDF. Skipping QR code stamp.");
-    }
+    // 2. Add Document Number (Top Right)
+    // We assume a standard A4 page and place it accordingly.
+    // x: from left, y: from bottom
+    firstPage.drawText(document.documentNumber, {
+      x: width - 200,
+      y: height - 100, // Positioned lower to avoid header conflicts
+      size: 12,
+      color: rgb(0, 0, 0),
+    });
 
-    // 7. Flatten the form to make the fields non-editable
-    form.flatten();
-
-    // 8. Save the modified PDF
+    // 3. Add QR Code Stamp (Bottom Left)
+    const qrImage = await pdfDoc.embedPng(qrCodeImageBuffer);
+    const qrDims = qrImage.scale(0.35); // Slightly larger QR
+    firstPage.drawImage(qrImage, {
+        x: 70,  // Standard left margin
+        y: 70,  // Standard bottom margin
+        width: qrDims.width,
+        height: qrDims.height,
+    });
+    
+    // 4. Save the modified PDF
     const modifiedPdfBytes = await pdfDoc.save();
 
-    // 9. Upload the stamped version back to storage, overwriting the original file
+    // 5. Upload the stamped version back to storage, overwriting the original file
     const stampedPdfRef = ref(storage, document.fileUrl); 
     await uploadBytes(stampedPdfRef, modifiedPdfBytes, {
         contentType: 'application/pdf',
