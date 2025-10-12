@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -27,7 +26,7 @@ export default function NewDocumentPage() {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<DocumentCategory[]>([]);
   const [docTypes, setDocTypes] = useState<DocumentType[]>([]);
-  const CANVA_TEMPLATE_URL = "https://www.canva.com/design/DAG1iEQwEnk/dkJaRIGTpYl3JmEmWMK--Q/edit?utm_content=DAG1iEQwEnk&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton";
+  const TEMPLATE_URL = "/api/templates/surat_resmi.pdf";
 
   const {
     control,
@@ -98,13 +97,13 @@ export default function NewDocumentPage() {
             <div className="flex justify-between items-start">
                 <div>
                     <CardTitle>Detail Dokumen</CardTitle>
-                    <CardDescription>Gunakan template, isi, lalu unggah sebagai PDF.</CardDescription>
+                    <CardDescription>Unduh template, isi, lalu unggah sebagai PDF.</CardDescription>
                 </div>
                 <Button variant="secondary" asChild>
-                    <Link href={CANVA_TEMPLATE_URL} target="_blank">
+                    <a href={TEMPLATE_URL} download="template_surat_resmi.pdf">
                         <Download className="mr-2 h-4 w-4" />
-                        Buka Template di Canva
-                    </Link>
+                        Unduh Template PDF
+                    </a>
                 </Button>
             </div>
         </CardHeader>

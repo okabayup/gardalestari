@@ -1,0 +1,4 @@
+// This is a placeholder for a binary PDF file. The build system will provide the actual file.
+// The template should contain two form fields:
+// 1. A text field named "nomor_surat" for the document number.
+// 2. A button field named "ttd_qr" for the QR code image.
