@@ -6,13 +6,19 @@
  * - stampPdfWithQrCode - Stamps a PDF with QR code and number.
  */
 
-import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getDocument } from '@/app/actions/documents';
 import { storage } from '@/lib/firebase';
 import { ref, getBytes, uploadBytes } from 'firebase/storage';
-import { PDFDocument, rgb, StandardFonts, PDFPage } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts, PDFPage, PageSizes } from 'pdf-lib';
 import QRCode from 'qrcode';
+import admin from 'firebase-admin';
+import { ai } from '@/ai/genkit';
+import { openSansBold } from '@/lib/fonts';
+
+if (admin.apps.length === 0) {
+  admin.initializeApp();
+}
 
 const StampPdfInputSchema = z.string().describe('The ID of the document in Firestore to be stamped.');
 export type StampPdfInput = z.infer<typeof StampPdfInputSchema>;
@@ -22,48 +28,61 @@ export async function stampPdfWithQrCode(input: StampPdfInput): Promise<void> {
 }
 
 // Helper function to find a placeholder and replace it.
-// This is very basic and relies on the placeholder being on its own line.
-async function findAndReplacePlaceholder(page: PDFPage, placeholder: string, replacement: { type: 'qr', data: Buffer, size: number } | { type: 'text', text: string, font: any, size: number }) {
-    const textContent = await page.getTextContent();
+async function findAndReplacePlaceholder(page: PDFPage, placeholder: string, replacement: { type: 'qr', data: Buffer } | { type: 'text', text: string, font: any, size: number }) {
+    const textContent = await (page as any).getTextContent();
     const { width, height } = page.getSize();
     
-    for (const item of textContent.items) {
-        if ('str' in item && item.str.includes(placeholder)) {
-            const x = item.transform[4];
-            let y = height - item.transform[5]; // pdf-lib y is from bottom, textContent y is from top
-
-            page.drawRectangle({
-                x: x - 5,
-                y: y - 5,
-                width: 100, // Assume placeholder is not wider than this
-                height: 20,
-                color: rgb(1, 1, 1), // Cover with white
-            });
-            
-            if (replacement.type === 'qr') {
-                const qrImage = await page.doc.embedPng(replacement.data);
-                const qrX = width - replacement.size - 50;
-                const qrY = 80;
-                page.drawImage(qrImage, { x: qrX, y: qrY, width: replacement.size, height: replacement.size });
-                 
-                // Also add signature text below the QR
-                const signatureTextLine1 = "a.n. Ketua Umum";
-                const signatureTextLine2 = "L. Andri Saputro, S.I.Kom";
-                const signatureFont = await page.doc.embedFont(StandardFonts.Helvetica);
-                const textWidth1 = signatureFont.widthOfTextAtSize(signatureTextLine1, 8);
-                const textWidth2 = signatureFont.widthOfTextAtSize(signatureTextLine2, 8);
-
-                page.drawText(signatureTextLine1, { x: qrX + (replacement.size - textWidth1) / 2, y: qrY - 10, font: signatureFont, size: 8, color: rgb(0, 0, 0) });
-                page.drawText(signatureTextLine2, { x: qrX + (replacement.size - textWidth2) / 2, y: qrY - 20, font: signatureFont, size: 8, color: rgb(0, 0, 0) });
-
-
-            } else if (replacement.type === 'text') {
-                page.drawText(replacement.text, { x, y: y-3, font: replacement.font, size: replacement.size, color: rgb(0, 0, 0) });
-            }
-            return;
-        }
+    // Find placeholder bounds by looking for the start and end markers
+    let startMarker, endMarker;
+    if (placeholder === '[TTD_QR]') {
+        startMarker = textContent.items.find((item: any) => item.str.includes('--'));
+        endMarker = textContent.items.reverse().find((item: any) => item.str.includes('--'));
+        textContent.items.reverse(); // reverse back
+    } else {
+        startMarker = textContent.items.find((item: any) => item.str.includes(placeholder));
     }
-     console.warn(`Placeholder "${placeholder}" not found in PDF.`);
+    
+    if (!startMarker) {
+        console.warn(`Placeholder "${placeholder}" not found in PDF.`);
+        return;
+    }
+
+    const placeholderX = startMarker.transform[4];
+    const placeholderY = height - startMarker.transform[5];
+
+    page.drawRectangle({
+        x: placeholderX - 5,
+        y: placeholderY - 15,
+        width: 150, 
+        height: 20, 
+        color: rgb(1, 1, 1),
+    });
+
+    if (replacement.type === 'text') {
+        page.drawText(replacement.text, { x: placeholderX, y: placeholderY, font: replacement.font, size: replacement.size, color: rgb(0, 0, 0) });
+    } else if (replacement.type === 'qr' && startMarker && endMarker) {
+        // Calculate size and position based on markers
+        const topY = height - startMarker.transform[5];
+        const bottomY = height - endMarker.transform[5];
+        const qrSize = Math.abs(topY - bottomY);
+        
+        const qrX = startMarker.transform[4];
+        const qrY = bottomY;
+
+        const qrImage = await page.doc.embedPng(replacement.data);
+
+        // Clear the area of the markers
+        page.drawRectangle({
+            x: qrX, y: qrY - 5, width: 50, height: qrSize + 10, color: rgb(1,1,1)
+        });
+
+        page.drawImage(qrImage, { x: qrX, y: qrY, width: qrSize, height: qrSize });
+    } else if (replacement.type === 'qr') {
+        // Fallback if markers are not found
+        const qrImage = await page.doc.embedPng(replacement.data);
+        const qrSize = 80;
+        page.drawImage(qrImage, { x: placeholderX, y: placeholderY - qrSize, width: qrSize, height: qrSize });
+    }
 }
 
 
@@ -89,24 +108,23 @@ const stampPdfFlow = ai.defineFlow(
     const pdfRef = ref(storage, document.fileUrl);
     const pdfBytes = await getBytes(pdfRef);
 
-    // 4. Load PDF
+    // 4. Load PDF and Font
     const pdfDoc = await PDFDocument.load(pdfBytes);
-    const firstPage = pdfDoc.getPages()[0];
-    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const openSansBoldBytes = Buffer.from(openSansBold, 'base64');
+    const customFont = await pdfDoc.embedFont(openSansBoldBytes);
 
-    // 5. Replace Placeholders
-    // Replace TTD placeholder with QR Code
-    await findAndReplacePlaceholder(firstPage, '[TTD_QR]', { type: 'qr', data: qrCodeImageBytes, size: 80 });
+    // 5. Replace Placeholders on the first page
+    const firstPage = pdfDoc.getPages()[0];
     
-    // Replace Nomor Surat placeholder with actual number
-    await findAndReplacePlaceholder(firstPage, '[NOMOR_SURAT]', { type: 'text', text: document.documentNumber, font: helveticaFont, size: 12 });
+    await findAndReplacePlaceholder(firstPage, '[NOMOR_SURAT]', { type: 'text', text: document.documentNumber, font: customFont, size: 12 });
+    await findAndReplacePlaceholder(firstPage, '[TTD_QR]', { type: 'qr', data: qrCodeImageBytes });
 
 
     // 6. Save the modified PDF
     const modifiedPdfBytes = await pdfDoc.save();
 
-    // 7. Upload a new version to storage
-    const stampedPdfRef = ref(storage, document.fileUrl); // Overwrite the original file
+    // 7. Upload a new version to storage (overwrite the original file)
+    const stampedPdfRef = ref(storage, document.fileUrl); 
     await uploadBytes(stampedPdfRef, modifiedPdfBytes, {
         contentType: 'application/pdf',
     });

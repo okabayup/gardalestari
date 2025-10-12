@@ -12,7 +12,6 @@ import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from './user';
 import { getWhatsappTemplate } from '@/app/actions/settings';
 import type { LetterStatus, ImportantDocument, DocumentCategory, DocumentType } from '@/lib/definitions';
-import admin from 'firebase-admin';
 
 const documentsCollection = collection(db, 'importantDocuments');
 const categoriesCollection = collection(db, 'documentCategories');
@@ -192,11 +191,10 @@ export async function submitForApproval(documentId: string, authorId: string) {
 
 export async function approveDocument(documentId: string, approverId: string) {
   try {
-    // Check if the user performing the action is a superadmin
-    if (admin.apps.length === 0) admin.initializeApp();
-    const approverAuth = await admin.auth().getUser(approverId);
-    const isAdmin = approverAuth.phoneNumber === process.env.ADMIN_PHONE_NUMBER;
-
+    const approverDoc = await getDoc(doc(db, 'users', approverId));
+    const approverData = approverDoc.exists() ? approverDoc.data() : null;
+    const isAdmin = approverData?.permissions?.includes('manage_documents');
+    
     const docRef = doc(db, 'importantDocuments', documentId);
     const docSnap = await getDoc(docRef);
 
@@ -204,7 +202,7 @@ export async function approveDocument(documentId: string, approverId: string) {
 
     const document = docSnap.data() as ImportantDocument;
 
-    // Allow approval if the user is the designated approver OR if they are a superadmin
+    // Allow approval if the user is the designated approver OR if they have admin rights
     if (document.approverId !== approverId && !isAdmin) {
       throw new Error("Anda tidak memiliki izin untuk menyetujui dokumen ini.");
     }
@@ -261,9 +259,8 @@ export async function approveDocument(documentId: string, approverId: string) {
 
 export async function rejectDocument(documentId: string, rejectorId: string, reason: string) {
   try {
-    if (admin.apps.length === 0) admin.initializeApp();
-    const rejectorAuth = await admin.auth().getUser(rejectorId);
-    const isAdmin = rejectorAuth.phoneNumber === process.env.ADMIN_PHONE_NUMBER;
+    const rejectorUser = await getUserByUid(rejectorId);
+    const isAdmin = rejectorUser?.permissions?.includes('manage_documents');
 
     const docRef = doc(db, 'importantDocuments', documentId);
     const docSnap = await getDoc(docRef);
@@ -365,3 +362,4 @@ export async function generateDocumentNumber(typeCode: string): Promise<string> 
       throw new Error("Gagal membuat nomor dokumen.");
   }
 }
+
