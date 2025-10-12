@@ -157,6 +157,34 @@ export default function NewDocumentPage() {
                     {errors.type && <p className="text-sm text-destructive">{errors.type?.message}</p>}
                 </div>
                 <div className="space-y-2">
+                    <Label htmlFor="documentNumber">Nomor Surat</Label>
+                    <div className="flex items-center gap-2">
+                        <Input id="documentNumber" {...register('documentNumber')} disabled={isGeneratingNumber} placeholder="Dibuat otomatis..." />
+                        {isGeneratingNumber && <Loader2 className="h-4 w-4 animate-spin" />}
+                    </div>
+                    {errors.documentNumber && <p className="text-sm text-destructive">{errors.documentNumber?.message}</p>}
+                </div>
+            </div>
+
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                    <Label htmlFor="category">Kategori Dokumen</Label>
+                    <Controller
+                    name="category"
+                    control={control}
+                    rules={{ required: "Kategori wajib dipilih" }}
+                    render={({ field }) => (
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger><SelectValue placeholder="Pilih kategori surat" /></SelectTrigger>
+                            <SelectContent>
+                            {categories.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    )}
+                    />
+                    {errors.category && <p className="text-sm text-destructive">{errors.category?.message}</p>}
+                </div>
+                 <div className="space-y-2">
                   <Label htmlFor="attachments">Jumlah Lampiran</Label>
                   <Input id="attachments" {...register('attachments')} placeholder="Contoh: 1 Berkas" />
               </div>

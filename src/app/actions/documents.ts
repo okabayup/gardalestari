@@ -145,16 +145,18 @@ export async function submitForApproval(documentId: string, authorId: string) {
     });
     
     const approver = await getUserByUid(approverId);
+    
+    // Always send WA to admin number
+    const template = await getWhatsappTemplate('document_submission');
+    if (template.isActive) {
+        const message = template.message
+            .replace('{namaPenerima}', approver?.name || 'Ketua Umum')
+            .replace('{judulDokumen}', document.title)
+            .replace('{namaPengirim}', document.authorName);
+        await sendWhatsAppMessage(ADMIN_NOTIFICATION_PHONE, message);
+    }
+    
     if (approver) {
-        const template = await getWhatsappTemplate('document_submission');
-        if (template.isActive) {
-            const message = template.message
-                .replace('{namaPenerima}', approver.name)
-                .replace('{judulDokumen}', document.title)
-                .replace('{namaPengirim}', document.authorName);
-            await sendWhatsAppMessage(ADMIN_NOTIFICATION_PHONE, message);
-        }
-
         await sendNotification(
         {
             title: 'Permintaan Persetujuan Dokumen',
@@ -164,7 +166,7 @@ export async function submitForApproval(documentId: string, authorId: string) {
         { type: 'users', userIds: [approverId] }
         );
     } else {
-        console.warn(`[submitForApproval Warn] Approver with UID ${approverId} not found. Cannot send notification.`);
+        console.warn(`[submitForApproval Warn] Approver with UID ${approverId} not found. Cannot send push notification.`);
     }
 
     revalidatePath('/panel/documents');
@@ -310,19 +312,14 @@ export async function generateDocumentNumber(typeCode: string): Promise<string> 
 
       const prefix = `GL/${typeCode}/${romanMonth}/${year}`;
       
-      const q = query(documentsCollection, where('documentNumber', '>=', `000/${prefix}`), where('documentNumber', '<', `999/${prefix}`));
+      const q = query(documentsCollection, 
+        where('documentNumber', '>=', `000/${prefix}`), 
+        where('documentNumber', '<', `999/${prefix}`)
+      );
       const snapshot = await getDocs(q);
       
-      let maxNumber = 0;
-      snapshot.forEach(doc => {
-        const numStr = doc.data().documentNumber.split('/')[0];
-        const num = parseInt(numStr, 10);
-        if (!isNaN(num) && num > maxNumber) {
-          maxNumber = num;
-        }
-      });
-
-      const nextNumber = (maxNumber + 1).toString().padStart(3, '0');
+      const nextNumber = (snapshot.size + 1).toString().padStart(3, '0');
+      
       return `${nextNumber}/${prefix}`;
   } catch (error) {
       console.error("[generateDocumentNumber Error]", error);
