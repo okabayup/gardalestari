@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { ImportantDocument } from '@/lib/definitions';
 import { Check, X } from 'lucide-react';
+import PdfViewer from '@/components/utils/PdfViewer';
 
 interface DocumentPreviewDialogProps {
   document: ImportantDocument | null;
@@ -19,21 +20,17 @@ export default function DocumentPreviewDialog({ document, isOpen, onClose, onApp
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
+        <DialogHeader className="p-6 pb-0">
           <DialogTitle>Tinjau Dokumen: {document.title}</DialogTitle>
           <DialogDescription>
             Periksa konten dokumen di bawah ini sebelum memberikan persetujuan.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-1 border rounded-md overflow-hidden">
-             <iframe 
-                src={`${document.fileUrl}#toolbar=0`} 
-                className="w-full h-full border-0"
-                title={`Pratinjau: ${document.title}`}
-            ></iframe>
+        <div className="flex-1 border-t border-b overflow-hidden">
+             <PdfViewer file={document.fileUrl} />
         </div>
-        <DialogFooter className="sm:justify-between">
+        <DialogFooter className="sm:justify-between p-6 pt-4">
             <Button variant="destructive" onClick={onReject}>
                 <X className="mr-2 h-4 w-4" /> Tolak
             </Button>

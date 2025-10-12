@@ -7,12 +7,13 @@ import { getDocument, ImportantDocument } from '@/app/actions/documents';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Loader2, Download, CheckCircle, XCircle, FileQuestion, UploadCloud, ShieldAlert, Sparkles } from 'lucide-react';
+import { Loader2, Download, CheckCircle, XCircle, FileQuestion, UploadCloud, ShieldAlert } from 'lucide-react';
 import { format } from 'date-fns';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { readDocumentText } from '@/ai/flows/ocr-pdf-flow';
+import PdfViewer from '@/components/utils/PdfViewer';
 
 const VerificationStatus = ({
   icon: Icon,
@@ -70,10 +71,10 @@ const ComparisonDialog = ({
         </div>
         <div className="grid grid-cols-2 gap-4 flex-1 overflow-auto">
           <div className="border rounded-md">
-            <iframe src={`${officialUrl}#toolbar=0`} className="w-full h-full" title="Versi Resmi"></iframe>
+            <PdfViewer file={officialUrl} />
           </div>
           <div className="border rounded-md">
-            <iframe src={uploadedUrl} className="w-full h-full" title="Versi Unggahan"></iframe>
+             <PdfViewer file={uploadedUrl} />
           </div>
         </div>
         <DialogFooter>
@@ -138,10 +139,6 @@ export default function DocumentVerificationPage() {
       
       const uploadedDataUri = await handleFileToDataUri(file);
       
-      // We can't fetch the official URL directly due to CORS.
-      // A better way would be a server-side proxy or passing the official file's content from server.
-      // For now, we will assume OCR works on both client-side URIs.
-      // This is a simplification.
       const officialFileResponse = await fetch(document.fileUrl);
       const officialFileBlob = await officialFileResponse.blob();
       const officialDataUri = await handleFileToDataUri(new File([officialFileBlob], "official.pdf"));
@@ -212,11 +209,7 @@ export default function DocumentVerificationPage() {
                         <VerificationStatus icon={CheckCircle} title="Dokumen Terverifikasi" description="Dokumen ini adalah asli dan tercatat dalam sistem kami." variant="success" />
                         
                         <div className="aspect-[4/5] w-full bg-gray-200 rounded-lg overflow-hidden border">
-                            <iframe 
-                                src={`${document.fileUrl}#toolbar=0`} 
-                                className="w-full h-full border-0"
-                                title={`Pratinjau Dokumen: ${document.title}`}
-                            ></iframe>
+                           <PdfViewer file={document.fileUrl} />
                         </div>
                         
                         <Card className="bg-background">

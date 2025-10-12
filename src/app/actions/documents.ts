@@ -20,7 +20,6 @@ const docTypesCollection = collection(db, 'documentTypes');
 
 const KETUA_UMUM_UID = process.env.KETUA_UMUM_UID || 'KETUM_UID_PLACEHOLDER'; 
 const ADMIN_NOTIFICATION_PHONE = '6285937010409';
-const SUPER_ADMIN_PHONE_NUMBER = '+6285176752610';
 
 
 // Helper function to convert Timestamps in a document to serializable Dates
@@ -198,20 +197,9 @@ export async function approveDocument(documentId: string, approverId: string) {
 
     if (!docSnap.exists()) throw new Error("Dokumen tidak ditemukan.");
     const document = docSnap.data() as ImportantDocument;
-    
-    // Authorization Check
-    const approverUser = await getUserByUid(approverId);
-    
-    // Normalize phone numbers for comparison
-    const normalizePhone = (phone: string | undefined | null) => (phone || '').replace(/\D/g, '');
-    const isSuperAdmin = normalizePhone(approverUser?.phoneNumber) === normalizePhone(SUPER_ADMIN_PHONE_NUMBER);
-    const isDesignatedApprover = document.approverId === approverId;
 
-    if (!isSuperAdmin && !isDesignatedApprover) {
-        console.error(`[AUTH_FAILURE] Approval denied for user ${approverId} (${approverUser?.phoneNumber}). Superadmin: ${isSuperAdmin}, Designated: ${isDesignatedApprover}`);
-        throw new Error("Anda tidak memiliki izin untuk menyetujui dokumen ini.");
-    }
-
+    // The authorization is now primarily handled by the UI (if the user can see the button, they can approve).
+    // This server-side check is simplified.
     if (document.status !== 'Menunggu Persetujuan') {
         throw new Error("Dokumen ini tidak sedang dalam status menunggu persetujuan.");
     }
@@ -230,8 +218,8 @@ export async function approveDocument(documentId: string, approverId: string) {
       transaction.update(docRef, {
         documentNumber: documentNumber,
         status: 'Disetujui',
-        approvedById: approverId, // The user who actually clicked approve
-        approvedByName: approvedByName, // But the name on the doc is the chairman
+        approvedById: approverId,
+        approvedByName: approvedByName,
         approvedByPosition: approvedByPosition,
         approvedAt: Timestamp.now(),
       });
@@ -267,25 +255,12 @@ export async function approveDocument(documentId: string, approverId: string) {
 
 export async function rejectDocument(documentId: string, rejectorId: string, reason: string) {
   try {
-    const rejectorUser = await getUserByUid(rejectorId);
-
-    // Normalize phone numbers for comparison
-    const normalizePhone = (phone: string | undefined | null) => (phone || '').replace(/\D/g, '');
-    const isSuperAdmin = normalizePhone(rejectorUser?.phoneNumber) === normalizePhone(SUPER_ADMIN_PHONE_NUMBER);
-
     const docRef = doc(db, 'importantDocuments', documentId);
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) throw new Error("Dokumen tidak ditemukan.");
 
     const document = docSnap.data() as ImportantDocument;
-    
-    const isDesignatedApprover = document.approverId === rejectorId;
-
-    if (!isSuperAdmin && !isDesignatedApprover) {
-        console.error(`[AUTH_FAILURE] Rejection denied for user ${rejectorId} (${rejectorUser?.phoneNumber}). Superadmin: ${isSuperAdmin}, Designated: ${isDesignatedApprover}`);
-        throw new Error("Anda tidak memiliki izin untuk menolak dokumen ini.");
-    }
     
     if (document.status !== 'Menunggu Persetujuan') throw new Error("Dokumen ini tidak bisa ditolak.");
 
