@@ -1,5 +1,3 @@
-
-
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -115,7 +113,7 @@ export async function updateDocument(id: string, data: Partial<Omit<ImportantDoc
 
     await updateDoc(docRef, dataToUpdate);
     revalidatePath('/panel/documents');
-    revalidatePath(`/panel/e-office/edit/${id}`);
+    revalidatePath(`/panel/documents/edit/${id}`);
   } catch (error) {
     console.error("[updateDocument Error]", error);
     throw new Error(`Gagal memperbarui dokumen: ${(error as Error).message}`);
@@ -189,7 +187,11 @@ export async function submitForApproval(documentId: string, authorId: string) {
   }
 }
 
-export async function approveDocument(documentId: string, approverId: string) {
+export async function approveDocument(
+  documentId: string, 
+  approverId: string,
+  stamp: { x: number; y: number; width: number; height: number; rotation: number }
+) {
   try {
     const docRef = doc(db, 'importantDocuments', documentId);
     const docSnap = await getDoc(docRef);
@@ -197,8 +199,7 @@ export async function approveDocument(documentId: string, approverId: string) {
     if (!docSnap.exists()) throw new Error("Dokumen tidak ditemukan.");
     const document = docSnap.data() as ImportantDocument;
 
-    // The authorization is now primarily handled by the UI (if the user can see the button, they can approve).
-    // This server-side check is simplified.
+    // Authorization is now primarily handled by the UI (if the user can see the button, they can approve).
     if (document.status !== 'Menunggu Persetujuan') {
         throw new Error("Dokumen ini tidak sedang dalam status menunggu persetujuan.");
     }
@@ -211,8 +212,14 @@ export async function approveDocument(documentId: string, approverId: string) {
     const docTypeCode = docTypeSnapshot.docs[0].data().code;
     
     const documentNumber = await generateDocumentNumber(docTypeCode);
+    
+    await stampPdfWithQrCode({
+      documentId,
+      documentNumber,
+      fileUrl: document.fileUrl,
+      stamp
+    });
 
-    // Signature is always on behalf of the Chairman
     const approvedByName = "L. Andri Saputro";
     const approvedByPosition = "Ketua Umum";
     
@@ -226,8 +233,6 @@ export async function approveDocument(documentId: string, approverId: string) {
         approvedAt: Timestamp.now(),
       });
     });
-
-    await stampPdfWithQrCode(documentId);
 
     const author = await getUserByUid(document.authorId);
     if (author) {

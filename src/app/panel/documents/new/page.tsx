@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -26,7 +25,7 @@ export default function NewDocumentPage() {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<DocumentCategory[]>([]);
   const [docTypes, setDocTypes] = useState<DocumentType[]>([]);
-  const TEMPLATE_URL = "/api/templates/surat_resmi.pdf";
+  const TEMPLATE_URL = "/api/templates/surat_resmi/route.ts";
 
   const {
     control,
@@ -100,9 +99,9 @@ export default function NewDocumentPage() {
                     <CardDescription>Unduh template, isi, lalu unggah sebagai PDF.</CardDescription>
                 </div>
                 <Button variant="secondary" asChild>
-                    <a href={TEMPLATE_URL} download="template_surat_resmi.pdf">
+                    <a href={TEMPLATE_URL} download>
                         <Download className="mr-2 h-4 w-4" />
-                        Unduh Template PDF
+                        Unduh Template
                     </a>
                 </Button>
             </div>

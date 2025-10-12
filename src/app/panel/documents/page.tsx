@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -33,54 +32,7 @@ import QRCode from 'qrcode.react';
 import { toPng } from 'html-to-image';
 import { useAuth } from '@/hooks/use-auth';
 import { Textarea } from '@/components/ui/textarea';
-import DocumentPreviewDialog from '@/components/panel/documents/DocumentPreviewDialog';
-
-
-const QRDialog = ({ document, isOpen, onClose }: { document: ImportantDocument | null, isOpen: boolean, onClose: () => void }) => {
-    const qrRef = useRef<HTMLDivElement>(null);
-
-    if (!document) return null;
-
-    const verificationUrl = `${window.location.origin}/dokumen/verifikasi/${document.id}`;
-
-    const handleDownloadQR = async () => {
-        if (!qrRef.current) return;
-        const dataUrl = await toPng(qrRef.current);
-        const link = document.createElement('a');
-        link.download = `QR-Verifikasi-${document.title.replace(/\s+/g, '-')}.png`;
-        link.href = dataUrl;
-        link.click();
-    }
-
-    return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>QR Code Verifikasi Dokumen</DialogTitle>
-                    <DialogDescription>Pindai QR code ini untuk melihat halaman verifikasi keaslian dokumen.</DialogDescription>
-                </DialogHeader>
-                <div className="flex flex-col items-center justify-center py-4" ref={qrRef}>
-                    <QRCode
-                        value={verificationUrl}
-                        size={256}
-                        imageSettings={{
-                            src: '/logo.png',
-                            height: 40,
-                            width: 40,
-                            excavate: true,
-                        }}
-                        level="H"
-                    />
-                     <p className="mt-4 text-sm font-mono break-all text-muted-foreground">{verificationUrl}</p>
-                </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={onClose}>Tutup</Button>
-                    <Button onClick={handleDownloadQR}>Unduh QR Code</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
-}
+import DocumentStampingDialog from '@/components/panel/documents/DocumentStampingDialog';
 
 const RejectDialog = ({ document, isOpen, onClose, onConfirm }: { document: ImportantDocument | null, isOpen: boolean, onClose: () => void, onConfirm: (reason: string) => void }) => {
     const [reason, setReason] = useState('');
@@ -115,9 +67,8 @@ export default function DocumentsPage() {
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<ImportantDocument | null>(null);
 
-  const [qrDialogItem, setQrDialogItem] = useState<ImportantDocument | null>(null);
   const [rejectDialogItem, setRejectDialogItem] = useState<ImportantDocument | null>(null);
-  const [previewDialogItem, setPreviewDialogItem] = useState<ImportantDocument | null>(null);
+  const [stampingDialogItem, setStampingDialogItem] = useState<ImportantDocument | null>(null);
 
 
   useEffect(() => {
@@ -155,10 +106,16 @@ export default function DocumentsPage() {
     }
   }
 
-  const handleApproveClick = (doc: ImportantDocument) => {
-    if (!doc.id || !user?.uid) return;
-    handleAction(() => approveDocument(doc.id!, user.uid), doc.id, 'Dokumen disetujui!', 'Gagal Menyetujui');
-  }
+  const handleApproveConfirm = async (stamp: { x: number; y: number; width: number; height: number; rotation: number }) => {
+    if (!stampingDialogItem?.id || !user?.uid) return;
+    setStampingDialogItem(null); // Close dialog immediately
+    handleAction(
+      () => approveDocument(stampingDialogItem.id!, user.uid, stamp),
+      stampingDialogItem.id!,
+      'Dokumen disetujui!',
+      'Gagal Menyetujui'
+    );
+  };
 
   const handleRejectConfirm = (reason: string) => {
     if (!rejectDialogItem?.id || !user?.uid) return;
@@ -185,7 +142,7 @@ export default function DocumentsPage() {
       case 'Menunggu Persetujuan':
         return <Badge className="bg-yellow-500 hover:bg-yellow-500/80">Menunggu Persetujuan</Badge>;
       case 'Disetujui':
-        return <Badge className="bg-green-500 hover:bg-green-500/80">Disetujui & Disahkan</Badge>;
+        return <Badge className="bg-green-500 hover:bg-green-500/80">Disetujui &amp; Disahkan</Badge>;
       case 'Ditolak':
         return <Badge variant="destructive">Ditolak</Badge>;
       default:
@@ -198,7 +155,7 @@ export default function DocumentsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-headline text-2xl font-bold">Dokumen Penting (E-Office)</h1>
+            <h1 className="font-headline text-2xl font-bold">Persuratan (E-Office)</h1>
             <p className="text-muted-foreground">Buat, sahkan, dan arsipkan dokumen resmi organisasi secara digital.</p>
           </div>
           <Button onClick={() => router.push('/panel/documents/new')}>
@@ -238,10 +195,10 @@ export default function DocumentsPage() {
                   documents.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">
-                        <span className="hover:underline text-primary cursor-pointer" onClick={() => setPreviewDialogItem(item)}>
+                        <Link href={item.fileUrl} target="_blank" className="hover:underline text-primary cursor-pointer">
                           {item.title}
-                        </span>
-                         <p className="text-xs text-muted-foreground font-mono">{item.documentNumber}</p>
+                        </Link>
+                         <p className="text-xs text-muted-foreground font-mono">{item.documentNumber || 'Belum ada nomor'}</p>
                       </TableCell>
                       <TableCell>{getStatusBadge(item.status)}</TableCell>
                       <TableCell>{item.authorName}</TableCell>
@@ -258,10 +215,10 @@ export default function DocumentsPage() {
                                     <Send className="mr-2 h-4 w-4" /> Ajukan Persetujuan
                                 </DropdownMenuItem>
                             )}
-                            {item.status === 'Menunggu Persetujuan' && item.approverId === user?.uid && (
+                            {item.status === 'Menunggu Persetujuan' && user?.uid === KETUA_UMUM_UID && (
                                 <>
-                                <DropdownMenuItem onClick={() => setPreviewDialogItem(item)}>
-                                    <Eye className="mr-2 h-4 w-4" /> Tinjau & Setujui
+                                <DropdownMenuItem onClick={() => setStampingDialogItem(item)}>
+                                    <Check className="mr-2 h-4 w-4" /> Setujui Dokumen
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => setRejectDialogItem(item)} className="text-destructive">
                                     <X className="mr-2 h-4 w-4" /> Tolak Dokumen
@@ -269,11 +226,13 @@ export default function DocumentsPage() {
                                 </>
                             )}
                             {item.status === 'Disetujui' && (
-                               <DropdownMenuItem onClick={() => setQrDialogItem(item)}>
-                                    <QrCode className="mr-2 h-4 w-4" /> Lihat QR Pengesahan
+                               <DropdownMenuItem asChild>
+                                    <Link href={`/dokumen/verifikasi/${item.id}`} target="_blank">
+                                        <QrCode className="mr-2 h-4 w-4" /> Lihat Halaman Verifikasi
+                                    </Link>
                                 </DropdownMenuItem>
                             )}
-                            {(item.authorId === user?.uid || user?.uid === process.env.KETUA_UMUM_UID) && <DropdownMenuSeparator />}
+                            {(item.authorId === user?.uid) && <DropdownMenuSeparator />}
                             <DropdownMenuItem onClick={() => router.push(`/panel/documents/edit/${item.id}`)} disabled={item.status !== 'Draft' && item.authorId !== user?.uid}>Edit</DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(item)}>
                               <Trash2 className="mr-2 h-4 w-4" /> Hapus
@@ -311,21 +270,17 @@ export default function DocumentsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <QRDialog document={qrDialogItem} isOpen={!!qrDialogItem} onClose={() => setQrDialogItem(null)} />
+      
       <RejectDialog document={rejectDialogItem} isOpen={!!rejectDialogItem} onClose={() => setRejectDialogItem(null)} onConfirm={handleRejectConfirm} />
-      <DocumentPreviewDialog 
-        document={previewDialogItem}
-        isOpen={!!previewDialogItem}
-        onClose={() => setPreviewDialogItem(null)}
-        onApprove={() => {
-            if (previewDialogItem) handleApproveClick(previewDialogItem);
-            setPreviewDialogItem(null);
-        }}
-        onReject={() => {
-            setRejectDialogItem(previewDialogItem);
-            setPreviewDialogItem(null);
-        }}
-      />
+      
+      {stampingDialogItem && (
+        <DocumentStampingDialog
+          document={stampingDialogItem}
+          isOpen={!!stampingDialogItem}
+          onClose={() => setStampingDialogItem(null)}
+          onConfirm={handleApproveConfirm}
+        />
+      )}
     </>
   );
 }

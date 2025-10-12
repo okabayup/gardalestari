@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,9 +15,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 
-type FormData = Omit<ImportantDocument, 'id' | 'createdAt' | 'authorId' | 'authorName' | 'status' | 'fileUrl' | 'fileName' | 'approvedAt' | 'approvedById' | 'approvedByName' | 'approverId' | 'rejectionReason'> & { file?: FileList };
+type FormData = Omit<ImportantDocument, 'id' | 'createdAt' | 'authorId' | 'authorName' | 'status' | 'fileUrl' | 'fileName' | 'approvedAt' | 'approvedById' | 'approvedByName' | 'approverId' | 'rejectionReason' | 'documentNumber'> & { file?: FileList };
 
-const TEMPLATE_URL = "/api/templates/surat_resmi.pdf";
+const TEMPLATE_URL = "/api/templates/surat_resmi/route.ts"; // This should point to the correct template download
 
 export default function EditDocumentPage() {
   const router = useRouter();
@@ -58,7 +57,7 @@ export default function EditDocumentPage() {
             setDocTypes(docTypesData);
 
             if (documentData) {
-                if (documentData.authorId !== user?.uid || documentData.status !== 'Draft') {
+                if (documentData.authorId !== user?.uid && documentData.status !== 'Draft' && documentData.status !== 'Ditolak') {
                     toast({ variant: 'destructive', title: 'Akses Ditolak', description: 'Anda tidak dapat mengedit dokumen ini.' });
                     router.push('/panel/documents');
                     return;
@@ -124,9 +123,9 @@ export default function EditDocumentPage() {
                     <CardDescription>Perbarui informasi dokumen di bawah ini. Anda hanya bisa mengedit dokumen yang masih berstatus "Draf".</CardDescription>
                 </div>
                  <Button variant="secondary" asChild>
-                    <a href={TEMPLATE_URL} download="template_surat_resmi.pdf">
+                    <a href={TEMPLATE_URL} download>
                         <Download className="mr-2 h-4 w-4" />
-                        Unduh Template PDF
+                        Unduh Template
                     </a>
                 </Button>
             </div>

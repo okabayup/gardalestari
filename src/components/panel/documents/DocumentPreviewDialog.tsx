@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -37,7 +36,7 @@ export default function DocumentPreviewDialog({ document, isOpen, onClose, onApp
             <div className="flex gap-2">
                  <Button variant="outline" onClick={onClose}>Tutup</Button>
                 <Button onClick={onApprove}>
-                    <Check className="mr-2 h-4 w-4" /> Setujui & Sahkan
+                    <Check className="mr-2 h-4 w-4" /> Setujui
                 </Button>
             </div>
         </DialogFooter>

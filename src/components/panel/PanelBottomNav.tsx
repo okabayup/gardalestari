@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import Link from 'next/link';
@@ -86,7 +84,7 @@ const groupedNavItems: {
     ],
   },
   {
-    group: 'Program & Peluang',
+    group: 'Program &amp; Peluang',
     items: [
        { href: '/panel/recruitments', icon: Briefcase, label: 'Rekrutmen', permission: 'manage_recruitments' },
        { href: '/panel/partners', icon: Handshake, label: 'Mitra', permission: 'manage_partners' },
@@ -103,7 +101,7 @@ const groupedNavItems: {
   {
     group: 'Persuratan',
     items: [
-        { href: '/panel/documents', icon: BookCopy, label: 'Surat & Dokumen', permission: 'manage_documents'},
+        { href: '/panel/documents', icon: BookCopy, label: 'Surat &amp; Dokumen', permission: 'manage_documents'},
         { href: '/panel/projects', icon: KanbanSquare, label: 'Manajemen Proyek', permission: 'manage_projects' },
         { href: '/panel/whatsapp', icon: MessageCircle, label: 'Manajemen WhatsApp', permission: 'manage_whatsapp' },
     ]
