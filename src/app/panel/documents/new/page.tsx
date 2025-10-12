@@ -112,7 +112,7 @@ export default function NewDocumentPage() {
                     <CardDescription>Informasi utama mengenai dokumen yang akan dibuat.</CardDescription>
                 </div>
                 <Button variant="secondary" asChild>
-                    <Link href="/templates/surat_resmi_template.docx" download>
+                    <Link href="/api/templates/surat-resmi">
                         <Download className="mr-2 h-4 w-4" />
                         Unduh Template
                     </Link>
