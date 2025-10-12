@@ -1,0 +1,1 @@
+Ini adalah placeholder. Harap ganti file ini dengan template .docx Anda yang sebenarnya. Pastikan template berisi placeholder [NOMOR_SURAT] dan [TTD_QR].
