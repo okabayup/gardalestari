@@ -12,7 +12,6 @@ import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from './user';
 import { getWhatsappTemplate } from '@/app/actions/settings';
 import type { LetterStatus, ImportantDocument, DocumentCategory, DocumentType } from '@/lib/definitions';
-import admin from 'firebase-admin';
 
 const documentsCollection = collection(db, 'importantDocuments');
 const categoriesCollection = collection(db, 'documentCategories');
@@ -204,9 +203,12 @@ export async function approveDocument(documentId: string, approverId: string) {
         throw new Error("Dokumen ini tidak sedang dalam status menunggu persetujuan.");
     }
     
-    const docTypeDoc = await getDoc(doc(docTypesCollection, document.type));
-    if (!docTypeDoc.exists()) throw new Error("Jenis dokumen tidak valid.");
-    const docTypeCode = docTypeDoc.data().code;
+    const docTypeQuery = query(docTypesCollection, where('name', '==', document.type));
+    const docTypeSnapshot = await getDocs(docTypeQuery);
+    if (docTypeSnapshot.empty) {
+      throw new Error("Jenis dokumen tidak valid.");
+    }
+    const docTypeCode = docTypeSnapshot.docs[0].data().code;
     
     const documentNumber = await generateDocumentNumber(docTypeCode);
 
