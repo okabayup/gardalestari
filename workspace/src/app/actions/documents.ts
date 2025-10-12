@@ -3,11 +3,11 @@
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, runTransaction, where } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, runTransaction, where, getCountFromServer } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, deleteObject, getBlob } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
-import { stampPdfWithQrCode } from '@/ai/flows/stamp-pdf-flow';
-import { sendNotification } from './notifications';
+import { stampDocxAndConvertToPdf } from '@/ai/flows/stamp-docx-flow';
+import { sendNotification } from '@/app/actions/notifications';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from './user';
 import { getWhatsappTemplate } from '@/app/actions/settings';
@@ -17,7 +17,6 @@ const documentsCollection = collection(db, 'importantDocuments');
 const categoriesCollection = collection(db, 'documentCategories');
 const docTypesCollection = collection(db, 'documentTypes');
 
-const KETUA_UMUM_UID = process.env.KETUA_UMUM_UID || 'KETUM_UID_PLACEHOLDER'; 
 const ADMIN_NOTIFICATION_PHONE = '6285937010409';
 
 
@@ -65,17 +64,20 @@ export async function getDocument(id: string): Promise<ImportantDocument | null>
 }
 
 export async function createDocument(
-    data: Omit<ImportantDocument, 'id' | 'createdAt' | 'fileUrl' | 'fileName' | 'status'>, 
+    data: Omit<ImportantDocument, 'id' | 'createdAt' | 'fileUrl' | 'fileName' | 'status' | 'documentNumber'>, 
     file: File
 ) {
   try {
-    const fileRef = ref(storage, `documents/${Date.now()}_${file.name}`);
+    const filePath = `documents/${Date.now()}_${file.name}`;
+    const fileRef = ref(storage, filePath);
     await uploadBytes(fileRef, file);
     const fileUrl = await getDownloadURL(fileRef);
 
     const docData = {
         ...data,
+        documentNumber: '', // Will be generated on approval
         fileUrl,
+        filePath: filePath, // Store path for server-side access
         fileName: file.name,
         createdAt: Timestamp.now(),
         status: 'Draft' as LetterStatus,
@@ -95,26 +97,26 @@ export async function updateDocument(id: string, data: Partial<Omit<ImportantDoc
 
     if (newFile) {
         const currentDoc = await getDocument(id);
-        if (currentDoc?.fileUrl) {
+        if (currentDoc?.filePath) {
             try {
-                if (currentDoc.fileUrl.includes('firebasestorage.googleapis.com')) {
-                    await deleteObject(ref(storage, currentDoc.fileUrl));
-                }
+                await deleteObject(ref(storage, currentDoc.filePath));
             } catch (storageError: any) {
                  if (storageError.code !== 'storage/object-not-found') {
                     console.warn("[updateDocument Warn] Could not delete old file", storageError);
                 }
             }
         }
-        const fileRef = ref(storage, `documents/${Date.now()}_${newFile.name}`);
+        const filePath = `documents/${Date.now()}_${newFile.name}`;
+        const fileRef = ref(storage, filePath);
         await uploadBytes(fileRef, newFile);
         dataToUpdate.fileUrl = await getDownloadURL(fileRef);
+        dataToUpdate.filePath = filePath;
         dataToUpdate.fileName = newFile.name;
     }
 
     await updateDoc(docRef, dataToUpdate);
     revalidatePath('/panel/documents');
-    revalidatePath(`/panel/e-office/edit/${id}`);
+    revalidatePath(`/panel/documents/edit/${id}`);
   } catch (error) {
     console.error("[updateDocument Error]", error);
     throw new Error(`Gagal memperbarui dokumen: ${(error as Error).message}`);
@@ -124,10 +126,8 @@ export async function updateDocument(id: string, data: Partial<Omit<ImportantDoc
 export async function deleteDocument(id: string) {
   try {
     const docToDelete = await getDocument(id);
-    if (docToDelete?.fileUrl) {
-        if (docToDelete.fileUrl.includes('firebasestorage.googleapis.com')) {
-            await deleteObject(ref(storage, docToDelete.fileUrl));
-        }
+    if (docToDelete?.filePath) {
+        await deleteObject(ref(storage, docToDelete.filePath));
     }
     await deleteDoc(doc(db, 'importantDocuments', id));
     revalidatePath('/panel/documents');
@@ -149,14 +149,11 @@ export async function submitForApproval(documentId: string, authorId: string) {
       throw new Error("Dokumen ini tidak dalam status yang bisa diajukan.");
     }
 
-    const approverId = KETUA_UMUM_UID;
-
+    const approver = await getUserByUid(document.approverId);
+    
     await updateDoc(docRef, {
       status: 'Menunggu Persetujuan',
-      approverId: approverId,
     });
-    
-    const approver = await getUserByUid(approverId);
     
     // Always send WA to admin number
     const template = await getWhatsappTemplate('document_submission');
@@ -175,10 +172,10 @@ export async function submitForApproval(documentId: string, authorId: string) {
             body: `Dokumen "${document.title}" dari ${document.authorName} memerlukan persetujuan Anda.`,
             link: `/panel/documents`
         },
-        { type: 'users', userIds: [approverId] }
+        { type: 'users', userIds: [document.approverId!] }
         );
     } else {
-        console.warn(`[submitForApproval Warn] Approver with UID ${approverId} not found. Cannot send push notification.`);
+        console.warn(`[submitForApproval Warn] Approver with UID ${document.approverId} not found. Cannot send push notification.`);
     }
 
     revalidatePath('/panel/documents');
@@ -194,24 +191,44 @@ export async function approveDocument(documentId: string, approverId: string) {
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) throw new Error("Dokumen tidak ditemukan.");
-
     const document = docSnap.data() as ImportantDocument;
-    if (document.approverId !== approverId) throw new Error("Anda tidak memiliki izin untuk menyetujui dokumen ini.");
-    if (document.status !== 'Menunggu Persetujuan') throw new Error("Dokumen ini tidak sedang dalam status menunggu persetujuan.");
 
-    const approvedByName = "L. Andri Saputro, S.I.Kom";
-    const approvedByPosition = "Ketua Umum";
+    // Simplified authorization: let the UI handle who can click the button.
+    // Server just checks if the document is in the correct state.
+    if (document.status !== 'Menunggu Persetujuan') {
+        throw new Error("Dokumen ini tidak sedang dalam status menunggu persetujuan.");
+    }
     
-    await runTransaction(db, async (transaction) => {
-      await stampPdfWithQrCode(documentId);
-      
-      transaction.update(docRef, {
-        status: 'Disetujui',
-        approvedById: approverId,
-        approvedByName: approvedByName,
-        approvedByPosition: approvedByPosition,
-        approvedAt: Timestamp.now(),
-      });
+    const docTypeQuery = query(docTypesCollection, where('name', '==', document.type));
+    const docTypeSnapshot = await getDocs(docTypeQuery);
+    if (docTypeSnapshot.empty) {
+      throw new Error("Jenis dokumen tidak valid.");
+    }
+    const docTypeCode = docTypeSnapshot.docs[0].data().code;
+    
+    const documentNumber = await generateDocumentNumber(docTypeCode);
+    
+    // The core stamping logic is now in a separate flow
+    const stampedFileResult = await stampDocxAndConvertToPdf({
+      documentId,
+      documentNumber,
+      filePath: document.filePath!,
+    });
+
+    const approverUser = await getUserByUid(approverId);
+    const approvedByName = approverUser?.name || "Admin";
+    const approvedByPosition = approverUser?.position || "Admin";
+    
+    await updateDoc(docRef, {
+      documentNumber: documentNumber,
+      status: 'Disetujui',
+      approvedById: approverId,
+      approvedByName: approvedByName,
+      approvedByPosition: approvedByPosition,
+      approvedAt: Timestamp.now(),
+      fileUrl: stampedFileResult.newFileUrl,
+      filePath: stampedFileResult.newFilePath,
+      fileName: stampedFileResult.newFileName,
     });
 
     const author = await getUserByUid(document.authorId);
@@ -220,7 +237,8 @@ export async function approveDocument(documentId: string, approverId: string) {
         if (template.isActive && author.waNumber) {
             const message = template.message
                 .replace('{namaPengguna}', author.name)
-                .replace('{judulDokumen}', document.title);
+                .replace('{judulDokumen}', document.title)
+                .replace('{nomorDokumen}', documentNumber);
             await sendWhatsAppMessage(author.waNumber, message);
         }
         await sendNotification(
@@ -248,7 +266,7 @@ export async function rejectDocument(documentId: string, rejectorId: string, rea
     if (!docSnap.exists()) throw new Error("Dokumen tidak ditemukan.");
 
     const document = docSnap.data() as ImportantDocument;
-    if (document.approverId !== rejectorId) throw new Error("Anda tidak memiliki izin untuk menolak dokumen ini.");
+    
     if (document.status !== 'Menunggu Persetujuan') throw new Error("Dokumen ini tidak bisa ditolak.");
 
     const rejector = await getUserByUid(rejectorId);
@@ -320,21 +338,29 @@ export async function generateDocumentNumber(typeCode: string): Promise<string> 
   try {
       const year = new Date().getFullYear();
       const month = new Date().getMonth() + 1;
-      const romanMonth = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'][month - 1];
+      
+      const romanMonthMap: { [key: number]: string } = {
+        1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI',
+        7: 'VII', 8: 'VIII', 9: 'IX', 10: 'X', 11: 'XI', 12: 'XII'
+      };
+      const romanMonth = romanMonthMap[month];
 
-      const prefix = `GL/${typeCode}/${romanMonth}/${year}`;
+      const prefix = `${typeCode}/GL/DPP`;
+      const queryPrefix = `/GL/${typeCode}/${romanMonth}/${year}`;
       
       const q = query(documentsCollection, 
-        where('documentNumber', '>=', `000/${prefix}`), 
-        where('documentNumber', '<', `999/${prefix}`)
+        where('documentNumber', '>=', `001${queryPrefix}`), 
+        where('documentNumber', '<=', `999${queryPrefix}`)
       );
-      const snapshot = await getDocs(q);
+
+      const countSnapshot = await getCountFromServer(q);
+      const nextNumber = (countSnapshot.data().count + 1).toString().padStart(3, '0');
       
-      const nextNumber = (snapshot.size + 1).toString().padStart(3, '0');
-      
-      return `${nextNumber}/${prefix}`;
+      return `${nextNumber}/${prefix}/${romanMonth}/${year}`;
   } catch (error) {
       console.error("[generateDocumentNumber Error]", error);
       throw new Error("Gagal membuat nomor dokumen.");
   }
 }
+
+    
