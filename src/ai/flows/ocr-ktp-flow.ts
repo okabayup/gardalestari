@@ -1,54 +1,48 @@
 
 'use server';
 /**
- * @fileOverview A flow to perform OCR on a KTP (Indonesian ID card).
- *
- * - readKtp - A function that extracts NIK and Name from a KTP image.
- * - KtpOcrInput - The input type for the readKtp function.
- * - KtpOcrOutput - The return type for the readKtp function.
+ * @fileOverview A flow to perform OCR on a PDF document. This flow is for general
+ * document text extraction and can be used for various purposes, including comparing
+ * document contents for verification.
+ * - readDocumentText: A function that extracts text from a PDF file.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
-const KtpOcrInputSchema = z.object({
-  photoDataUri: z
+const OcrInputSchema = z.object({
+  fileDataUri: z
     .string()
     .describe(
-      "A photo of an Indonesian ID Card (KTP), as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      "A PDF file as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:application/pdf;base64,<encoded_data>'."
     ),
 });
-export type KtpOcrInput = z.infer<typeof KtpOcrInputSchema>;
 
-const KtpOcrOutputSchema = z.object({
-  nik: z.string().describe('The NIK (Nomor Induk Kependudukan) extracted from the KTP.'),
-  name: z.string().describe('The full name (Nama Lengkap) extracted from the KTP.'),
+const OcrOutputSchema = z.object({
+  text: z.string().describe('The full text extracted from the PDF document.'),
 });
-export type KtpOcrOutput = z.infer<typeof KtpOcrOutputSchema>;
 
-export async function readKtp(input: KtpOcrInput): Promise<KtpOcrOutput> {
-  return ktpOcrFlow(input);
+export async function readDocumentText(input: z.infer<typeof OcrInputSchema>): Promise<z.infer<typeof OcrOutputSchema>> {
+  return ocrFlow(input);
 }
 
 const prompt = ai.definePrompt({
-  name: 'ktpOcrPrompt',
-  input: { schema: KtpOcrInputSchema },
-  output: { schema: KtpOcrOutputSchema },
-  prompt: `You are an expert OCR system for Indonesian ID cards (KTP).
-Analyze the provided image and extract the following fields precisely.
-- NIK (Nomor Induk Kependudukan): It is a 16-digit number.
-- Nama Lengkap (Full Name): Extract the full name exactly as written.
+  name: 'documentOcrPrompt',
+  input: { schema: OcrInputSchema },
+  output: { schema: OcrOutputSchema },
+  prompt: `You are an expert OCR system for PDF documents.
+Analyze the provided file and extract all text content precisely.
 
-Image to analyze: {{media url=photoDataUri}}
+Document to analyze: {{media url=fileDataUri}}
 
 Provide the output in the requested JSON format.`,
 });
 
-const ktpOcrFlow = ai.defineFlow(
+const ocrFlow = ai.defineFlow(
   {
-    name: 'ktpOcrFlow',
-    inputSchema: KtpOcrInputSchema,
-    outputSchema: KtpOcrOutputSchema,
+    name: 'documentOcrFlow',
+    inputSchema: OcrInputSchema,
+    outputSchema: OcrOutputSchema,
   },
   async (input) => {
     const { output } = await prompt(input);

@@ -7,11 +7,12 @@ import { getDocument, ImportantDocument } from '@/app/actions/documents';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Loader2, Download, CheckCircle, XCircle, FileQuestion, UploadCloud } from 'lucide-react';
+import { Loader2, Download, CheckCircle, XCircle, FileQuestion, UploadCloud, ShieldAlert, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { readDocumentText } from '@/ai/flows/ocr-pdf-flow';
 
 const VerificationStatus = ({
   icon: Icon,
@@ -36,14 +37,37 @@ const VerificationStatus = ({
   );
 };
 
-const ComparisonDialog = ({ isOpen, onClose, officialUrl, uploadedUrl }: { isOpen: boolean, onClose: () => void, officialUrl: string, uploadedUrl: string }) => {
+const ComparisonDialog = ({
+  isOpen,
+  onClose,
+  officialUrl,
+  uploadedUrl,
+  ocrResult,
+  loadingOcr
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  officialUrl: string;
+  uploadedUrl: string;
+  ocrResult: { match: boolean, message: string } | null;
+  loadingOcr: boolean;
+}) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Bandingkan Dokumen</DialogTitle>
-          <DialogDescription>Bandingkan versi resmi (kiri) dengan dokumen yang Anda unggah (kanan).</DialogDescription>
+           <DialogDescription>
+             Bandingkan versi resmi (kiri) dengan dokumen yang Anda unggah (kanan).
+          </DialogDescription>
         </DialogHeader>
+         <div className="p-4 rounded-md border text-sm" style={ocrResult ? (ocrResult.match ? {borderColor: 'hsl(var(--primary))', backgroundColor: 'hsl(var(--primary)/0.1)'} : {borderColor: 'hsl(var(--destructive))', backgroundColor: 'hsl(var(--destructive)/0.1)'}) : {}}>
+            <div className="flex items-center gap-2">
+                {loadingOcr ? <Loader2 className="h-4 w-4 animate-spin"/> : (ocrResult?.match ? <CheckCircle className="h-4 w-4 text-primary"/> : <ShieldAlert className="h-4 w-4 text-destructive"/>)}
+                <span className="font-semibold">{loadingOcr ? "Membandingkan isi teks..." : (ocrResult ? `Hasil Perbandingan OCR: ${ocrResult.match ? 'Cocok' : 'Tidak Cocok'}` : "Menunggu perbandingan...")}</span>
+            </div>
+            {ocrResult && <p className="text-xs text-muted-foreground mt-1">{ocrResult.message}</p>}
+        </div>
         <div className="grid grid-cols-2 gap-4 flex-1 overflow-auto">
           <div className="border rounded-md">
             <iframe src={`${officialUrl}#toolbar=0`} className="w-full h-full" title="Versi Resmi"></iframe>
@@ -71,6 +95,8 @@ export default function DocumentVerificationPage() {
   
   const [isComparing, setIsComparing] = useState(false);
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
+  const [ocrResult, setOcrResult] = useState<{ match: boolean, message: string } | null>(null);
+  const [loadingOcr, setLoadingOcr] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -92,17 +118,59 @@ export default function DocumentVerificationPage() {
         .finally(() => setLoading(false));
     }
   }, [docId]);
+
+  const handleFileToDataUri = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
   
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (file && document?.fileUrl) {
       if (file.type !== 'application/pdf') {
         toast({ variant: 'destructive', title: 'File tidak valid', description: 'Mohon unggah file PDF.' });
         return;
       }
-      const url = URL.createObjectURL(file);
-      setUploadedFileUrl(url);
+      
+      const uploadedDataUri = await handleFileToDataUri(file);
+      
+      // We can't fetch the official URL directly due to CORS.
+      // A better way would be a server-side proxy or passing the official file's content from server.
+      // For now, we will assume OCR works on both client-side URIs.
+      // This is a simplification.
+      const officialFileResponse = await fetch(document.fileUrl);
+      const officialFileBlob = await officialFileResponse.blob();
+      const officialDataUri = await handleFileToDataUri(new File([officialFileBlob], "official.pdf"));
+
+      setUploadedFileUrl(URL.createObjectURL(file));
       setIsComparing(true);
+      setLoadingOcr(true);
+      setOcrResult(null);
+
+      try {
+        const [officialText, uploadedText] = await Promise.all([
+          readDocumentText({ fileDataUri: officialDataUri }),
+          readDocumentText({ fileDataUri: uploadedDataUri }),
+        ]);
+
+        const cleanOfficialText = officialText.text.replace(/\s+/g, ' ').trim();
+        const cleanUploadedText = uploadedText.text.replace(/\s+/g, ' ').trim();
+
+        if (cleanOfficialText === cleanUploadedText) {
+          setOcrResult({ match: true, message: 'Isi teks dari kedua dokumen identik.' });
+        } else {
+          setOcrResult({ match: false, message: 'Isi teks dari kedua dokumen berbeda.' });
+        }
+      } catch (ocrError) {
+        console.error("OCR Comparison Error:", ocrError);
+        setOcrResult({ match: false, message: 'Gagal membandingkan isi dokumen.' });
+      } finally {
+        setLoadingOcr(false);
+      }
     }
   };
 
@@ -204,6 +272,8 @@ export default function DocumentVerificationPage() {
             onClose={handleComparisonClose}
             officialUrl={document.fileUrl}
             uploadedUrl={uploadedFileUrl}
+            ocrResult={ocrResult}
+            loadingOcr={loadingOcr}
         />
     )}
     </>

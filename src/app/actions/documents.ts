@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -12,6 +11,7 @@ import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from './user';
 import { getWhatsappTemplate } from '@/app/actions/settings';
 import type { LetterStatus, ImportantDocument, DocumentCategory, DocumentType } from '@/lib/definitions';
+import admin from 'firebase-admin';
 
 const documentsCollection = collection(db, 'importantDocuments');
 const categoriesCollection = collection(db, 'documentCategories');
@@ -192,22 +192,24 @@ export async function submitForApproval(documentId: string, authorId: string) {
 
 export async function approveDocument(documentId: string, approverId: string) {
   try {
-    const approverDoc = await getDoc(doc(db, 'users', approverId));
-    const approverData = approverDoc.exists() ? approverDoc.data() : null;
-    const isSuperAdmin = approverData?.phoneNumber === SUPER_ADMIN_PHONE_NUMBER;
-    
     const docRef = doc(db, 'importantDocuments', documentId);
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) throw new Error("Dokumen tidak ditemukan.");
-
     const document = docSnap.data() as ImportantDocument;
+    
+    // Authorization Check
+    const approverUser = await getUserByUid(approverId);
+    const isSuperAdmin = approverUser?.phoneNumber === SUPER_ADMIN_PHONE_NUMBER;
+    const isDesignatedApprover = document.approverId === approverId;
 
-    // Allow approval if the user is the designated approver OR if they are a superadmin
-    if (document.approverId !== approverId && !isSuperAdmin) {
-      throw new Error("Anda tidak memiliki izin untuk menyetujui dokumen ini.");
+    if (!isSuperAdmin && !isDesignatedApprover) {
+        throw new Error("Anda tidak memiliki izin untuk menyetujui dokumen ini.");
     }
-    if (document.status !== 'Menunggu Persetujuan') throw new Error("Dokumen ini tidak sedang dalam status menunggu persetujuan.");
+
+    if (document.status !== 'Menunggu Persetujuan') {
+        throw new Error("Dokumen ini tidak sedang dalam status menunggu persetujuan.");
+    }
     
     const docTypeDoc = await getDoc(doc(docTypesCollection, document.type));
     if (!docTypeDoc.exists()) throw new Error("Jenis dokumen tidak valid.");
@@ -269,8 +271,10 @@ export async function rejectDocument(documentId: string, rejectorId: string, rea
     if (!docSnap.exists()) throw new Error("Dokumen tidak ditemukan.");
 
     const document = docSnap.data() as ImportantDocument;
+    
+    const isDesignatedApprover = document.approverId === rejectorId;
 
-    if (document.approverId !== rejectorId && !isSuperAdmin) {
+    if (!isSuperAdmin && !isDesignatedApprover) {
         throw new Error("Anda tidak memiliki izin untuk menolak dokumen ini.");
     }
     
@@ -363,4 +367,3 @@ export async function generateDocumentNumber(typeCode: string): Promise<string> 
       throw new Error("Gagal membuat nomor dokumen.");
   }
 }
-
