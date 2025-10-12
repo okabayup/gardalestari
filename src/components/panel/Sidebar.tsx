@@ -103,7 +103,7 @@ const navGroups: {
     ]
   },
   {
-    group: 'E-Office',
+    group: 'Persuratan',
     icon: Building2,
     items: [
         { href: '/panel/documents', icon: BookCopy, label: 'Surat & Dokumen', permission: 'manage_documents'},

@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -200,10 +201,14 @@ export async function approveDocument(documentId: string, approverId: string) {
     
     // Authorization Check
     const approverUser = await getUserByUid(approverId);
-    const isSuperAdmin = approverUser?.phoneNumber === SUPER_ADMIN_PHONE_NUMBER;
+    
+    // Normalize phone numbers for comparison
+    const normalizePhone = (phone: string | undefined | null) => (phone || '').replace(/\D/g, '');
+    const isSuperAdmin = normalizePhone(approverUser?.phoneNumber) === normalizePhone(SUPER_ADMIN_PHONE_NUMBER);
     const isDesignatedApprover = document.approverId === approverId;
 
     if (!isSuperAdmin && !isDesignatedApprover) {
+        console.error(`[AUTH_FAILURE] Approval denied for user ${approverId} (${approverUser?.phoneNumber}). Superadmin: ${isSuperAdmin}, Designated: ${isDesignatedApprover}`);
         throw new Error("Anda tidak memiliki izin untuk menyetujui dokumen ini.");
     }
 
@@ -263,7 +268,10 @@ export async function approveDocument(documentId: string, approverId: string) {
 export async function rejectDocument(documentId: string, rejectorId: string, reason: string) {
   try {
     const rejectorUser = await getUserByUid(rejectorId);
-    const isSuperAdmin = rejectorUser?.phoneNumber === SUPER_ADMIN_PHONE_NUMBER;
+
+    // Normalize phone numbers for comparison
+    const normalizePhone = (phone: string | undefined | null) => (phone || '').replace(/\D/g, '');
+    const isSuperAdmin = normalizePhone(rejectorUser?.phoneNumber) === normalizePhone(SUPER_ADMIN_PHONE_NUMBER);
 
     const docRef = doc(db, 'importantDocuments', documentId);
     const docSnap = await getDoc(docRef);
@@ -275,6 +283,7 @@ export async function rejectDocument(documentId: string, rejectorId: string, rea
     const isDesignatedApprover = document.approverId === rejectorId;
 
     if (!isSuperAdmin && !isDesignatedApprover) {
+        console.error(`[AUTH_FAILURE] Rejection denied for user ${rejectorId} (${rejectorUser?.phoneNumber}). Superadmin: ${isSuperAdmin}, Designated: ${isDesignatedApprover}`);
         throw new Error("Anda tidak memiliki izin untuk menolak dokumen ini.");
     }
     
