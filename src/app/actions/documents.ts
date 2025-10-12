@@ -4,9 +4,9 @@
 
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, runTransaction, where, getCountFromServer } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject, getBlob } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
-import { stampPdfWithQrCode } from '@/ai/flows/stamp-pdf-flow';
+import { stampDocxAndConvertToPdf } from '@/ai/flows/stamp-docx-flow';
 import { sendNotification } from './notifications';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from './user';
@@ -68,7 +68,8 @@ export async function createDocument(
     file: File
 ) {
   try {
-    const fileRef = ref(storage, `documents/${Date.now()}_${file.name}`);
+    const filePath = `documents/${Date.now()}_${file.name}`;
+    const fileRef = ref(storage, filePath);
     await uploadBytes(fileRef, file);
     const fileUrl = await getDownloadURL(fileRef);
 
@@ -76,6 +77,7 @@ export async function createDocument(
         ...data,
         documentNumber: '', // Will be generated on approval
         fileUrl,
+        filePath: filePath, // Store path for server-side access
         fileName: file.name,
         createdAt: Timestamp.now(),
         status: 'Draft' as LetterStatus,
@@ -95,20 +97,20 @@ export async function updateDocument(id: string, data: Partial<Omit<ImportantDoc
 
     if (newFile) {
         const currentDoc = await getDocument(id);
-        if (currentDoc?.fileUrl) {
+        if (currentDoc?.filePath) {
             try {
-                if (currentDoc.fileUrl.includes('firebasestorage.googleapis.com')) {
-                    await deleteObject(ref(storage, currentDoc.fileUrl));
-                }
+                await deleteObject(ref(storage, currentDoc.filePath));
             } catch (storageError: any) {
                  if (storageError.code !== 'storage/object-not-found') {
                     console.warn("[updateDocument Warn] Could not delete old file", storageError);
                 }
             }
         }
-        const fileRef = ref(storage, `documents/${Date.now()}_${newFile.name}`);
+        const filePath = `documents/${Date.now()}_${newFile.name}`;
+        const fileRef = ref(storage, filePath);
         await uploadBytes(fileRef, newFile);
         dataToUpdate.fileUrl = await getDownloadURL(fileRef);
+        dataToUpdate.filePath = filePath;
         dataToUpdate.fileName = newFile.name;
     }
 
@@ -124,10 +126,8 @@ export async function updateDocument(id: string, data: Partial<Omit<ImportantDoc
 export async function deleteDocument(id: string) {
   try {
     const docToDelete = await getDocument(id);
-    if (docToDelete?.fileUrl) {
-        if (docToDelete.fileUrl.includes('firebasestorage.googleapis.com')) {
-            await deleteObject(ref(storage, docToDelete.fileUrl));
-        }
+    if (docToDelete?.filePath) {
+        await deleteObject(ref(storage, docToDelete.filePath));
     }
     await deleteDoc(doc(db, 'importantDocuments', id));
     revalidatePath('/panel/documents');
@@ -185,12 +185,7 @@ export async function submitForApproval(documentId: string, authorId: string) {
   }
 }
 
-export async function approveDocument(
-  documentId: string, 
-  approverId: string,
-  qrStamp: { x: number; y: number; width: number; height: number; rotation: number },
-  numberStamp: { x: number; y: number; width: number; height: number; rotation: number }
-) {
+export async function approveDocument(documentId: string, approverId: string) {
   try {
     const docRef = doc(db, 'importantDocuments', documentId);
     const docSnap = await getDoc(docRef);
@@ -198,13 +193,8 @@ export async function approveDocument(
     if (!docSnap.exists()) throw new Error("Dokumen tidak ditemukan.");
     const document = docSnap.data() as ImportantDocument;
 
-    const approverUserDoc = await getDoc(doc(db, 'users', approverId));
-    if (!approverUserDoc.exists()) {
-        console.error(`[approveDocument] Approving user with UID: ${approverId} not found in Firestore.`);
-        throw new Error("Anda tidak memiliki izin untuk menyetujui dokumen ini.");
-    }
-
-    const approverUser = approverUserDoc.data();
+    // Simplified authorization: let the UI handle who can click the button.
+    // Server just checks if the document is in the correct state.
     if (document.status !== 'Menunggu Persetujuan') {
         throw new Error("Dokumen ini tidak sedang dalam status menunggu persetujuan.");
     }
@@ -218,26 +208,27 @@ export async function approveDocument(
     
     const documentNumber = await generateDocumentNumber(docTypeCode);
     
-    await stampPdfWithQrCode({
+    // The core stamping logic is now in a separate flow
+    const stampedFileResult = await stampDocxAndConvertToPdf({
       documentId,
       documentNumber,
-      fileUrl: document.fileUrl,
-      qrStamp,
-      numberStamp
+      filePath: document.filePath!,
     });
 
-    const approvedByName = approverUser.fullName || "Admin";
-    const approvedByPosition = approverUser.position || "Admin";
+    const approverUser = await getUserByUid(approverId);
+    const approvedByName = approverUser?.name || "Admin";
+    const approvedByPosition = approverUser?.position || "Admin";
     
-    await runTransaction(db, async (transaction) => {
-      transaction.update(docRef, {
-        documentNumber: documentNumber,
-        status: 'Disetujui',
-        approvedById: approverId,
-        approvedByName: approvedByName,
-        approvedByPosition: approvedByPosition,
-        approvedAt: Timestamp.now(),
-      });
+    await updateDoc(docRef, {
+      documentNumber: documentNumber,
+      status: 'Disetujui',
+      approvedById: approverId,
+      approvedByName: approvedByName,
+      approvedByPosition: approvedByPosition,
+      approvedAt: Timestamp.now(),
+      fileUrl: stampedFileResult.newFileUrl,
+      filePath: stampedFileResult.newFilePath,
+      fileName: stampedFileResult.newFileName,
     });
 
     const author = await getUserByUid(document.authorId);

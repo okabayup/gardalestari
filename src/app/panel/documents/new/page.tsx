@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -65,6 +66,7 @@ export default function NewDocumentPage() {
           ...documentData,
           authorId: user.uid,
           authorName: user.displayName || 'Pengguna',
+          approverId: 'aYlG4AVpM2W4Aap25VE8g2BHn3a2' // Default approver UID
       };
       await createDocument(payload, file[0]);
       toast({ title: 'Dokumen berhasil dibuat!' });
@@ -96,10 +98,10 @@ export default function NewDocumentPage() {
             <div className="flex justify-between items-start">
                 <div>
                     <CardTitle>Detail Dokumen</CardTitle>
-                    <CardDescription>Unduh template, isi, lalu unggah sebagai PDF.</CardDescription>
+                    <CardDescription>Unduh template, isi, lalu unggah sebagai file .docx.</CardDescription>
                 </div>
                 <Button variant="secondary" asChild>
-                    <a href={TEMPLATE_URL} download>
+                    <a href="/templates/template_surat_resmi.docx" download>
                         <Download className="mr-2 h-4 w-4" />
                         Unduh Template
                     </a>
@@ -163,8 +165,8 @@ export default function NewDocumentPage() {
             </div>
             
             <div className="space-y-2">
-                <Label htmlFor="file">File Dokumen (PDF)</Label>
-                <Input id="file" type="file" {...register('file')} accept=".pdf" />
+                <Label htmlFor="file">File Dokumen (.docx)</Label>
+                <Input id="file" type="file" {...register('file')} accept=".docx" />
                  {uploadedFileName && <p className="text-sm text-muted-foreground flex items-center gap-2"><Paperclip className="h-4 w-4"/> {uploadedFileName}</p>}
                  {errors.file && <p className="text-sm text-destructive">File wajib diunggah</p>}
             </div>

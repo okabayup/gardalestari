@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,8 +17,6 @@ import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 
 type FormData = Omit<ImportantDocument, 'id' | 'createdAt' | 'authorId' | 'authorName' | 'status' | 'fileUrl' | 'fileName' | 'approvedAt' | 'approvedById' | 'approvedByName' | 'approverId' | 'rejectionReason' | 'documentNumber'> & { file?: FileList };
-
-const TEMPLATE_URL = "/api/templates/surat_resmi/route.ts"; // This should point to the correct template download
 
 export default function EditDocumentPage() {
   const router = useRouter();
@@ -123,7 +122,7 @@ export default function EditDocumentPage() {
                     <CardDescription>Perbarui informasi dokumen di bawah ini. Anda hanya bisa mengedit dokumen yang masih berstatus "Draf".</CardDescription>
                 </div>
                  <Button variant="secondary" asChild>
-                    <a href={TEMPLATE_URL} download>
+                    <a href="/templates/template_surat_resmi.docx" download>
                         <Download className="mr-2 h-4 w-4" />
                         Unduh Template
                     </a>
@@ -187,8 +186,8 @@ export default function EditDocumentPage() {
             </div>
             
             <div className="space-y-2">
-                <Label htmlFor="file">Ganti File Dokumen (PDF)</Label>
-                <Input id="file" type="file" {...register('file')} accept=".pdf" />
+                <Label htmlFor="file">Ganti File Dokumen (.docx)</Label>
+                <Input id="file" type="file" {...register('file')} accept=".docx" />
                 {uploadedFileName ? (
                     <p className="text-sm text-muted-foreground flex items-center gap-2"><Paperclip className="h-4 w-4"/> {uploadedFileName}</p>
                 ) : currentFile && (

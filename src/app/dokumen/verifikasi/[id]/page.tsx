@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useRef, ChangeEvent } from 'react';
@@ -139,23 +140,23 @@ export default function DocumentVerificationPage() {
       
       const uploadedDataUri = await handleFileToDataUri(file);
       
-      const officialFileResponse = await fetch(document.fileUrl);
-      const officialFileBlob = await officialFileResponse.blob();
-      const officialDataUri = await handleFileToDataUri(new File([officialFileBlob], "official.pdf"));
-
       setUploadedFileUrl(URL.createObjectURL(file));
       setIsComparing(true);
       setLoadingOcr(true);
       setOcrResult(null);
 
       try {
-        const [officialText, uploadedText] = await Promise.all([
+        const officialFileResponse = await fetch(document.fileUrl);
+        const officialFileBlob = await officialFileResponse.blob();
+        const officialDataUri = await handleFileToDataUri(new File([officialFileBlob], "official.pdf"));
+
+        const [officialTextResult, uploadedTextResult] = await Promise.all([
           readDocumentText({ fileDataUri: officialDataUri }),
           readDocumentText({ fileDataUri: uploadedDataUri }),
         ]);
 
-        const cleanOfficialText = officialText.text.replace(/\s+/g, ' ').trim();
-        const cleanUploadedText = uploadedText.text.replace(/\s+/g, ' ').trim();
+        const cleanOfficialText = officialTextResult.text.replace(/\s+/g, ' ').trim();
+        const cleanUploadedText = uploadedTextResult.text.replace(/\s+/g, ' ').trim();
 
         if (cleanOfficialText === cleanUploadedText) {
           setOcrResult({ match: true, message: 'Isi teks dari kedua dokumen identik.' });

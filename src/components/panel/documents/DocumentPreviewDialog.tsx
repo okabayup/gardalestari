@@ -1,10 +1,11 @@
+
 'use client';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ImportantDocument } from '@/lib/definitions';
 import { Check, X } from 'lucide-react';
-import PdfViewer from '@/components/utils/PdfViewer';
+import DocxViewer from '@/components/utils/DocxViewer'; // Updated import
 
 interface DocumentPreviewDialogProps {
   document: ImportantDocument | null;
@@ -27,7 +28,7 @@ export default function DocumentPreviewDialog({ document, isOpen, onClose, onApp
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 border-t border-b overflow-hidden">
-             <PdfViewer file={document.fileUrl} />
+             <DocxViewer fileUrl={document.fileUrl} />
         </div>
         <DialogFooter className="sm:justify-between p-6 pt-4">
             <Button variant="destructive" onClick={onReject}>

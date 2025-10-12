@@ -32,7 +32,8 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import { Textarea } from '@/components/ui/textarea';
-import DocumentStampingDialog from '@/components/panel/documents/DocumentStampingDialog';
+import DocumentPreviewDialog from '@/components/panel/documents/DocumentPreviewDialog';
+
 
 const RejectDialog = ({ document, isOpen, onClose, onConfirm }: { document: ImportantDocument | null, isOpen: boolean, onClose: () => void, onConfirm: (reason: string) => void }) => {
     const [reason, setReason] = useState('');
@@ -68,7 +69,7 @@ export default function DocumentsPage() {
   const [itemToDelete, setItemToDelete] = useState<ImportantDocument | null>(null);
 
   const [rejectDialogItem, setRejectDialogItem] = useState<ImportantDocument | null>(null);
-  const [stampingDialogItem, setStampingDialogItem] = useState<ImportantDocument | null>(null);
+  const [previewDialogItem, setPreviewDialogItem] = useState<ImportantDocument | null>(null);
 
   const canManageDocuments = hasPermission('manage_documents');
 
@@ -108,16 +109,23 @@ export default function DocumentsPage() {
     }
   }
 
-  const handleApproveConfirm = async (stamp: { x: number; y: number; width: number; height: number; rotation: number }) => {
-    if (!stampingDialogItem?.id || !user?.uid) return;
-    setStampingDialogItem(null); // Close dialog immediately
+  const handleApproveConfirm = async () => {
+    if (!previewDialogItem?.id || !user?.uid) return;
+    const docToApprove = previewDialogItem;
+    setPreviewDialogItem(null); // Close dialog immediately
     handleAction(
-      () => approveDocument(stampingDialogItem!.id!, user.uid, stamp),
-      stampingDialogItem.id!,
+      () => approveDocument(docToApprove.id!, user.uid),
+      docToApprove.id!,
       'Dokumen disetujui!',
       'Gagal Menyetujui'
     );
   };
+  
+  const handleRejectFromPreview = () => {
+      if(!previewDialogItem) return;
+      setRejectDialogItem(previewDialogItem);
+      setPreviewDialogItem(null);
+  }
 
   const handleRejectConfirm = (reason: string) => {
     if (!rejectDialogItem?.id || !user?.uid) return;
@@ -219,11 +227,8 @@ export default function DocumentsPage() {
                             )}
                              {item.status === 'Menunggu Persetujuan' && canManageDocuments && (
                                 <>
-                                <DropdownMenuItem onClick={() => setStampingDialogItem(item)}>
-                                    <Check className="mr-2 h-4 w-4" /> Setujui Dokumen
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setRejectDialogItem(item)} className="text-destructive">
-                                    <X className="mr-2 h-4 w-4" /> Tolak Dokumen
+                                <DropdownMenuItem onClick={() => setPreviewDialogItem(item)}>
+                                    <Check className="mr-2 h-4 w-4" /> Tinjau & Setujui
                                 </DropdownMenuItem>
                                 </>
                             )}
@@ -275,14 +280,13 @@ export default function DocumentsPage() {
       
       <RejectDialog document={rejectDialogItem} isOpen={!!rejectDialogItem} onClose={() => setRejectDialogItem(null)} onConfirm={handleRejectConfirm} />
       
-      {stampingDialogItem && (
-        <DocumentStampingDialog
-          document={stampingDialogItem}
-          isOpen={!!stampingDialogItem}
-          onClose={() => setStampingDialogItem(null)}
-          onConfirm={handleApproveConfirm}
-        />
-      )}
+      <DocumentPreviewDialog 
+        document={previewDialogItem}
+        isOpen={!!previewDialogItem}
+        onClose={() => setPreviewDialogItem(null)}
+        onApprove={handleApproveConfirm}
+        onReject={handleRejectFromPreview}
+      />
     </>
   );
 }
