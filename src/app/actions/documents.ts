@@ -17,7 +17,6 @@ const documentsCollection = collection(db, 'importantDocuments');
 const categoriesCollection = collection(db, 'documentCategories');
 const docTypesCollection = collection(db, 'documentTypes');
 
-const KETUA_UMUM_UID = process.env.KETUA_UMUM_UID || 'KETUM_UID_PLACEHOLDER'; 
 const ADMIN_NOTIFICATION_PHONE = '6285937010409';
 
 
@@ -150,14 +149,11 @@ export async function submitForApproval(documentId: string, authorId: string) {
       throw new Error("Dokumen ini tidak dalam status yang bisa diajukan.");
     }
 
-    const approverId = KETUA_UMUM_UID;
-
+    const approver = await getUserByUid(document.approverId);
+    
     await updateDoc(docRef, {
       status: 'Menunggu Persetujuan',
-      approverId: approverId,
     });
-    
-    const approver = await getUserByUid(approverId);
     
     // Always send WA to admin number
     const template = await getWhatsappTemplate('document_submission');
@@ -176,10 +172,10 @@ export async function submitForApproval(documentId: string, authorId: string) {
             body: `Dokumen "${document.title}" dari ${document.authorName} memerlukan persetujuan Anda.`,
             link: `/panel/documents`
         },
-        { type: 'users', userIds: [approverId] }
+        { type: 'users', userIds: [document.approverId!] }
         );
     } else {
-        console.warn(`[submitForApproval Warn] Approver with UID ${approverId} not found. Cannot send push notification.`);
+        console.warn(`[submitForApproval Warn] Approver with UID ${document.approverId} not found. Cannot send push notification.`);
     }
 
     revalidatePath('/panel/documents');
@@ -192,7 +188,8 @@ export async function submitForApproval(documentId: string, authorId: string) {
 export async function approveDocument(
   documentId: string, 
   approverId: string,
-  stamp: { x: number; y: number; width: number; height: number; rotation: number }
+  qrStamp: { x: number; y: number; width: number; height: number; rotation: number },
+  numberStamp: { x: number; y: number; width: number; height: number; rotation: number }
 ) {
   try {
     const docRef = doc(db, 'importantDocuments', documentId);
@@ -201,8 +198,6 @@ export async function approveDocument(
     if (!docSnap.exists()) throw new Error("Dokumen tidak ditemukan.");
     const document = docSnap.data() as ImportantDocument;
 
-    // Authorization is now primarily handled by the UI (if the user can see the button, they can approve).
-    // This is a server-side double check.
     const approverUserDoc = await getDoc(doc(db, 'users', approverId));
     if (!approverUserDoc.exists()) {
         console.error(`[approveDocument] Approving user with UID: ${approverId} not found in Firestore.`);
@@ -210,11 +205,6 @@ export async function approveDocument(
     }
 
     const approverUser = approverUserDoc.data();
-    if (!approverUser.permissions?.includes('manage_documents')) {
-        console.error(`[approveDocument] Unauthorized attempt by UID: ${approverId}`);
-        throw new Error("Anda tidak memiliki izin untuk menyetujui dokumen ini.");
-    }
-
     if (document.status !== 'Menunggu Persetujuan') {
         throw new Error("Dokumen ini tidak sedang dalam status menunggu persetujuan.");
     }
@@ -232,7 +222,8 @@ export async function approveDocument(
       documentId,
       documentNumber,
       fileUrl: document.fileUrl,
-      stamp
+      qrStamp,
+      numberStamp
     });
 
     const approvedByName = approverUser.fullName || "Admin";
