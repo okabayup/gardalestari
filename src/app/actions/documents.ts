@@ -349,3 +349,5 @@ export async function generateDocumentNumber(typeCode: string): Promise<string> 
       throw new Error("Gagal membuat nomor dokumen.");
   }
 }
+
+    
