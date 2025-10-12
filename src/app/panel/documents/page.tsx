@@ -25,15 +25,14 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
-import { getDocuments, deleteDocument, ImportantDocument, submitForApproval, approveDocument } from '@/app/actions/documents';
+import { getDocuments, deleteDocument, ImportantDocument, submitForApproval, approveDocument, rejectDocument } from '@/app/actions/documents';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import QRCode from 'qrcode.react';
 import { toPng } from 'html-to-image';
 import { useAuth } from '@/hooks/use-auth';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { getMembers, MemberWithStatus } from '@/app/actions/members';
+import { Textarea } from '@/components/ui/textarea';
 
 const QRDialog = ({ document, isOpen, onClose }: { document: ImportantDocument | null, isOpen: boolean, onClose: () => void }) => {
     const qrRef = useRef<HTMLDivElement>(null);
@@ -81,42 +80,21 @@ const QRDialog = ({ document, isOpen, onClose }: { document: ImportantDocument |
     )
 }
 
-const ApprovalDialog = ({ document, members, isOpen, onClose, onConfirm }: { document: ImportantDocument | null, members: MemberWithStatus[], isOpen: boolean, onClose: () => void, onConfirm: (approverId: string) => void }) => {
-    const [approverId, setApproverId] = useState('');
-    const [loading, setLoading] = useState(false);
-    
+const RejectDialog = ({ document, isOpen, onClose, onConfirm }: { document: ImportantDocument | null, isOpen: boolean, onClose: () => void, onConfirm: (reason: string) => void }) => {
+    const [reason, setReason] = useState('');
     if (!document) return null;
 
-    const handleConfirm = async () => {
-        if (!approverId) return;
-        setLoading(true);
-        await onConfirm(approverId);
-        setLoading(false);
-    }
-    
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
+         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Ajukan Persetujuan Dokumen</DialogTitle>
-                    <DialogDescription>Pilih siapa yang harus meninjau dan menyetujui dokumen "{document.title}". Pengguna yang dipilih akan menerima notifikasi.</DialogDescription>
+                    <DialogTitle>Tolak Dokumen</DialogTitle>
+                    <DialogDescription>Berikan alasan penolakan untuk dokumen "{document.title}".</DialogDescription>
                 </DialogHeader>
-                 <div className="py-4">
-                     <Select onValueChange={setApproverId} value={approverId}>
-                        <SelectTrigger><SelectValue placeholder="Pilih pejabat berwenang..." /></SelectTrigger>
-                        <SelectContent>
-                            {members.filter(m => m.id !== document.authorId).map(member => (
-                                <SelectItem key={member.id} value={member.id}>{member.name} ({member.position})</SelectItem>
-                            ))}
-                        </SelectContent>
-                     </Select>
-                 </div>
+                 <Textarea value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Alasan penolakan..." />
                 <DialogFooter>
-                    <Button variant="outline" onClick={onClose} disabled={loading}>Batal</Button>
-                    <Button onClick={handleConfirm} disabled={!approverId || loading}>
-                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                        Kirim Permintaan
-                    </Button>
+                    <Button variant="ghost" onClick={onClose}>Batal</Button>
+                    <Button variant="destructive" onClick={() => onConfirm(reason)} disabled={!reason.trim()}>Tolak Dokumen</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -129,36 +107,30 @@ export default function DocumentsPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [documents, setDocuments] = useState<ImportantDocument[]>([]);
-  const [members, setMembers] = useState<MemberWithStatus[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<ImportantDocument | null>(null);
+
   const [qrDialogItem, setQrDialogItem] = useState<ImportantDocument | null>(null);
-  const [approvalDialogItem, setApprovalDialogItem] = useState<ImportantDocument | null>(null);
+  const [rejectDialogItem, setRejectDialogItem] = useState<ImportantDocument | null>(null);
+
 
   useEffect(() => {
-    async function fetchData() {
-        setLoading(true);
-        try {
-            const [docs, mems] = await Promise.all([getDocuments(), getMembers()]);
-            setDocuments(docs);
-            setMembers(mems.filter(m => m.position && m.position !== 'Anggota')); // Filter for approvers
-        } catch (error) {
-            toast({ variant: "destructive", title: "Gagal memuat data" });
-        } finally {
-            setLoading(false);
-        }
-    }
-    fetchData();
-  }, [toast]);
+    fetchDocuments();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchDocuments = async () => {
+    setLoading(true);
     try {
         const data = await getDocuments();
         setDocuments(data);
     } catch(e) {
-        toast({ variant: 'destructive', title: 'Gagal memperbarui daftar dokumen.'});
+        toast({ variant: 'destructive', title: 'Gagal memuat dokumen.'});
+    } finally {
+        setLoading(false);
     }
   }
 
@@ -166,44 +138,41 @@ export default function DocumentsPage() {
     setItemToDelete(doc);
     setShowDeleteAlert(true);
   };
-
-  const handleApproveClick = async (doc: ImportantDocument) => {
-    if (!doc.id || !user?.uid) return;
+  
+  const handleAction = async (action: () => Promise<any>, docId: string, successMessage: string, errorMessage: string) => {
+    setActionLoading(docId);
     try {
-      await approveDocument(doc.id, user.uid);
-      toast({ title: 'Dokumen disetujui dan disahkan!' });
+      await action();
+      toast({ title: successMessage });
       fetchDocuments();
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Gagal menyetujui', description: (error as Error).message });
+      toast({ variant: 'destructive', title: errorMessage, description: (error as Error).message });
+    } finally {
+      setActionLoading(null);
     }
+  }
+
+  const handleApproveClick = (doc: ImportantDocument) => {
+    if (!doc.id || !user?.uid) return;
+    handleAction(() => approveDocument(doc.id!, user.uid), doc.id, 'Dokumen disetujui!', 'Gagal Menyetujui');
+  }
+
+  const handleRejectConfirm = (reason: string) => {
+    if (!rejectDialogItem?.id || !user?.uid) return;
+    handleAction(() => rejectDocument(rejectDialogItem.id!, user.uid, reason), rejectDialogItem.id, 'Dokumen ditolak.', 'Gagal Menolak');
+    setRejectDialogItem(null);
   }
 
   const handleDeleteConfirm = async () => {
     if (!itemToDelete?.id) return;
-    setIsDeleting(itemToDelete.id);
-    try {
-      await deleteDocument(itemToDelete.id);
-      toast({ title: "Dokumen berhasil dihapus." });
-      fetchDocuments();
-    } catch (error) {
-      toast({ variant: "destructive", title: "Gagal menghapus", description: (error as Error).message });
-    } finally {
-      setIsDeleting(null);
-      setShowDeleteAlert(false);
-      setItemToDelete(null);
-    }
+    handleAction(() => deleteDocument(itemToDelete!.id!), itemToDelete.id, "Dokumen berhasil dihapus.", "Gagal menghapus");
+    setShowDeleteAlert(false);
+    setItemToDelete(null);
   };
   
-  const handleApprovalSubmit = async (approverId: string) => {
-    if (!approvalDialogItem?.id || !user?.uid) return;
-    try {
-        await submitForApproval(approvalDialogItem.id, user.uid, approverId);
-        toast({ title: 'Permintaan persetujuan terkirim!'});
-        setApprovalDialogItem(null);
-        fetchDocuments();
-    } catch (error) {
-         toast({ variant: 'destructive', title: 'Gagal mengirim', description: (error as Error).message });
-    }
+  const handleApprovalSubmit = async (doc: ImportantDocument) => {
+    if (!doc.id || !user?.uid) return;
+    handleAction(() => submitForApproval(doc.id!, user.uid), doc.id, 'Permintaan terkirim!', 'Gagal Mengirim');
   }
   
   const getStatusBadge = (status: ImportantDocument['status']) => {
@@ -226,7 +195,7 @@ export default function DocumentsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-headline text-2xl font-bold">Dokumen Penting</h1>
+            <h1 className="font-headline text-2xl font-bold">Dokumen Penting (E-Office)</h1>
             <p className="text-muted-foreground">Buat, sahkan, dan arsipkan dokumen resmi organisasi secara digital.</p>
           </div>
           <Button onClick={() => router.push('/panel/documents/new')}>
@@ -242,7 +211,7 @@ export default function DocumentsPage() {
             </div>
             <Button variant="outline" size="sm" onClick={() => router.push('/panel/documents/categories')}>
                 <Tags className="mr-2 h-4 w-4" />
-                Kelola Kategori
+                Kelola Atribut
             </Button>
           </CardHeader>
           <CardContent className="p-0">
@@ -276,28 +245,33 @@ export default function DocumentsPage() {
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button aria-haspopup="true" size="icon" variant="ghost" disabled={!!isDeleting}>
-                              {isDeleting === item.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <MoreHorizontal className="h-4 w-4" />}
+                            <Button aria-haspopup="true" size="icon" variant="ghost" disabled={!!actionLoading}>
+                              {actionLoading === item.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <MoreHorizontal className="h-4 w-4" />}
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {item.status === 'Draft' && item.authorId === user?.uid && (
-                                <DropdownMenuItem onClick={() => setApprovalDialogItem(item)}>
+                            {(item.status === 'Draft' || item.status === 'Ditolak') && item.authorId === user?.uid && (
+                                <DropdownMenuItem onClick={() => handleApprovalSubmit(item)}>
                                     <Send className="mr-2 h-4 w-4" /> Ajukan Persetujuan
                                 </DropdownMenuItem>
                             )}
                             {item.status === 'Menunggu Persetujuan' && item.approverId === user?.uid && (
+                                <>
                                 <DropdownMenuItem onClick={() => handleApproveClick(item)}>
                                     <Check className="mr-2 h-4 w-4" /> Setujui Dokumen
                                 </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setRejectDialogItem(item)} className="text-destructive">
+                                    <X className="mr-2 h-4 w-4" /> Tolak Dokumen
+                                </DropdownMenuItem>
+                                </>
                             )}
                             {item.status === 'Disetujui' && (
                                <DropdownMenuItem onClick={() => setQrDialogItem(item)}>
                                     <QrCode className="mr-2 h-4 w-4" /> Lihat QR Pengesahan
                                 </DropdownMenuItem>
                             )}
-                             <DropdownMenuSeparator />
-                             <DropdownMenuItem onClick={() => router.push(`/panel/documents/edit/${item.id}`)}>Edit</DropdownMenuItem>
+                            {(item.authorId === user?.uid || user?.uid === KETUA_UMUM_UID) && <DropdownMenuSeparator />}
+                            <DropdownMenuItem onClick={() => router.push(`/panel/documents/edit/${item.id}`)} disabled={item.status !== 'Draft' && item.authorId !== user?.uid}>Edit</DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(item)}>
                               <Trash2 className="mr-2 h-4 w-4" /> Hapus
                             </DropdownMenuItem>
@@ -335,13 +309,7 @@ export default function DocumentsPage() {
         </AlertDialogContent>
       </AlertDialog>
       <QRDialog document={qrDialogItem} isOpen={!!qrDialogItem} onClose={() => setQrDialogItem(null)} />
-       <ApprovalDialog 
-          document={approvalDialogItem} 
-          members={members}
-          isOpen={!!approvalDialogItem} 
-          onClose={() => setApprovalDialogItem(null)}
-          onConfirm={handleApprovalSubmit}
-      />
+      <RejectDialog document={rejectDialogItem} isOpen={!!rejectDialogItem} onClose={() => setRejectDialogItem(null)} onConfirm={handleRejectConfirm} />
     </>
   );
 }

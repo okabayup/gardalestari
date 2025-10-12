@@ -11,11 +11,14 @@ import { sendNotification } from './notifications';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from './user';
 import { getWhatsappTemplate } from '@/app/actions/settings';
-import type { LetterStatus, ImportantDocument, DocumentCategory } from '@/lib/definitions';
+import type { LetterStatus, ImportantDocument, DocumentCategory, DocumentType } from '@/lib/definitions';
 
 const documentsCollection = collection(db, 'importantDocuments');
 const categoriesCollection = collection(db, 'documentCategories');
+const docTypesCollection = collection(db, 'documentTypes');
+
 const KETUA_UMUM_UID = process.env.KETUA_UMUM_UID || 'KETUM_UID_PLACEHOLDER'; 
+const ADMIN_NOTIFICATION_PHONE = '6285937010409';
 
 
 // --- Document Management ---
@@ -130,23 +133,22 @@ export async function submitForApproval(documentId: string, authorId: string) {
       throw new Error("Dokumen ini tidak dalam status yang bisa diajukan.");
     }
 
-    const approverId = KETUA_UMUM_UID; // Always send to Ketua Umum
+    const approverId = KETUA_UMUM_UID;
 
     await updateDoc(docRef, {
       status: 'Menunggu Persetujuan',
       approverId: approverId,
     });
     
-    // Send notifications
     const approver = await getUserByUid(approverId);
     if (approver) {
         const template = await getWhatsappTemplate('document_submission');
-        if (template.isActive && approver.waNumber) {
-        const message = template.message
-            .replace('{namaPenerima}', approver.name)
-            .replace('{judulDokumen}', document.title)
-            .replace('{namaPengirim}', document.authorName);
-        await sendWhatsAppMessage(approver.waNumber, message);
+        if (template.isActive) {
+            const message = template.message
+                .replace('{namaPenerima}', approver.name)
+                .replace('{judulDokumen}', document.title)
+                .replace('{namaPengirim}', document.authorName);
+            await sendWhatsAppMessage(ADMIN_NOTIFICATION_PHONE, message);
         }
 
         await sendNotification(
@@ -179,15 +181,12 @@ export async function approveDocument(documentId: string, approverId: string) {
     if (document.approverId !== approverId) throw new Error("Anda tidak memiliki izin untuk menyetujui dokumen ini.");
     if (document.status !== 'Menunggu Persetujuan') throw new Error("Dokumen ini tidak sedang dalam status menunggu persetujuan.");
 
-    // Signatory is always Ketua Umum
     const approvedByName = "L. Andri Saputro, S.I.Kom";
     const approvedByPosition = "Ketua Umum";
     
     await runTransaction(db, async (transaction) => {
-      // AI Flow to stamp the PDF
       await stampPdfWithQrCode(documentId);
       
-      // Update document status in Firestore
       transaction.update(docRef, {
         status: 'Disetujui',
         approvedById: approverId,
@@ -201,10 +200,10 @@ export async function approveDocument(documentId: string, approverId: string) {
     if (author) {
         const template = await getWhatsappTemplate('document_approved');
         if (template.isActive && author.waNumber) {
-        const message = template.message
-            .replace('{namaPengguna}', author.name)
-            .replace('{judulDokumen}', document.title);
-        await sendWhatsAppMessage(author.waNumber, message);
+            const message = template.message
+                .replace('{namaPengguna}', author.name)
+                .replace('{judulDokumen}', document.title);
+            await sendWhatsAppMessage(author.waNumber, message);
         }
         await sendNotification(
         {
@@ -215,7 +214,6 @@ export async function approveDocument(documentId: string, approverId: string) {
         { type: 'users', userIds: [document.authorId] }
         );
     }
-
 
     revalidatePath('/panel/documents');
   } catch (error) {
@@ -248,12 +246,12 @@ export async function rejectDocument(documentId: string, rejectorId: string, rea
     if (author) {
         const template = await getWhatsappTemplate('document_rejected');
         if (template.isActive && author.waNumber) {
-        const message = template.message
-            .replace('{namaPengguna}', author.name)
-            .replace('{judulDokumen}', document.title)
-            .replace('{namaPenolak}', rejector?.name || 'Admin')
-            .replace('{alasanPenolakan}', reason);
-        await sendWhatsAppMessage(author.waNumber, message);
+            const message = template.message
+                .replace('{namaPengguna}', author.name)
+                .replace('{judulDokumen}', document.title)
+                .replace('{namaPenolak}', rejector?.name || 'Admin')
+                .replace('{alasanPenolakan}', reason);
+            await sendWhatsAppMessage(author.waNumber, message);
         }
 
         await sendNotification(
@@ -275,7 +273,7 @@ export async function rejectDocument(documentId: string, rejectorId: string, rea
 }
 
 
-// --- Category Management ---
+// --- Category & Type Management ---
 
 export async function getDocumentCategories(): Promise<DocumentCategory[]> {
     try {
@@ -291,7 +289,7 @@ export async function getDocumentCategories(): Promise<DocumentCategory[]> {
 export async function addDocumentCategory(name: string) {
     try {
         await addDoc(categoriesCollection, { name });
-        revalidatePath('/panel/documents');
+        revalidatePath('/panel/documents/categories');
     } catch (error) {
         console.error("[addDocumentCategory Error]", error);
         throw new Error("Gagal menambahkan kategori.");
@@ -301,31 +299,62 @@ export async function addDocumentCategory(name: string) {
 export async function deleteDocumentCategory(id: string) {
     try {
         await deleteDoc(doc(db, 'documentCategories', id));
-        revalidatePath('/panel/documents');
+        revalidatePath('/panel/documents/categories');
     } catch (error) {
         console.error("[deleteDocumentCategory Error]", error);
         throw new Error("Gagal menghapus kategori.");
     }
 }
 
-export async function generateDocumentNumber(category: string): Promise<string> {
+export async function getDocumentTypes(): Promise<DocumentType[]> {
+    try {
+        const q = query(docTypesCollection, orderBy('name', 'asc'));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DocumentType));
+    } catch (error) {
+        console.error("[getDocumentTypes Error]", error);
+        throw new Error("Gagal memuat jenis dokumen.");
+    }
+}
+
+export async function addDocumentType(data: Omit<DocumentType, 'id'>) {
+    try {
+        await addDoc(docTypesCollection, data);
+        revalidatePath('/panel/documents/categories');
+    } catch (error) {
+        console.error("[addDocumentType Error]", error);
+        throw new Error("Gagal menambahkan jenis dokumen.");
+    }
+}
+
+export async function deleteDocumentType(id: string) {
+    try {
+        await deleteDoc(doc(db, 'documentTypes', id));
+        revalidatePath('/panel/documents/categories');
+    } catch (error) {
+        console.error("[deleteDocumentType Error]", error);
+        throw new Error("Gagal menghapus jenis dokumen.");
+    }
+}
+
+
+export async function generateDocumentNumber(typeCode: string): Promise<string> {
   try {
       const year = new Date().getFullYear();
       const month = new Date().getMonth() + 1;
       const romanMonth = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'][month - 1];
 
-      const prefix = `GL/S-${category.toUpperCase()}/${romanMonth}/${year}`;
-
-      const q = query(documentsCollection, where('documentNumber', '>=', prefix), where('documentNumber', '<', `${prefix}-Z`));
+      const prefix = `GL/${typeCode}/${romanMonth}/${year}`;
+      
+      const q = query(documentsCollection, where('documentNumber', '>=', `000/${prefix}`), where('documentNumber', '<', `999/${prefix}`));
       const snapshot = await getDocs(q);
       
       let maxNumber = 0;
       snapshot.forEach(doc => {
-        const num = doc.data().documentNumber;
-        const lastPart = num.split('/')[0];
-        const numericPart = parseInt(lastPart, 10);
-        if (!isNaN(numericPart) && numericPart > maxNumber) {
-          maxNumber = numericPart;
+        const numStr = doc.data().documentNumber.split('/')[0];
+        const num = parseInt(numStr, 10);
+        if (!isNaN(num) && num > maxNumber) {
+          maxNumber = num;
         }
       });
 
