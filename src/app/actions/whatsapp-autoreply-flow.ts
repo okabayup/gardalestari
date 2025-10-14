@@ -1,4 +1,5 @@
 
+
 'use server';
 /**
  * @fileOverview A flow to handle automated WhatsApp replies.
@@ -12,7 +13,7 @@ import { z } from 'zod';
 import { getDocument } from '@/app/actions/documents';
 import { getLatestProgramsText } from '@/app/actions/whatsapp';
 import { createIdea } from '@/app/actions/ideas';
-import { getUserByWaNumber } from '@/app/actions/members';
+import { getUserByWaNumber } from '@/app/actions/user';
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
 
@@ -143,3 +144,5 @@ export async function generateWhatsAppReply(input: z.infer<typeof WhatsAppReplyI
     console.error(`Failed to send WhatsApp auto-reply to ${sender}:`, error);
   }
 }
+
+    

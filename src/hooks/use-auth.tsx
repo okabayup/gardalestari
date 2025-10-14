@@ -15,7 +15,7 @@ import { doc, getDoc, serverTimestamp, collection, query, where, getDocs, Timest
 import { auth, db } from '@/lib/firebase';
 import { redirect, usePathname } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { processVerificationSubmission, generateUniqueUsername, updateUserProfile as updateUserProfileServer, getUserByUid } from '@/app/actions/members';
+import { processVerificationSubmission, generateUniqueUsername, updateUserProfile as updateUserProfileServer, getUserByUid } from '@/app/actions/user';
 import type { PermissionId, Position, MemberType, VerificationStatus } from '@/lib/definitions';
 import { ALL_PERMISSIONS } from '@/lib/definitions';
 import { logAnalyticsEvent } from '@/lib/analytics';
@@ -308,3 +308,5 @@ export const useRequireAuth = (redirectTo = '/login') => {
 
   return { user, loading };
 };
+
+    

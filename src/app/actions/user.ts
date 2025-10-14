@@ -8,9 +8,7 @@ import { db, storage } from '@/lib/firebase';
 import type { PermissionId, Position, MemberWithStatus, MemberType, VerificationStatus, UserLevel, PublicUser, PublicProfile } from '@/lib/definitions';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getWhatsappTemplate } from '@/app/actions/settings';
-import { formatFullName } from '@/lib/utils';
 import { sendNotification } from './notifications';
-import { format } from 'date-fns';
 import { awardPointsForAction } from '@/app/actions/points';
 import admin from 'firebase-admin';
 
@@ -25,10 +23,6 @@ if (admin.apps.length === 0) {
 const usersCollection = collection(db, 'users');
 const positionsCollection = collection(db, 'positions');
 
-const OFFICIAL_ACCOUNT_PHONE = process.env.SATUCONNECT_DEVICE_ID;
-const ADMIN_PHONE_NUMBER = process.env.ADMIN_PHONE_NUMBER;
-
-// Helper to get position details from ID
 async function getPositionDetails(positionId?: string): Promise<{ name: string, permissions: PermissionId[] }> {
     if (!positionId) return { name: 'Anggota', permissions: [] };
     try {
@@ -101,12 +95,6 @@ export async function getUserByUid(uid: string): Promise<(MemberWithStatus & { w
     }
 }
 
-
-/**
- * Gets public user data by username for KTA verification.
- * @param username The username to fetch.
- * @returns {Promise<PublicProfile | null>} The public user data or null if not found.
- */
 export async function getUserByUsername(username: string): Promise<PublicProfile | null> {
     if (!username) return null;
     try {
@@ -153,11 +141,6 @@ export async function getUserByUsername(username: string): Promise<PublicProfile
     }
 }
 
-/**
- * Checks if a username already exists in the database.
- * @param username The username to check.
- * @returns {Promise<boolean>} True if the username exists, false otherwise.
- */
 export async function checkUsernameExists(username: string): Promise<boolean> {
   if (!username) return false;
 
@@ -167,16 +150,10 @@ export async function checkUsernameExists(username: string): Promise<boolean> {
     return !querySnapshot.empty;
   } catch (error) {
     console.error("[checkUsernameExists Error]", error);
-    // In case of error, assume it might exist to be safe, or handle as needed
     return true; 
   }
 }
 
-/**
- * Generates a unique username based on a full name.
- * @param fullName The full name to base the username on.
- * @returns {Promise<string>} A unique username.
- */
 export async function generateUniqueUsername(fullName: string): Promise<string> {
     try {
         const baseUsername = fullName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 15) || 'user';
@@ -188,7 +165,6 @@ export async function generateUniqueUsername(fullName: string): Promise<string> 
             if (querySnapshot.empty) {
                 return username;
             }
-            // If username exists, append a random number
             username = `${baseUsername}${Math.floor(Math.random() * 1000)}`;
         }
     } catch (error) {
@@ -197,12 +173,6 @@ export async function generateUniqueUsername(fullName: string): Promise<string> 
     }
 }
 
-/**
- * Searches for users by username or full name.
- * @param searchQuery The search term.
- * @param limitCount The maximum number of users to return.
- * @returns {Promise<PublicUser[]>} A list of public user data.
- */
 export async function searchUsers(searchQuery: string, limitCount: number = 5): Promise<PublicUser[]> {
   if (!searchQuery) return [];
 
@@ -254,7 +224,6 @@ export async function searchUsers(searchQuery: string, limitCount: number = 5): 
     return [];
   }
 }
-
 
 export async function saveWaNumber(userId: string, waNumber: string) {
     try {
@@ -349,14 +318,12 @@ export async function updateUserProfile(userId: string, data: { username?: strin
   }
 }
 
-// Server action to handle file uploads and verification submission
 export async function processVerificationSubmission(
   userId: string,
   data: { fullName: string; nik: string; ktpDataUrl: string; photoDataUrl?: string; waNumber: string; }
 ) {
   try {
     
-    // Check for duplicate NIK against other users
     const nikQuery = query(collection(db, 'users'), where("nik", "==", data.nik));
     const nikSnapshot = await getDocs(nikQuery);
     if (!nikSnapshot.empty) {
@@ -366,10 +333,8 @@ export async function processVerificationSubmission(
         }
     }
     
-    // Convert data URLs to buffers
     const ktpBuffer = Buffer.from(data.ktpDataUrl.split(',')[1], 'base64');
     
-    // Upload KTP to storage
     const ktpRef = ref(storage, `kyc/${userId}/ktp.jpg`);
     await uploadBytes(ktpRef, ktpBuffer, { contentType: 'image/jpeg' });
     const ktpImageUrl = await getDownloadURL(ktpRef);
@@ -401,7 +366,6 @@ export async function processVerificationSubmission(
       verificationData.photoURL = newPhotoURL;
     }
     
-    // Update user document in Firestore and Auth
     const userDocRef = doc(db, 'users', userId);
     await setDoc(userDocRef, verificationData, { merge: true });
     
@@ -438,7 +402,6 @@ export async function getUserUplineStructure(userId: string): Promise<Record<str
             }
         });
 
-        // Add Level 1 explicitly from referralCount for direct referrals
         const userDoc = await getDoc(doc(db, 'users', userId));
         if (userDoc.exists()) {
              structure['Level 1'] = userDoc.data().referralCount || 0;
@@ -451,9 +414,6 @@ export async function getUserUplineStructure(userId: string): Promise<Record<str
     return structure;
 }
 
-
-// --- Data Deletion Flow ---
-
 export async function requestDataDeletion(userId: string) {
     if (!userId) throw new Error("ID pengguna dibutuhkan.");
 
@@ -463,12 +423,10 @@ export async function requestDataDeletion(userId: string) {
 
     const userData = userDoc.data();
 
-    // Set deletion request timestamp
     await updateDoc(userRef, {
         deletionRequestedAt: Timestamp.now(),
     });
 
-    // Notify admin
     const adminPhoneNumber = '6285937010409';
     const message = `🚨 PERMINTAAN HAPUS DATA 🚨\n\nPengguna:\n- Nama: ${userData.fullName}\n- Username: ${userData.username}\n- UID: ${userId}\n\nTelah mengajukan permintaan penghapusan data. Mohon tinjau di panel admin.`;
     
@@ -476,26 +434,20 @@ export async function requestDataDeletion(userId: string) {
         await sendWhatsAppMessage(adminPhoneNumber, message);
     } catch (e) {
         console.error("Failed to send WhatsApp alert for deletion request:", e);
-        // Don't fail the whole operation if WhatsApp fails
     }
 
     revalidatePath('/panel/members');
 }
-
 
 export async function deleteUserAccount(userId: string): Promise<{ success: boolean; error?: string }> {
     try {
         const auth = admin.auth();
         const userRef = doc(db, 'users', userId);
 
-        // Delete from Firebase Auth
         await auth.deleteUser(userId);
 
-        // Delete from Firestore
         await deleteDoc(userRef);
         
-        // TODO: In the future, add logic here to delete user's posts, comments, etc.
-
         revalidatePath('/panel/members');
 
         return { success: true };
@@ -530,3 +482,5 @@ export async function getUserByWaNumber(waNumber: string): Promise<PublicUser | 
         return null;
     }
 }
+
+    

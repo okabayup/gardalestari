@@ -1,11 +1,12 @@
 
+
 'use server';
 
 import { searchDataBank } from './bank-data';
 import { searchEvents } from './events';
 import { searchIdeaBank } from './ideas';
 import { searchPrograms } from './programs';
-import { searchUsers } from './members';
+import { searchUsers } from './user';
 import type { DataBankEntry, Event, Idea, Program, PublicUser } from '@/lib/definitions';
 
 export interface GlobalSearchResults {
@@ -47,3 +48,5 @@ export async function globalSearch(query: string): Promise<GlobalSearchResults> 
     throw new Error("Gagal melakukan pencarian global.");
   }
 }
+
+    
