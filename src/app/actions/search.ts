@@ -4,7 +4,7 @@ import { searchDataBank } from './bank-data';
 import { searchEvents } from './events';
 import { searchIdeaBank } from './ideas';
 import { searchPrograms } from './programs';
-import { searchUsers } from './user';
+import { searchUsers } from './members';
 import type { DataBankEntry, Event, Idea, Program, PublicUser } from '@/lib/definitions';
 
 export interface GlobalSearchResults {
