@@ -259,6 +259,7 @@ export interface Event {
   attachmentUrl?: string;
   attachmentName?: string;
   attendeeIds?: { userId: string, userName: string, timestamp: Timestamp }[];
+  guestAttendees?: { name: string, email: string, phone?: string, timestamp: Timestamp }[];
 }
 
 

@@ -108,6 +108,7 @@ export async function createEvent(formData: FormData) {
         startDate: Timestamp.fromDate(new Date(eventData.dateRangeFrom as string)),
         endDate: eventData.dateRangeTo ? Timestamp.fromDate(new Date(eventData.dateRangeTo as string)) : null,
         attendeeIds: [],
+        guestAttendees: [],
         createdAt: Timestamp.now(),
     };
     
@@ -256,4 +257,21 @@ export async function markAttendance(eventId: string, userId: string, userName: 
     
     revalidatePath(`/events/${eventId}`);
     return { success: true, message: 'Kehadiran Anda berhasil dicatat!' };
+}
+
+export async function markGuestAttendance(eventId: string, guest: { name: string, email: string, phone?: string }): Promise<void> {
+    const eventRef = doc(db, 'events', eventId);
+    const eventDoc = await getDoc(eventRef);
+
+    if (!eventDoc.exists()) {
+        throw new Error('Acara tidak ditemukan.');
+    }
+
+    const newGuestAttendee = { ...guest, timestamp: Timestamp.now() };
+
+    await updateDoc(eventRef, {
+        guestAttendees: arrayUnion(newGuestAttendee)
+    });
+    
+    revalidatePath(`/events/${eventId}`);
 }
