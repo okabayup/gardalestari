@@ -139,7 +139,7 @@ const nextConfig: NextConfig = {
       // Untuk menggunakan URL logo eksternal dari mitra,
       // tambahkan hostname mereka di sini. Contoh:
       // {
-      //   protocol: 'https',
+      //   protocol: 'https'
       //   hostname: 'media.corporate.com',
       //   port: '',
       //   pathname: '/**',
