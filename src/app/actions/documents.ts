@@ -1,10 +1,9 @@
 
-
 'use server';
 
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, runTransaction, where, getCountFromServer } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject, getBlob } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import { stampDocxAndConvertToPdf } from '@/ai/flows/stamp-docx-flow';
 import { sendNotification } from '@/app/actions/notifications';
@@ -362,7 +361,3 @@ export async function generateDocumentNumber(typeCode: string): Promise<string> 
       throw new Error("Gagal membuat nomor dokumen.");
   }
 }
-
-    
-
-    
