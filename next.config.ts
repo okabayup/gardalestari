@@ -66,15 +66,14 @@ const withPWA = require('next-pwa')({
       },
     },
      {
-      urlPattern: /.*/i,
-      handler: 'NetworkFirst',
+      urlPattern: /^\//, // This will match all navigations
+      handler: 'StaleWhileRevalidate',
       options: {
-        cacheName: 'others',
+        cacheName: 'pages-cache',
         expiration: {
-          maxEntries: 32,
+          maxEntries: 64,
           maxAgeSeconds: 24 * 60 * 60, // 24 hours
         },
-        networkTimeoutSeconds: 10,
       },
     },
   ],
