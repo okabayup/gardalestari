@@ -10,6 +10,7 @@ import { format } from 'date-fns';
 import Link from 'next/link';
 import { Download, ArrowRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { id } from 'date-fns/locale';
 
 interface EventCardProps {
   event: Event;
@@ -21,14 +22,12 @@ export default function EventCard({ event }: EventCardProps) {
   const [year, setYear] = useState('');
 
   useEffect(() => {
-    const formatDate = async () => {
-      const { id } = await import('date-fns/locale/id');
-      setDay(format(new Date(event.date), 'dd', { locale: id }));
-      setMonth(format(new Date(event.date), 'MMM', { locale: id }));
-      setYear(format(new Date(event.date), 'yyyy', { locale: id }));
-    };
-    formatDate();
-  }, [event.date]);
+    if (event.startDate) {
+        setDay(format(new Date(event.startDate), 'dd', { locale: id }));
+        setMonth(format(new Date(event.startDate), 'MMM', { locale: id }));
+        setYear(format(new Date(event.startDate), 'yyyy', { locale: id }));
+    }
+  }, [event.startDate]);
 
   return (
     <Card className="overflow-hidden">

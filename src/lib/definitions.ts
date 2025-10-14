@@ -243,16 +243,24 @@ export interface DocumentType {
 
 // --- Events ---
 export interface Event {
-  id?: string;
+  id: string;
   title: string;
+  slug: string;
   description: string;
-  date: Date;
+  startDate: Date;
+  endDate?: Date;
   location: string;
+  visibility: 'public' | 'member';
+  submissionType: 'internal' | 'external';
+  applicationUrl?: string;
+  formId?: string;
   imageUrl: string;
   imageHint: string;
   attachmentUrl?: string;
   attachmentName?: string;
+  attendeeIds?: { userId: string, userName: string, timestamp: Timestamp }[];
 }
+
 
 // --- Forms ---
 export type FormFieldType = 'text' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'file';
