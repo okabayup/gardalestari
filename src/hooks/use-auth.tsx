@@ -308,5 +308,3 @@ export const useRequireAuth = (redirectTo = '/login') => {
 
   return { user, loading };
 };
-
-    

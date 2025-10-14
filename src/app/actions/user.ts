@@ -464,5 +464,3 @@ export async function getUserByWaNumber(waNumber: string): Promise<PublicUser | 
         return null;
     }
 }
-
-    

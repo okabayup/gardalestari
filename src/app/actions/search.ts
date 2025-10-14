@@ -48,5 +48,3 @@ export async function globalSearch(query: string): Promise<GlobalSearchResults> 
     throw new Error("Gagal melakukan pencarian global.");
   }
 }
-
-    

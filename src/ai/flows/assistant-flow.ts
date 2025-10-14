@@ -374,5 +374,3 @@ const assistantFlow = ai.defineFlow(
 export async function answerQuestion(input: AssistantInput): Promise<AssistantOutput> {
   return assistantFlow(input);
 }
-
-    

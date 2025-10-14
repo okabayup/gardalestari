@@ -144,5 +144,3 @@ export async function generateWhatsAppReply(input: z.infer<typeof WhatsAppReplyI
     console.error(`Failed to send WhatsApp auto-reply to ${sender}:`, error);
   }
 }
-
-    
