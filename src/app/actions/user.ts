@@ -23,24 +23,6 @@ if (admin.apps.length === 0) {
 const usersCollection = collection(db, 'users');
 const positionsCollection = collection(db, 'positions');
 
-async function getPositionDetails(positionId?: string): Promise<{ name: string, permissions: PermissionId[] }> {
-    if (!positionId) return { name: 'Anggota', permissions: [] };
-    try {
-        const positionDoc = await getDoc(doc(positionsCollection, positionId));
-        if (positionDoc.exists()) {
-            const positionData = positionDoc.data() as Position;
-            return {
-                name: positionData.name,
-                permissions: positionData.permissions || []
-            };
-        }
-        return { name: 'Anggota', permissions: [] };
-    } catch (error) {
-        console.error("[getPositionDetails Error]", error);
-        return { name: 'Anggota', permissions: [] };
-    }
-}
-
 export async function getUserByUid(uid: string): Promise<(MemberWithStatus & { waNumber?: string }) | null> {
     if (!uid) return null;
     try {

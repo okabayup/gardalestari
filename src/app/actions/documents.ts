@@ -8,9 +8,9 @@ import { revalidatePath } from 'next/cache';
 import { stampDocxAndConvertToPdf } from '@/ai/flows/stamp-docx-flow';
 import { sendNotification } from '@/app/actions/notifications';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
-import { getUserByUid } from '@/app/actions/user';
 import { getWhatsappTemplate } from '@/app/actions/settings';
 import type { LetterStatus, ImportantDocument, DocumentCategory, DocumentType } from '@/lib/definitions';
+import { getUserByUid } from '@/app/actions/members';
 
 const documentsCollection = collection(db, 'importantDocuments');
 const categoriesCollection = collection(db, 'documentCategories');
@@ -361,3 +361,5 @@ export async function generateDocumentNumber(typeCode: string): Promise<string> 
       throw new Error("Gagal membuat nomor dokumen.");
   }
 }
+
+    
