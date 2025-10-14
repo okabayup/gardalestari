@@ -21,7 +21,7 @@ import {
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
-import { getUserByUid } from '@/app/actions/user';
+import { getUserByUid } from '@/app/actions/members';
 import { getWhatsappTemplate } from '@/app/actions/settings';
 import type { Project, ProjectColumn, ProjectTask, CommentWithAuthor, IdeaAuthor } from '@/lib/definitions';
 import { sendNotification } from './notifications';

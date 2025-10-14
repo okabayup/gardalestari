@@ -9,7 +9,7 @@ import { revalidatePath } from 'next/cache';
 import { stampDocxAndConvertToPdf } from '@/ai/flows/stamp-docx-flow';
 import { sendNotification } from '@/app/actions/notifications';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
-import { getUserByUid } from '@/app/actions/user';
+import { getUserByUid } from '@/app/actions/members';
 import { getWhatsappTemplate } from '@/app/actions/settings';
 import type { LetterStatus, ImportantDocument, DocumentCategory, DocumentType } from '@/lib/definitions';
 

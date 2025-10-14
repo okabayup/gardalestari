@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { collection, getDocs, doc, updateDoc, deleteField, query, setDoc, Timestamp, getDoc, addDoc, where,getCountFromServer, runTransaction, orderBy, limit, startAfter, endBefore, increment, writeBatch } from 'firebase/firestore';
@@ -8,7 +9,7 @@ import { db, storage } from '@/lib/firebase';
 import type { PermissionId, Position, MemberWithStatus, MemberType, VerificationStatus, UserLevel } from '@/lib/definitions';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getWhatsappTemplate } from '@/app/actions/settings';
-import { generateUniqueUsername, getUserByUid } from './user';
+import { generateUniqueUsername } from './user';
 import { formatFullName } from '@/lib/utils';
 import { sendNotification } from './notifications';
 import { format } from 'date-fns';
@@ -47,6 +48,61 @@ async function getPositionDetails(positionId?: string): Promise<{ name: string, 
         return { name: 'Anggota', permissions: [] };
     }
 }
+
+export async function getUserByUid(uid: string): Promise<(MemberWithStatus & { waNumber?: string }) | null> {
+    if (!uid) return null;
+    try {
+        const userDocRef = doc(db, 'users', uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (!userDoc.exists()) {
+            return null;
+        }
+
+        const data = userDoc.data();
+
+         let positionName = 'Anggota';
+         let permissions: PermissionId[] = [];
+         if (data.positionId) {
+            const positionDoc = await getDoc(doc(db, 'positions', data.positionId));
+            if (positionDoc.exists()) {
+                const posData = positionDoc.data() as Position
+                positionName = posData.name;
+                permissions = posData.permissions || [];
+            }
+         }
+
+        return {
+            id: userDoc.id,
+            name: data.fullName || data.displayName || 'Nama Tidak Diketahui',
+            username: data.username,
+            avatarUrl: data.avatarUrl,
+            phoneNumber: data.phoneNumber || 'N/A',
+            verificationStatus: data.verificationStatus || 'unverified',
+            position: positionName,
+            positionId: data.positionId,
+            type: data.type,
+            region: data.region,
+            isSpecialMember: data.isSpecialMember,
+            joinDate: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
+            permissions: permissions,
+            waNumber: data.waNumber,
+            waVerified: data.waVerified || false,
+            instagram: data.instagram,
+            linkedin: data.linkedin,
+            skills: data.skills || [],
+            interests: data.interests || [],
+            referralCode: data.referralCode,
+            referralCount: data.referralCount || 0,
+            greenPoints: data.greenPoints || 0,
+        };
+
+    } catch (error) {
+        console.error("[getUserByUid Error]", error);
+        return null;
+    }
+}
+
 
 // Get the count of members waiting for verification
 export async function getPendingVerificationCount(): Promise<number> {

@@ -23,7 +23,7 @@ import {
 import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import type { RedeemableItem, Mission, RedemptionLog, PointLog, BadgeMetric } from '@/lib/definitions';
-import { getUserByUid } from './user';
+import { getUserByUid } from './members';
 
 const redeemableItemsCollection = collection(db, 'redeemableItems');
 const missionsCollection = collection(db, 'missions');
