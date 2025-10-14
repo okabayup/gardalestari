@@ -9,26 +9,15 @@ import { db, storage } from '@/lib/firebase';
 import type { PermissionId, Position, MemberWithStatus, MemberType, VerificationStatus, UserLevel, PublicUser, PublicProfile } from '@/lib/definitions';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getWhatsappTemplate } from '@/app/actions/settings';
-import { formatFullName } from '@/lib/utils';
 import { sendNotification } from './notifications';
-import { format } from 'date-fns';
 import { awardPointsForAction } from '@/app/actions/points';
-import admin from 'firebase-admin';
-import { generateUniqueUsername, getUserByUid } from './user';
-
-if (admin.apps.length === 0) {
-  try {
-    admin.initializeApp();
-  } catch (e) {
-    console.error('Firebase admin initialization error', e);
-  }
-}
+import { getUserByUid } from './user';
+import { format } from 'date-fns';
 
 const usersCollection = collection(db, 'users');
 const positionsCollection = collection(db, 'positions');
 
 const OFFICIAL_ACCOUNT_PHONE = process.env.SATUCONNECT_DEVICE_ID;
-const ADMIN_PHONE_NUMBER = process.env.ADMIN_PHONE_NUMBER;
 
 // Helper to get position details from ID
 async function getPositionDetails(positionId?: string): Promise<{ name: string, permissions: PermissionId[] }> {
@@ -314,57 +303,5 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
     } catch (error) {
         console.error("[updateMemberDetails Error]", error);
         throw new Error(`Gagal memperbarui detail anggota: ${(error as Error).message}`);
-    }
-}
-
-
-// Manually create a member without an auth account
-export async function createManualMember(formData: FormData) {
-    try {
-        const fullName = formData.get('fullName') as string;
-        const photoFile = formData.get('photoFile') as File | null;
-        
-        let avatarUrl = `https://picsum.photos/seed/${fullName.replace(/\s+/g, '-')}/200/200`;
-
-        if (photoFile && photoFile.size > 0) {
-            console.log("[createManualMember] Uploading profile picture...");
-            const storageRef = ref(storage, `profile-pictures/${Date.now()}-${photoFile.name}`);
-            await uploadBytes(storageRef, photoFile);
-            avatarUrl = await getDownloadURL(storageRef);
-            console.log("[createManualMember] Image uploaded successfully:", avatarUrl);
-        }
-        
-        console.log("[createManualMember] Generating username...");
-        const username = await generateUniqueUsername(fullName);
-
-        const newMemberData = {
-            fullName: fullName,
-            positionId: formData.get('positionId') as string,
-            type: formData.get('type') as MemberType,
-            isSpecialMember: formData.get('isSpecialMember') === 'true',
-            isHidden: formData.get('isHidden') === 'true',
-            region: formData.get('region') as string | undefined,
-            titlePrefix: formData.get('titlePrefix') as string | undefined,
-            titlePostfix: formData.get('titlePostfix') as string | undefined,
-            username,
-            avatarUrl,
-            phoneNumber: 'N/A',
-            verificationStatus: 'manual' as VerificationStatus,
-            createdAt: Timestamp.now(),
-            referralCount: 0,
-            upline: [],
-            level: 'bronze',
-        };
-        
-        console.log("[createManualMember] Creating document in Firestore...");
-        await addDoc(usersCollection, newMemberData);
-        
-        revalidatePath('/panel/members');
-        revalidatePath('/members');
-        revalidatePath('/tentang');
-
-    } catch (error) {
-        console.error("[createManualMember Error]", error);
-        throw new Error(`Gagal membuat anggota manual: ${(error as Error).message}`);
     }
 }
