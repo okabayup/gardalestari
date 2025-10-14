@@ -15,8 +15,8 @@ import { doc, getDoc, serverTimestamp, collection, query, where, getDocs, Timest
 import { auth, db } from '@/lib/firebase';
 import { redirect, usePathname } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { processVerificationSubmission, getUserByUsername, generateUniqueUsername } from '@/app/actions/members';
-import type { PermissionId, Position, MemberType, Mission } from '@/lib/definitions';
+import { processVerificationSubmission, generateUniqueUsername, updateUserProfile as updateUserProfileServer, getUserByUid } from '@/app/actions/members';
+import type { PermissionId, Position, MemberType, VerificationStatus } from '@/lib/definitions';
 import { ALL_PERMISSIONS } from '@/lib/definitions';
 import { logAnalyticsEvent } from '@/lib/analytics';
 import { seedInitialData } from '@/lib/seed-data';
@@ -263,6 +263,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateUserProfile = async (updates: { photoFile?: File, username?: string, instagram?: string, linkedin?: string, skills?: string[], interests?: string[] }) => {
+      if (!auth.currentUser) throw new Error("Pengguna tidak ditemukan.");
+      await updateUserProfileServer(auth.currentUser.uid, updates);
   };
 
 const submitForVerification = async (data: { fullName: string; nik: string; ktpDataUrl: string; photoDataUrl?: string; waNumber: string; }) => {

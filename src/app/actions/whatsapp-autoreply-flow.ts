@@ -12,7 +12,7 @@ import { z } from 'zod';
 import { getDocument } from '@/app/actions/documents';
 import { getLatestProgramsText } from '@/app/actions/whatsapp';
 import { createIdea } from '@/app/actions/ideas';
-import { getUserByWaNumber } from '@/app/actions/user';
+import { getUserByWaNumber } from '@/app/actions/members';
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
 
