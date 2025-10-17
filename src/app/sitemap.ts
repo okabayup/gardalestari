@@ -52,7 +52,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const events = await getEvents();
   const eventRoutes = events.map((event) => ({
     url: `${BASE_URL}/events/${event.id}`,
-    lastModified: new Date(event.date).toISOString(),
+    lastModified: new Date(event.startDate).toISOString(),
     changeFrequency: 'weekly' as const,
     priority: 0.7,
   }));

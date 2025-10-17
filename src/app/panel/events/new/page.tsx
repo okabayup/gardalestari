@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -17,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { addDays, format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { createEvent } from '@/app/actions/events';
 import { getForms, ProgramForm } from '@/app/actions/forms';
 import { generateImage } from '@/ai/flows/image-generate-flow';
@@ -42,8 +43,8 @@ const formSchema = z.object({
   imageHint: z.string().optional(),
   imageFile: z.any().optional(),
   attachment: z.any().optional(),
-}).refine(data => data.submissionType !== 'external' || !!data.applicationUrl, {
-  message: "URL Pendaftaran wajib diisi untuk tipe eksternal",
+}).refine(data => data.submissionType !== 'external' || (!!data.applicationUrl && z.string().url().safeParse(data.applicationUrl).success), {
+  message: "URL Pendaftaran eksternal tidak valid atau wajib diisi",
   path: ["applicationUrl"],
 }).refine(data => data.submissionType !== 'internal' || !!data.formId, {
   message: "Formulir wajib dipilih untuk tipe internal",
@@ -67,13 +68,14 @@ export default function NewEventPage() {
     setValue,
     getValues,
     watch,
+    formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',
       slug: '',
       description: '',
-      dateRange: { from: new Date(), to: new Date() },
+      dateRange: { from: new Date(), to: addDays(new Date(), 1) },
       location: '',
       visibility: 'public',
       submissionType: 'external',
@@ -99,6 +101,28 @@ export default function NewEventPage() {
   const watchImageSource = watch('imageSource');
   const attachmentFile = watch("attachment");
   const attachmentFileName = attachmentFile?.[0]?.name;
+  
+  const handleGenerateImage = async () => {
+      const imageHint = getValues('imageHint');
+      if (!imageHint || !imageHint.trim()) {
+          toast({ variant: 'destructive', title: 'Petunjuk gambar kosong' });
+          return;
+      }
+      setLoadingImage(true);
+      try {
+          const result = await generateImage({ prompt: imageHint });
+          if (result.imageUrl) {
+              setValue('imageUrl', result.imageUrl);
+              toast({ title: 'Gambar berhasil dibuat!' });
+          } else {
+              throw new Error("AI tidak mengembalikan URL gambar.");
+          }
+      } catch (error) {
+          toast({ variant: 'destructive', title: 'Gagal membuat gambar', description: (error as Error).message });
+      } finally {
+          setLoadingImage(false);
+      }
+  };
 
 
   const onSubmit = async (data: FormData) => {
@@ -128,29 +152,6 @@ export default function NewEventPage() {
       setLoading(false);
     }
   };
-
-  const handleGenerateImage = async () => {
-      const imageHint = getValues('imageHint');
-      if (!imageHint || !imageHint.trim()) {
-          toast({ variant: 'destructive', title: 'Petunjuk gambar kosong' });
-          return;
-      }
-      setLoadingImage(true);
-      try {
-          const result = await generateImage({ prompt: imageHint });
-          if (result.imageUrl) {
-              setValue('imageUrl', result.imageUrl);
-              toast({ title: 'Gambar berhasil dibuat!' });
-          } else {
-              throw new Error("AI tidak mengembalikan URL gambar.");
-          }
-      } catch (error) {
-          toast({ variant: 'destructive', title: 'Gagal membuat gambar', description: (error as Error).message });
-      } finally {
-          setLoadingImage(false);
-      }
-  };
-
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -278,8 +279,10 @@ export default function NewEventPage() {
             {watchImageSource === 'ai' && (
                 <div className="space-y-2">
                     <Label htmlFor="imageHint">Petunjuk Gambar (AI)</Label>
-                    <div className="flex gap-2"><Input id="imageHint" {...register('imageHint')} /><Button type="button" onClick={handleGenerateImage} disabled={loadingImage}><Wand2 className="mr-2 h-4 w-4" />Buat</Button></div>
-                    {errors.imageHint && <p className="text-sm text-destructive">{errors.imageHint.message}</p>}
+                    <div className="flex gap-2">
+                        <Input id="imageHint" {...register('imageHint')} placeholder="Contoh: sekelompok anak muda menanam pohon mangrove di pantai"/>
+                        <Button type="button" onClick={handleGenerateImage} disabled={loadingImage}><Wand2 className="mr-2 h-4 w-4" />Buat</Button>
+                    </div>
                 </div>
             )}
             {watchImageSource === 'url' && (

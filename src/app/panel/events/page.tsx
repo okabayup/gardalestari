@@ -86,7 +86,7 @@ export default function AdminEventsPage() {
         }
     }
   };
-
+  
   return (
     <>
       <div className="space-y-6">
@@ -129,7 +129,7 @@ export default function AdminEventsPage() {
                     <TableRow key={event.id}>
                       <TableCell className="font-medium">{event.title}</TableCell>
                       <TableCell>
-                        <ClientFormattedDate date={event.date.toDate()} />
+                        <ClientFormattedDate date={event.startDate} />
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{event.location}</TableCell>
                       <TableCell className="text-right">

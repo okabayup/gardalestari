@@ -21,6 +21,7 @@ const toEvent = (doc: any): Event => {
         ...data,
         startDate: (data.startDate as Timestamp).toDate(),
         endDate: data.endDate ? (data.endDate as Timestamp).toDate() : undefined,
+        createdAt: (data.createdAt as Timestamp).toDate(),
     } as Event;
 };
 
@@ -112,14 +113,20 @@ export async function createEvent(formData: FormData) {
         createdAt: Timestamp.now(),
     };
     
-    if (eventData.imageSource === 'upload' && eventData.imageFile instanceof File) {
+    if (eventData.imageSource === 'upload' && eventData.imageFile instanceof File && eventData.imageFile.size > 0) {
         const imageRef = ref(storage, `event-images/${Date.now()}_${eventData.imageFile.name}`);
         await uploadBytes(imageRef, eventData.imageFile);
         dataToCreate.imageUrl = await getDownloadURL(imageRef);
     } else if (eventData.imageSource === 'ai' && typeof eventData.imageHint === 'string' && eventData.imageHint) {
         const result = await generateImage({ prompt: eventData.imageHint });
         if (result.imageUrl) {
-            dataToCreate.imageUrl = result.imageUrl;
+             if (result.imageUrl.startsWith('data:')) {
+                const storageRef = ref(storage, `event-images/${Date.now()}_ai_generated.png`);
+                await uploadBytes(storageRef, Buffer.from(result.imageUrl.split(',')[1], 'base64'), { contentType: 'image/png' });
+                dataToCreate.imageUrl = await getDownloadURL(storageRef);
+            } else {
+                dataToCreate.imageUrl = result.imageUrl;
+            }
         }
     } else if (eventData.imageSource === 'url' && typeof eventData.imageUrl === 'string' && eventData.imageUrl) {
          dataToCreate.imageUrl = eventData.imageUrl;
@@ -168,7 +175,15 @@ export async function updateEvent(id: string, formData: FormData) {
         dataToUpdate.imageUrl = await getDownloadURL(imageRef);
     } else if (eventData.imageSource === 'ai' && typeof eventData.imageHint === 'string' && eventData.imageHint) {
          const result = await generateImage({ prompt: eventData.imageHint });
-         if (result.imageUrl) dataToUpdate.imageUrl = result.imageUrl;
+         if (result.imageUrl) {
+            if (result.imageUrl.startsWith('data:')) {
+                const storageRef = ref(storage, `event-images/${Date.now()}_ai_generated.png`);
+                await uploadBytes(storageRef, Buffer.from(result.imageUrl.split(',')[1], 'base64'), { contentType: 'image/png' });
+                dataToUpdate.imageUrl = await getDownloadURL(storageRef);
+            } else {
+                dataToUpdate.imageUrl = result.imageUrl;
+            }
+         }
     } else if (eventData.imageSource === 'url' && typeof eventData.imageUrl === 'string' && eventData.imageUrl) {
          dataToUpdate.imageUrl = eventData.imageUrl;
     }

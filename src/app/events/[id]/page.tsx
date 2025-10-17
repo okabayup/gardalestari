@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { notFound, useSearchParams, useRouter } from 'next/navigation';
@@ -113,10 +114,10 @@ const EventDetailClient = ({ event }: { event: Event }) => {
     const [attendanceUrl, setAttendanceUrl] = useState('');
 
     useEffect(() => {
-        setIsPast(new Date() > toJsDate(program.endDate));
+        setIsPast(new Date() > toJsDate(event.endDate));
         logAnalyticsEvent('view_item', {
-            item_id: program.id,
-            item_name: program.title,
+            item_id: event.id,
+            item_name: event.title,
             item_category: 'event',
         });
         setAttendanceUrl(`${window.location.origin}/events/${event.id}/absen`);
@@ -198,7 +199,7 @@ const EventDetailClient = ({ event }: { event: Event }) => {
             </div>
             <div className="relative h-48 md:h-64 w-full">
                 <Image
-                    src={program.imageUrl || 'https://picsum.photos/1200/800'}
+                    src={program.imageUrl || 'https://picsum.photos/seed/placeholder/600/400'}
                     alt={program.title}
                     data-ai-hint={program.imageHint}
                     fill

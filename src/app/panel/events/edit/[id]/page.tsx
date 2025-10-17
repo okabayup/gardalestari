@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -42,6 +43,12 @@ const formSchema = z.object({
   imageHint: z.string().optional(),
   imageFile: z.any().optional(),
   attachment: z.any().optional(),
+}).refine(data => data.submissionType !== 'external' || (!!data.applicationUrl && z.string().url().safeParse(data.applicationUrl).success), {
+  message: "URL Pendaftaran eksternal tidak valid atau wajib diisi",
+  path: ["applicationUrl"],
+}).refine(data => data.submissionType !== 'internal' || !!data.formId, {
+  message: "Formulir wajib dipilih untuk tipe internal",
+  path: ["formId"],
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -234,6 +241,7 @@ export default function EditEventPage() {
             <div className="space-y-2">
                 <Label htmlFor="applicationUrl">URL Pendaftaran Eksternal</Label>
                 <Input id="applicationUrl" {...register('applicationUrl')} />
+                {errors.applicationUrl && <p className="text-sm text-destructive">{errors.applicationUrl.message}</p>}
             </div>
             )}
             {watchSubmissionType === 'internal' && (
@@ -247,6 +255,7 @@ export default function EditEventPage() {
                     </SelectContent>
                 </Select>
                 )} />
+                 {errors.formId && <p className="text-sm text-destructive">{errors.formId.message}</p>}
             </div>
             )}
 
@@ -276,6 +285,7 @@ export default function EditEventPage() {
                 <div className="space-y-2">
                     <Label htmlFor="imageUrl">URL Gambar</Label>
                     <Input id="imageUrl" {...register('imageUrl')} />
+                    {errors.imageUrl && <p className="text-sm text-destructive">{errors.imageUrl.message}</p>}
                 </div>
             )}
             {watchImageSource === 'upload' && (

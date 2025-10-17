@@ -216,6 +216,7 @@ export interface ImportantDocument {
   createdAt: Timestamp;
   fileUrl: string;
   fileName: string;
+  filePath: string;
   authorId: string;
   authorName: string; // denormalized
   status: LetterStatus;
@@ -255,11 +256,12 @@ export interface Event {
   applicationUrl?: string;
   formId?: string;
   imageUrl: string;
-  imageHint: string;
+  imageHint?: string;
   attachmentUrl?: string;
   attachmentName?: string;
   attendeeIds?: { userId: string, userName: string, timestamp: Timestamp }[];
   guestAttendees?: { name: string, email: string, phone?: string, timestamp: Timestamp }[];
+  createdAt: Timestamp;
 }
 
 
