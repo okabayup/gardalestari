@@ -11,6 +11,7 @@ import { sendNotification } from '@/app/actions/notifications';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getWhatsappTemplate } from '@/app/actions/settings';
 import type { LetterStatus, ImportantDocument, DocumentCategory, DocumentType, PermissionId, Position, MemberWithStatus } from '@/lib/definitions';
+import { getUserByUid } from '@/app/actions/user';
 
 
 const documentsCollection = collection(db, 'importantDocuments');
@@ -18,63 +19,6 @@ const categoriesCollection = collection(db, 'documentCategories');
 const docTypesCollection = collection(db, 'documentTypes');
 
 const ADMIN_NOTIFICATION_PHONE = '6285937010409';
-
-
-// --- DUPLICATED FUNCTION TO AVOID CROSS-ACTION IMPORT ISSUES ---
-async function getUserByUid(uid: string): Promise<(MemberWithStatus & { waNumber?: string }) | null> {
-    if (!uid) return null;
-    try {
-        const userDocRef = doc(db, 'users', uid);
-        const userDoc = await getDoc(userDocRef);
-        
-        if (!userDoc.exists()) {
-            return null;
-        }
-
-        const data = userDoc.data();
-
-         let positionName = 'Anggota';
-         let permissions: PermissionId[] = [];
-         if (data.positionId) {
-            const positionDoc = await getDoc(doc(db, 'positions', data.positionId));
-            if (positionDoc.exists()) {
-                const posData = positionDoc.data() as Position
-                positionName = posData.name;
-                permissions = posData.permissions || [];
-            }
-         }
-
-        return {
-            id: userDoc.id,
-            name: data.fullName || data.displayName || 'Nama Tidak Diketahui',
-            username: data.username,
-            avatarUrl: data.avatarUrl,
-            phoneNumber: data.phoneNumber || 'N/A',
-            verificationStatus: data.verificationStatus || 'unverified',
-            position: positionName,
-            positionId: data.positionId,
-            type: data.type,
-            region: data.region,
-            isSpecialMember: data.isSpecialMember,
-            joinDate: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
-            permissions: permissions,
-            waNumber: data.waNumber,
-            waVerified: data.waVerified || false,
-            instagram: data.instagram,
-            linkedin: data.linkedin,
-            skills: data.skills || [],
-            interests: data.interests || [],
-            referralCode: data.referralCode,
-            referralCount: data.referralCount || 0,
-            greenPoints: data.greenPoints || 0,
-        };
-
-    } catch (error) {
-        console.error("[getUserByUid Error in documents.ts]", error);
-        return null;
-    }
-}
-// --- END DUPLICATED FUNCTION ---
 
 
 // Helper function to convert Timestamps in a document to serializable Dates
@@ -419,5 +363,3 @@ export async function generateDocumentNumber(typeCode: string): Promise<string> 
       throw new Error("Gagal membuat nomor dokumen.");
   }
 }
-
-    

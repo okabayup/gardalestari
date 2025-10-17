@@ -6,12 +6,12 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, query, orderBy, limit, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
-import { getWhatsappTemplate } from './settings';
+import { getWhatsappTemplate } from '@/app/actions/settings';
 import { sendBulkWhatsAppMessage } from '@/services/whatsapp';
 import type { Program, ProgramFormData, ProgramTag } from '@/lib/definitions';
 import { generateImage } from '@/ai/flows/image-generate-flow';
-import { sendNotification } from './notifications';
-import { getMembers } from './user';
+import { sendNotification } from '@/app/actions/notifications';
+import { getMembers } from '@/app/actions/user';
 
 const programsCollection = collection(db, 'programs');
 const tagsCollection = collection(db, 'programTags');
