@@ -45,6 +45,7 @@ const BoardSection = ({ title, members }: { title: string, members: MemberWithSt
                         avatarUrl={member.avatarUrl}
                         titlePrefix={member.titlePrefix}
                         titlePostfix={member.titlePostfix}
+                        username={member.username}
                     />
                 ))}
             </div>
