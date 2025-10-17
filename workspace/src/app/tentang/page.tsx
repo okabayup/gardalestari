@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Sprout, Ship, TreePine, Eye, Shield, Scale, Search, ZoomIn, ZoomOut, Move, Loader2 } from 'lucide-react';
 import LandingHeader from '@/components/layout/LandingHeader';
-import { getAppSettings, AppSettings } from '../actions/settings';
+import { getAppSettings, AppSettings } from '@/app/actions/settings';
 import { Separator } from '@/components/ui/separator';
-import { getMembers, MemberWithStatus } from '../actions/user';
+import { getMembers, MemberWithStatus } from '@/app/actions/user';
 import { MemberCard } from '@/components/members/MemberCard';
 import { formatFullName } from '@/lib/utils';
 import { initialPositions } from '@/lib/definitions';
@@ -46,6 +46,7 @@ const BoardSection = ({ title, members }: { title: string, members: MemberWithSt
                         avatarUrl={member.avatarUrl}
                         titlePrefix={member.titlePrefix}
                         titlePostfix={member.titlePostfix}
+                        username={member.username}
                     />
                 ))}
             </div>
