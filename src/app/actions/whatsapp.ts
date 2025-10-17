@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -6,7 +7,7 @@ import { doc, getDoc, setDoc, getDocs, collection, query, where, getCountFromSer
 import { sendWhatsAppMessage as sendWhatsAppMessageSatuConnect, sendBulkWhatsAppMessage as sendBulkWhatsAppMessageSatuConnect } from '@/services/whatsapp';
 import { revalidatePath } from 'next/cache';
 import { getPrograms } from '@/app/actions/programs';
-import { getMembers } from '@/app/actions/members';
+import { getMembers } from '@/app/actions/user';
 
 export async function sendTestMessage(phoneNumber: string, message: string) {
     try {
@@ -143,3 +144,15 @@ export async function getUnverifiedUserCount(): Promise<number> {
     const snapshot = await getCountFromServer(q);
     return snapshot.data().count;
 }
+
+export async function getWhatsappTemplates(): Promise<Record<NotificationType, WhatsAppTemplate>> {
+    const { getWhatsappTemplates: getTemplates } = await import('@/app/actions/settings');
+    return getTemplates();
+}
+
+export async function updateWhatsappTemplates(templates: Record<string, Partial<WhatsAppTemplate>>): Promise<void> {
+    const { updateWhatsappTemplates: updateTemplates } = await import('@/app/actions/settings');
+    return updateTemplates(templates);
+}
+
+    

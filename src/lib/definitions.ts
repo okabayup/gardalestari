@@ -451,6 +451,23 @@ export interface MemberWithStatus extends Member {
     deletionRequestedAt?: Timestamp;
 }
 
+export const memberTypes: { value: MemberType, label: string }[] = [
+  { value: 'pusat', label: 'DPP' },
+  { value: 'daerah', label: 'DPD' },
+  { value: 'cabang', label: 'DPC' },
+  { value: 'pembina', label: 'Dewan Pembina' },
+  { value: 'pengawas', label: 'Dewan Pengawas' },
+  { value: 'penasehat', label: 'Dewan Penasehat' },
+];
+
+export const verificationStatuses: { value: VerificationStatus, label: string }[] = [
+    { value: 'unverified', label: 'Belum Terverifikasi'},
+    { value: 'temporary', label: 'Menunggu Persetujuan'},
+    { value: 'permanent', label: 'Permanen'},
+    { value: 'rejected', label: 'Ditolak'},
+    { value: 'manual', label: 'Manual' },
+];
+
 // --- Badges ---
 export type BadgeType = 'manual' | 'auto';
 export type BadgeMetric = 'post_count' | 'idea_count' | 'comment_count' | 'upvote_count' | 'project_completed' | 'achievement_added' | 'vote_casted';
@@ -823,3 +840,5 @@ export interface PublicProfile extends PublicUser {
   skills?: string[];
   interests?: string[];
 }
+
+    

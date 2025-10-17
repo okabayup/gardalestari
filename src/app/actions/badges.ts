@@ -6,7 +6,7 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, arrayUnion, arrayRemove, where, getCountFromServer } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { Badge, BadgeMetric, Mission } from '@/lib/definitions';
-import { getUserByUid } from './members';
+import { getUserByUid } from './user';
 import { awardPointsForAction } from './points';
 
 const badgesCollection = collection(db, 'badges');
@@ -161,3 +161,5 @@ export async function checkAndAwardBadges(userId: string, triggeredMetric: Badge
         // We don't re-throw here to not block the main operation (e.g., creating a post).
     }
 }
+
+    

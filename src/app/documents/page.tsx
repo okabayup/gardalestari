@@ -16,7 +16,7 @@ const DocumentItem = ({ document }: { document: ImportantDocument }) => {
       <CardHeader>
         <CardTitle className="text-lg">{document.title}</CardTitle>
         <CardDescription>
-          Nomor: {document.documentNumber} | Disahkan pada {format(document.approvedAt!.toDate(), 'dd MMMM yyyy', { locale: id })}
+          Nomor: {document.documentNumber} | Disahkan pada {document.approvedAt ? format(new Date(document.approvedAt as unknown as Date), 'dd MMMM yyyy', { locale: id }) : ''}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex justify-between items-center">
@@ -64,3 +64,5 @@ export default async function PublicDocumentsPage() {
     </MainLayout>
   );
 }
+
+    
