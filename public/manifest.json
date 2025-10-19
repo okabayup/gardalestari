@@ -1,6 +1,6 @@
 {
   "name": "Garda Lestari",
-  "short_name": "Garda",
+  "short_name": "Garda Lestari",
   "description": "Garda Lestari adalah organisasi kepemudaan yang berfokus pada inovasi di sektor agro-maritim dan kehutanan untuk pembangunan berkelanjutan di Indonesia.",
   "start_url": "/feed",
   "display": "fullscreen",
@@ -10,55 +10,51 @@
   ],
   "background_color": "#E8F0E5",
   "theme_color": "#347C45",
-  "orientation": "portrait-primary",
+  "orientation": "portrait",
   "scope": "/",
   "lang": "id",
   "dir": "ltr",
   "id": "/?id=gardalestari",
   "icons": [
     {
-      "src": "icon-bg-putih.png",
+      "src": "logo-bg-putih.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "icon-bg-putih.png",
+      "src": "logo-bg-putih.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "logo-bg-putih.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "logo-bg-putih.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "screenshots": [
     {
-      "src": "https://www.gardalestari.org/screenshots/screenshot1.jpg",
+      "src": "/screenshots/screenshot1.png",
       "sizes": "1080x2340",
-      "type": "image/jpeg",
+      "type": "image/png",
       "form_factor": "narrow",
-      "label": "Tampilan Beranda Aplikasi"
+      "label": "Tampilan Beranda"
     },
     {
-      "src": "https://www.gardalestari.org/screenshots/screenshot2.jpg",
+      "src": "/screenshots/screenshot2.png",
       "sizes": "1080x2340",
-      "type": "image/jpeg",
+      "type": "image/png",
       "form_factor": "narrow",
-      "label": "Direktori Anggota"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Buat Postingan Baru",
-      "short_name": "Buat Postingan",
-      "description": "Bagikan pembaruan baru ke feed",
-      "url": "/feed/new",
-      "icons": [{ "src": "/icons/new-post.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Lihat Program",
-      "short_name": "Program",
-      "description": "Lihat semua program yang tersedia",
-      "url": "/programs",
-      "icons": [{ "src": "/icons/programs.png", "sizes": "192x192" }]
+      "label": "Halaman Program"
     }
   ],
   "categories": [
@@ -67,20 +63,36 @@
     "sustainability",
     "business"
   ],
+  "shortcuts": [
+    {
+      "name": "Buat Postingan Baru",
+      "short_name": "Postingan Baru",
+      "description": "Bagikan pembaruan atau momen baru.",
+      "url": "/feed/new",
+      "icons": [{ "src": "/icons/new-post.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Lihat Program",
+      "short_name": "Program",
+      "description": "Jelajahi program terbaru yang tersedia.",
+      "url": "/programs",
+      "icons": [{ "src": "/icons/programs.png", "sizes": "192x192" }]
+    }
+  ],
   "file_handlers": [
     {
-      "action": "/content/new",
+      "action": "/feed/new",
       "accept": {
         "image/jpeg": [".jpg", ".jpeg"],
-        "image/png": [".png"],
-        "image/gif": [".gif"]
-      }
+        "image/png": [".png"]
+      },
+      "launch_type": "single-client"
     }
   ],
   "launch_handler": {
     "client_mode": "focus-existing"
   },
-  "protocol_handlers": [],
+  "prefer_related_applications": true,
   "related_applications": [
     {
       "platform": "play",
@@ -88,28 +100,5 @@
       "id": "org.gardalestari.twa"
     }
   ],
-  "prefer_related_applications": true,
-  "share_target": {
-    "action": "/content/new/share-target/",
-    "method": "POST",
-    "enctype": "multipart/form-data",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url",
-      "files": [
-        {
-          "name": "files",
-          "accept": ["image/jpeg", "image/png", "image/gif"]
-        }
-      ]
-    }
-  },
-  "iarc_rating_id": "REPLACE_WITH_YOUR_IARC_ID",
-  "widgets": [],
-  "edge_side_panel": {},
-  "note_taking": {},
-  "scope_extensions": [
-    { "origin": "blog.gardalestari.org" }
-  ]
+  "iarc_rating_id": "REPLACE_WITH_YOUR_IARC_ID"
 }
