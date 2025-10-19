@@ -15,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     metadataBase: new URL(BASE_URL),
     title: {
-      default: 'Garda Lestari: Aksi Nyata Anda untuk Bumi',
+      default: 'Tumbuh Bersama Bumi',
       template: '%s | Garda Lestari',
     },
     description: 'Garda Lestari adalah organisasi kepemudaan yang berfokus pada inovasi di sektor agro-maritim dan kehutanan untuk pembangunan berkelanjutan di Indonesia.',
@@ -27,7 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
       apple: '/logo-bg-hijau.png',
     },
     openGraph: {
-      title: 'Garda Lestari: Aksi Nyata Anda untuk Bumi',
+      title: 'Tumbuh Bersama Bumi',
       description: 'Inovasi pemuda untuk kelestarian agro-maritim dan kehutanan Indonesia.',
       url: BASE_URL,
       siteName: 'Garda Lestari',
@@ -44,7 +44,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'Garda Lestari: Aksi Nyata Anda untuk Bumi',
+      title: 'Tumbuh Bersama Bumi',
       description: 'Inovasi pemuda untuk kelestarian agro-maritim dan kehutanan Indonesia.',
       images: [settings.heroImageUrl || '/og-image.png'],
     },
