@@ -40,6 +40,7 @@ export default function Footer() {
                             <Link href="/ketentuan-layanan" className="hover:text-primary">Ketentuan Layanan</Link>
                             <Link href="/kebijakan-privasi" className="hover:text-primary">Kebijakan Privasi</Link>
                             <Link href="/hapus-data" className="hover:text-primary">Hapus Data</Link>
+                            <Link href="https://www.weprotect.org/" target="_blank" rel="noopener noreferrer" className="hover:text-primary">Standar Keselamatan</Link>
                         </nav>
                     </div>
                     <div className="space-y-2">

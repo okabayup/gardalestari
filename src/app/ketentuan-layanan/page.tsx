@@ -5,6 +5,7 @@ import LandingHeader from '@/components/layout/LandingHeader';
 import Footer from '@/components/landing/Footer';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { FileText } from 'lucide-react';
+import Link from 'next/link';
 
 const Section = ({ title, children }: { title: string, children: React.ReactNode }) => (
     <div className="space-y-2">
@@ -50,6 +51,7 @@ export default function TermsOfServicePage() {
                             <li>Melakukan pelecehan, intimidasi, atau stalking terhadap pengguna lain.</li>
                             <li>Mengganggu atau mengacaukan integritas atau kinerja layanan.</li>
                             <li>Berpura-pura menjadi orang atau entitas lain.</li>
+                            <li>Mengunggah atau menyebarkan materi pelecehan dan eksploitasi seksual anak (CSAE). Garda Lestari memiliki kebijakan nol-toleransi terhadap CSAE dan akan melaporkan semua pelanggaran ke pihak berwenang yang sesuai. Kami mematuhi standar dari <a href="https://www.weprotect.org/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">WeProtect Global Alliance</a>.</li>
                         </ul>
                    </Section>
 
