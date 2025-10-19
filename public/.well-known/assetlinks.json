@@ -1,11 +1,13 @@
+
 [
   {
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "org.gardalestari.twa",
-      "sha256_cert_fingerprints":
-      ["GANTI_DENGAN_SHA256_FINGERPRINT_ANDA"]
+      "package_name": "org.gardalestari.app",
+      "sha256_cert_fingerprints": [
+        "1C:EC:B8:33:C6:16:32:42:3A:53:23:7A:43:89:4F:92:AF:A5:D2:C3:68:57:43:83:A7:48:98:A2:3E:99:A5:C3"
+      ]
     }
   }
-]]
+]

@@ -65,13 +65,16 @@ const withPWA = require('next-pwa')({
       },
     },
      {
-      urlPattern: /\/(?:feed|members|programs|events|ideas|profile|achievements|recruitments|documents|announcements|p|evoting|points|map|tentang|berita|video|kebijakan-privasi|ketentuan-layanan|hapus-data)\/?.*$/i,
+      urlPattern: /^https:\/\/gardalestari\.org\/.*/i,
       handler: 'StaleWhileRevalidate',
       options: {
         cacheName: 'pages-cache',
         expiration: {
           maxEntries: 64,
           maxAgeSeconds: 24 * 60 * 60, // 24 hours
+        },
+        cacheableResponse: {
+          statuses: [200],
         },
       },
     },
