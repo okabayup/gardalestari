@@ -43,6 +43,12 @@ export default function LoginPage() {
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
 
   useEffect(() => {
+    if (document.referrer && !document.referrer.includes('android-app://')) {
+      window.location.href = 'https://play.google.com/store/apps/details?id=org.gardalestari.twa';
+    }
+  }, []);
+
+  useEffect(() => {
     if (!loading && !user && recaptchaContainerRef.current && !recaptchaVerifierRef.current) {
         try {
             const verifier = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
@@ -137,7 +143,7 @@ export default function LoginPage() {
     const phoneNumber = normalizePhoneNumber(phone);
     
     if (!recaptchaVerifierRef.current) {
-        toast({ variant: 'destructive', title: 'Error', description: 'reCAPTCHA belum siap. Mohon segarkan halaman.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'reCAPTCHA belum siap. Mohon tunggu atau segarkan halaman.' });
         setIsSubmitting(false);
         setCountdown(0);
         return;
@@ -235,3 +241,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
