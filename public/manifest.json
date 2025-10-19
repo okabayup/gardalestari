@@ -1,16 +1,57 @@
 {
   "name": "Garda Lestari",
   "short_name": "GardaLestari",
-  "theme_color": "#347C45",
-  "background_color": "#E8F0E5",
-  "display": "fullscreen",
-  "display_override": ["fullscreen", "standalone"],
-  "scope": "/",
+  "description": "Inovasi pemuda untuk kelestarian agro-maritim dan kehutanan Indonesia.",
   "start_url": "/feed",
+  "display": "fullscreen",
+  "background_color": "#E8F0E5",
+  "theme_color": "#347C45",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
   "id": "/?id=gardalestari",
-  "lang": "id",
-  "dir": "ltr",
   "orientation": "portrait",
+  "screenshots": [
+    {
+      "src": "/screenshots/screenshot1.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Tampilan Beranda Aplikasi"
+    },
+    {
+      "src": "/screenshots/screenshot2.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Profil Pengguna"
+    },
+    {
+      "src": "/screenshots/screenshot3.jpg",
+      "sizes": "1280x800",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Tampilan Panel Admin"
+    }
+  ],
+  "categories": ["social", "education", "sustainability", "business"],
   "related_applications": [
     {
       "platform": "play",
@@ -18,44 +59,49 @@
     }
   ],
   "prefer_related_applications": true,
-  "categories": ["social", "education", "sustainability"],
   "iarc_rating_id": "YOUR_IARC_RATING_ID",
-  "screenshots": [
+  "display_override": ["fullscreen", "standalone"],
+  "scope": "/",
+  "lang": "id",
+  "dir": "ltr",
+  "scope_extensions": [
+    { "origin": "*.gardalestari.org" },
+    { "origin": "gardalestari.web.app" }
+  ],
+  "shortcuts": [
     {
-      "src": "/screenshots/screenshot1.png",
-      "type": "image/png",
-      "sizes": "1080x2340",
-      "form_factor": "narrow"
+      "name": "Buat Postingan Baru",
+      "short_name": "Buat Post",
+      "description": "Bagikan pembaruan atau momen baru",
+      "url": "/feed/new",
+      "icons": [{ "src": "/icons/shortcut-post.png", "sizes": "192x192" }]
     },
     {
-      "src": "/screenshots/screenshot2.png",
-      "type": "image/png",
-      "sizes": "1080x2340",
-      "form_factor": "narrow"
+      "name": "Lihat Program",
+      "short_name": "Program",
+      "description": "Jelajahi program yang sedang berjalan",
+      "url": "/programs",
+      "icons": [{ "src": "/icons/shortcut-programs.png", "sizes": "192x192" }]
     },
     {
-      "src": "/screenshots/screenshot-wide.png",
-      "type": "image/png",
-      "sizes": "1920x1080",
-      "form_factor": "wide"
+      "name": "Direktori Anggota",
+      "short_name": "Anggota",
+      "description": "Temukan anggota lain dalam jaringan",
+      "url": "/members",
+      "icons": [{ "src": "/icons/shortcut-members.png", "sizes": "192x192" }]
     }
   ],
-  "icons": [
+  "file_handlers": [
     {
-      "src": "/icon-bg-putih.png",
-      "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "/logo-bg-hijau.png",
-      "type": "image/png",
-      "sizes": "512x512"
-    },
-    {
-      "src": "/logo-bg-hijau.png",
-      "type": "image/png",
-      "sizes": "512x512",
-      "purpose": "maskable"
+      "action": "/content/new",
+      "accept": {
+        "image/jpeg": [".jpg", ".jpeg"],
+        "image/png": [".png"]
+      },
+      "launch_type": "single-client"
     }
-  ]
+  ],
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  }
 }
