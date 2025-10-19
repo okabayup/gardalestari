@@ -1,60 +1,22 @@
-
 {
-  "name": "Garda Lestari",
-  "short_name": "Garda Lestari",
-  "description": "Inovasi pemuda untuk kelestarian agro-maritim dan kehutanan Indonesia.",
-  "start_url": "/feed",
+  "theme_color": "#e8f0e5",
+  "background_color": "#e8f0e5",
   "display": "standalone",
-  "background_color": "#E8F0E5",
-  "theme_color": "#347C45",
+  "scope": "/",
+  "start_url": "/",
+  "name": "Garda Lestari",
+  "short_name": "GardaLestari",
+  "description": "Garda Lestari adalah organisasi kepemudaan yang berfokus pada inovasi di sektor agro-maritim dan kehutanan untuk pembangunan berkelanjutan di Indonesia.",
   "icons": [
     {
-      "src": "/logo.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo.png",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo.png",
+      "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
+      "type": "image/png"
     },
     {
-      "src": "/logo.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo.png",
+      "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
+      "type": "image/png"
     }
   ]
 }

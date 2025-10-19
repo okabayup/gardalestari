@@ -5,7 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import FirebaseAnalytics from '@/components/FirebaseAnalytics';
 import { Suspense } from 'react';
-import { getAppSettings } from '@/app/actions/settings';
+import { getAppSettings } from './actions/settings';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://gardalestari.org';
 
@@ -23,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
     icons: {
       icon: '/logo.png',
       shortcut: '/favicon.ico',
-      apple: '/logo.png',
+      apple: '/icons/icon-192x192.png',
     },
     openGraph: {
       title: 'Garda Lestari: Aksi Nyata Anda untuk Bumi',
@@ -47,6 +47,11 @@ export async function generateMetadata(): Promise<Metadata> {
       description: 'Inovasi pemuda untuk kelestarian agro-maritim dan kehutanan Indonesia.',
       images: [settings.heroImageUrl || '/og-image.png'],
     },
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'default',
+      title: 'Garda Lestari',
+    },
   };
 }
 
@@ -65,9 +70,7 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap"
           rel="stylesheet"
         />
-        <meta name="theme-color" content="#E8F0E5" />
-        <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/logo.png"></link>
+        <meta name="theme-color" content="#e8f0e5" />
       </head>
       <body className="font-body antialiased">
         <AuthProvider>
