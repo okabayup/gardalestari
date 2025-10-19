@@ -161,5 +161,3 @@ export async function checkAndAwardBadges(userId: string, triggeredMetric: Badge
         // We don't re-throw here to not block the main operation (e.g., creating a post).
     }
 }
-
-    
