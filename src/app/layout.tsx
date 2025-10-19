@@ -71,7 +71,7 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap"
           rel="stylesheet"
         />
-        <meta name="theme-color" content="#E8F0E5" />
+        <meta name="theme-color" content="#347C45" />
       </head>
       <body className="font-body antialiased">
         <AuthProvider>
