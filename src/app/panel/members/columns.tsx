@@ -2,7 +2,7 @@
 'use client'
 
 import { ColumnDef } from "@tanstack/react-table"
-import { MemberWithStatus } from "@/app/actions/members"
+import { MemberWithStatus } from "@/app/actions/user"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { formatFullName } from "@/lib/utils"

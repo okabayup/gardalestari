@@ -4,7 +4,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { MemberWithStatus } from '@/app/actions/members';
+import { MemberWithStatus } from '@/app/actions/user';
 import Image from 'next/image';
 import { ScrollArea } from '../ui/scroll-area';
 

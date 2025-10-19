@@ -152,7 +152,7 @@ export async function checkAndAwardBadges(userId: string, triggeredMetric: Badge
             // Check if the current user value is a multiple of the mission's target value
             if (userValue > 0 && userValue % mission.criteria.value === 0) {
                  console.log(`[checkAndAwardBadges] Awarding points for mission '${mission.name}' to user ${userId} for metric '${mission.criteria.metric}' (value ${userValue} is multiple of ${mission.criteria.value})`);
-                 await awardPointsForAction(mission.id, userId);
+                 await awardPointsForAction(mission.id, userId, `Menyelesaikan Misi: ${mission.name}`);
             }
         }
 

@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Loader2, UserPlus } from 'lucide-react';
-import { createManualMember } from '@/app/actions/members';
+import { createManualMember } from '@/app/actions/user';
 import type { MemberType } from '@/lib/definitions';
 import { getPositions, Position } from '@/app/actions/positions';
 import Image from 'next/image';
