@@ -1,112 +1,115 @@
 {
   "name": "Garda Lestari",
-  "short_name": "Garda Lestari",
+  "short_name": "Garda",
+  "description": "Garda Lestari adalah organisasi kepemudaan yang berfokus pada inovasi di sektor agro-maritim dan kehutanan untuk pembangunan berkelanjutan di Indonesia.",
   "start_url": "/feed",
   "display": "fullscreen",
-  "background_color": "#E8F0E5",
-  "theme_color": "#347C45",
-  "icons": [
-    {
-      "src": "/logo-bg-putih.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo-bg-putih.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo-bg-putih.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
-  ],
-  "id": "/?id=gardalestari",
-  "orientation": "portrait",
-  "screenshots": [
-    {
-      "src": "/img/screenshot1.png",
-      "type": "image/png",
-      "sizes": "540x720",
-      "form_factor": "narrow"
-    },
-    {
-      "src": "/img/screenshot2.png",
-      "type": "image/png",
-      "sizes": "540x720",
-      "form_factor": "narrow"
-    }
-  ],
-  "categories": [
-    "social",
-    "education",
-    "sustainability"
-  ],
-  "prefer_related_applications": true,
-  "related_applications": [
-    {
-      "platform": "play",
-      "id": "org.gardalestari.twa"
-    }
-  ],
-  "iarc_rating_id": "REPLACE_WITH_YOUR_IARC_RATING_ID",
   "display_override": [
     "fullscreen",
     "standalone"
   ],
+  "background_color": "#E8F0E5",
+  "theme_color": "#347C45",
+  "orientation": "portrait-primary",
   "scope": "/",
   "lang": "id",
   "dir": "ltr",
-  "scope_extensions": [
+  "id": "/?id=gardalestari",
+  "icons": [
     {
-      "origin": "*.gardalestari.org"
+      "src": "icon-bg-putih.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-bg-putih.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "https://www.gardalestari.org/screenshots/screenshot1.jpg",
+      "sizes": "1080x2340",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Tampilan Beranda Aplikasi"
+    },
+    {
+      "src": "https://www.gardalestari.org/screenshots/screenshot2.jpg",
+      "sizes": "1080x2340",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Direktori Anggota"
     }
   ],
   "shortcuts": [
     {
       "name": "Buat Postingan Baru",
-      "short_name": "Baru",
-      "description": "Bagikan momen atau wawasan Anda",
+      "short_name": "Buat Postingan",
+      "description": "Bagikan pembaruan baru ke feed",
       "url": "/feed/new",
-      "icons": [
-        {
-          "src": "/logo-bg-putih.png",
-          "sizes": "192x192"
-        }
-      ]
+      "icons": [{ "src": "/icons/new-post.png", "sizes": "192x192" }]
     },
     {
       "name": "Lihat Program",
       "short_name": "Program",
-      "description": "Lihat program yang sedang dibuka",
+      "description": "Lihat semua program yang tersedia",
       "url": "/programs",
-      "icons": [
-        {
-          "src": "/logo-bg-putih.png",
-          "sizes": "192x192"
-        }
-      ]
+      "icons": [{ "src": "/icons/programs.png", "sizes": "192x192" }]
     }
+  ],
+  "categories": [
+    "social",
+    "education",
+    "sustainability",
+    "business"
   ],
   "file_handlers": [
     {
       "action": "/content/new",
       "accept": {
-        "image/jpeg": [
-          ".jpg",
-          ".jpeg"
-        ],
-        "image/png": [
-          ".png"
-        ]
+        "image/jpeg": [".jpg", ".jpeg"],
+        "image/png": [".png"],
+        "image/gif": [".gif"]
       }
     }
   ],
   "launch_handler": {
     "client_mode": "focus-existing"
-  }
+  },
+  "protocol_handlers": [],
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=org.gardalestari.twa",
+      "id": "org.gardalestari.twa"
+    }
+  ],
+  "prefer_related_applications": true,
+  "share_target": {
+    "action": "/content/new/share-target/",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "files",
+          "accept": ["image/jpeg", "image/png", "image/gif"]
+        }
+      ]
+    }
+  },
+  "iarc_rating_id": "REPLACE_WITH_YOUR_IARC_ID",
+  "widgets": [],
+  "edge_side_panel": {},
+  "note_taking": {},
+  "scope_extensions": [
+    { "origin": "blog.gardalestari.org" }
+  ]
 }
