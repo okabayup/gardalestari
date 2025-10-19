@@ -82,7 +82,7 @@ export default async function LandingPage() {
             </div>
             <div className="animate-in fade-in slide-in-from-bottom-12 duration-1000">
                 <h1 className="font-headline text-4xl font-bold tracking-tight text-primary sm:text-5xl md:text-6xl lg:text-7xl">
-                  Aksi Nyata Anda untuk Bumi, Dimulai dari Sini.
+                  Tumbuh Bersama Bumi
                 </h1>
                 <p className="mx-auto mt-6 max-w-3xl text-lg text-muted-foreground md:text-xl">
                   Garda Lestari adalah wadah bagi Anda yang peduli dan ingin beraksi untuk kelestarian agro, maritim, dan kehutanan Indonesia.
@@ -233,29 +233,6 @@ export default async function LandingPage() {
             </section>
         )}
         
-        {/* Featured Videos Section */}
-        <section id="video" className="w-full bg-secondary py-16 md:py-28">
-          <div className="container">
-             <div className="mb-14 text-center">
-              <span className="text-sm font-semibold uppercase text-primary">Video Unggulan</span>
-              <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl mt-2">Liputan &amp; Cerita Visual</h2>
-              <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Tonton cerita inspiratif dan liputan kegiatan kami langsung dari lapangan.</p>
-            </div>
-            {featuredVideos.length > 0 ? (
-              <VideoSlider videos={featuredVideos} />
-            ) : (
-              <p className="text-center text-muted-foreground">Belum ada video unggulan.</p>
-            )}
-             <div className="mt-12 text-center">
-              <Button asChild>
-                <Link href="/video">
-                  Lihat Semua Video <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </section>
-
         {/* Latest News Section */}
         <section id="news" className="w-full bg-background py-16 md:py-28">
           <div className="container">
