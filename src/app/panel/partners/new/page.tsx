@@ -16,10 +16,12 @@ import { Loader2 } from 'lucide-react';
 import { createPartner, createPartnerWithUrl } from '@/app/actions/partners';
 import Image from 'next/image';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import type { PartnerCategory } from '@/lib/definitions';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Nama wajib diisi'),
   websiteUrl: z.string().url('URL website tidak valid'),
+  category: z.enum(['strategis', 'media'], { required_error: 'Kategori wajib dipilih' }),
   isFeatured: z.boolean().default(false),
   logoSource: z.enum(['url', 'upload']).default('upload'),
   logoUrl: z.string().optional(),
@@ -53,7 +55,8 @@ export default function NewPartnerPage() {
           isFeatured: false,
           name: '',
           websiteUrl: '',
-          logoSource: 'upload'
+          logoSource: 'upload',
+          category: 'strategis',
       }
   });
 
@@ -78,6 +81,7 @@ export default function NewPartnerPage() {
              if (!rest.logoUrl) throw new Error("Logo URL is required");
              await createPartnerWithUrl({
                  name: rest.name,
+                 category: rest.category,
                  websiteUrl: rest.websiteUrl,
                  isFeatured: rest.isFeatured,
                  logoUrl: rest.logoUrl
@@ -119,6 +123,16 @@ export default function NewPartnerPage() {
             <Input id="name" {...register('name')} />
             {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
           </div>
+           <div className="space-y-2">
+            <Label>Kategori Mitra</Label>
+             <Controller name="category" control={control} render={({ field }) => (
+                <RadioGroup onValueChange={field.onChange} value={field.value} className="flex gap-4">
+                    <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="strategis" /> Mitra Strategis</Label>
+                    <Label className="flex items-center gap-2 cursor-pointer"><RadioGroupItem value="media" /> Mitra Media</Label>
+                </RadioGroup>
+            )} />
+            {errors.category && <p className="text-sm text-destructive">{errors.category.message}</p>}
+           </div>
           <div className="space-y-2">
             <Label htmlFor="websiteUrl">URL Website</Label>
             <Input id="websiteUrl" type="url" {...register('websiteUrl')} />
@@ -169,3 +183,4 @@ export default function NewPartnerPage() {
     </form>
   );
 }
+    

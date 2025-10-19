@@ -94,7 +94,7 @@ export default function AdminPartnersPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="font-headline text-2xl font-bold">Manajemen Mitra</h1>
-            <p className="text-muted-foreground">Kelola semua mitra strategis Garda Lestari.</p>
+            <p className="text-muted-foreground">Kelola semua mitra strategis dan media Garda Lestari.</p>
           </div>
           {canManage && (
             <Button onClick={() => router.push('/panel/partners/new')}>
@@ -113,6 +113,7 @@ export default function AdminPartnersPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nama Mitra</TableHead>
+                  <TableHead>Kategori</TableHead>
                   <TableHead>Website</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead><span className="sr-only">Aksi</span></TableHead>
@@ -121,7 +122,7 @@ export default function AdminPartnersPage() {
               <TableBody>
                 {loading ? (
                     <TableRow>
-                        <TableCell colSpan={4} className="text-center py-10">
+                        <TableCell colSpan={5} className="text-center py-10">
                             <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
                         </TableCell>
                     </TableRow>
@@ -134,6 +135,11 @@ export default function AdminPartnersPage() {
                             <AvatarFallback>{partner.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         {partner.name}
+                      </TableCell>
+                      <TableCell>
+                          <Badge variant={partner.category === 'strategis' ? 'default' : 'outline'}>
+                              {partner.category === 'strategis' ? 'Strategis' : 'Media'}
+                          </Badge>
                       </TableCell>
                       <TableCell>
                         <a href={partner.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
@@ -169,7 +175,7 @@ export default function AdminPartnersPage() {
                   ))
                 ) : (
                     <TableRow>
-                        <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
+                        <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
                             Belum ada mitra yang ditambahkan.
                         </TableCell>
                     </TableRow>
@@ -198,3 +204,4 @@ export default function AdminPartnersPage() {
     </>
   );
 }
+    

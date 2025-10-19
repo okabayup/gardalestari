@@ -1,5 +1,4 @@
 
-
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -52,7 +51,8 @@ export default async function LandingPage() {
   const featuredArticles = allPosts.filter(p => p.type === 'artikel' && p.isFeatured).slice(0,3);
   const featuredVideos = allPosts.filter(p => p.type === 'video' && p.isFeatured);
 
-  const featuredPartners = partners.filter(p => p.isFeatured);
+  const strategicPartners = partners.filter(p => p.category === 'strategis');
+  const mediaPartners = partners.filter(p => p.category === 'media');
   const featuredMembers = members.filter(m => m.isSpecialMember).slice(0, 3);
   const WHATSAPP_LINK = `https://wa.me/${process.env.SATUCONNECT_DEVICE_ID || '6285176752610'}`;
 
@@ -93,19 +93,19 @@ export default async function LandingPage() {
                         <Link href="/register">Bergabunglah dengan Gerakan Kami</Link>
                     </Button>
                   )}
-                  <Button size="lg" variant="outline" asChild>
-                      <Link href={WHATSAPP_LINK} target="_blank">Dukung Misi Kami</Link>
-                  </Button>
-                  <Button size="lg" variant="ghost" asChild>
-                      <Link href={WHATSAPP_LINK} target="_blank">Jalin Kemitraan</Link>
-                  </Button>
                 </div>
             </div>
             
-            {featuredPartners.length > 0 && (
+            {strategicPartners.length > 0 && (
                 <div className="mt-16 md:mt-24 animate-in fade-in slide-in-from-bottom-16 duration-1000">
                     <h3 className="text-sm font-semibold uppercase text-muted-foreground tracking-wider">Dipercaya dan Didukung Oleh</h3>
-                    <PartnerSlider partners={featuredPartners} />
+                    <PartnerSlider partners={strategicPartners} />
+                </div>
+            )}
+             {mediaPartners.length > 0 && (
+                <div className="mt-12">
+                    <h3 className="text-sm font-semibold uppercase text-muted-foreground tracking-wider">Diliput Oleh</h3>
+                    <PartnerSlider partners={mediaPartners} />
                 </div>
             )}
           </div>
@@ -238,7 +238,7 @@ export default async function LandingPage() {
           <div className="container">
              <div className="mb-14 text-center">
               <span className="text-sm font-semibold uppercase text-primary">Video Unggulan</span>
-              <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl mt-2">Liputan & Cerita Visual</h2>
+              <h2 className="font-headline text-3xl font-bold tracking-tighter sm:text-4xl mt-2">Liputan &amp; Cerita Visual</h2>
               <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">Tonton cerita inspiratif dan liputan kegiatan kami langsung dari lapangan.</p>
             </div>
             {featuredVideos.length > 0 ? (
@@ -341,3 +341,4 @@ export default async function LandingPage() {
     </div>
   );
 }
+    

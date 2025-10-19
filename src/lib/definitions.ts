@@ -1,5 +1,4 @@
 
-
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
 import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins } from 'lucide-react';
@@ -498,9 +497,12 @@ export interface Badge {
 
 
 // --- Partners ---
+export type PartnerCategory = 'strategis' | 'media';
+
 export interface Partner {
   id?: string;
   name: string;
+  category: PartnerCategory;
   websiteUrl: string;
   logoUrl: string;
   isFeatured: boolean;
@@ -840,5 +842,4 @@ export interface PublicProfile extends PublicUser {
   skills?: string[];
   interests?: string[];
 }
-
     

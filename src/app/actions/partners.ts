@@ -89,7 +89,7 @@ export async function updatePartner(id: string, data: Partial<Omit<Partner, 'id'
             }
         }
         const newLogoRef = ref(storage, `partner-logos/${Date.now()}_${logoFile.name}`);
-        await uploadBytes(newLogoRef, newLogoRef);
+        await uploadBytes(newLogoRef, logoFile);
         dataToUpdate.logoUrl = await getDownloadURL(newLogoRef);
     }
     
@@ -145,3 +145,4 @@ export async function deletePartner(id: string) {
     throw new Error("Gagal menghapus data mitra.");
   }
 }
+    
