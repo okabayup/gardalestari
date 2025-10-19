@@ -5,14 +5,10 @@ import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import FirebaseAnalytics from '@/components/FirebaseAnalytics';
 import { Suspense } from 'react';
-import { getAppSettings } from './actions/settings';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://gardalestari.org';
 
-export async function generateMetadata(): Promise<Metadata> {
-  const settings = await getAppSettings();
-
-  return {
+export const metadata: Metadata = {
     metadataBase: new URL(BASE_URL),
     title: {
       default: 'Tumbuh Bersama Bumi',
@@ -33,7 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: 'Garda Lestari',
       images: [
         {
-          url: settings.heroImageUrl || '/og-image.png',
+          url: '/og-image.png',
           width: 1200,
           height: 630,
           alt: 'Lanskap Pertanian Indonesia',
@@ -46,15 +42,14 @@ export async function generateMetadata(): Promise<Metadata> {
       card: 'summary_large_image',
       title: 'Tumbuh Bersama Bumi',
       description: 'Inovasi pemuda untuk kelestarian agro-maritim dan kehutanan Indonesia.',
-      images: [settings.heroImageUrl || '/og-image.png'],
+      images: ['/og-image.png'],
     },
     appleWebApp: {
       capable: true,
       statusBarStyle: 'default',
       title: 'Garda Lestari',
     },
-  };
-}
+};
 
 
 export default function RootLayout({
@@ -71,6 +66,7 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap"
           rel="stylesheet"
         />
+        <link rel="manifest" href="/manifest.json" />
       </head>
       <body className="font-body antialiased">
         <AuthProvider>

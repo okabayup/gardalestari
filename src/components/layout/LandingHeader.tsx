@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import Image from 'next/image';
@@ -10,6 +10,7 @@ import { Loader2, Menu } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Separator } from '../ui/separator';
 import VerificationFlow from '../auth/VerificationFlow';
+import { getAppSettings } from '@/app/actions/settings';
 
 const navItems = [
   { href: '/berita', label: 'Berita' },
@@ -17,12 +18,17 @@ const navItems = [
   { href: '/programs', label: 'Program' },
 ];
 
-interface LandingHeaderProps {
-  isRegistrationOpen?: boolean;
-}
-
-export default function LandingHeader({ isRegistrationOpen = true }: LandingHeaderProps) {
+export default function LandingHeader() {
   const { user, loading } = useAuth();
+  const [isRegistrationOpen, setRegistrationOpen] = useState(true);
+
+  useEffect(() => {
+    async function fetchSettings() {
+        const settings = await getAppSettings();
+        setRegistrationOpen(settings.isRegistrationOpen);
+    }
+    fetchSettings();
+  }, []);
   
   // If user is logged in but has not completed KTP verification, show the flow.
   if (user && user.verificationStatus === 'unverified') {

@@ -15,7 +15,6 @@ import { Separator } from '@/components/ui/separator';
 import BeritaPostCard from '@/components/berita/BeritaPostCard';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import PartnerSlider from '@/components/landing/PartnerSlider';
-import VideoSlider from '@/components/landing/VideoSlider';
 import Footer from '@/components/landing/Footer';
 import FlagshipProgramSlider from '@/components/landing/FlagshipProgramSlider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -49,8 +48,7 @@ export default async function LandingPage() {
   
   const flagshipPrograms = allPrograms.filter(p => p.category === 'flagship');
   const featuredArticles = allPosts.filter(p => p.type === 'artikel' && p.isFeatured).slice(0,3);
-  const featuredVideos = allPosts.filter(p => p.type === 'video' && p.isFeatured);
-
+  
   const strategicPartners = partners.filter(p => p.category === 'strategis');
   const mediaPartners = partners.filter(p => p.category === 'media');
   const featuredMembers = members.filter(m => m.isSpecialMember).slice(0, 3);
@@ -63,7 +61,7 @@ export default async function LandingPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <LandingHeader isRegistrationOpen={settings.isRegistrationOpen} />
+      <LandingHeader />
 
       <main className="flex-1">
         {/* Hero Section */}
