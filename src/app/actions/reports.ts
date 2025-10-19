@@ -13,12 +13,15 @@ import {
   query,
   orderBy,
   Timestamp,
+  getDoc,
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { Report, ReportReason, ReportType, ReportStatus } from '@/lib/definitions';
 import { getUserByUid } from './user';
 import { suspendUser } from './user';
 import { updatePostStatus } from './posts';
+import { sendDevAlert } from './errors';
+
 
 const reportsCollection = collection(db, 'reports');
 
@@ -51,7 +54,11 @@ export async function createReport(
 
   await addDoc(reportsCollection, reportData);
 
-  // Potentially send a notification to admins here
+  // If the reason is critical (CSAE), send an immediate high-priority alert.
+  if (reason === 'csae') {
+    const alertMessage = `‼️ LAPORAN DARURAT (CSAE) ‼️\n\nPengguna: ${reporterName} (UID: ${reporterId})\nMelaporkan item tipe: ${reportedItemType}\nID Item: ${reportedItemId}\nKonten: "${reportedItemContent || 'N/A'}"\n\nMohon segera ditindaklanjuti di panel admin.`;
+    await sendDevAlert(alertMessage);
+  }
 }
 
 
@@ -108,4 +115,5 @@ export async function takeModerationAction(action: 'suspend_user' | 'hide_post',
     throw new Error(`Gagal mengambil tindakan moderasi: ${(error as Error).message}`);
   }
 }
+
 

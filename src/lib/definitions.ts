@@ -116,7 +116,7 @@ export type LetterStatus = 'Draft' | 'Menunggu Persetujuan' | 'Disetujui' | 'Dit
 // --- Reports ---
 export type ReportType = 'user' | 'post';
 export type ReportStatus = 'baru' | 'ditinjau' | 'selesai';
-export type ReportReason = 'spam' | 'scam' | 'ujaran_kebencian' | 'pelecehan' | 'konten_ilegal' | 'lainnya';
+export type ReportReason = 'csae' | 'spam' | 'scam' | 'ujaran_kebencian' | 'pelecehan' | 'konten_ilegal' | 'lainnya';
 
 export interface Report {
     id?: string;
@@ -185,7 +185,7 @@ export interface BeritaPost {
   youtubeId?: string;
   isFeatured?: boolean;
   seoScore?: number;
-  status?: 'published' | 'draft';
+  status?: 'published' | 'draft' | 'hidden_by_moderator';
   indexingStatus?: IndexingStatus | null;
 }
 

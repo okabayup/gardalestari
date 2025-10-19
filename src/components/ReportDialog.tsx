@@ -13,6 +13,8 @@ import { Loader2 } from 'lucide-react';
 import { createReport } from '@/app/actions/reports';
 import { useAuth } from '@/hooks/use-auth';
 import type { ReportType, ReportReason } from '@/lib/definitions';
+import { cn } from '@/lib/utils';
+
 
 interface ReportDialogProps {
   isOpen: boolean;
@@ -22,7 +24,8 @@ interface ReportDialogProps {
   reportedItemContent?: string;
 }
 
-const reportReasons: { value: ReportReason, label: string }[] = [
+const reportReasons: { value: ReportReason, label: string, isCritical?: boolean }[] = [
+    { value: 'csae', label: 'Eksploitasi & Pelecehan Seksual Anak', isCritical: true },
     { value: 'spam', label: 'Spam atau Promosi'},
     { value: 'scam', label: 'Penipuan'},
     { value: 'ujaran_kebencian', label: 'Ujaran Kebencian'},
@@ -71,16 +74,18 @@ export function ReportDialog({ isOpen, onClose, reportedItemId, reportedItemType
             <Label>Alasan Pelaporan</Label>
             <RadioGroup onValueChange={(value) => setReason(value as ReportReason)}>
               {reportReasons.map(r => (
-                <div key={r.value} className="flex items-center space-x-2">
+                <div key={r.value} className={cn("flex items-center space-x-2 p-2 rounded-md", r.isCritical && 'bg-destructive/10 border border-destructive/20')}>
                   <RadioGroupItem value={r.value} id={r.value} />
-                  <Label htmlFor={r.value}>{r.label}</Label>
+                  <Label htmlFor={r.value} className={cn("cursor-pointer", r.isCritical && 'text-destructive font-bold')}>
+                      {r.label}
+                  </Label>
                 </div>
               ))}
             </RadioGroup>
           </div>
-          {reason === 'lainnya' && (
+          {(reason === 'lainnya' || reason === 'csae') && (
             <div className="space-y-2">
-              <Label htmlFor="details">Detail Lainnya</Label>
+              <Label htmlFor="details">Detail Tambahan</Label>
               <Textarea
                 id="details"
                 value={details}
