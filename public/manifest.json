@@ -1,35 +1,32 @@
 {
-  "name": "Garda Lestari",
-  "short_name": "GardaLestari",
-  "description": "Wadah bagi pemuda Indonesia untuk inovasi di sektor agro-maritim dan kehutanan.",
-  "start_url": "/",
-  "display": "fullscreen",
-  "background_color": "#E8F0E5",
   "theme_color": "#347C45",
+  "background_color": "#E8F0E5",
+  "display": "fullscreen",
+  "scope": "/",
+  "start_url": "/feed",
+  "name": "Garda Lestari",
+  "short_name": "Garda Lestari",
+  "description": "Inovasi pemuda untuk kelestarian agro-maritim dan kehutanan Indonesia.",
   "icons": [
     {
-      "src": "/logo-bg-hijau.png",
+      "src": "/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
+      "type": "image/png"
     },
     {
-      "src": "/logo-bg-hijau.png",
+      "src": "/icon-256x256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/logo-bg-hijau.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/logo-bg-hijau.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
+      "type": "image/png"
     }
   ]
 }
