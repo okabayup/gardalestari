@@ -197,7 +197,7 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
         const postRef = doc(db, 'posts', postId);
         const postDoc = await getDoc(postRef);
 
-        if (!postDoc.exists()) { // Allow fetching archived posts by their ID
+        if (!postDoc.exists() || postDoc.data().status !== 'published') { 
             return null;
         }
 
@@ -397,4 +397,21 @@ export async function unarchivePost(postId: string) {
         console.error("Error unarchiving post:", error);
         throw new Error("Gagal memulihkan postingan.");
     }
+}
+
+export async function updatePostStatus(postId: string, status: 'published' | 'hidden_by_moderator' | 'archived'): Promise<void> {
+  if (!postId) {
+    throw new Error('ID Postingan dibutuhkan.');
+  }
+
+  const postRef = doc(db, 'posts', postId);
+  const postDoc = await getDoc(postRef);
+  if (!postDoc.exists()) {
+    throw new Error('Postingan tidak ditemukan.');
+  }
+
+  await updateDoc(postRef, { status: status });
+  
+  revalidatePath('/feed');
+  revalidatePath('/panel/reports');
 }

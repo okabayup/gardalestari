@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Loader2, X } from 'lucide-react';
-import type { MemberWithStatus } from '@/app/actions/members';
+import { MemberWithStatus } from '@/app/actions/user'; // Updated import
 import { getPositions, Position } from '@/app/actions/positions';
 import { getBadges, assignBadgeToUser, removeBadgeFromUser, Badge as BadgeType } from '@/app/actions/badges';
 import type { MemberType, VerificationStatus } from '@/lib/definitions';
@@ -57,6 +57,7 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>(member.verificationStatus || 'unverified');
   const [isSpecialMember, setIsSpecialMember] = useState(member.isSpecialMember || false);
   const [isHidden, setIsHidden] = useState(member.isHidden || false);
+  const [isSuspended, setIsSuspended] = useState(member.isSuspended || false);
   const [titlePrefix, setTitlePrefix] = useState(member.titlePrefix || '');
   const [titlePostfix, setTitlePostfix] = useState(member.titlePostfix || '');
   const [positions, setPositions] = useState<Position[]>([]);
@@ -78,6 +79,7 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
         setVerificationStatus(member.verificationStatus || 'unverified');
         setIsSpecialMember(member.isSpecialMember || false);
         setIsHidden(member.isHidden || false);
+        setIsSuspended(member.isSuspended || false);
         setTitlePrefix(member.titlePrefix || '');
         setTitlePostfix(member.titlePostfix || '');
         setMemberBadges(member.assignedBadges || []);
@@ -112,6 +114,7 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
     formData.append('verificationStatus', verificationStatus);
     formData.append('isSpecialMember', String(isSpecialMember));
     formData.append('isHidden', String(isHidden));
+    formData.append('isSuspended', String(isSuspended));
     formData.append('titlePrefix', titlePrefix);
     formData.append('titlePostfix', titlePostfix);
     if (photoFile) {
@@ -255,6 +258,15 @@ export default function EditMemberDialog({ member, isOpen, onClose, onSave, isSa
                     onCheckedChange={setIsHidden}
                 />
                 <Label htmlFor="is-hidden">Sembunyikan dari Direktori Publik</Label>
+                </div>
+                <div className="flex items-center space-x-2 pt-2">
+                <Switch
+                    id="is-suspended"
+                    checked={isSuspended}
+                    onCheckedChange={setIsSuspended}
+                    className="data-[state=checked]:bg-destructive"
+                />
+                <Label htmlFor="is-suspended" className={isSuspended ? 'text-destructive' : ''}>Tangguhkan Akun Pengguna</Label>
                 </div>
             </div>
         </ScrollArea>

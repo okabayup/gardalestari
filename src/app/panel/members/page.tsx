@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -8,7 +9,7 @@ import {
   resetVerificationData,
   deleteUserAccount,
   MemberWithStatus,
-} from '@/app/actions/members';
+} from '@/app/actions/user'; // Updated import
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,6 +38,8 @@ import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/panel/DataTable';
 import { columns } from './columns';
 import { Badge } from '@/components/ui/badge';
+import type { Timestamp } from 'firebase/firestore';
+
 
 export default function AdminMembersPage() {
   const { toast } = useToast();
@@ -157,6 +160,16 @@ export default function AdminMembersPage() {
   const memoizedColumns = useMemo<ColumnDef<MemberWithStatus>[]>(() => [
         ...columns,
          {
+          accessorKey: "isSuspended",
+          header: "Status Akun",
+          cell: ({ row }) => {
+            const member = row.original;
+            return member.isSuspended ? (
+              <Badge variant="destructive">Ditangguhkan</Badge>
+            ) : null;
+          },
+        },
+        {
           accessorKey: "deletionRequestedAt",
           header: "Permintaan Hapus",
           cell: ({ row }) => {

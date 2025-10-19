@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { collection, getDocs, doc, updateDoc, deleteField, query, setDoc, Timestamp, getDoc, addDoc, where,getCountFromServer, runTransaction, orderBy, limit, startAfter, endBefore, increment, writeBatch } from 'firebase/firestore';
@@ -72,8 +73,8 @@ export async function getMembers(forPublic: boolean = false): Promise<MemberWith
           continue;
       }
       
-      // For public view, also exclude hidden members and unverified
-      if (forPublic && (data.isHidden === true || (data.verificationStatus !== 'permanent' && data.verificationStatus !== 'manual'))) {
+      // For public view, also exclude hidden members and unverified/suspended
+      if (forPublic && (data.isHidden === true || (data.verificationStatus !== 'permanent' && data.verificationStatus !== 'manual') || data.isSuspended)) {
           continue;
       }
       
@@ -96,6 +97,7 @@ export async function getMembers(forPublic: boolean = false): Promise<MemberWith
         region: data.region,
         isSpecialMember: data.isSpecialMember || false,
         isHidden: data.isHidden || false,
+        isSuspended: data.isSuspended || false,
         joinDate: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
         ktpImageUrl: data.ktpImageUrl,
         createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
@@ -381,6 +383,7 @@ export async function getUserByUid(uid: string): Promise<(MemberWithStatus & { w
             type: data.type,
             region: data.region,
             isSpecialMember: data.isSpecialMember,
+            isSuspended: data.isSuspended || false,
             joinDate: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
             permissions: permissions,
             waNumber: data.waNumber,
@@ -788,4 +791,23 @@ export async function getUserByWaNumber(waNumber: string): Promise<PublicUser | 
     }
 }
 
+export async function suspendUser(userId: string, reason: string): Promise<void> {
+  if (!userId) {
+    throw new Error('ID Pengguna dibutuhkan.');
+  }
+
+  const userRef = doc(db, 'users', userId);
+  const userDoc = await getDoc(userRef);
+  if (!userDoc.exists()) {
+    throw new Error('Pengguna tidak ditemukan.');
+  }
+
+  await updateDoc(userRef, {
+    isSuspended: true,
+    suspensionReason: reason,
+  });
+  
+  revalidatePath('/panel/members');
+  revalidatePath(`/profile/${userDoc.data().username}`);
+}
     

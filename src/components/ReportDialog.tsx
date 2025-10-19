@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -44,7 +45,7 @@ export function ReportDialog({ isOpen, onClose, reportedItemId, reportedItemType
     }
     setLoading(true);
     try {
-      await createReport(user.uid, reportedItemId, reportedItemType, reason, details);
+      await createReport(user.uid, reportedItemId, reportedItemType, reason, details, reportedItemContent);
       toast({ title: 'Laporan Terkirim', description: 'Terima kasih, laporan Anda akan segera kami tinjau.' });
       onClose();
       setReason(null);

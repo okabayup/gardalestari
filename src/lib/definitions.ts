@@ -1,4 +1,5 @@
 
+
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
 import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag } from 'lucide-react';
@@ -441,6 +442,7 @@ export interface Member {
   avatarUrl?: string;
   isSpecialMember?: boolean;
   isHidden?: boolean;
+  isSuspended?: boolean;
   instagram?: string;
   linkedin?: string;
   skills?: string[];
@@ -552,7 +554,7 @@ export interface Post {
   likes: string[];
   commentsCount: number;
   createdAt: Timestamp;
-  status: 'published' | 'archived';
+  status: 'published' | 'archived' | 'hidden_by_moderator';
   mentionedUserIds: string[];
 }
 
@@ -574,7 +576,7 @@ export interface PostWithAuthor {
   commentsCount: number;
   timestamp: string;
   isLiked: boolean;
-  status: 'published' | 'archived';
+  status: 'published' | 'archived' | 'hidden_by_moderator';
 }
 
 export interface Comment {

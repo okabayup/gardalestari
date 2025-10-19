@@ -1,18 +1,21 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { getReports, updateReportStatus, Report, ReportStatus } from '@/app/actions/reports';
+import { getReports, updateReportStatus, takeModerationAction, Report, ReportStatus } from '@/app/actions/reports';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, MoreHorizontal, Check, Clock } from 'lucide-react';
+import { Loader2, MoreHorizontal, Check, Clock, ShieldAlert, UserX, EyeOff } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import Link from 'next/link';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
 
 const statusConfig: Record<ReportStatus, { label: string; color: string }> = {
     baru: { label: 'Baru', color: 'bg-red-500' },
@@ -33,6 +36,10 @@ export default function ReportsPage() {
     const { toast } = useToast();
     const [reports, setReports] = useState<Report[]>([]);
     const [loading, setLoading] = useState(true);
+    const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+    const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+    const [actionType, setActionType] = useState<'suspend_user' | 'hide_post' | null>(null);
 
     const fetchReports = useCallback(async () => {
         setLoading(true);
@@ -51,16 +58,37 @@ export default function ReportsPage() {
     }, [fetchReports]);
 
     const handleStatusChange = async (id: string, status: ReportStatus) => {
+        setActionLoading(id);
         try {
             await updateReportStatus(id, status);
             toast({ title: 'Status laporan diperbarui' });
             fetchReports();
         } catch (error) {
             toast({ variant: 'destructive', title: 'Gagal memperbarui status' });
+        } finally {
+            setActionLoading(null);
         }
     };
+    
+    const handleActionConfirm = async () => {
+        if (!selectedReport || !actionType) return;
+
+        setActionLoading(selectedReport.id!);
+        try {
+            await takeModerationAction(actionType, selectedReport.id!);
+            toast({ title: 'Tindakan moderasi berhasil diambil.'});
+            fetchReports();
+        } catch (error) {
+             toast({ variant: 'destructive', title: 'Gagal mengambil tindakan', description: (error as Error).message });
+        } finally {
+            setActionLoading(null);
+            setSelectedReport(null);
+            setActionType(null);
+        }
+    }
 
     return (
+        <>
         <div className="space-y-6">
             <div>
                 <h1 className="font-headline text-2xl font-bold">Manajemen Laporan</h1>
@@ -121,9 +149,15 @@ export default function ReportsPage() {
                                             <TableCell className="text-right">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
+                                                        <Button variant="ghost" size="icon" disabled={actionLoading === report.id}>
+                                                            {actionLoading === report.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
+                                                        </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent>
+                                                        <DropdownMenuItem onClick={() => { setSelectedReport(report); setActionType(report.reportedItemType === 'post' ? 'hide_post' : 'suspend_user'); }}>
+                                                            <ShieldAlert className="mr-2 h-4 w-4"/> Tindak Lanjuti
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
                                                         <DropdownMenuItem onClick={() => handleStatusChange(report.id!, 'ditinjau')}>
                                                             <Clock className="mr-2 h-4 w-4"/> Tandai Ditinjau
                                                         </DropdownMenuItem>
@@ -142,5 +176,27 @@ export default function ReportsPage() {
                 </CardContent>
             </Card>
         </div>
+
+        <AlertDialog open={!!selectedReport} onOpenChange={(open) => !open && setSelectedReport(null)}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Konfirmasi Tindakan Moderasi</AlertDialogTitle>
+                    <AlertDialogDescription>
+                       Anda akan mengambil tindakan pada item yang dilaporkan. Tindakan ini juga akan menandai laporan sebagai "Selesai". Lanjutkan?
+                       <div className="mt-4 p-4 bg-muted/80 rounded-lg">
+                            <p className="font-semibold text-foreground">Item: <span className="font-normal text-sm">{selectedReport?.reportedItemContent || selectedReport?.reportedItemId}</span></p>
+                            <p className="font-semibold text-foreground">Aksi: <span className="font-normal text-sm">{actionType === 'hide_post' ? 'Sembunyikan Postingan' : 'Tangguhkan Pengguna'}</span></p>
+                       </div>
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleActionConfirm} className="bg-destructive hover:bg-destructive/90">
+                        Ya, Lanjutkan
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        </>
     );
 }

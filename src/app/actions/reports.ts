@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -11,10 +12,13 @@ import {
   serverTimestamp,
   query,
   orderBy,
+  Timestamp,
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { Report, ReportReason, ReportType, ReportStatus } from '@/lib/definitions';
 import { getUserByUid } from './user';
+import { suspendUser } from './user';
+import { updatePostStatus } from './posts';
 
 const reportsCollection = collection(db, 'reports');
 
@@ -23,7 +27,8 @@ export async function createReport(
     reportedItemId: string,
     reportedItemType: ReportType,
     reason: ReportReason,
-    details?: string
+    details?: string,
+    reportedItemContent?: string
 ): Promise<void> {
   if (!reporterId) {
     throw new Error('Hanya pengguna yang masuk yang dapat membuat laporan.');
@@ -37,6 +42,7 @@ export async function createReport(
     reporterName,
     reportedItemId,
     reportedItemType,
+    reportedItemContent,
     reason,
     details: details || '',
     status: 'baru',
@@ -53,7 +59,14 @@ export async function getReports(): Promise<Report[]> {
   try {
     const q = query(reportsCollection, orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Report));
+    return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+             id: doc.id, 
+             ...data,
+             createdAt: data.createdAt as Timestamp,
+        } as Report
+    });
   } catch (error) {
     console.error("Error getting reports:", error);
     throw new Error("Gagal mengambil data laporan.");
@@ -70,3 +83,29 @@ export async function updateReportStatus(id: string, status: ReportStatus) {
     throw new Error("Gagal memperbarui status laporan.");
   }
 }
+
+export async function takeModerationAction(action: 'suspend_user' | 'hide_post', reportId: string) {
+  try {
+    const reportRef = doc(db, 'reports', reportId);
+    const reportSnap = await getDoc(reportRef);
+    if (!reportSnap.exists()) {
+      throw new Error("Laporan tidak ditemukan.");
+    }
+    const report = reportSnap.data() as Report;
+
+    if (action === 'suspend_user' && report.reportedItemType === 'user') {
+      await suspendUser(report.reportedItemId, `Akun ditangguhkan karena laporan: ${report.reason}.`);
+    } else if (action === 'hide_post' && report.reportedItemType === 'post') {
+      await updatePostStatus(report.reportedItemId, 'hidden_by_moderator');
+    } else {
+      throw new Error("Aksi tidak valid atau tipe laporan tidak cocok.");
+    }
+
+    await updateDoc(reportRef, { status: 'selesai' });
+    revalidatePath('/panel/reports');
+  } catch (error) {
+    console.error("Error taking moderation action:", error);
+    throw new Error(`Gagal mengambil tindakan moderasi: ${(error as Error).message}`);
+  }
+}
+
