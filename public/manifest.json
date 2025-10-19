@@ -4,9 +4,11 @@
   "display": "fullscreen",
   "scope": "/",
   "start_url": "/feed",
+  "id": "/?id=gardalestari",
   "name": "Garda Lestari",
-  "short_name": "Garda Lestari",
-  "description": "Inovasi pemuda untuk kelestarian agro-maritim dan kehutanan Indonesia.",
+  "short_name": "GardaLestari",
+  "description": "Wadah bagi pemuda Indonesia untuk inovasi di sektor agro-maritim dan kehutanan.",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "/icon-192x192.png",
@@ -27,6 +29,29 @@
       "src": "/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/1.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Beranda Feed"
+    },
+    {
+      "src": "/screenshots/2.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Profil Anggota"
+    },
+    {
+      "src": "/screenshots/3.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Daftar Program"
     }
   ]
 }
