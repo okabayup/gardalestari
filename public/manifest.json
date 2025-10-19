@@ -1,21 +1,48 @@
 {
   "name": "Garda Lestari",
   "short_name": "GardaLestari",
-  "description": "Garda Lestari adalah organisasi kepemudaan yang berfokus pada inovasi di sektor agro-maritim dan kehutanan untuk pembangunan berkelanjutan di Indonesia.",
+  "description": "Inovasi pemuda untuk kelestarian agro-maritim dan kehutanan Indonesia.",
   "start_url": "/feed",
   "display": "standalone",
   "background_color": "#E8F0E5",
   "theme_color": "#347C45",
+  "orientation": "portrait-primary",
+  "id": "/",
   "icons": [
     {
-      "src": "/logo.png",
+      "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "/logo.png",
+      "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/screenshot-1.png",
+      "sizes": "1080x2340",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Halaman Beranda (Feed)"
+    },
+    {
+      "src": "/screenshots/screenshot-2.png",
+      "sizes": "1080x2340",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Halaman Profil Pengguna"
+    },
+    {
+      "src": "/screenshots/screenshot-3.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Panel Admin"
     }
   ]
 }
