@@ -1,0 +1,29 @@
+{
+  "name": "Garda Lestari",
+  "short_name": "GardaLestari",
+  "description": "Inovasi pemuda untuk kelestarian agro-maritim dan kehutanan Indonesia.",
+  "start_url": "/feed",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#E8F0E5",
+  "theme_color": "#347C45",
+  "id": "/?source=pwa",
+  "icons": [
+    {
+      "src": "logo-bg-hijau.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "logo-bg-hijau.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "logo-bg-hijau.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
