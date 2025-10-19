@@ -1,20 +1,19 @@
 {
-  "theme_color": "#e8f0e5",
-  "background_color": "#e8f0e5",
-  "display": "standalone",
-  "scope": "/",
-  "start_url": "/",
   "name": "Garda Lestari",
   "short_name": "GardaLestari",
   "description": "Garda Lestari adalah organisasi kepemudaan yang berfokus pada inovasi di sektor agro-maritim dan kehutanan untuk pembangunan berkelanjutan di Indonesia.",
+  "start_url": "/feed",
+  "display": "standalone",
+  "background_color": "#E8F0E5",
+  "theme_color": "#347C45",
   "icons": [
     {
-      "src": "/icons/icon-192x192.png",
+      "src": "/logo.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/icons/icon-512x512.png",
+      "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png"
     }
