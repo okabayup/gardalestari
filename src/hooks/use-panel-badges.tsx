@@ -1,7 +1,8 @@
+
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { getPendingVerificationCount } from '@/app/actions/members';
+import { getPendingVerificationCount } from '@/app/actions/user';
 import { useAuth } from './use-auth';
 
 interface PanelBadgesContextType {
