@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Heart, MessageCircle, Send, MoreHorizontal, Archive, Tag, Undo } from 'lucide-react';
+import { Heart, MessageCircle, Send, MoreHorizontal, Archive, Tag, Undo, Flag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PostWithAuthor, CommentWithAuthor } from '@/app/actions/posts';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
@@ -20,6 +20,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../u
 import CommentList from './CommentList';
 import { VerifiedBadge } from '../members/VerifiedBadge';
 import { logAnalyticsEvent } from '@/lib/analytics';
+import { ReportDialog } from '@/components/ReportDialog';
 
 
 interface PostCardProps {
@@ -80,6 +81,7 @@ export default function PostCard({ post, onToggleLike, onArchive, onUnarchive, c
   const [isCommenting, setIsCommenting] = useState(false);
   const [comments, setComments] = useState<CommentWithAuthor[]>([]);
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,6 +146,7 @@ export default function PostCard({ post, onToggleLike, onArchive, onUnarchive, c
   const hasTags = post.media.some(m => m.mentions && m.mentions.length > 0);
 
   return (
+    <>
     <Card className={cn("overflow-hidden", isArchived && "bg-muted/50")}>
       <CardHeader className="flex flex-row items-center gap-3 p-3">
         <Link href={`/profile/${post.author.username}`}>
@@ -177,7 +180,7 @@ export default function PostCard({ post, onToggleLike, onArchive, onUnarchive, c
                         Pulihkan
                     </DropdownMenuItem>
                 )}
-                {!isAuthor && <DropdownMenuItem>Laporkan</DropdownMenuItem>}
+                {!isAuthor && <DropdownMenuItem onClick={() => setIsReportOpen(true)} className="text-destructive focus:text-destructive"><Flag className="mr-2 h-4 w-4" />Laporkan</DropdownMenuItem>}
             </DropdownMenuContent>
         </DropdownMenu>
       </CardHeader>
@@ -281,5 +284,13 @@ export default function PostCard({ post, onToggleLike, onArchive, onUnarchive, c
          }
       </CardFooter>
     </Card>
+     <ReportDialog
+        isOpen={isReportOpen}
+        onClose={() => setIsReportOpen(false)}
+        reportedItemId={post.id}
+        reportedItemType="post"
+        reportedItemContent={post.caption.substring(0, 30) + '...'}
+      />
+    </>
   );
 };

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -35,6 +34,7 @@ import {
   Gift,
   Coins,
   Bug,
+  Flag,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
@@ -121,6 +121,7 @@ const navGroups: {
       { href: '/panel/map-data', icon: Map, label: 'Data Peta', permission: 'manage_map_data' },
       { href: '/panel/map-datasets', icon: Layers, label: 'Dataset Peta', permission: 'manage_map_datasets' },
       { href: '/panel/data-bank', icon: Database, label: 'Bank Data', permission: 'manage_data_bank'},
+      { href: '/panel/reports', icon: Flag, label: 'Laporan', permission: 'manage_reports' },
     ],
   },
    {
@@ -162,7 +163,7 @@ function SidebarComponent() {
           <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
             <Accordion type="single" collapsible defaultValue={defaultAccordionValue} className="w-full">
                 {navGroups.map((group, index) => {
-                const visibleItems = group.items.filter(item => !item.permission || hasPermission(item.permission));
+                const visibleItems = group.items.filter(item => !item.permission || hasPermission(item.permission as PermissionId));
                 if (visibleItems.length === 0) return null;
 
                 const renderNavItem = (item: (typeof visibleItems)[0]) => {

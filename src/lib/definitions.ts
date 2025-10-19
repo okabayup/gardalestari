@@ -1,7 +1,7 @@
 
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
-import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins } from 'lucide-react';
+import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag } from 'lucide-react';
 
 export const ALL_PERMISSIONS = [
     { id: 'manage_users', label: 'Kelola Anggota & Verifikasi' },
@@ -31,6 +31,7 @@ export const ALL_PERMISSIONS = [
     { id: 'manage_whatsapp', label: 'Kelola WhatsApp Bot' },
     { id: 'manage_ideas', label: 'Kelola Bank Ide'},
     { id: 'manage_data_bank', label: 'Kelola Bank Data'},
+    { id: 'manage_reports', label: 'Kelola Laporan Pengguna'},
 ] as const;
 
 export type PermissionId = typeof ALL_PERMISSIONS[number]['id'];
@@ -110,6 +111,24 @@ export const ideaStatusMap: Record<IdeaStatus, { label: string, color: string }>
 };
 
 export type LetterStatus = 'Draft' | 'Menunggu Persetujuan' | 'Disetujui' | 'Ditolak';
+
+// --- Reports ---
+export type ReportType = 'user' | 'post';
+export type ReportStatus = 'baru' | 'ditinjau' | 'selesai';
+export type ReportReason = 'spam' | 'scam' | 'ujaran_kebencian' | 'pelecehan' | 'konten_ilegal' | 'lainnya';
+
+export interface Report {
+    id?: string;
+    reporterId: string;
+    reporterName: string;
+    reportedItemId: string; // User ID or Post ID
+    reportedItemType: ReportType;
+    reportedItemContent?: string; // e.g., username, post caption
+    reason: ReportReason;
+    details?: string;
+    status: ReportStatus;
+    createdAt: Timestamp;
+}
 
 // --- Achievements ---
 export interface Achievement {

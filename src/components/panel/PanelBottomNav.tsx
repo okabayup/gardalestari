@@ -38,6 +38,7 @@ import {
   Gift,
   Coins,
   Bug,
+  Flag,
 } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
@@ -115,6 +116,7 @@ const groupedNavItems: {
       { href: '/panel/map-data', icon: Map, label: 'Data Peta', permission: 'manage_map_data' },
       { href: '/panel/map-datasets', icon: Layers, label: 'Dataset Peta', permission: 'manage_map_datasets' },
       { href: '/panel/data-bank', icon: Database, label: 'Bank Data', permission: 'manage_data_bank'},
+      { href: '/panel/reports', icon: Flag, label: 'Laporan', permission: 'manage_reports' },
     ],
   },
    {
@@ -157,7 +159,7 @@ const MoreMenuSheet = () => {
                  <ScrollArea className="h-[calc(80vh-8rem)]">
                    <Accordion type="single" collapsible defaultValue={defaultAccordionValue} className="w-full">
                         {groupedNavItems.map(group => {
-                            const visibleItems = group.items.filter(item => !item.permission || hasPermission(item.permission));
+                            const visibleItems = group.items.filter(item => !item.permission || hasPermission(item.permission as PermissionId));
                             if (visibleItems.length === 0) return null;
                             
                             return (
@@ -198,7 +200,7 @@ function PanelBottomNavComponent() {
     <div className="fixed bottom-0 left-0 z-40 h-16 w-full border-t bg-background/95 backdrop-blur-lg md:hidden">
       <nav className="grid h-full grid-cols-5 items-center">
         {mainNavItems.map((item) => {
-            if (item.permission && !hasPermission(item.permission)) {
+            if (item.permission && !hasPermission(item.permission as PermissionId)) {
               return <div key={item.href} />;
             }
             const isActive = pathname.startsWith(item.href);

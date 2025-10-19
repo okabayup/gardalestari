@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -9,7 +8,7 @@ import { getUserByUsername, PublicProfile } from '@/app/actions/user';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
-import { Loader2, ShieldAlert, Award, Grid3x3, IdCard, PlusCircle, Eye, Instagram, Linkedin } from 'lucide-react';
+import { Loader2, ShieldAlert, Award, Grid3x3, IdCard, PlusCircle, Eye, Instagram, Linkedin, Flag } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { VerifiedBadge } from '@/components/members/VerifiedBadge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,6 +21,7 @@ import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
+import { ReportDialog } from '@/components/ReportDialog';
 
 const ProfilePostsGrid = ({ posts, isLoading }: { posts: PostWithAuthor[], isLoading: boolean }) => {
     if (isLoading) {
@@ -100,6 +100,7 @@ const InvalidProfileCard = () => (
 
 const UserProfileHeader = ({ user, postCount }: { user: PublicProfile, postCount: number }) => {
     const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
+    const [isReportOpen, setIsReportOpen] = useState(false);
     
     return (
       <>
@@ -110,10 +111,15 @@ const UserProfileHeader = ({ user, postCount }: { user: PublicProfile, postCount
                     <AvatarImage src={user?.avatarUrl || ''} alt={user?.name || ''} />
                     <AvatarFallback className="text-3xl">{user?.name?.charAt(0) || 'A'}</AvatarFallback>
                     </Avatar>
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                             <h1 className="text-2xl font-bold font-headline">@{user?.username}</h1>
-                             <VerifiedBadge type={user.type} />
+                    <div className="space-y-1 flex-1">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <h1 className="text-2xl font-bold font-headline">@{user?.username}</h1>
+                                <VerifiedBadge type={user.type} />
+                            </div>
+                            <Button variant="ghost" size="icon" onClick={() => setIsReportOpen(true)}>
+                                <Flag className="h-4 w-4 text-muted-foreground" />
+                            </Button>
                         </div>
                         <p className="text-muted-foreground">{user?.name}</p>
                         <p className="text-sm pt-1">{user?.position || 'Anggota Garda Lestari'}</p>
@@ -160,6 +166,13 @@ const UserProfileHeader = ({ user, postCount }: { user: PublicProfile, postCount
                 <iframe src={`/kta/${user.username}`} className="w-full h-[600px] rounded-lg border" title={`Verifikasi Anggota: ${user.name}`}/>
             </DialogContent>
         </Dialog>
+         <ReportDialog
+            isOpen={isReportOpen}
+            onClose={() => setIsReportOpen(false)}
+            reportedItemId={user.id}
+            reportedItemType="user"
+            reportedItemContent={user.username}
+        />
       </>
     )
 }
