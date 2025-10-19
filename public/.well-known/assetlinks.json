@@ -3,6 +3,7 @@
   "target": {
     "namespace": "android_app",
     "package_name": "org.gardalestari.twa",
-    "sha256_cert_fingerprints": ["1F:3B:BE:B4:ED:21:14:3B:A4:21:16:A0:C8:40:42:6D:E2:AF:0B:7D:1C:92:86:BA:52:BF:55:C7:20:89:82:8A"]
+    "sha256_cert_fingerprints":
+    ["GANTI_DENGAN_SHA256_FINGERPRINT_ANDA"]
   }
-}]
+}]]
