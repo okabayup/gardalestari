@@ -8,7 +8,7 @@ import { revalidatePath } from 'next/cache';
 import type { Achievement } from '@/lib/definitions';
 import { getAuth } from 'firebase-admin/auth';
 import admin from 'firebase-admin';
-import { checkAndAwardBadges } from './badges';
+import { checkAndAwardBadges } from '@/app/actions/badges';
 
 if (admin.apps.length === 0) {
   admin.initializeApp();

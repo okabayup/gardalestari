@@ -23,7 +23,7 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import type { Mention, MediaItem, Post, Author, PostWithAuthor, Comment, CommentWithAuthor } from '@/lib/definitions';
-import { checkAndAwardBadges } from './badges';
+import { checkAndAwardBadges } from '@/app/actions/badges';
 
 const postsCollection = collection(db, 'posts');
 const usersCollection = collection(db, 'users'); 
@@ -398,4 +398,3 @@ export async function unarchivePost(postId: string) {
         throw new Error("Gagal memulihkan postingan.");
     }
 }
-

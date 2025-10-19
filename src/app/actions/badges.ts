@@ -7,7 +7,7 @@ import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timesta
 import { revalidatePath } from 'next/cache';
 import type { Badge, BadgeMetric, Mission } from '@/lib/definitions';
 import { getUserByUid } from '@/app/actions/user';
-import { awardPointsForAction } from './points';
+import { awardPointsForAction } from '@/app/actions/points';
 
 const badgesCollection = collection(db, 'badges');
 const missionsCollection = collection(db, 'missions');

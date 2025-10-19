@@ -23,7 +23,7 @@ import {
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { Idea, IdeaWithAuthor, IdeaAuthor, IdeaCategory, VoteType, IdeaStatus, IdeaType, Challenge } from '@/lib/definitions';
-import { checkAndAwardBadges } from './badges';
+import { checkAndAwardBadges } from '@/app/actions/badges';
 
 const ideasCollection = collection(db, 'ideas');
 const usersCollection = collection(db, 'users');
