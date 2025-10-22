@@ -178,6 +178,13 @@ const defaultTemplates: Record<NotificationType, WhatsAppTemplate> = {
         message: 'Program baru telah dibuka!\n\n*{namaProgram}*\n\nBatas waktu pendaftaran: *{batasWaktu}*. Cek selengkapnya di aplikasi!',
         isActive: true,
         placeholders: ['{namaProgram}', '{batasWaktu}']
+    },
+    app_tester_approved: {
+        id: 'app_tester_approved',
+        label: 'Persetujuan Penguji Aplikasi',
+        message: 'Selamat, {namaPengguna}! Anda telah disetujui sebagai penguji aplikasi versi beta. Silakan klik tautan berikut untuk bergabung dalam program pengujian: {linkPengujian}',
+        isActive: true,
+        placeholders: ['{namaPengguna}', '{linkPengujian}']
     }
 };
 

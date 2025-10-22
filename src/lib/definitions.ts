@@ -2,7 +2,7 @@
 
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
-import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag } from 'lucide-react';
+import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2 } from 'lucide-react';
 
 export const ALL_PERMISSIONS = [
     { id: 'manage_users', label: 'Kelola Anggota & Verifikasi' },
@@ -33,6 +33,7 @@ export const ALL_PERMISSIONS = [
     { id: 'manage_ideas', label: 'Kelola Bank Ide'},
     { id: 'manage_data_bank', label: 'Kelola Bank Data'},
     { id: 'manage_reports', label: 'Kelola Laporan Pengguna'},
+    { id: 'manage_shortlinks', label: 'Kelola Shortlink' },
 ] as const;
 
 export type PermissionId = typeof ALL_PERMISSIONS[number]['id'];
@@ -51,6 +52,7 @@ export const directoryItems = [
     { href: '/evoting', label: 'E-Voting', icon: Vote },
     { href: '/points', label: 'Poin Hijau', icon: Coins },
     { href: '/content/new', label: 'Kirim Konten', icon: FilePlus },
+    { href: '/uji-aplikasi', label: 'Uji Aplikasi', icon: TestTube2 },
 ];
 
 
@@ -163,6 +165,18 @@ export interface Announcement {
   attachmentUrl?: string;
   attachmentName?: string;
 }
+
+// --- App Tester ---
+export interface AppTester {
+    id?: string;
+    name: string;
+    email: string;
+    reason: string;
+    status: 'pending' | 'approved' | 'rejected';
+    submittedAt: Timestamp;
+    processedAt?: Timestamp;
+}
+
 
 // --- Berita ---
 export interface BeritaCategory {
@@ -741,7 +755,8 @@ export type NotificationType =
   | 'member_position_updated'
   | 'event_reminder'
   | 'new_program_announcement'
-  | 'kta_activated';
+  | 'kta_activated'
+  | 'app_tester_approved';
 
 export interface WhatsAppTemplate {
   id: NotificationType;
@@ -750,6 +765,18 @@ export interface WhatsAppTemplate {
   isActive: boolean;
   placeholders: string[];
 }
+
+// --- Shortlinks ---
+export interface ShortLink {
+    id?: string; // the short code
+    title: string;
+    longUrl: string;
+    type: 'event' | 'program' | 'custom' | 'app_tester';
+    relatedId?: string; // e.g., eventId or programId
+    clicks: number;
+    createdAt: Timestamp;
+}
+
 
 // --- Assistant ---
 export const AssistantInputSchema = z.object({
