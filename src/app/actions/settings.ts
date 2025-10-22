@@ -20,6 +20,7 @@ export async function getAppSettings(): Promise<AppSettings> {
       return {
         isRegistrationOpen: true,
         isWhatsappNotificationsEnabled: false,
+        isInstallForced: true,
         linkedin: '#',
         instagram: '#',
         twitter: '#',
@@ -46,6 +47,7 @@ export async function getAppSettings(): Promise<AppSettings> {
     facebook: '#',
     isRegistrationOpen: true,
     isWhatsappNotificationsEnabled: false,
+    isInstallForced: true,
     heroImageUrl: 'https://picsum.photos/seed/paddy-field/1920/1080',
     aboutImageUrl: 'https://picsum.photos/seed/youth-farmers/800/600',
     orgChartImageUrl: 'https://picsum.photos/seed/org-chart/1200/1600',
@@ -65,7 +67,7 @@ export async function updateAppSettings(formData: FormData) {
     // Handle simple string and boolean fields
     for (const [key, value] of formData.entries()) {
         if (typeof value === 'string' && !key.endsWith('File')) {
-            if(key === 'isRegistrationOpen' || key === 'isWhatsappNotificationsEnabled' || key === 'isTestimonialsEnabled') {
+            if(key === 'isRegistrationOpen' || key === 'isWhatsappNotificationsEnabled' || key === 'isTestimonialsEnabled' || key === 'isInstallForced') {
                  dataToUpdate[key] = value === 'true';
             } else if (key.startsWith('dummy')) {
                 dataToUpdate[key] = Number(value) || 0;

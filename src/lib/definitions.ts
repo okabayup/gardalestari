@@ -1,4 +1,5 @@
 
+
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
 import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2 } from 'lucide-react';
@@ -734,6 +735,7 @@ export interface AppSettings {
   facebook: string;
   isRegistrationOpen: boolean;
   isWhatsappNotificationsEnabled: boolean;
+  isInstallForced: boolean;
   heroImageUrl: string;
   aboutImageUrl: string;
   orgChartImageUrl: string;

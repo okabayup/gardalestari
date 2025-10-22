@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -11,6 +12,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle,
 import { Separator } from '../ui/separator';
 import VerificationFlow from '../auth/VerificationFlow';
 import { getAppSettings } from '@/app/actions/settings';
+import InstallGate from './InstallGate';
 
 const navItems = [
   { href: '/berita', label: 'Berita' },
@@ -36,6 +38,8 @@ export default function LandingHeader() {
   }
 
   return (
+    <>
+    <InstallGate />
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
         <Link href="/" className="flex items-center">
@@ -103,5 +107,6 @@ export default function LandingHeader() {
         </div>
       </div>
     </header>
+    </>
   );
 }

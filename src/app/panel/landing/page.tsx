@@ -1,8 +1,9 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { getAppSettings, updateAppSettings, AppSettings } from '@/app/actions/settings';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 
 type FormData = Omit<AppSettings, 'heroImageUrl' | 'aboutImageUrl' | 'orgChartImageUrl'> & {
   heroImageFile?: FileList;
@@ -25,7 +27,7 @@ export default function LandingPageSettings() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const { register, handleSubmit, reset, watch } = useForm<FormData>();
+  const { register, handleSubmit, reset, watch, control } = useForm<FormData>();
 
   const heroImageFile = watch("heroImageFile");
   const aboutImageFile = watch("aboutImageFile");
@@ -119,6 +121,32 @@ export default function LandingPageSettings() {
         <p className="text-muted-foreground">Kelola konten yang tampil di halaman depan website Anda.</p>
       </div>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Pengaturan Umum</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+             <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                    <Label htmlFor="isInstallForced">Paksa Instalasi Aplikasi di Mobile</Label>
+                    <p className="text-xs text-muted-foreground">
+                    Jika aktif, pengguna mobile akan melihat dialog untuk menginstal aplikasi.
+                    </p>
+                </div>
+                <Controller
+                    name="isInstallForced"
+                    control={control}
+                    render={({ field }) => (
+                    <Switch
+                        id="isInstallForced"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                    />
+                    )}
+                />
+            </div>
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader>
             <CardTitle>Gambar</CardTitle>
