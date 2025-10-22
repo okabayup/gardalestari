@@ -32,6 +32,16 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
   rowSelection?: Record<string, boolean>;
   setRowSelection?: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  placeholder?: string;
+  facetedFilters?: {
+    columnId: string;
+    title: string;
+    options: {
+      label: string;
+      value: string;
+      icon?: React.ComponentType<{ className?: string }>;
+    }[];
+  }[];
 }
 
 export function DataTable<TData, TValue>({
@@ -39,6 +49,8 @@ export function DataTable<TData, TValue>({
   data,
   rowSelection,
   setRowSelection,
+  placeholder,
+  facetedFilters,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -67,7 +79,11 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <DataTableToolbar table={table} />
+      <DataTableToolbar 
+        table={table} 
+        placeholder={placeholder} 
+        facetedFilters={facetedFilters} 
+      />
       <div className="rounded-md border">
         <Table>
           <TableHeader>

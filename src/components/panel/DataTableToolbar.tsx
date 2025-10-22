@@ -9,13 +9,26 @@ import { Input } from "@/components/ui/input"
 import { DataTableFacetedFilter } from "./DataTableFacetedFilter"
 import { memberTypes, verificationStatuses } from "@/lib/definitions"
 
+interface FacetedFilterConfig {
+  columnId: string;
+  title: string;
+  options: {
+    label: string;
+    value: string;
+    icon?: React.ComponentType<{ className?: string }>;
+  }[];
+}
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>
+  placeholder?: string;
+  facetedFilters?: FacetedFilterConfig[];
 }
 
 export function DataTableToolbar<TData>({
   table,
+  placeholder = "Cari...",
+  facetedFilters = [],
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0
 
@@ -23,25 +36,23 @@ export function DataTableToolbar<TData>({
     <div className="flex items-center justify-between">
       <div className="flex flex-1 items-center space-x-2">
         <Input
-          placeholder="Cari anggota..."
+          placeholder={placeholder}
           value={(table.getState().globalFilter as string) ?? ""}
           onChange={(event) => table.setGlobalFilter(event.target.value)}
           className="h-8 w-[150px] lg:w-[250px]"
         />
-        {table.getColumn("type") && (
-          <DataTableFacetedFilter
-            column={table.getColumn("type")}
-            title="Jenis"
-            options={memberTypes.map(mt => ({label: mt.label, value: mt.value}))}
-          />
-        )}
-        {table.getColumn("verificationStatus") && (
-          <DataTableFacetedFilter
-            column={table.getColumn("verificationStatus")}
-            title="Status"
-            options={verificationStatuses.map(vs => ({label: vs.label, value: vs.value}))}
-          />
-        )}
+        {facetedFilters.map(filter => {
+          const column = table.getColumn(filter.columnId);
+          if (!column) return null;
+          return (
+            <DataTableFacetedFilter
+              key={filter.columnId}
+              column={column}
+              title={filter.title}
+              options={filter.options}
+            />
+          )
+        })}
         {isFiltered && (
           <Button
             variant="ghost"

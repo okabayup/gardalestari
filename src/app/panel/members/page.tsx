@@ -39,6 +39,7 @@ import { DataTable } from '@/components/panel/DataTable';
 import { columns } from './columns';
 import { Badge } from '@/components/ui/badge';
 import type { Timestamp } from 'firebase/firestore';
+import { memberTypes, verificationStatuses } from '@/lib/definitions';
 
 
 export default function AdminMembersPage() {
@@ -212,6 +213,12 @@ export default function AdminMembersPage() {
         },
   ], []);
 
+  const facetedFilters = [
+    { columnId: 'type', title: 'Jenis', options: memberTypes.map(mt => ({ label: mt.label, value: mt.value })) },
+    { columnId: 'verificationStatus', title: 'Status', options: verificationStatuses.map(vs => ({ label: vs.label, value: vs.value })) },
+  ];
+
+
   return (
     <>
       <div className="space-y-6">
@@ -230,7 +237,12 @@ export default function AdminMembersPage() {
                 <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
             </div>
         ) : (
-            <DataTable columns={memoizedColumns} data={members} />
+            <DataTable 
+              columns={memoizedColumns} 
+              data={members} 
+              placeholder="Cari anggota..."
+              facetedFilters={facetedFilters}
+            />
         )}
       </div>
       {selectedMember && (

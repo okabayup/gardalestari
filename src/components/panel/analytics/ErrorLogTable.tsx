@@ -93,5 +93,5 @@ const columns: ColumnDef<ErrorLog>[] = [
 ];
 
 export default function ErrorLogTable({ data }: { data: ErrorLog[] }) {
-    return <DataTable columns={columns} data={data} />
+    return <DataTable columns={columns} data={data} placeholder="Cari error..." />
 }
