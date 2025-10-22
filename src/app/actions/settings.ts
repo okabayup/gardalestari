@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -20,7 +19,7 @@ export async function getAppSettings(): Promise<AppSettings> {
       return {
         isRegistrationOpen: true,
         isWhatsappNotificationsEnabled: false,
-        isInstallForced: true,
+        isInstallForced: false,
         linkedin: '#',
         instagram: '#',
         twitter: '#',
@@ -47,7 +46,7 @@ export async function getAppSettings(): Promise<AppSettings> {
     facebook: '#',
     isRegistrationOpen: true,
     isWhatsappNotificationsEnabled: false,
-    isInstallForced: true,
+    isInstallForced: false,
     heroImageUrl: 'https://picsum.photos/seed/paddy-field/1920/1080',
     aboutImageUrl: 'https://picsum.photos/seed/youth-farmers/800/600',
     orgChartImageUrl: 'https://picsum.photos/seed/org-chart/1200/1600',

@@ -20,12 +20,6 @@ export default function FeedPage() {
   const { toast } = useToast();
   const loaderRef = useRef<HTMLDivElement>(null);
   
-  useEffect(() => {
-    if (typeof document !== 'undefined' && document.referrer && !document.referrer.includes('android-app://')) {
-      window.location.href = 'https://play.google.com/store/apps/details?id=org.gardalestari.twa';
-    }
-  }, []);
-
   const fetchPosts = useCallback(async (isInitial = false) => {
       if (!user) return;
       
