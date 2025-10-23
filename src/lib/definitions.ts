@@ -2,7 +2,7 @@
 
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
-import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Gift, Target, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook } from 'lucide-react';
+import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank } from 'lucide-react';
 
 export const ALL_PERMISSIONS = [
     { id: 'manage_users', label: 'Kelola Anggota & Verifikasi' },
@@ -139,8 +139,8 @@ export interface JournalEntry {
 
 export interface FinancialReportData {
     incomeStatement: {
-        revenues: { name: string; total: number }[];
-        expenses: { name: string; total: number }[];
+        revenues: { name: string; total: number; budget?: number }[];
+        expenses: { name: string; total: number; budget?: number }[];
         netIncome: number;
         revenueTrend: { date: string; Pendapatan: number }[];
         expenseTrend: { date: string; Beban: number }[];
@@ -169,6 +169,14 @@ export interface FixedAsset {
   createdAt: Timestamp;
 }
 
+export interface Budget {
+    id?: string;
+    accountId: string;
+    accountName: string;
+    period: string; // YYYY-MM
+    amount: number;
+    createdAt: Timestamp;
+}
 
 
 export interface IdeaStatus {

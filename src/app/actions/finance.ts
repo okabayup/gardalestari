@@ -19,13 +19,67 @@ import {
   increment,
   Timestamp,
   where,
+  setDoc,
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
-import type { Account, JournalEntry, JournalTransaction, FinancialReportData } from '@/lib/definitions';
-import { format } from 'date-fns';
+import type { Account, JournalEntry, JournalTransaction, FinancialReportData, Budget } from '@/lib/definitions';
+import { format, getMonth, getYear } from 'date-fns';
 
 const accountsCollection = collection(db, 'accounts');
 const journalEntriesCollection = collection(db, 'journalEntries');
+const budgetsCollection = collection(db, 'budgets');
+
+
+// --- Budget Management ---
+
+/**
+ * Fetches all budget entries for a specific period (YYYY-MM).
+ * @param period - The period string, e.g., "2024-08".
+ * @returns A promise that resolves to an array of Budget objects.
+ */
+export async function getBudgetsForPeriod(period: string): Promise<Budget[]> {
+    try {
+        const q = query(budgetsCollection, where('period', '==', period));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Budget));
+    } catch (error) {
+        console.error("[getBudgetsForPeriod Error]", error);
+        throw new Error("Gagal mengambil data anggaran.");
+    }
+}
+
+/**
+ * Saves or updates multiple budget entries for a specific period.
+ * @param period - The period string, e.g., "2024-08".
+ * @param budgets - An array of budget data to save.
+ */
+export async function saveBudgets(period: string, budgets: { accountId: string, accountName: string, amount: number }[]) {
+    try {
+        const batch = writeBatch(db);
+        
+        for (const budget of budgets) {
+            // Use a composite ID to ensure one budget per account per period
+            const docId = `${period}_${budget.accountId}`;
+            const docRef = doc(db, 'budgets', docId);
+
+            batch.set(docRef, {
+                period: period,
+                accountId: budget.accountId,
+                accountName: budget.accountName,
+                amount: budget.amount,
+                createdAt: serverTimestamp(),
+            }, { merge: true });
+        }
+        
+        await batch.commit();
+        revalidatePath('/panel/finance/budgets');
+        revalidatePath('/panel/finance/reports');
+    } catch (error) {
+        console.error("[saveBudgets Error]", error);
+        throw new Error("Gagal menyimpan data anggaran.");
+    }
+}
+
 
 // --- Chart of Accounts (CoA) Management ---
 
@@ -152,6 +206,8 @@ export async function createJournalEntry(data: Omit<JournalEntry, 'id' | 'create
 
     revalidatePath('/panel/finance/journal');
     revalidatePath('/panel/finance/accounts');
+    revalidatePath('/panel/finance/reports');
+    revalidatePath('/panel/finance/dashboard');
   } catch (error) {
     console.error("[createJournalEntry Error]", error);
     throw new Error(`Gagal membuat entri jurnal: ${(error as Error).message}`);
@@ -206,6 +262,17 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
     const accounts = await getAccounts();
     const accountsMap = new Map(accounts.map(acc => [acc.id!, acc]));
     
+    // Fetch budgets for the period
+    const periods = new Set<string>();
+    for (let d = new Date(startDate); d <= endDate; d.setMonth(d.getMonth() + 1)) {
+        periods.add(format(d, 'yyyy-MM'));
+    }
+    const budgetPromises = Array.from(periods).map(p => getBudgetsForPeriod(p));
+    const budgetResults = await Promise.all(budgetPromises);
+    const allBudgets = budgetResults.flat();
+    const budgetMap = new Map(allBudgets.map(b => [b.accountId, (budgetMap.get(b.accountId) || 0) + b.amount]));
+
+
     const cashAccount = accounts.find(a => a.name.toLowerCase().includes('kas'));
     const cashPosition = cashAccount?.balance || 0;
 
@@ -267,7 +334,7 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
       if (acc.category === 'Pendapatan' || acc.category === 'Beban') {
         const total = accountPeriodChanges.get(acc.id!) || 0;
         if (total !== 0) {
-            const item = { name: acc.name, total };
+            const item = { name: acc.name, total, budget: budgetMap.get(acc.id!) || 0 };
             if (acc.category === 'Pendapatan') report.incomeStatement.revenues.push(item);
             else report.incomeStatement.expenses.push(item);
         }
