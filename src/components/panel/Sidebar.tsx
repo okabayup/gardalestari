@@ -4,6 +4,7 @@
 import Link from 'next/link';
 import {
   Home,
+  ChevronLeft
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
@@ -14,7 +15,7 @@ import type { PermissionId } from '@/lib/definitions';
 import { usePanelBadges } from '@/hooks/use-panel-badges';
 import { Badge } from '../ui/badge';
 import { panelDirectoryItems } from '@/lib/definitions';
-import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupLabel, SidebarMenuBadge } from '../ui/sidebar';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '../ui/sidebar';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 export function PanelSidebarContent() {
@@ -32,6 +33,14 @@ export function PanelSidebarContent() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
+            <SidebarMenuItem>
+             <SidebarMenuButton asChild tooltip={{children: 'Kembali ke Beranda'}}>
+                  <Link href="/feed">
+                    <ChevronLeft />
+                    <span>Kembali ke Beranda</span>
+                  </Link>
+              </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
              <SidebarMenuButton asChild isActive={pathname === '/panel/dashboard'} tooltip={{children: 'Dasbor'}}>
                   <Link href="/panel/dashboard">
@@ -69,7 +78,7 @@ export function PanelSidebarContent() {
                                             <span>{item.label}</span>
                                         </Link>
                                     </SidebarMenuButton>
-                                    {badgeCount > 0 && <SidebarMenuBadge>{badgeCount}</SidebarMenuBadge>}
+                                    {badgeCount > 0 && <Badge className="absolute right-2 top-1.5 group-data-[collapsible=icon]:hidden">{badgeCount}</Badge>}
                                 </SidebarMenuItem>
                               )
                           })}
