@@ -25,7 +25,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }
   
   // If user is unverified, force them into the verification flow.
-  if (user.verificationStatus === 'unverified' && !pathname.startsWith('/profile/me')) {
+  if (user.verificationStatus === 'unverified') {
     return <VerificationFlow />;
   }
 
@@ -41,7 +41,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const showBottomNav = !isMapPage && !isPanelPage;
   
   return (
-    <div className="relative mx-auto flex h-screen w-full max-w-lg flex-col bg-background">
+    <div className="relative mx-auto flex h-dvh w-full max-w-lg flex-col bg-background">
         <>
           {showHeader && <Header />}
           <main className="flex-1 overflow-auto">{children}</main>

@@ -9,6 +9,7 @@ import { PanelSidebarContent } from '@/components/panel/Sidebar';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
 import { PanelBadgesProvider } from '@/hooks/use-panel-badges';
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -33,9 +34,25 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
                 <Sidebar collapsible="icon" className="hidden md:block">
                     <PanelSidebarContent />
                 </Sidebar>
-                <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
-                    {children}
-                </main>
+                <SidebarInset>
+                    <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+                        <Sheet>
+                            <SheetTrigger asChild>
+                                <Button size="icon" variant="outline" className="md:hidden">
+                                    <Menu className="h-5 w-5" />
+                                    <span className="sr-only">Toggle Menu</span>
+                                </Button>
+                            </SheetTrigger>
+                            <SheetContent side="left" className="p-0">
+                                <PanelSidebarContent />
+                            </SheetContent>
+                        </Sheet>
+                        <SidebarTrigger className="hidden md:flex" />
+                    </header>
+                    <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
+                        {children}
+                    </main>
+                </SidebarInset>
             </div>
           </PanelBadgesProvider>
       </SidebarProvider>
