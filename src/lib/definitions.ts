@@ -65,8 +65,8 @@ export const panelDirectoryItems: {
     items: [
       { href: '/panel/finance/dashboard', icon: LayoutDashboard, label: 'Dasbor', permission: 'manage_finance' },
       { href: '/panel/finance/invoices', icon: FileText, label: 'Faktur Penjualan', permission: 'manage_finance' },
-      { href: '/panel/finance/journal', icon: BookOpen, label: 'Jurnal Umum', permission: 'manage_finance' },
-      { href: '/panel/finance/accounts', icon: Notebook, label: 'Bagan Akun', permission: 'manage_finance' },
+      { href: '/panel/finance/journal', icon: BookOpen, label: 'Buku Jurnal', permission: 'manage_finance' },
+      { href: '/panel/finance/accounts', icon: Notebook, label: 'Daftar Akun', permission: 'manage_finance' },
       { href: '/panel/finance/ledger', icon: BookCopy, label: 'Buku Besar', permission: 'manage_finance' },
       { href: '/panel/finance/contacts', icon: Contact, label: 'Kontak', permission: 'manage_finance' },
       { href: '/panel/finance/assets', icon: Package, label: 'Manajemen Aset', permission: 'manage_finance' },
@@ -1078,6 +1078,7 @@ export interface PublicProfile extends PublicUser {
 }
     
     
+
 
 
 

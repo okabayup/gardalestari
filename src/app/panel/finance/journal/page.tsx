@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -50,11 +48,11 @@ export default function JournalPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-headline text-2xl font-bold">Jurnal Umum</h1>
+          <h1 className="font-headline text-2xl font-bold">Buku Jurnal</h1>
           <p className="text-muted-foreground">Catatan semua transaksi keuangan yang terjadi.</p>
         </div>
          <Button onClick={() => router.push('/panel/finance/journal/new')}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Tambah Entri
+            <PlusCircle className="mr-2 h-4 w-4" /> Buat Entri Baru
         </Button>
       </div>
 
@@ -111,5 +109,3 @@ export default function JournalPage() {
     </div>
   );
 }
-
-    

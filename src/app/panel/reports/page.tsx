@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -26,9 +25,9 @@ const reasonLabels: Record<Report['reason'], string> = {
   spam: 'Spam/Promosi',
   scam: 'Penipuan',
   ujaran_kebencian: 'Ujaran Kebencian',
-  pelecehan: 'Pelecehan',
-  konten_ilegal: 'Konten Ilegal',
-  lainnya: 'Lainnya',
+  pelecehan: 'Pelecehan atau Perundungan',
+  konten_ilegal: 'Konten Ilegal atau Berbahaya',
+  lainnya: 'Alasan Lainnya',
   csae: 'CSAE',
 };
 

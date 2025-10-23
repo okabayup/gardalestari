@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -60,7 +59,7 @@ const AccountFormDialog = ({ account, onSave, isSaving, onClose }: { account?: A
         <DialogHeader>
           <DialogTitle>{account ? 'Edit Akun' : 'Tambah Akun Baru'}</DialogTitle>
           <DialogDescription>
-            Isi detail untuk akun dalam Bagan Akun Anda.
+            Isi detail untuk akun dalam Daftar Akun Anda.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSave)} className="space-y-4">
@@ -133,7 +132,7 @@ export default function ChartOfAccountsPage() {
       const fetchedData = await getAccounts();
       setAccounts(fetchedData);
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Gagal memuat Bagan Akun' });
+      toast({ variant: 'destructive', title: 'Gagal memuat Daftar Akun' });
     } finally {
       setLoading(false);
     }
@@ -181,7 +180,7 @@ export default function ChartOfAccountsPage() {
     <>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="font-headline text-2xl font-bold">Bagan Akun (Chart of Accounts)</h1>
+          <h1 className="font-headline text-2xl font-bold">Daftar Akun</h1>
           <p className="text-muted-foreground">Kelola semua akun keuangan yang digunakan dalam organisasi.</p>
         </div>
         <Button onClick={() => { setSelectedAccount(null); setIsDialogOpen(true); }}>
