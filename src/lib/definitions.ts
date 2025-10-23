@@ -134,10 +134,11 @@ export const panelDirectoryItems: {
 ];
 
 export const initialAccounts = [
-  // Aset
+  // Aset Lancar
   { code: '1-1100', name: 'Kas dan Setara Kas', category: 'Aset' as const, normalBalance: 'Debit' as const },
   { code: '1-1200', name: 'Piutang Usaha', category: 'Aset' as const, normalBalance: 'Debit' as const },
   { code: '1-1300', name: 'Investasi Jangka Pendek', category: 'Aset' as const, normalBalance: 'Debit' as const },
+  // Aset Tidak Lancar
   { code: '1-2100', name: 'Aset Tetap', category: 'Aset' as const, normalBalance: 'Debit' as const },
   { code: '1-2199', name: 'Akumulasi Penyusutan Aset', category: 'Aset' as const, normalBalance: 'Kredit' as const },
   { code: '1-2200', name: 'Investasi Jangka Panjang', category: 'Aset' as const, normalBalance: 'Debit' as const },
@@ -1078,6 +1079,7 @@ export interface PublicProfile extends PublicUser {
 }
     
     
+
 
 
 
