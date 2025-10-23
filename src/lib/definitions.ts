@@ -2,7 +2,7 @@
 
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
-import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact, LayoutDashboard, Package, Bell } from 'lucide-react';
+import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact, LayoutDashboard, Package } from 'lucide-react';
 
 export const ALL_PERMISSIONS = [
     { id: 'manage_users', label: 'Kelola Anggota & Verifikasi' },
@@ -134,31 +134,35 @@ export const panelDirectoryItems: {
   }
 ];
 
+export const initialAccounts = [
+  // Aset
+  { code: '1-1100', name: 'Kas dan Setara Kas', category: 'Aset' as const, normalBalance: 'Debit' as const },
+  { code: '1-1200', name: 'Piutang Usaha', category: 'Aset' as const, normalBalance: 'Debit' as const },
+  { code: '1-1300', name: 'Investasi Jangka Pendek', category: 'Aset' as const, normalBalance: 'Debit' as const },
+  { code: '1-2100', name: 'Aset Tetap', category: 'Aset' as const, normalBalance: 'Debit' as const },
+  { code: '1-2199', name: 'Akumulasi Penyusutan Aset', category: 'Aset' as const, normalBalance: 'Kredit' as const },
+  { code: '1-2200', name: 'Investasi Jangka Panjang', category: 'Aset' as const, normalBalance: 'Debit' as const },
+  
+  // Liabilitas
+  { code: '2-1100', name: 'Utang Usaha', category: 'Liabilitas' as const, normalBalance: 'Kredit' as const },
+  { code: '2-2100', name: 'Utang Jangka Panjang', category: 'Liabilitas' as const, normalBalance: 'Kredit' as const },
 
-export const initialPositions = [
-    "Dewan Pembina",
-    "Dewan Pengawas",
-    "Dewan Penasihat",
-    "Ketua Umum",
-    "Ketua Harian",
-    "Sekretaris Jenderal",
-    "Staf Administrasi Internal",
-    "Staf Administrasi Eksternal",
-    "Bendahara Umum",
-    "Staf Keuangan Organisasi",
-    "Staf Keuangan Program",
-    "Wakil Ketua Bidang Teknis & Program",
-    "Agro (Pertanian Berkelanjutan)",
-    "Maritim (Kelautan & Perikanan)",
-    "Kehutanan (Agroforestri & Rehabilitasi)",
-    "Perdagangan Karbon & Energi Hijau",
-    "Wakil Ketua Bidang Pendukung & Strategis",
-    "Hubungan Eksternal & Kemitraan",
-    "Relawan & Kampanye Digital",
-    "Kewirausahaan & Inkubasi",
-    "Kajian Hukum & Regulasi",
-    "Data & Analisis (Data Analyst Unit)",
-    "Penelitian & Inovasi",
+  // Ekuitas
+  { code: '3-1100', name: 'Modal Disetor', category: 'Ekuitas' as const, normalBalance: 'Kredit' as const },
+  { code: '3-1200', name: 'Laba Ditahan', category: 'Ekuitas' as const, normalBalance: 'Kredit' as const },
+  { code: '3-3000', name: 'Laba (Rugi) Belum Direalisasi', category: 'Ekuitas' as const, normalBalance: 'Kredit' as const },
+
+  // Pendapatan
+  { code: '4-1100', name: 'Pendapatan Jasa', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
+  { code: '4-1200', name: 'Pendapatan Donasi', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
+  { code: '4-8000', name: 'Pendapatan (Beban) Lain-lain', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
+
+  // Beban
+  { code: '5-1100', name: 'Beban Gaji', category: 'Beban' as const, normalBalance: 'Debit' as const },
+  { code: '5-1200', name: 'Beban Sewa', category: 'Beban' as const, normalBalance: 'Debit' as const },
+  { code: '5-1300', name: 'Beban Utilitas', category: 'Beban' as const, normalBalance: 'Debit' as const },
+  { code: '5-1400', name: 'Beban Operasional Program', category: 'Beban' as const, normalBalance: 'Debit' as const },
+  { code: '5-2100', name: 'Beban Penyusutan', category: 'Beban' as const, normalBalance: 'Debit' as const },
 ];
 
 export const initialDocumentTypes = [
@@ -308,7 +312,6 @@ export interface Report {
     reporterId: string;
     reporterName: string;
     reportedItemId: string; // User ID or Post ID
-    reportedItemType: ReportType;
     reportedItemContent?: string; // e.g., username, post caption
     reason: ReportReason;
     details?: string;
@@ -1076,5 +1079,6 @@ export interface PublicProfile extends PublicUser {
 }
     
     
+
 
 

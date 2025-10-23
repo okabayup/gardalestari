@@ -1,17 +1,15 @@
-
-
 'use server';
 
 import { collection, addDoc, getDocs, query, limit } from 'firebase/firestore';
 import { db } from './firebase';
-import { initialPositions, initialDocumentTypes } from './definitions';
+import { initialAccounts, initialDocumentTypes } from './definitions';
 
 const ideaCategoriesCollection = collection(db, 'ideaCategories');
 const beritaCategoriesCollection = collection(db, 'beritaCategories');
 const documentCategoriesCollection = collection(db, 'documentCategories');
 const docTypesCollection = collection(db, 'documentTypes');
 const programTagsCollection = collection(db, 'programTags');
-const positionsCollection = collection(db, 'positions');
+const accountsCollection = collection(db, 'accounts');
 
 const initialIdeaCategories = [
     'Agrikultur', 'Maritim', 'Kehutanan', 'Teknologi', 'Pemasaran', 'Komunitas', 'Lainnya'
@@ -64,6 +62,6 @@ export async function seedInitialData() {
     await seedCollection(beritaCategoriesCollection, initialBeritaCategories, 'beritaCategories');
     await seedCollection(documentCategoriesCollection, initialDocumentCategories, 'documentCategories');
     await seedCollection(programTagsCollection, initialProgramTags, 'programTags');
-    await seedCollection(positionsCollection, initialPositions.map(name => ({ name, permissions: [] })), 'positions');
+    await seedCollection(accountsCollection, initialAccounts, 'accounts');
     await seedCollection(docTypesCollection, initialDocumentTypes, 'documentTypes');
 }
