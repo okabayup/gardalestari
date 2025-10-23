@@ -44,6 +44,7 @@ export default function Header() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const isAdmin = user?.permissions && user.permissions.length > 0;
   
   useEffect(() => {
     if (user) {
@@ -102,6 +103,11 @@ export default function Header() {
           {user && (
             <>
                <GlobalSearch />
+                {isAdmin && (
+                  <Button variant="outline" size="sm" className="hidden sm:flex" asChild>
+                    <Link href="/panel/dashboard"><Shield className="mr-2 h-4 w-4" /> Panel Admin</Link>
+                  </Button>
+                )}
                <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetTrigger asChild>
                    <Button variant="ghost" size="icon" className="relative" onClick={handleOpenSheet}>
@@ -164,8 +170,8 @@ export default function Header() {
                       <span>Poin Hijau</span>
                     </div>
                   </DropdownMenuItem>
-                  {user.permissions && user.permissions.length > 0 && (
-                      <DropdownMenuItem onClick={() => router.push('/panel/dashboard')} className="cursor-pointer">
+                  {isAdmin && (
+                      <DropdownMenuItem onClick={() => router.push('/panel/dashboard')} className="cursor-pointer sm:hidden">
                           <Shield className="mr-2 h-4 w-4" />
                           <span>Panel Admin</span>
                       </DropdownMenuItem>

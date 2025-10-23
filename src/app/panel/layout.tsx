@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useAuth } from '@/hooks/use-auth';
@@ -34,24 +33,11 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
                 <Sidebar collapsible="icon" className="hidden md:block">
                     <PanelSidebarContent />
                 </Sidebar>
-                <SidebarInset>
-                    <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4">
-                      <SidebarTrigger asChild className="md:hidden">
-                        <Button size="icon" variant="outline">
-                          <Menu className="h-5 w-5" />
-                          <span className="sr-only">Toggle Menu</span>
-                        </Button>
-                      </SidebarTrigger>
-                      <h1 className="flex-1 text-lg font-semibold capitalize">{pathname.split('/').pop()?.replace(/-/g, ' ')}</h1>
-                    </header>
-                    <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
-                        {children}
-                    </main>
-                </SidebarInset>
+                <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
+                    {children}
+                </main>
             </div>
           </PanelBadgesProvider>
       </SidebarProvider>
   );
 }
-
-    

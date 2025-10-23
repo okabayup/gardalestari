@@ -33,8 +33,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const showWaVerification = user.verificationStatus !== 'unverified' && !user.waVerified;
   
   const isMapPage = pathname === '/map';
-  const showHeader = !isMapPage && !pathname.startsWith('/panel');
-  const showBottomNav = !isMapPage;
+  
+  // Determine if the current page is a panel page.
+  const isPanelPage = pathname.startsWith('/panel');
+
+  const showHeader = !isMapPage && !isPanelPage;
+  const showBottomNav = !isMapPage && !isPanelPage;
   
   return (
     <div className="relative mx-auto flex h-screen w-full max-w-lg flex-col bg-background">
