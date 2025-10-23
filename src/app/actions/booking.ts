@@ -17,12 +17,17 @@ const addonsCollection = collection(db, 'addons');
 
 /**
  * Creates a new booking for an Eduwisata package.
- * This function should be called after a successful payment transaction.
+ * This function initiates the booking and sets its status to 'pending'.
  * @param bookingData - The core booking information.
  * @returns The ID of the newly created booking.
  */
-export async function createBooking(bookingData: Omit<Booking, 'id' | 'createdAt' | 'status'>): Promise<string> {
+export async function createBooking(bookingData: Omit<Booking, 'id' | 'createdAt' | 'status' | 'totalPrice'>): Promise<{ bookingId: string; finalAmount: number; }> {
   try {
+    // Generate a unique 3-digit code for the transfer
+    const uniqueCode = Math.floor(100 + Math.random() * 900);
+    const basePrice = bookingData.selectedAddons.reduce((acc, item) => acc + (item.price * item.quantity), 0); // Assuming base package price is included or handled separately
+    const finalAmount = basePrice + uniqueCode;
+
     const bookingId = await runTransaction(db, async (transaction) => {
       // 1. Decrement stock for selected add-ons atomically
       for (const item of bookingData.selectedAddons) {
@@ -49,12 +54,12 @@ export async function createBooking(bookingData: Omit<Booking, 'id' | 'createdAt
         transaction.update(addonRef, { stock: newStock });
       }
 
-      // 2. Create the booking document
+      // 2. Create the booking document with 'pending' status
       const newBookingRef = doc(bookingsCollection);
-      const newBooking: Booking = {
+      const newBooking: Omit<Booking, 'id'> = {
         ...bookingData,
-        id: newBookingRef.id,
-        status: 'confirmed', // Assuming payment is confirmed at this point
+        totalPrice: finalAmount,
+        status: 'pending', // Set initial status to pending payment
         createdAt: Timestamp.now(),
       };
       transaction.set(newBookingRef, newBooking);
@@ -65,9 +70,8 @@ export async function createBooking(bookingData: Omit<Booking, 'id' | 'createdAt
     // 3. Revalidate paths to update caches
     revalidatePath('/admin/bookings'); // Assuming an admin page for bookings
 
-    // 4. (Optional) Send confirmation email/notification to the user
-
-    return bookingId;
+    // 4. Return the booking ID and the final amount for the user to pay
+    return { bookingId, finalAmount };
 
   } catch (error) {
     console.error('[createBooking Error]', error);
@@ -76,59 +80,38 @@ export async function createBooking(bookingData: Omit<Booking, 'id' | 'createdAt
 }
 
 /**
- * --- BRAINSTORMING: PAYMENT GATEWAY INTEGRATION ---
+ * --- BRAINSTORMING: UNIQUE CODE BANK TRANSFER PAYMENT ---
  * 
- * To connect this to a payment gateway (e.g., Midtrans, Xendit):
+ * This method avoids direct payment gateway integration and relies on manual verification by an admin,
+ * which is simplified by a unique payment amount.
  * 
  * 1. **Initiate Transaction (Client-side):**
- *    - User finalizes their booking details (package, add-ons, date).
- *    - Client-side code calculates the total price and makes a request to a serverless function (Next.js API route) to create a payment transaction.
- *    - This serverless function communicates with the payment gateway SDK, providing the amount and order details.
- *    - The payment gateway returns a `transaction_token` or a `redirect_url`.
- *    - The client-side then uses this token to open the payment gateway's checkout UI (e.g., Midtrans Snap.js).
+ *    - User finalizes their booking details.
+ *    - Client calls the `createBooking` server action.
+ *    - The `createBooking` action:
+ *      a. Generates a unique 3-digit code (e.g., 123).
+ *      b. Calculates the `finalAmount` (e.g., total price of 150,000 becomes 150,123).
+ *      c. Creates a booking document in Firestore with `status: 'pending'` and saves the `finalAmount`.
+ *      d. Returns the `bookingId` and `finalAmount` to the client.
+ *    - The client-side UI then displays a "Waiting for Payment" page with:
+ *      a. The exact amount to transfer (Rp 150.123).
+ *      b. The bank account details (Bank Name, Account Number, Account Holder Name).
+ *      c. A deadline for the payment (e.g., "Please complete payment within 1 hour").
  * 
- * 2. **Handle Payment Notification (Server-side Webhook):**
- *    - The payment gateway will send a notification (webhook) to a dedicated API endpoint in our app (e.g., `/api/payment/webhook`).
- *    - This webhook handler MUST verify the signature of the request to ensure it's genuinely from the payment gateway.
- *    - On successful payment notification (`transaction_status === 'settlement'`), the webhook handler will:
- *      a. Call the `createBooking` function with the booking data (which should have been stored temporarily, e.g., in a 'pending_bookings' collection, or passed in the transaction metadata).
- *      b. This ensures that the stock is only decremented and the booking is only finalized AFTER payment is confirmed.
+ * 2. **Manual Payment Confirmation (Admin Workflow):**
+ *    - The admin periodically checks their bank account statement.
+ *    - They look for incoming transfers with unique amounts (e.g., Rp 150.123).
+ *    - When a matching transfer is found, the admin goes to the Admin Panel (`/panel/bookings`).
+ *    - In the panel, they find the booking with the corresponding `pending` status and `totalPrice`.
+ *    - The admin manually updates the booking status from 'pending' to 'confirmed' or 'paid'.
  * 
- * 3. **Update Booking Status:**
- *    - The `createBooking` function would set the booking status to 'confirmed' or 'paid'.
- *    - If a payment fails or is cancelled, the webhook handler would update the temporary booking's status accordingly.
- * 
- * Example `createPaymentTransaction` function (in a Next.js API route):
- * 
- * ```typescript
- * import midtransClient from 'midtrans-client';
- * 
- * // ... (inside your API route handler)
- * 
- * const snap = new midtransClient.Snap({
- *   isProduction: false,
- *   serverKey: process.env.MIDTRANS_SERVER_KEY,
- *   clientKey: process.env.MIDTRANS_CLIENT_KEY
- * });
- * 
- * const parameter = {
- *   transaction_details: {
- *     order_id: `booking-${Date.now()}`, // Should be a unique ID
- *     gross_amount: totalPrice,
- *   },
- *   customer_details: {
- *     first_name: customerName,
- *     email: customerEmail,
- *   },
- *   // You can pass booking details here to retrieve in the webhook
- *   metadata: {
- *      packageId: 'eduwisata-basic',
- *      // ... other booking details
- *   }
- * };
- * 
- * const transaction = await snap.createTransaction(parameter);
- * res.status(200).json(transaction);
- * ```
+ * 3. **Handle Payment Notification (Server-side):**
+ *    - When the admin updates the status, a server-side trigger (or an explicit action) can be fired.
+ *    - This trigger sends a confirmation notification (e.g., via WhatsApp or email) to the user,
+ *      informing them that their payment has been received and their booking is confirmed.
+ *
+ * 4. **Handling Expired Bookings:**
+ *    - A scheduled function (e.g., a cron job or Firebase Scheduled Function) can run periodically (e.g., every hour).
+ *    - This function queries for `pending` bookings older than the payment deadline (e.g., 1 hour).
+ *    - For each expired booking, it reverts the stock decremented in step 1 and updates the booking status to 'cancelled'.
  */
-
