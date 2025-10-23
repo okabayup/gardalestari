@@ -13,12 +13,12 @@ import { revalidatePath } from 'next/cache';
 import type { Booking, Addon } from '@/lib/definitions';
 
 const bookingsCollection = collection(db, 'bookings');
-const addonsCollection = collection(db, 'addons');
+const addonsCollection = doc(db, 'edutourismAddons');
 
 /**
  * Creates a new booking for an Eduwisata package.
  * This function initiates the booking and sets its status to 'pending'.
- * @param bookingData - The core booking information.
+ * @param bookingData - The core booking information, including the new fields.
  * @returns The ID of the newly created booking and the final amount to be paid.
  */
 export async function createBooking(
@@ -89,18 +89,18 @@ export async function createBooking(
  * oleh admin, yang disederhanakan dengan jumlah pembayaran yang unik.
  * 
  * 1. **Inisiasi Transaksi (Client-side):**
- *    - Pengguna menyelesaikan detail pemesanan mereka.
+ *    - Pengguna menyelesaikan detail pemesanan mereka (paket, tanggal, addons, data diri).
  *    - Client memanggil `createBooking` server action.
  *    - `createBooking` akan:
  *      a. Menghasilkan kode unik 3-digit (misal: 123).
  *      b. Menghitung `finalAmount` (misal: total harga 150.000 menjadi 150.123).
- *      c. Membuat dokumen booking di Firestore dengan `status: 'pending'` dan menyimpan `finalAmount` & `uniqueCode`.
+ *      c. Membuat dokumen booking di Firestore dengan `status: 'pending'` dan menyimpan semua data termasuk `finalAmount` & `uniqueCode`.
  *      d. Mengembalikan `bookingId` dan `finalAmount` ke client.
  *    - UI client kemudian menampilkan halaman "Menunggu Pembayaran" dengan:
  *      a. Jumlah yang harus ditransfer: Rp 150.123.
  *      b. Detail rekening bank: BCA 1801802325 a.n. Oka Bayu Pratama.
  *      c. Batas waktu pembayaran (misal, "Selesaikan pembayaran dalam 1 jam").
- *      d. Form untuk konfirmasi pembayaran (opsional, tapi direkomendasikan), di mana pengguna memasukkan nama pengirim, nama bank, dan mengunggah bukti transfer.
+ *      d. Form untuk konfirmasi pembayaran, di mana pengguna memasukkan nama pengirim, nama bank, dan mengunggah bukti transfer.
  * 
  * 2. **Konfirmasi Pembayaran (Admin Workflow):**
  *    - Admin secara berkala memeriksa mutasi rekening bank.

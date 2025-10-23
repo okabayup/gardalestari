@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache';
 import type { ShortLink } from '@/lib/definitions';
 
 const shortlinksCollection = collection(db, 'shortlinks');
-const SHORTLINK_DOMAIN = 'https://gamules.io';
+export const SHORTLINK_DOMAIN = 'https://gamules.io';
 
 /**
  * Creates a new shortlink in the gamules.io service.

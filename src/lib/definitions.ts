@@ -1,8 +1,7 @@
 
-
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
-import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact, LayoutDashboard, Package, Landmark, Bell } from 'lucide-react';
+import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact, LayoutDashboard, Package, Landmark, Bell, Plane } from 'lucide-react';
 
 export const ALL_PERMISSIONS = [
     { id: 'manage_users', label: 'Kelola Anggota & Verifikasi' },
@@ -35,6 +34,7 @@ export const ALL_PERMISSIONS = [
     { id: 'manage_reports', label: 'Kelola Laporan Pengguna'},
     { id: 'manage_shortlinks', label: 'Kelola Shortlink' },
     { id: 'manage_finance', label: 'Kelola Keuangan' },
+    { id: 'manage_edutourism', label: 'Kelola Eduwisata' },
 ] as const;
 
 export type PermissionId = typeof ALL_PERMISSIONS[number]['id'];
@@ -115,6 +115,7 @@ export const panelDirectoryItems: {
     icon: Database,
     items: [
       { href: '/panel/partners', icon: Handshake, label: 'Mitra', permission: 'manage_partners' },
+      { href: '/panel/edutourism', icon: Plane, label: 'Eduwisata', permission: 'manage_edutourism' },
       { href: '/panel/forms', icon: FileText, label: 'Formulir', permission: 'manage_forms' },
       { href: '/panel/data-bank', icon: Database, label: 'Bank Data', permission: 'manage_data_bank'},
       { href: '/panel/map-data', icon: Map, label: 'Data Peta', permission: 'manage_map_data' },
@@ -163,6 +164,7 @@ export const initialAccounts = [
   { code: '4-1400', name: 'Pendapatan Iuran Anggota', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
   { code: '4-1500', name: 'Pendapatan Penjualan Merchandise', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
   { code: '4-1600', name: 'Pendapatan Hibah', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
+  { code: '4-1700', name: 'Pendapatan dari Program/Acara', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
   { code: '4-8000', name: 'Pendapatan Lain-lain', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
 
   // Beban
@@ -204,32 +206,41 @@ export interface Addon {
 
 export interface EduwisataPackage {
     id: string;
-    name: string;
+    title: string;
     description: string;
     price: number;
     duration: string; // e.g., "3 Jam", "1 Hari"
     imageUrl: string; // Aspect ratio 4:5
-    availableAddons: Addon[];
+    images?: string[]; // Gallery images
+    availableAddonIds: string[];
+    shortlinkSlug?: string;
 }
 
 export interface Booking {
     id: string;
     packageId: string;
+    packageName: string; // Denormalized for easy display
     userId?: string; // Optional if booked by guest
     customerName: string;
     customerEmail: string;
     customerPhone: string;
     bookingDate: Timestamp;
     participants: number;
-    selectedAddons: { addonId: string; quantity: number, price: number }[];
+    selectedAddons: { addonId: string; addonName: string; quantity: number; price: number }[];
     totalPrice: number;
     uniqueCode: number;
     status: 'pending' | 'paid' | 'confirmed' | 'cancelled' | 'completed';
     createdAt: Timestamp;
-    // Fields for manual bank transfer confirmation
+    
+    // For manual bank transfer
     paymentSenderName?: string;
     paymentSenderBank?: string;
     paymentProofUrl?: string; // URL to uploaded payment proof
+
+    // For meeting booking
+    meetingTopic?: string;
+    meetingDuration?: '30min' | '60min' | 'custom';
+    meetingCustomDuration?: number; // in hours
 }
 
 
@@ -1014,7 +1025,7 @@ export interface ShortLink {
     id?: string; // the short code
     title: string;
     longUrl: string;
-    type: 'event' | 'program' | 'custom' | 'app_tester';
+    type: 'event' | 'program' | 'custom' | 'app_tester' | 'edutourism';
     relatedId?: string; // e.g., eventId or programId
     clicks: number;
     createdAt: Timestamp;
@@ -1135,4 +1146,3 @@ export interface PublicProfile extends PublicUser {
 }
     
     
-
