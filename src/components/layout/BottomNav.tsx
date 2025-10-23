@@ -5,7 +5,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutGrid, Users, Sprout, FolderKanban, Sparkles } from 'lucide-react';
+import { LayoutGrid, Users, Sprout, FolderKanban, Sparkles, Dot } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { Separator } from '../ui/separator';
 import { useAuth } from '@/hooks/use-auth';
@@ -48,9 +48,13 @@ const DirectorySheet = () => {
                         Jelajahi semua fitur, informasi, dan alat yang tersedia.
                     </SheetDescription>
                 </SheetHeader>
+                <div className="flex items-center gap-4 text-xs text-muted-foreground py-2">
+                    <div className="flex items-center gap-1"><Dot className="text-primary"/><span>Fitur Umum</span></div>
+                    <div className="flex items-center gap-1"><Dot className="text-destructive"/><span>Panel Admin</span></div>
+                </div>
                 <Separator className="my-2" />
                 <ScrollArea className="flex-1 -mx-6 px-6">
-                    <Accordion type="multiple" className="w-full">
+                    <Accordion type="multiple" className="w-full" defaultValue={['general', ...allPanelGroups.map(g => g.group)]}>
                         <AccordionItem value="general">
                             <AccordionTrigger>Fitur Umum</AccordionTrigger>
                             <AccordionContent>

@@ -1,14 +1,19 @@
 
+
 'use client';
 
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
-import { Sidebar } from '@/components/panel/Sidebar';
+import { SidebarProvider, Sidebar, SidebarTrigger, SidebarContent } from '@/components/ui/sidebar';
 import { redirect, usePathname } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
+import { PanelSidebarContent } from '@/components/panel/Sidebar';
+import { Button } from '@/components/ui/button';
+import { Menu } from 'lucide-react';
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, hasPermission } = useAuth();
+  const { user, loading } = useAuth();
+  const pathname = usePathname();
 
   if (loading || !user) {
     return (
@@ -22,19 +27,31 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
     redirect('/feed');
   }
 
-  // Instead of replacing the entire layout, we render the panel content
-  // inside the MainLayout. The MainLayout provides the main Header and BottomNav.
   return (
     <MainLayout>
-        <div className="grid h-full w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-            <Sidebar />
-            <div className="flex flex-col h-full">
-                <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
-                    {children}
-                </main>
-            </div>
-            {/* PanelBottomNav is removed from here as MainLayout already provides a bottom nav */}
-        </div>
+        <SidebarProvider defaultOpen={false}>
+          <div className="grid h-full w-full md:grid-cols-[auto_1fr]">
+              <Sidebar collapsible="icon" className="hidden md:block">
+                  <SidebarContent>
+                      <PanelSidebarContent />
+                  </SidebarContent>
+              </Sidebar>
+              <div className="flex flex-col h-full">
+                   <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 md:hidden">
+                    <SidebarTrigger asChild>
+                      <Button size="icon" variant="outline">
+                        <Menu className="h-5 w-5" />
+                        <span className="sr-only">Toggle Menu</span>
+                      </Button>
+                    </SidebarTrigger>
+                    <h1 className="text-lg font-semibold capitalize">{pathname.split('/').pop()?.replace(/-/g, ' ')}</h1>
+                  </header>
+                  <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 overflow-auto">
+                      {children}
+                  </main>
+              </div>
+          </div>
+      </SidebarProvider>
     </MainLayout>
   );
 }
