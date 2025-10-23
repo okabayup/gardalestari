@@ -7,7 +7,13 @@ import { revalidatePath } from 'next/cache';
 import type { ShortLink } from '@/lib/definitions';
 
 const shortlinksCollection = collection(db, 'shortlinks');
+const SHORTLINK_DOMAIN = 'https://gamules.io';
 
+/**
+ * Creates a new shortlink in the gamules.io service.
+ * @param data - The details of the shortlink to create.
+ * @returns The ID of the newly created shortlink.
+ */
 export async function createShortLink(data: Omit<ShortLink, 'id' | 'createdAt' | 'clicks'>): Promise<string> {
     try {
         const docRef = await addDoc(shortlinksCollection, {

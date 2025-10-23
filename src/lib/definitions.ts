@@ -1,4 +1,5 @@
 
+
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
 import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact, LayoutDashboard, Package, Landmark, Bell } from 'lucide-react';
@@ -191,6 +192,41 @@ export const initialDocumentTypes = [
     { name: 'Nota Kesepahaman', code: 'MoU' },
     { name: 'Lainnya', code: 'Lain' },
 ];
+
+// --- Booking & Eduwisata ---
+export interface Addon {
+    id: string;
+    name: string;
+    description?: string;
+    price: number;
+    stock: number; // Use -1 for unlimited stock
+}
+
+export interface EduwisataPackage {
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    duration: string; // e.g., "3 Jam", "1 Hari"
+    imageUrl: string; // Aspect ratio 4:5
+    availableAddons: Addon[];
+}
+
+export interface Booking {
+    id: string;
+    packageId: string;
+    userId: string;
+    customerName: string;
+    customerEmail: string;
+    bookingDate: Timestamp;
+    participants: number;
+    selectedAddons: { addonId: string; quantity: number }[];
+    totalPrice: number;
+    status: 'pending' | 'paid' | 'confirmed' | 'cancelled' | 'completed';
+    paymentGatewayTransactionId?: string;
+    createdAt: Timestamp;
+}
+
 
 // --- Finance ---
 export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'void';
