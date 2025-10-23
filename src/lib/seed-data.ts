@@ -1,4 +1,3 @@
-
 'use server';
 
 import { collection, addDoc, getDocs, query, limit } from 'firebase/firestore';

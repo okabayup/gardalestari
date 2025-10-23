@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -15,8 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Loader2, UserPlus } from 'lucide-react';
 import { createManualMember } from '@/app/actions/user';
-import type { MemberType } from '@/lib/definitions';
-import { getPositions, Position } from '@/app/actions/positions';
+import type { MemberType, Position } from '@/lib/definitions';
+import { getPositions } from '@/app/actions/positions';
 import Image from 'next/image';
 
 const formSchema = z.object({
