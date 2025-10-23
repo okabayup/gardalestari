@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -35,11 +36,7 @@ export default function LedgerPage() {
       const fetchData = async () => {
         setLoading(true);
         try {
-          const [accountDetails, entries] = await Promise.all([
-            getAccountDetails(accountId),
-            getJournalEntriesForAccount(accountId),
-          ]);
-          
+          const accountDetails = await getAccountDetails(accountId);
           if (!accountDetails) {
             toast({ variant: 'destructive', title: 'Akun tidak ditemukan' });
             router.push('/panel/finance/accounts');
@@ -47,21 +44,35 @@ export default function LedgerPage() {
           }
           setAccount(accountDetails);
 
-          // Calculate running balance
-          let runningBalance = 0; // We start from 0 and build up
+          const entries = await getJournalEntriesForAccount(accountId);
+          
+          let runningBalance = accountDetails.balance;
+          if (entries.length > 0) {
+            const allTransactionsBeforeFirst = await getJournalEntriesForAccount(accountId, (entries[0].date as any).toDate());
+            
+            const balanceBeforeFirstTx = allTransactionsBeforeFirst.reduce((balance, entry) => {
+              const transaction = entry.transactions.find(t => t.accountId === accountId)!;
+              return balance + (accountDetails.normalBalance === 'Debit' ? transaction.debit - transaction.credit : transaction.credit - transaction.debit);
+            }, 0);
+
+            // This is a correction factor. The running balance should start from the balance of the account
+            // minus the balance calculated from the transactions we are about to display.
+            const displayedTransactionsBalance = entries.reduce((balance, entry) => {
+                 const transaction = entry.transactions.find(t => t.accountId === accountId)!;
+                 return balance + (accountDetails.normalBalance === 'Debit' ? transaction.debit - transaction.credit : transaction.credit - transaction.debit);
+            }, 0);
+
+            runningBalance = accountDetails.balance - displayedTransactionsBalance;
+          } else {
+            runningBalance = accountDetails.balance;
+          }
+
+
           const rows = entries.map(entry => {
-            const transaction = entry.transactions.find(t => t.accountId === accountId);
-            if (!transaction) return null;
-
+            const transaction = entry.transactions.find(t => t.accountId === accountId)!;
             const { debit, credit } = transaction;
-            let change = 0;
-            if (accountDetails.normalBalance === 'Debit') {
-                change = debit - credit;
-            } else {
-                change = credit - debit;
-            }
+            const change = accountDetails.normalBalance === 'Debit' ? debit - credit : credit - debit;
             runningBalance += change;
-
             return {
               date: (entry.date as any).toDate(),
               description: entry.description,
@@ -69,7 +80,19 @@ export default function LedgerPage() {
               credit,
               balance: runningBalance,
             };
-          }).filter((row): row is LedgerRow => row !== null);
+          });
+
+          // Add opening balance row
+          if (entries.length > 0) {
+             const openingBalance = accountDetails.balance - displayedTransactionsBalance;
+             rows.unshift({
+                date: (entries[0].date as any).toDate(),
+                description: "Saldo Awal",
+                debit: 0,
+                credit: 0,
+                balance: openingBalance,
+             })
+          }
           
           setLedgerRows(rows);
           
@@ -98,7 +121,7 @@ export default function LedgerPage() {
       <Card>
         <CardHeader>
           <CardTitle>Buku Besar: {account?.name}</CardTitle>
-          <CardDescription>Menampilkan semua transaksi untuk akun <span className="font-mono">{account?.code}</span>. Saldo Akhir: <span className="font-bold">{ledgerRows.at(-1)?.balance.toLocaleString('id-ID', {style: 'currency', currency: 'IDR'}) || 'Rp 0'}</span></CardDescription>
+          <CardDescription>Menampilkan semua transaksi untuk akun <span className="font-mono">{account?.code}</span>. Saldo Akhir: <span className="font-bold">{account?.balance.toLocaleString('id-ID', {style: 'currency', currency: 'IDR'}) || 'Rp 0'}</span></CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -127,6 +150,12 @@ export default function LedgerPage() {
                   <TableCell colSpan={5} className="text-center">Tidak ada transaksi untuk akun ini.</TableCell>
                 </TableRow>
               )}
+               {ledgerRows.length === 0 && (
+                 <TableRow className="font-bold bg-muted/50">
+                    <TableCell colSpan={4}>Saldo Akhir</TableCell>
+                    <TableCell className="text-right font-mono">{account?.balance.toLocaleString('id-ID')}</TableCell>
+                 </TableRow>
+               )}
             </TableBody>
           </Table>
         </CardContent>

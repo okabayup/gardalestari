@@ -22,12 +22,25 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
-import type { Account, JournalEntry, JournalTransaction, FinancialReportData, Budget } from '@/lib/definitions';
+import type { Account, JournalEntry, JournalTransaction, FinancialReportData, Budget, Contact } from '@/lib/definitions';
 import { format, getMonth, getYear } from 'date-fns';
 
 const accountsCollection = collection(db, 'accounts');
 const journalEntriesCollection = collection(db, 'journalEntries');
 const budgetsCollection = collection(db, 'budgets');
+const contactsCollection = collection(db, 'contacts');
+
+// --- Contact Management ---
+export async function getContacts(): Promise<Contact[]> {
+    const q = query(contactsCollection, orderBy('name', 'asc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Contact));
+}
+
+export async function createContact(data: Omit<Contact, 'id' | 'createdAt'>) {
+    await addDoc(contactsCollection, { ...data, createdAt: serverTimestamp() });
+    revalidatePath('/panel/finance/contacts');
+}
 
 
 // --- Budget Management ---
@@ -230,17 +243,23 @@ export async function getJournalEntries(): Promise<JournalEntry[]> {
 }
 
 /**
- * Fetches all journal entries for a specific account.
+ * Fetches all journal entries for a specific account, optionally up to a certain date.
  * @param accountId - The ID of the account.
+ * @param upToDate - Optional date to limit the query.
  * @returns A promise that resolves to an array of JournalEntry objects.
  */
-export async function getJournalEntriesForAccount(accountId: string): Promise<JournalEntry[]> {
+export async function getJournalEntriesForAccount(accountId: string, upToDate?: Date): Promise<JournalEntry[]> {
     try {
-        const q = query(
-            journalEntriesCollection,
-            where('transactions', 'array-contains-any', [{ accountId: accountId, debit: 0, credit: 0 }]), // This is a trick to query array of objects
-            orderBy('date', 'asc')
-        );
+        const constraints = [
+            where('transactions', 'array-contains', { accountId: accountId, debit: 0, credit: 0 }), // This is a trick
+            orderBy('date', 'asc'),
+        ];
+        
+        if (upToDate) {
+            constraints.push(where('date', '<=', Timestamp.fromDate(upToDate)));
+        }
+        
+        const q = query(journalEntriesCollection, ...constraints as any);
         const snapshot = await getDocs(q);
 
         // Firestore's array-contains-any is not perfect for this, so we need to filter in-memory
@@ -293,7 +312,7 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
 
     journalSnapshot.docs.forEach(doc => {
       const entry = doc.data() as JournalEntry;
-      const dateStr = format(entry.date.toDate(), 'yyyy-MM-dd');
+      const dateStr = format((entry.date as any).toDate(), 'yyyy-MM-dd');
       
       if (!dailyAggregates[dateStr]) {
         dailyAggregates[dateStr] = { revenue: 0, expense: 0 };
@@ -364,5 +383,3 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
     throw new Error('Gagal menghasilkan laporan keuangan.');
   }
 }
-
-    
