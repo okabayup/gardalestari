@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -88,7 +87,6 @@ export async function runMonthlyDepreciation(userId: string) {
         return { message: "Tidak ada aset aktif untuk disusutkan." };
     }
 
-    const batch = writeBatch(db);
     let journalEntriesCreated = 0;
 
     for (const assetDoc of snapshot.docs) {
@@ -102,23 +100,29 @@ export async function runMonthlyDepreciation(userId: string) {
         const monthlyDepreciation = (asset.acquisitionCost - asset.salvageValue) / (asset.usefulLife * 12);
         
         if (monthlyDepreciation > 0) {
+             // This automatically creates a journal entry AND updates account balances in a transaction
             await createJournalEntry({
                 date: Timestamp.now(),
                 description: `Penyusutan bulanan untuk ${asset.name}`,
                 transactions: [
-                    { accountId: 'Beban Penyusutan', debit: monthlyDepreciation, credit: 0 }, // Replace with actual account ID from user's CoA
-                    { accountId: 'Akumulasi Penyusutan', debit: 0, credit: monthlyDepreciation }, // Replace with actual account ID
+                    // IMPORTANT: The accountId here should match the ID of the actual account in your CoA
+                    { accountId: 'Beban Penyusutan', debit: monthlyDepreciation, credit: 0 }, 
+                    { accountId: 'Akumulasi Penyusutan Aset', debit: 0, credit: monthlyDepreciation }, 
                 ],
                 createdBy: userId,
-                createdAt: Timestamp.now(),
             });
-            batch.update(assetDoc.ref, { lastDepreciationDate: Timestamp.now() });
+            
+            const assetRef = doc(db, 'fixedAssets', asset.id!);
+            await updateDoc(assetRef, { lastDepreciationDate: Timestamp.now() });
+
             journalEntriesCreated++;
         }
     }
 
-    await batch.commit();
     revalidatePath('/panel/finance/journal');
     revalidatePath('/panel/finance/assets');
+    revalidatePath('/panel/finance/reports');
+    revalidatePath('/panel/finance/dashboard');
+    
     return { message: `Penyusutan selesai. ${journalEntriesCreated} entri jurnal dibuat.` };
 }

@@ -37,6 +37,7 @@ export async function createInvoice(data: Omit<Invoice, 'id' | 'createdAt' | 'in
     try {
         const invoiceNumber = `INV-${Date.now()}`;
 
+        // This will create the invoice and the corresponding journal entry in a single atomic operation.
         await runTransaction(db, async (transaction) => {
             const newInvoiceRef = doc(invoicesCollection);
             
@@ -50,30 +51,29 @@ export async function createInvoice(data: Omit<Invoice, 'id' | 'createdAt' | 'in
             transaction.set(newInvoiceRef, invoiceData);
 
             // Create corresponding journal entry
+            // NOTE: The account IDs here ('Piutang Usaha', 'Pendapatan Jasa') are placeholders.
+            // In a real system, you'd fetch these from your Chart of Accounts config.
             const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
                 date: data.date,
                 description: `Faktur Penjualan #${invoiceNumber} untuk ${data.contactName}`,
                 transactions: [
-                    { accountId: 'Piutang Usaha', debit: data.total, credit: 0 }, // Replace with actual account ID from user's CoA
-                    { accountId: 'Pendapatan Jasa', debit: 0, credit: data.subtotal }, // Replace with actual account ID
-                    // Add tax transaction if applicable
+                    { accountId: 'Piutang Usaha', debit: data.total, credit: 0 }, 
+                    { accountId: 'Pendapatan Jasa', debit: 0, credit: data.subtotal },
+                    // TODO: Add tax transaction if applicable, e.g., to 'Utang PPN'.
                 ],
                 createdBy: userId,
                 relatedInvoiceId: newInvoiceRef.id,
             };
-            const newJournalRef = doc(journalEntriesCollection);
-            transaction.set(newJournalRef, { ...journalEntry, createdAt: serverTimestamp() });
             
-            // Update account balances
-            const arAccountRef = doc(db, 'accounts', 'Piutang Usaha'); // Use actual ID
-            transaction.update(arAccountRef, { balance: increment(data.total) });
-            const revenueAccountRef = doc(db, 'accounts', 'Pendapatan Jasa'); // Use actual ID
-            transaction.update(revenueAccountRef, { balance: increment(data.subtotal) });
-
+            // This function handles the creation of the journal entry AND the atomic balance updates.
+            await createJournalEntryWithTransaction(transaction, journalEntry);
         });
 
         revalidatePath('/panel/finance/invoices');
         revalidatePath('/panel/finance/journal');
+        revalidatePath('/panel/finance/accounts');
+        revalidatePath('/panel/finance/reports');
+        revalidatePath('/panel/finance/dashboard');
 
     } catch (error) {
         console.error("[createInvoice Error]", error);
@@ -91,6 +91,18 @@ export async function getContacts(): Promise<Contact[]> {
 
 export async function createContact(data: Omit<Contact, 'id' | 'createdAt'>) {
     await addDoc(contactsCollection, { ...data, createdAt: serverTimestamp() });
+    revalidatePath('/panel/finance/contacts');
+}
+
+export async function updateContact(id: string, data: Partial<Omit<Contact, 'id' | 'createdAt'>>) {
+    const docRef = doc(db, 'contacts', id);
+    await updateDoc(docRef, data);
+    revalidatePath('/panel/finance/contacts');
+}
+
+export async function deleteContact(id: string) {
+    const docRef = doc(db, 'contacts', id);
+    await deleteDoc(docRef);
     revalidatePath('/panel/finance/contacts');
 }
 
@@ -179,7 +191,7 @@ export async function getAccounts(): Promise<Account[]> {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Account));
   } catch (error) {
     console.error("[getAccounts Error]", error);
-    throw new Error("Gagal mengambil data Bagan Akun.");
+    throw new Error("Gagal mengambil data Daftar Akun.");
   }
 }
 
@@ -239,34 +251,44 @@ export async function deleteAccount(id: string) {
 // --- General Journal Management ---
 
 /**
- * Creates a new journal entry and updates account balances.
+ * Helper function to create a journal entry WITHIN an existing Firestore transaction.
+ * This is used by other functions like createInvoice to ensure atomicity.
+ * @param transaction - The Firestore transaction object.
+ * @param data - The journal entry data.
+ */
+async function createJournalEntryWithTransaction(transaction: any, data: Omit<JournalEntry, 'id' | 'createdAt'>) {
+  const newEntryRef = doc(journalEntriesCollection);
+  transaction.set(newEntryRef, { ...data, createdAt: serverTimestamp() });
+
+  for (const trans of data.transactions) {
+    // In a real app, you would query for the account ID based on a stable key, not the name.
+    const accountQuery = query(accountsCollection, where("name", "==", trans.accountId), limit(1));
+    const accountSnapshot = await getDocs(accountQuery);
+    if (accountSnapshot.empty) {
+        throw new Error(`Akun dengan nama "${trans.accountId}" tidak ditemukan.`);
+    }
+    const accountDoc = accountSnapshot.docs[0];
+    const accountData = accountDoc.data() as Account;
+    
+    let amountChange = 0;
+    if (accountData.normalBalance === 'Debit') {
+        amountChange = trans.debit - trans.credit;
+    } else { // Kredit
+        amountChange = trans.credit - trans.debit;
+    }
+    transaction.update(accountDoc.ref, { balance: increment(amountChange) });
+  }
+}
+
+
+/**
+ * Creates a new journal entry and updates account balances atomically.
  * @param data - The journal entry data.
  */
 export async function createJournalEntry(data: Omit<JournalEntry, 'id' | 'createdAt'>) {
   try {
     await runTransaction(db, async (transaction) => {
-      // 1. Create the new journal entry document
-      const newEntryRef = doc(journalEntriesCollection);
-      transaction.set(newEntryRef, { ...data, createdAt: serverTimestamp() });
-
-      // 2. Update balances for each account in the transaction
-      for (const trans of data.transactions) {
-        const accountRef = doc(db, 'accounts', trans.accountId);
-        const accountDoc = await transaction.get(accountRef);
-        if (!accountDoc.exists()) {
-          throw new Error(`Akun dengan ID ${trans.accountId} tidak ditemukan.`);
-        }
-        
-        const accountData = accountDoc.data() as Account;
-        let amountChange = 0;
-        if (accountData.normalBalance === 'Debit') {
-            amountChange = trans.debit - trans.credit;
-        } else { // Kredit
-            amountChange = trans.credit - trans.debit;
-        }
-
-        transaction.update(accountRef, { balance: increment(amountChange) });
-      }
+        await createJournalEntryWithTransaction(transaction, data);
     });
 
     revalidatePath('/panel/finance/journal');
@@ -279,6 +301,7 @@ export async function createJournalEntry(data: Omit<JournalEntry, 'id' | 'create
   }
 }
 
+
 /**
  * Fetches all journal entries, ordered by date.
  * @returns A promise that resolves to an array of JournalEntry objects.
@@ -290,7 +313,7 @@ export async function getJournalEntries(): Promise<JournalEntry[]> {
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as JournalEntry));
     } catch(error) {
         console.error("[getJournalEntries Error]", error);
-        throw new Error("Gagal mengambil data Jurnal Umum.");
+        throw new Error("Gagal mengambil data Buku Jurnal.");
     }
 }
 
@@ -313,7 +336,8 @@ export async function getJournalEntriesForAccount(accountId: string, upToDate?: 
         const q = query(journalEntriesCollection, ...constraints);
         const snapshot = await getDocs(q);
 
-        // Firestore can't query for array-contains on multiple fields, so filter in memory
+        // In a real application with large datasets, you would create a composite index in Firestore
+        // or denormalize data to query more efficiently. For this scale, in-memory filtering is acceptable.
         const filteredEntries = snapshot.docs
             .map(doc => ({ id: doc.id, ...doc.data() } as JournalEntry))
             .filter(entry => entry.transactions.some(t => t.accountId === accountId));
@@ -370,7 +394,7 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
       }
 
       entry.transactions.forEach(t => {
-        const acc = accountsMap.get(t.accountId)!;
+        const acc = accounts.find(acc => acc.name === t.accountId);
         if (!acc) return;
 
         if (acc.category === 'Pendapatan') {
@@ -385,14 +409,14 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
     report.incomeStatement.revenueTrend = sortedDates.map(date => ({ date, Pendapatan: dailyAggregates[date].revenue }));
     report.incomeStatement.expenseTrend = sortedDates.map(date => ({ date, Beban: dailyAggregates[date].expense }));
 
-    const incomeStatementAccountIds = accounts.filter(a => a.category === 'Pendapatan' || a.category === 'Beban').map(a => a.id!);
+    const incomeStatementAccountIds = accounts.filter(a => a.category === 'Pendapatan' || a.category === 'Beban').map(a => a.name);
     const accountPeriodChanges = new Map<string, number>();
 
     journalSnapshot.docs.forEach(doc => {
       const entry = doc.data() as JournalEntry;
       entry.transactions.forEach(t => {
         if (incomeStatementAccountIds.includes(t.accountId)) {
-          const acc = accountsMap.get(t.accountId)!;
+          const acc = accounts.find(a => a.name === t.accountId)!;
           const currentChange = accountPeriodChanges.get(t.accountId) || 0;
           const change = acc.normalBalance === 'Kredit' ? t.credit - t.debit : t.debit - t.credit;
           accountPeriodChanges.set(t.accountId, currentChange + change);
@@ -402,7 +426,7 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
     
     accounts.forEach(acc => {
       if (acc.category === 'Pendapatan' || acc.category === 'Beban') {
-        const total = accountPeriodChanges.get(acc.id!) || 0;
+        const total = accountPeriodChanges.get(acc.name) || 0;
         if (total !== 0) {
             const item = { name: acc.name, total, budget: budgetMap.get(acc.id!) || 0 };
             if (acc.category === 'Pendapatan') report.incomeStatement.revenues.push(item);
