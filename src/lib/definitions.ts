@@ -64,7 +64,7 @@ export const panelDirectoryItems: { href: string; icon: LucideIcon; label: strin
     { href: '/panel/ideas', icon: Lightbulb, label: 'Bank Ide', permission: 'manage_ideas'},
     { href: '/panel/projects', icon: KanbanSquare, label: 'Proyek', permission: 'manage_projects' },
     { href: '/panel/documents', icon: BookCopy, label: 'Persuratan', permission: 'manage_documents'},
-    { href: '/panel/finance/accounts', icon: Wallet, label: 'Keuangan', permission: 'manage_finance'},
+    { href: '/panel/finance/dashboard', icon: Wallet, label: 'Keuangan', permission: 'manage_finance'},
     { href: '/panel/settings', icon: Settings, label: 'Pengaturan', permission: 'manage_settings' },
 ];
 
@@ -142,6 +142,8 @@ export interface FinancialReportData {
         revenues: { name: string; total: number }[];
         expenses: { name: string; total: number }[];
         netIncome: number;
+        revenueTrend: { date: string; Pendapatan: number }[];
+        expenseTrend: { date: string; Beban: number }[];
     };
     balanceSheet: {
         assets: { name: string; balance: number }[];
@@ -150,6 +152,7 @@ export interface FinancialReportData {
         totalAssets: number;
         totalLiabilitiesAndEquity: number;
     };
+    cashPosition: number;
 }
 
 export interface FixedAsset {
@@ -793,8 +796,8 @@ export interface Recruitment {
   description: string;
   requirements: string;
   applicationUrl: string;
-  deadline: Timestamp;
-  createdAt: Timestamp;
+  deadline: string; // ISO string
+  createdAt: string; // ISO string
 }
 
 // --- Settings ---
@@ -961,4 +964,5 @@ export interface PublicProfile extends PublicUser {
   skills?: string[];
   interests?: string[];
 }
+    
     

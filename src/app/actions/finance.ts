@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -21,6 +22,7 @@ import {
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { Account, JournalEntry, JournalTransaction, FinancialReportData } from '@/lib/definitions';
+import { format } from 'date-fns';
 
 const accountsCollection = collection(db, 'accounts');
 const journalEntriesCollection = collection(db, 'journalEntries');
@@ -203,10 +205,9 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
   try {
     const accounts = await getAccounts();
     const accountsMap = new Map(accounts.map(acc => [acc.id!, acc]));
-
-    // --- Income Statement Calculation ---
-    const incomeStatementAccounts = accounts.filter(a => a.category === 'Pendapatan' || a.category === 'Beban');
-    const incomeStatementAccountIds = incomeStatementAccounts.map(a => a.id!);
+    
+    const cashAccount = accounts.find(a => a.name.toLowerCase().includes('kas'));
+    const cashPosition = cashAccount?.balance || 0;
 
     const q = query(
       journalEntriesCollection,
@@ -216,10 +217,38 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
     const journalSnapshot = await getDocs(q);
 
     const report: FinancialReportData = {
-      incomeStatement: { revenues: [], expenses: [], netIncome: 0 },
+      incomeStatement: { revenues: [], expenses: [], netIncome: 0, revenueTrend: [], expenseTrend: [] },
       balanceSheet: { assets: [], liabilities: [], equity: [], totalAssets: 0, totalLiabilitiesAndEquity: 0 },
+      cashPosition,
     };
+    
+    const dailyAggregates: Record<string, { revenue: number; expense: number }> = {};
 
+    journalSnapshot.docs.forEach(doc => {
+      const entry = doc.data() as JournalEntry;
+      const dateStr = format(entry.date.toDate(), 'yyyy-MM-dd');
+      
+      if (!dailyAggregates[dateStr]) {
+        dailyAggregates[dateStr] = { revenue: 0, expense: 0 };
+      }
+
+      entry.transactions.forEach(t => {
+        const acc = accountsMap.get(t.accountId)!;
+        if (!acc) return;
+
+        if (acc.category === 'Pendapatan') {
+          dailyAggregates[dateStr].revenue += t.credit - t.debit;
+        } else if (acc.category === 'Beban') {
+          dailyAggregates[dateStr].expense += t.debit - t.credit;
+        }
+      });
+    });
+
+    const sortedDates = Object.keys(dailyAggregates).sort();
+    report.incomeStatement.revenueTrend = sortedDates.map(date => ({ date, Pendapatan: dailyAggregates[date].revenue }));
+    report.incomeStatement.expenseTrend = sortedDates.map(date => ({ date, Beban: dailyAggregates[date].expense }));
+
+    const incomeStatementAccountIds = accounts.filter(a => a.category === 'Pendapatan' || a.category === 'Beban').map(a => a.id!);
     const accountPeriodChanges = new Map<string, number>();
 
     journalSnapshot.docs.forEach(doc => {
@@ -233,42 +262,28 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
         }
       });
     });
-
-    incomeStatementAccounts.forEach(acc => {
-      const total = accountPeriodChanges.get(acc.id!) || 0;
-      if (total === 0) return;
-      
-      const item = { name: acc.name, total };
-      if (acc.category === 'Pendapatan') {
-        report.incomeStatement.revenues.push(item);
-      } else {
-        report.incomeStatement.expenses.push(item);
+    
+    accounts.forEach(acc => {
+      if (acc.category === 'Pendapatan' || acc.category === 'Beban') {
+        const total = accountPeriodChanges.get(acc.id!) || 0;
+        if (total !== 0) {
+            const item = { name: acc.name, total };
+            if (acc.category === 'Pendapatan') report.incomeStatement.revenues.push(item);
+            else report.incomeStatement.expenses.push(item);
+        }
+      } else if (acc.balance !== 0) {
+          const item = { name: acc.name, balance: acc.balance };
+          if (acc.category === 'Aset') report.balanceSheet.assets.push(item);
+          else if (acc.category === 'Liabilitas') report.balanceSheet.liabilities.push(item);
+          else if (acc.category === 'Ekuitas') report.balanceSheet.equity.push(item);
       }
     });
 
     const totalRevenue = report.incomeStatement.revenues.reduce((sum, item) => sum + item.total, 0);
     const totalExpense = report.incomeStatement.expenses.reduce((sum, item) => sum + item.total, 0);
     report.incomeStatement.netIncome = totalRevenue - totalExpense;
-
-
-    // --- Balance Sheet Calculation ---
-    // This is a simplified calculation. A correct one requires calculating balances from the beginning of time up to the endDate.
-    // For this MVP, we will use the pre-calculated balance on the account documents. A more robust system would re-calculate.
-    accounts.forEach(acc => {
-      if (acc.balance !== 0) {
-        if (acc.category === 'Aset') {
-          report.balanceSheet.assets.push({ name: acc.name, balance: acc.balance });
-        } else if (acc.category === 'Liabilitas') {
-          report.balanceSheet.liabilities.push({ name: acc.name, balance: acc.balance });
-        } else if (acc.category === 'Ekuitas') {
-          // Add Net Income to Equity
-           report.balanceSheet.equity.push({ name: acc.name, balance: acc.balance });
-        }
-      }
-    });
     
-    // Add net income as retained earnings to equity section
-    report.balanceSheet.equity.push({ name: 'Laba Ditahan (Periode Ini)', balance: report.incomeStatement.netIncome });
+    report.balanceSheet.equity.push({ name: 'Laba (Rugi) Periode Ini', balance: report.incomeStatement.netIncome });
 
     report.balanceSheet.totalAssets = report.balanceSheet.assets.reduce((sum, item) => sum + item.balance, 0);
     const totalLiabilities = report.balanceSheet.liabilities.reduce((sum, item) => sum + item.balance, 0);
@@ -282,3 +297,5 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
     throw new Error('Gagal menghasilkan laporan keuangan.');
   }
 }
+
+    

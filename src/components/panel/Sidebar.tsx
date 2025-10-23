@@ -40,6 +40,7 @@ import {
   BookOpen,
   AreaChart,
   Notebook,
+  LayoutDashboard,
   Package,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -73,8 +74,9 @@ const navGroups: {
     group: 'Manajemen Keuangan',
     icon: Wallet,
     items: [
-      { href: '/panel/finance/accounts', icon: Notebook, label: 'Bagan Akun', permission: 'manage_finance' },
+      { href: '/panel/finance/dashboard', icon: LayoutDashboard, label: 'Dasbor', permission: 'manage_finance' },
       { href: '/panel/finance/journal', icon: BookOpen, label: 'Jurnal Umum', permission: 'manage_finance' },
+      { href: '/panel/finance/ledger', icon: Notebook, label: 'Buku Besar', permission: 'manage_finance' },
       { href: '/panel/finance/assets', icon: Package, label: 'Manajemen Aset', permission: 'manage_finance' },
       { href: '/panel/finance/reports', icon: AreaChart, label: 'Laporan Keuangan', permission: 'manage_finance' },
     ]
@@ -263,3 +265,5 @@ export function Sidebar() {
         </PanelBadgesProvider>
     )
 }
+
+    
