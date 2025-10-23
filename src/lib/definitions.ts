@@ -2,7 +2,7 @@
 
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
-import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Gift, Target, BookCopy, TrendingUp, Bug, Settings } from 'lucide-react';
+import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Gift, Target, BookCopy, TrendingUp, Bug, Settings, Wallet } from 'lucide-react';
 
 export const ALL_PERMISSIONS = [
     { id: 'manage_users', label: 'Kelola Anggota & Verifikasi' },
@@ -34,6 +34,7 @@ export const ALL_PERMISSIONS = [
     { id: 'manage_data_bank', label: 'Kelola Bank Data'},
     { id: 'manage_reports', label: 'Kelola Laporan Pengguna'},
     { id: 'manage_shortlinks', label: 'Kelola Shortlink' },
+    { id: 'manage_finance', label: 'Kelola Keuangan' },
 ] as const;
 
 export type PermissionId = typeof ALL_PERMISSIONS[number]['id'];
@@ -63,6 +64,7 @@ export const panelDirectoryItems = [
     { href: '/panel/ideas', icon: Lightbulb, label: 'Bank Ide', permission: 'manage_ideas'},
     { href: '/panel/projects', icon: KanbanSquare, label: 'Proyek', permission: 'manage_projects' },
     { href: '/panel/documents', icon: BookCopy, label: 'Persuratan', permission: 'manage_documents'},
+    { href: '/panel/finance/accounts', icon: Wallet, label: 'Keuangan', permission: 'manage_finance'},
     { href: '/panel/settings', icon: Settings, label: 'Pengaturan', permission: 'manage_settings' },
 ];
 
@@ -106,11 +108,22 @@ export const initialDocumentTypes = [
     { name: 'Lainnya', code: 'Lain' },
 ];
 
+// --- Finance ---
+export type AccountCategory = 'Aset' | 'Liabilitas' | 'Ekuitas' | 'Pendapatan' | 'Beban';
+export type AccountNormalBalance = 'Debit' | 'Kredit';
 
-export interface Position {
-  id?: string;
-  name: string;
-  permissions: PermissionId[];
+export interface Account {
+    id?: string;
+    code: string;
+    name: string;
+    category: AccountCategory;
+    normalBalance: AccountNormalBalance;
+    balance: number;
+    createdAt: Timestamp;
+}
+
+export interface IdeaStatus {
+  // ... (previous definitions)
 }
 
 export type IdeaStatus = 'diajukan' | 'ditinjau' | 'disetujui' | 'diterapkan' | 'ditolak';

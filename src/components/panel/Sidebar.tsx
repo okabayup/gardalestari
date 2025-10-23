@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -35,6 +36,7 @@ import {
   Coins,
   Bug,
   Flag,
+  Wallet,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
@@ -61,6 +63,13 @@ const navGroups: {
     items: [
       { href: '/panel/performance', icon: TrendingUp, label: 'Performa', permission: 'manage_settings' },
       { href: '/panel/analytics/errors', icon: Bug, label: 'Log Error', permission: 'manage_settings' },
+    ]
+  },
+   {
+    group: 'Manajemen Keuangan',
+    icon: Wallet,
+    items: [
+      { href: '/panel/finance/accounts', icon: BookCopy, label: 'Bagan Akun', permission: 'manage_finance' },
     ]
   },
   {
