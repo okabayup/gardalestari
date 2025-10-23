@@ -15,7 +15,7 @@ import type { PermissionId } from '@/lib/definitions';
 import { usePanelBadges } from '@/hooks/use-panel-badges';
 import { Badge } from '../ui/badge';
 import { panelDirectoryItems } from '@/lib/definitions';
-import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupLabel, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton } from '../ui/sidebar';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupLabel, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton, SidebarMenuBadge } from '../ui/sidebar';
 
 export function PanelSidebarContent() {
   const pathname = usePathname();
