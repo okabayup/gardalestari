@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import Link from 'next/link';
@@ -38,6 +36,7 @@ import {
   Flag,
   Wallet,
   BookOpen,
+  AreaChart
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
@@ -72,6 +71,7 @@ const navGroups: {
     items: [
       { href: '/panel/finance/accounts', icon: BookCopy, label: 'Bagan Akun', permission: 'manage_finance' },
       { href: '/panel/finance/journal', icon: BookOpen, label: 'Jurnal Umum', permission: 'manage_finance' },
+      { href: '/panel/finance/reports', icon: AreaChart, label: 'Laporan Keuangan', permission: 'manage_finance' },
     ]
   },
   {

@@ -1,5 +1,3 @@
-
-
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -18,9 +16,10 @@ import {
   writeBatch,
   increment,
   Timestamp,
+  where,
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
-import type { Account, JournalEntry, JournalTransaction } from '@/lib/definitions';
+import type { Account, JournalEntry, JournalTransaction, FinancialReportData } from '@/lib/definitions';
 
 const accountsCollection = collection(db, 'accounts');
 const journalEntriesCollection = collection(db, 'journalEntries');
@@ -149,4 +148,90 @@ export async function getJournalEntries(): Promise<JournalEntry[]> {
         console.error("[getJournalEntries Error]", error);
         throw new Error("Gagal mengambil data Jurnal Umum.");
     }
+}
+
+
+// --- Financial Reports ---
+export async function getFinancialReports(startDate: Date, endDate: Date): Promise<FinancialReportData> {
+  try {
+    const accounts = await getAccounts();
+    const accountsMap = new Map(accounts.map(acc => [acc.id!, acc]));
+
+    // --- Income Statement Calculation ---
+    const incomeStatementAccounts = accounts.filter(a => a.category === 'Pendapatan' || a.category === 'Beban');
+    const incomeStatementAccountIds = incomeStatementAccounts.map(a => a.id!);
+
+    const q = query(
+      journalEntriesCollection,
+      where('date', '>=', Timestamp.fromDate(startDate)),
+      where('date', '<=', Timestamp.fromDate(endDate))
+    );
+    const journalSnapshot = await getDocs(q);
+
+    const report: FinancialReportData = {
+      incomeStatement: { revenues: [], expenses: [], netIncome: 0 },
+      balanceSheet: { assets: [], liabilities: [], equity: [], totalAssets: 0, totalLiabilitiesAndEquity: 0 },
+    };
+
+    const accountPeriodChanges = new Map<string, number>();
+
+    journalSnapshot.docs.forEach(doc => {
+      const entry = doc.data() as JournalEntry;
+      entry.transactions.forEach(t => {
+        if (incomeStatementAccountIds.includes(t.accountId)) {
+          const acc = accountsMap.get(t.accountId)!;
+          const currentChange = accountPeriodChanges.get(t.accountId) || 0;
+          const change = acc.normalBalance === 'Kredit' ? t.credit - t.debit : t.debit - t.credit;
+          accountPeriodChanges.set(t.accountId, currentChange + change);
+        }
+      });
+    });
+
+    incomeStatementAccounts.forEach(acc => {
+      const total = accountPeriodChanges.get(acc.id!) || 0;
+      if (total === 0) return;
+      
+      const item = { name: acc.name, total };
+      if (acc.category === 'Pendapatan') {
+        report.incomeStatement.revenues.push(item);
+      } else {
+        report.incomeStatement.expenses.push(item);
+      }
+    });
+
+    const totalRevenue = report.incomeStatement.revenues.reduce((sum, item) => sum + item.total, 0);
+    const totalExpense = report.incomeStatement.expenses.reduce((sum, item) => sum + item.total, 0);
+    report.incomeStatement.netIncome = totalRevenue - totalExpense;
+
+
+    // --- Balance Sheet Calculation ---
+    // This is a simplified calculation. A correct one requires calculating balances from the beginning of time up to the endDate.
+    // For this MVP, we will use the pre-calculated balance on the account documents. A more robust system would re-calculate.
+    accounts.forEach(acc => {
+      if (acc.balance !== 0) {
+        if (acc.category === 'Aset') {
+          report.balanceSheet.assets.push({ name: acc.name, balance: acc.balance });
+        } else if (acc.category === 'Liabilitas') {
+          report.balanceSheet.liabilities.push({ name: acc.name, balance: acc.balance });
+        } else if (acc.category === 'Ekuitas') {
+          // Add Net Income to Equity
+           report.balanceSheet.equity.push({ name: acc.name, balance: acc.balance });
+        }
+      }
+    });
+    
+    // Add net income as retained earnings to equity section
+    report.balanceSheet.equity.push({ name: 'Laba Ditahan (Periode Ini)', balance: report.incomeStatement.netIncome });
+
+    report.balanceSheet.totalAssets = report.balanceSheet.assets.reduce((sum, item) => sum + item.balance, 0);
+    const totalLiabilities = report.balanceSheet.liabilities.reduce((sum, item) => sum + item.balance, 0);
+    const totalEquity = report.balanceSheet.equity.reduce((sum, item) => sum + item.balance, 0);
+    report.balanceSheet.totalLiabilitiesAndEquity = totalLiabilities + totalEquity;
+
+    return report;
+
+  } catch (error) {
+    console.error('[getFinancialReports Error]', error);
+    throw new Error('Gagal menghasilkan laporan keuangan.');
+  }
 }

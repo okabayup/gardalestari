@@ -2,7 +2,7 @@
 
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
-import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Gift, Target, BookCopy, TrendingUp, Bug, Settings, Wallet } from 'lucide-react';
+import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Gift, Target, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen } from 'lucide-react';
 
 export const ALL_PERMISSIONS = [
     { id: 'manage_users', label: 'Kelola Anggota & Verifikasi' },
@@ -135,6 +135,21 @@ export interface JournalEntry {
     transactions: JournalTransaction[];
     createdBy: string; // userId
     createdAt: Timestamp;
+}
+
+export interface FinancialReportData {
+    incomeStatement: {
+        revenues: { name: string; total: number }[];
+        expenses: { name: string; total: number }[];
+        netIncome: number;
+    };
+    balanceSheet: {
+        assets: { name: string; balance: number }[];
+        liabilities: { name: string; balance: number }[];
+        equity: { name: string; balance: number }[];
+        totalAssets: number;
+        totalLiabilitiesAndEquity: number;
+    };
 }
 
 
