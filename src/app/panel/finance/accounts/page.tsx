@@ -1,11 +1,11 @@
 
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { getAccounts, createAccount, updateAccount, deleteAccount, Account } from '@/app/actions/finance';
 import type { AccountCategory, AccountNormalBalance } from '@/lib/definitions';
@@ -214,7 +214,11 @@ export default function ChartOfAccountsPage() {
                 {accounts.map(acc => (
                   <TableRow key={acc.id}>
                     <TableCell className="font-mono">{acc.code}</TableCell>
-                    <TableCell className="font-medium">{acc.name}</TableCell>
+                    <TableCell className="font-medium">
+                        <Link href={`/panel/finance/ledger/${acc.id}`} className="hover:underline text-primary">
+                            {acc.name}
+                        </Link>
+                    </TableCell>
                     <TableCell>{acc.category}</TableCell>
                     <TableCell>{acc.normalBalance}</TableCell>
                     <TableCell className="text-right">
@@ -257,4 +261,3 @@ export default function ChartOfAccountsPage() {
     </>
   );
 }
-

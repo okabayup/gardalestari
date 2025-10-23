@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -25,6 +26,26 @@ const accountsCollection = collection(db, 'accounts');
 const journalEntriesCollection = collection(db, 'journalEntries');
 
 // --- Chart of Accounts (CoA) Management ---
+
+/**
+ * Fetches a single account's details.
+ * @param accountId - The ID of the account.
+ * @returns A promise that resolves to the Account object or null.
+ */
+export async function getAccountDetails(accountId: string): Promise<Account | null> {
+  try {
+    const docRef = doc(db, 'accounts', accountId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return { id: docSnap.id, ...docSnap.data() } as Account;
+    }
+    return null;
+  } catch (error) {
+    console.error("[getAccountDetails Error]", error);
+    throw new Error("Gagal mengambil detail akun.");
+  }
+}
+
 
 /**
  * Fetches all accounts from the Chart of Accounts, ordered by code.
@@ -147,6 +168,32 @@ export async function getJournalEntries(): Promise<JournalEntry[]> {
     } catch(error) {
         console.error("[getJournalEntries Error]", error);
         throw new Error("Gagal mengambil data Jurnal Umum.");
+    }
+}
+
+/**
+ * Fetches all journal entries for a specific account.
+ * @param accountId - The ID of the account.
+ * @returns A promise that resolves to an array of JournalEntry objects.
+ */
+export async function getJournalEntriesForAccount(accountId: string): Promise<JournalEntry[]> {
+    try {
+        const q = query(
+            journalEntriesCollection,
+            where('transactions', 'array-contains-any', [{ accountId: accountId, debit: 0, credit: 0 }]), // This is a trick to query array of objects
+            orderBy('date', 'asc')
+        );
+        const snapshot = await getDocs(q);
+
+        // Firestore's array-contains-any is not perfect for this, so we need to filter in-memory
+        const filteredEntries = snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() } as JournalEntry))
+            .filter(entry => entry.transactions.some(t => t.accountId === accountId));
+
+        return filteredEntries;
+    } catch (error) {
+        console.error("[getJournalEntriesForAccount Error]", error);
+        throw new Error("Gagal mengambil data buku besar.");
     }
 }
 
