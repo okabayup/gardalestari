@@ -2,7 +2,7 @@
 
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
-import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2 } from 'lucide-react';
+import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Gift, Target, BookCopy, TrendingUp, Bug } from 'lucide-react';
 
 export const ALL_PERMISSIONS = [
     { id: 'manage_users', label: 'Kelola Anggota & Verifikasi' },
@@ -53,6 +53,17 @@ export const directoryItems = [
     { href: '/points', label: 'Poin Hijau', icon: Coins },
     { href: '/content/new', label: 'Kirim Konten', icon: FilePlus },
     { href: '/uji-aplikasi', label: 'Uji Aplikasi', icon: TestTube2 },
+];
+
+export const panelDirectoryItems = [
+    { href: '/panel/dashboard', icon: Home, label: 'Dasbor' },
+    { href: '/panel/members', icon: Users, label: 'Anggota', permission: 'manage_users' },
+    { href: '/panel/berita', icon: Newspaper, label: 'Konten', permission: 'manage_news' },
+    { href: '/panel/programs', icon: Megaphone, label: 'Program', permission: 'manage_programs' },
+    { href: '/panel/ideas', icon: Lightbulb, label: 'Bank Ide', permission: 'manage_ideas'},
+    { href: '/panel/projects', icon: KanbanSquare, label: 'Proyek', permission: 'manage_projects' },
+    { href: '/panel/documents', icon: BookCopy, label: 'Persuratan', permission: 'manage_documents'},
+    { href: '/panel/settings', icon: Settings, label: 'Pengaturan', permission: 'manage_settings' },
 ];
 
 

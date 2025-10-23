@@ -8,7 +8,7 @@ import { LayoutGrid, Users, Sprout, FolderKanban, Sparkles } from 'lucide-react'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { Separator } from '../ui/separator';
 import { useAuth } from '@/hooks/use-auth';
-import { directoryItems } from '@/lib/definitions';
+import { directoryItems, panelDirectoryItems, PermissionId } from '@/lib/definitions';
 
 const mainNavItems = [
   { href: '/feed', label: 'Beranda', icon: LayoutGrid },
@@ -18,6 +18,9 @@ const mainNavItems = [
 ];
 
 const DirectorySheet = () => {
+    const { hasPermission } = useAuth();
+    const visiblePanelItems = panelDirectoryItems.filter(item => !item.permission || hasPermission(item.permission as PermissionId));
+
     return (
         <Sheet>
             <SheetTrigger asChild>
@@ -47,6 +50,21 @@ const DirectorySheet = () => {
                          </Link>
                     ))}
                 </div>
+
+                {visiblePanelItems.length > 0 && (
+                    <>
+                        <Separator className="my-4" />
+                        <h4 className="mb-2 text-sm font-semibold text-muted-foreground">Panel Admin</h4>
+                        <div className="grid grid-cols-3 gap-4">
+                            {visiblePanelItems.map(item => (
+                                <Link key={item.label} href={item.href} className="flex flex-col items-center gap-2 p-4 rounded-lg bg-destructive/10 hover:bg-destructive/20">
+                                    <item.icon className="h-6 w-6 text-destructive" />
+                                    <span className="font-medium text-sm text-center text-destructive">{item.label}</span>
+                                </Link>
+                            ))}
+                        </div>
+                    </>
+                )}
             </SheetContent>
         </Sheet>
     )
