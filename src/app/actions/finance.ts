@@ -20,6 +20,7 @@ import {
   Timestamp,
   where,
   setDoc,
+  limit,
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { Account, JournalEntry, JournalTransaction, FinancialReportData, Budget, Contact, Invoice } from '@/lib/definitions';
@@ -50,9 +51,6 @@ export async function createInvoice(data: Omit<Invoice, 'id' | 'createdAt' | 'in
             };
             transaction.set(newInvoiceRef, invoiceData);
 
-            // Create corresponding journal entry
-            // NOTE: The account IDs here ('Piutang Usaha', 'Pendapatan Jasa') are placeholders.
-            // In a real system, you'd fetch these from your Chart of Accounts config.
             const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
                 date: data.date,
                 description: `Faktur Penjualan #${invoiceNumber} untuk ${data.contactName}`,
@@ -65,7 +63,6 @@ export async function createInvoice(data: Omit<Invoice, 'id' | 'createdAt' | 'in
                 relatedInvoiceId: newInvoiceRef.id,
             };
             
-            // This function handles the creation of the journal entry AND the atomic balance updates.
             await createJournalEntryWithTransaction(transaction, journalEntry);
         });
 
@@ -108,12 +105,6 @@ export async function deleteContact(id: string) {
 
 
 // --- Budget Management ---
-
-/**
- * Fetches all budget entries for a specific period (YYYY-MM).
- * @param period - The period string, e.g., "2024-08".
- * @returns A promise that resolves to an array of Budget objects.
- */
 export async function getBudgetsForPeriod(period: string): Promise<Budget[]> {
     try {
         const q = query(budgetsCollection, where('period', '==', period));
@@ -125,17 +116,11 @@ export async function getBudgetsForPeriod(period: string): Promise<Budget[]> {
     }
 }
 
-/**
- * Saves or updates multiple budget entries for a specific period.
- * @param period - The period string, e.g., "2024-08".
- * @param budgets - An array of budget data to save.
- */
 export async function saveBudgets(period: string, budgets: { accountId: string, accountName: string, amount: number }[]) {
     try {
         const batch = writeBatch(db);
         
         for (const budget of budgets) {
-            // Use a composite ID to ensure one budget per account per period
             const docId = `${period}_${budget.accountId}`;
             const docRef = doc(db, 'budgets', docId);
 
@@ -159,12 +144,6 @@ export async function saveBudgets(period: string, budgets: { accountId: string, 
 
 
 // --- Chart of Accounts (CoA) Management ---
-
-/**
- * Fetches a single account's details.
- * @param accountId - The ID of the account.
- * @returns A promise that resolves to the Account object or null.
- */
 export async function getAccountDetails(accountId: string): Promise<Account | null> {
   try {
     const docRef = doc(db, 'accounts', accountId);
@@ -179,11 +158,6 @@ export async function getAccountDetails(accountId: string): Promise<Account | nu
   }
 }
 
-
-/**
- * Fetches all accounts from the Chart of Accounts, ordered by code.
- * @returns A promise that resolves to an array of Account objects.
- */
 export async function getAccounts(): Promise<Account[]> {
   try {
     const q = query(accountsCollection, orderBy('code', 'asc'));
@@ -195,10 +169,6 @@ export async function getAccounts(): Promise<Account[]> {
   }
 }
 
-/**
- * Creates a new account in the Chart of Accounts.
- * @param data - The account data to create.
- */
 export async function createAccount(data: Omit<Account, 'id' | 'createdAt' | 'balance'>) {
   try {
     const accountData = {
@@ -214,11 +184,6 @@ export async function createAccount(data: Omit<Account, 'id' | 'createdAt' | 'ba
   }
 }
 
-/**
- * Updates an existing account.
- * @param id - The ID of the account to update.
- * @param data - The partial data to update.
- */
 export async function updateAccount(id: string, data: Partial<Omit<Account, 'id' | 'createdAt' | 'balance'>>) {
   try {
     const docRef = doc(db, 'accounts', id);
@@ -230,15 +195,9 @@ export async function updateAccount(id: string, data: Partial<Omit<Account, 'id'
   }
 }
 
-/**
- * Deletes an account from the Chart of Accounts.
- * @param id - The ID of the account to delete.
- */
 export async function deleteAccount(id: string) {
   try {
     const docRef = doc(db, 'accounts', id);
-    // TODO: Add a check here to prevent deleting an account with a non-zero balance
-    // or existing journal entries.
     await deleteDoc(docRef);
     revalidatePath('/panel/finance/accounts');
   } catch (error) {
@@ -247,27 +206,54 @@ export async function deleteAccount(id: string) {
   }
 }
 
+// --- Simplified Transaction Entry ---
+export async function createSimpleTransaction(
+    type: 'income' | 'expense',
+    date: Timestamp,
+    amount: number,
+    description: string,
+    cashBankAccountId: string, // The 'from' or 'to' account (must be an asset)
+    categoryAccountId: string, // The 'for' or 'source' account (expense or income)
+    userId: string
+) {
+    let debitAccount, creditAccount;
+
+    if (type === 'expense') {
+        // Expense: Debit the expense account, Credit the cash/bank account
+        debitAccount = categoryAccountId;
+        creditAccount = cashBankAccountId;
+    } else { // income
+        // Income: Debit the cash/bank account, Credit the income account
+        debitAccount = cashBankAccountId;
+        creditAccount = categoryAccountId;
+    }
+    
+    const entry: Omit<JournalEntry, 'id' | 'createdAt'> = {
+        date,
+        description,
+        transactions: [
+            { accountId: debitAccount, debit: amount, credit: 0 },
+            { accountId: creditAccount, debit: 0, credit: amount },
+        ],
+        createdBy: userId,
+    };
+
+    await createJournalEntry(entry);
+}
+
 
 // --- General Journal Management ---
-
-/**
- * Helper function to create a journal entry WITHIN an existing Firestore transaction.
- * This is used by other functions like createInvoice to ensure atomicity.
- * @param transaction - The Firestore transaction object.
- * @param data - The journal entry data.
- */
 async function createJournalEntryWithTransaction(transaction: any, data: Omit<JournalEntry, 'id' | 'createdAt'>) {
   const newEntryRef = doc(journalEntriesCollection);
   transaction.set(newEntryRef, { ...data, createdAt: serverTimestamp() });
 
   for (const trans of data.transactions) {
-    // In a real app, you would query for the account ID based on a stable key, not the name.
-    const accountQuery = query(accountsCollection, where("name", "==", trans.accountId), limit(1));
-    const accountSnapshot = await getDocs(accountQuery);
-    if (accountSnapshot.empty) {
-        throw new Error(`Akun dengan nama "${trans.accountId}" tidak ditemukan.`);
+    const accountRef = doc(db, 'accounts', trans.accountId);
+    const accountDoc = await transaction.get(accountRef);
+
+    if (!accountDoc.exists()) {
+        throw new Error(`Akun dengan ID "${trans.accountId}" tidak ditemukan.`);
     }
-    const accountDoc = accountSnapshot.docs[0];
     const accountData = accountDoc.data() as Account;
     
     let amountChange = 0;
@@ -276,15 +262,10 @@ async function createJournalEntryWithTransaction(transaction: any, data: Omit<Jo
     } else { // Kredit
         amountChange = trans.credit - trans.debit;
     }
-    transaction.update(accountDoc.ref, { balance: increment(amountChange) });
+    transaction.update(accountRef, { balance: increment(amountChange) });
   }
 }
 
-
-/**
- * Creates a new journal entry and updates account balances atomically.
- * @param data - The journal entry data.
- */
 export async function createJournalEntry(data: Omit<JournalEntry, 'id' | 'createdAt'>) {
   try {
     await runTransaction(db, async (transaction) => {
@@ -301,11 +282,6 @@ export async function createJournalEntry(data: Omit<JournalEntry, 'id' | 'create
   }
 }
 
-
-/**
- * Fetches all journal entries, ordered by date.
- * @returns A promise that resolves to an array of JournalEntry objects.
- */
 export async function getJournalEntries(): Promise<JournalEntry[]> {
     try {
         const q = query(journalEntriesCollection, orderBy('date', 'desc'));
@@ -317,38 +293,169 @@ export async function getJournalEntries(): Promise<JournalEntry[]> {
     }
 }
 
-/**
- * Fetches all journal entries for a specific account, optionally up to a certain date.
- * @param accountId - The ID of the account.
- * @param upToDate - Optional date to limit the query.
- * @returns A promise that resolves to an array of JournalEntry objects.
- */
-export async function getJournalEntriesForAccount(accountId: string, upToDate?: Date): Promise<JournalEntry[]> {
+export async function getJournalEntriesForAccount(accountId: string, upToDate?: Date): Promise<{ entries: JournalEntry[], openingBalance: number }> {
     try {
-        const constraints = [
-             orderBy('date', 'asc'),
-        ];
-        
-        if (upToDate) {
-            constraints.push(where('date', '<=', Timestamp.fromDate(upToDate)) as any);
-        }
-        
-        const q = query(journalEntriesCollection, ...constraints);
+        const accountDoc = await getAccountDetails(accountId);
+        if (!accountDoc) throw new Error("Akun tidak ditemukan");
+
+        const q = query(collection(db, 'journalEntries'), orderBy('date', 'asc'));
         const snapshot = await getDocs(q);
 
-        // In a real application with large datasets, you would create a composite index in Firestore
-        // or denormalize data to query more efficiently. For this scale, in-memory filtering is acceptable.
-        const filteredEntries = snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() } as JournalEntry))
-            .filter(entry => entry.transactions.some(t => t.accountId === accountId));
+        let openingBalance = 0;
+        let runningBalance = 0;
+        
+        const relevantEntries: JournalEntry[] = [];
+        
+        snapshot.docs.forEach(doc => {
+            const entry = { id: doc.id, ...doc.data() } as JournalEntry;
+            const transaction = entry.transactions.find(t => t.accountId === accountId);
 
-        return filteredEntries;
+            if (transaction) {
+                const change = accountDoc.normalBalance === 'Debit' 
+                    ? transaction.debit - transaction.credit 
+                    : transaction.credit - transaction.debit;
+                
+                if (upToDate && entry.date.toDate() < upToDate) {
+                    openingBalance += change;
+                } else {
+                    runningBalance += change;
+                    relevantEntries.push(entry);
+                }
+            }
+        });
+        
+        // This calculation provides a different perspective on opening balance.
+        // Let's refine it in the component for presentation.
+        // For now, let's calculate a simpler opening balance.
+        
+        const allEntriesBeforeDate = await getDocs(query(collection(db, 'journalEntries'), where('date', '<', Timestamp.fromDate(upToDate || new Date(0)))));
+        let calculatedOpeningBalance = 0;
+        allEntriesBeforeDate.forEach(doc => {
+             const entry = { id: doc.id, ...doc.data() } as JournalEntry;
+             const transaction = entry.transactions.find(t => t.accountId === accountId);
+             if(transaction) {
+                 calculatedOpeningBalance += accountDoc.normalBalance === 'Debit' ? transaction.debit - transaction.credit : transaction.credit - transaction.debit;
+             }
+        });
+
+
+        return { entries: relevantEntries, openingBalance: calculatedOpeningBalance };
     } catch (error) {
         console.error("[getJournalEntriesForAccount Error]", error);
         throw new Error("Gagal mengambil data buku besar.");
     }
 }
 
+// --- Fixed Assets ---
+export async function getAssets(): Promise<FixedAsset[]> {
+  try {
+    const q = query(accountsCollection, orderBy('acquisitionDate', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FixedAsset));
+  } catch (error) {
+    console.error("[getAssets Error]", error);
+    throw new Error("Gagal mengambil data aset tetap.");
+  }
+}
+
+export async function createAsset(data: Omit<FixedAsset, 'id' | 'createdAt' | 'status'>) {
+  try {
+    const assetData = {
+      ...data,
+      status: 'active' as const,
+      createdAt: serverTimestamp(),
+    };
+    await addDoc(collection(db, 'fixedAssets'), assetData);
+    revalidatePath('/panel/finance/assets');
+  } catch (error) {
+    console.error("[createAsset Error]", error);
+    throw new Error(`Gagal membuat aset: ${(error as Error).message}`);
+  }
+}
+
+export async function updateAsset(id: string, data: Partial<Omit<FixedAsset, 'id' | 'createdAt'>>) {
+  try {
+    const docRef = doc(db, 'fixedAssets', id);
+    await updateDoc(docRef, data);
+    revalidatePath('/panel/finance/assets');
+  } catch (error) {
+    console.error("[updateAsset Error]", error);
+    throw new Error(`Gagal memperbarui aset: ${(error as Error).message}`);
+  }
+}
+
+export async function deleteAsset(id: string) {
+    try {
+        const docRef = doc(db, 'fixedAssets', id);
+        await deleteDoc(docRef);
+        revalidatePath('/panel/finance/assets');
+    } catch (error) {
+        console.error("[deleteAsset Error]", error);
+        throw new Error("Gagal menghapus aset.");
+    }
+}
+
+export async function runMonthlyDepreciation(userId: string) {
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+
+    const q = query(
+        collection(db, 'fixedAssets'), 
+        where('status', '==', 'active')
+    );
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+        return { message: "Tidak ada aset aktif untuk disusutkan." };
+    }
+    
+    const depreciationExpenseAccount = await getDocs(query(accountsCollection, where("name", "==", "Beban Penyusutan"), limit(1)));
+    const accDepreciationAccount = await getDocs(query(accountsCollection, where("name", "==", "Akumulasi Penyusutan Aset"), limit(1)));
+
+    if (depreciationExpenseAccount.empty || accDepreciationAccount.empty) {
+        throw new Error("Akun 'Beban Penyusutan' atau 'Akumulasi Penyusutan Aset' tidak ditemukan.");
+    }
+    const depreciationAccountId = depreciationExpenseAccount.docs[0].id;
+    const accDepreciationAccountId = accDepreciationAccount.docs[0].id;
+
+    let journalEntriesCreated = 0;
+
+    for (const assetDoc of snapshot.docs) {
+        const asset = { id: assetDoc.id, ...assetDoc.data() } as FixedAsset;
+        const lastDepreciation = asset.lastDepreciationDate?.toDate();
+
+        if (lastDepreciation && lastDepreciation.getFullYear() === currentYear && lastDepreciation.getMonth() === currentMonth) {
+            continue; // Already depreciated this month
+        }
+        
+        const monthlyDepreciation = (asset.acquisitionCost - asset.salvageValue) / (asset.usefulLife * 12);
+        
+        if (monthlyDepreciation > 0) {
+            await createJournalEntry({
+                date: Timestamp.now(),
+                description: `Penyusutan bulanan untuk ${asset.name}`,
+                transactions: [
+                    { accountId: depreciationAccountId, debit: monthlyDepreciation, credit: 0 }, 
+                    { accountId: accDepreciationAccountId, debit: 0, credit: monthlyDepreciation }, 
+                ],
+                createdBy: userId,
+            });
+            
+            const assetRef = doc(db, 'fixedAssets', asset.id!);
+            await updateDoc(assetRef, { lastDepreciationDate: Timestamp.now() });
+
+            journalEntriesCreated++;
+        }
+    }
+
+    revalidatePath('/panel/finance/journal');
+    revalidatePath('/panel/finance/assets');
+    revalidatePath('/panel/finance/reports');
+    revalidatePath('/panel/finance/dashboard');
+    
+    return { message: `Penyusutan selesai. ${journalEntriesCreated} entri jurnal dibuat.` };
+}
 
 // --- Financial Reports ---
 export async function getFinancialReports(startDate: Date, endDate: Date): Promise<FinancialReportData> {
@@ -356,7 +463,6 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
     const accounts = await getAccounts();
     const accountsMap = new Map(accounts.map(acc => [acc.id!, acc]));
     
-    // Fetch budgets for the period
     const periods = new Set<string>();
     for (let d = new Date(startDate); d <= endDate; d.setMonth(d.getMonth() + 1)) {
         periods.add(format(d, 'yyyy-MM'));
@@ -364,8 +470,10 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
     const budgetPromises = Array.from(periods).map(p => getBudgetsForPeriod(p));
     const budgetResults = await Promise.all(budgetPromises);
     const allBudgets = budgetResults.flat();
-    const budgetMap = new Map(allBudgets.map(b => [b.accountId, (budgetMap.get(b.accountId) || 0) + b.amount]));
-
+    const budgetMap = new Map<string, number>();
+    allBudgets.forEach(b => {
+        budgetMap.set(b.accountId, (budgetMap.get(b.accountId) || 0) + b.amount);
+    });
 
     const cashAccount = accounts.find(a => a.name.toLowerCase().includes('kas'));
     const cashPosition = cashAccount?.balance || 0;
@@ -378,23 +486,23 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
     const journalSnapshot = await getDocs(q);
 
     const report: FinancialReportData = {
-      incomeStatement: { revenues: [], expenses: [], netIncome: 0, revenueTrend: [], expenseTrend: [] },
+      incomeStatement: { revenues: [], expenses: [], netIncome: 0, revenueTrend: [], expenseTrend: [], expenseComposition: [] },
       balanceSheet: { assets: [], liabilities: [], equity: [], totalAssets: 0, totalLiabilitiesAndEquity: 0 },
       cashPosition,
     };
     
     const dailyAggregates: Record<string, { revenue: number; expense: number }> = {};
+    const accountPeriodChanges = new Map<string, number>();
+    const incomeStatementAccountIds = new Set(accounts.filter(a => a.category === 'Pendapatan' || a.category === 'Beban').map(a => a.id));
 
     journalSnapshot.docs.forEach(doc => {
       const entry = doc.data() as JournalEntry;
       const dateStr = format((entry.date as any).toDate(), 'yyyy-MM-dd');
       
-      if (!dailyAggregates[dateStr]) {
-        dailyAggregates[dateStr] = { revenue: 0, expense: 0 };
-      }
+      if (!dailyAggregates[dateStr]) dailyAggregates[dateStr] = { revenue: 0, expense: 0 };
 
       entry.transactions.forEach(t => {
-        const acc = accounts.find(acc => acc.name === t.accountId);
+        const acc = accountsMap.get(t.accountId);
         if (!acc) return;
 
         if (acc.category === 'Pendapatan') {
@@ -402,21 +510,8 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
         } else if (acc.category === 'Beban') {
           dailyAggregates[dateStr].expense += t.debit - t.credit;
         }
-      });
-    });
-
-    const sortedDates = Object.keys(dailyAggregates).sort();
-    report.incomeStatement.revenueTrend = sortedDates.map(date => ({ date, Pendapatan: dailyAggregates[date].revenue }));
-    report.incomeStatement.expenseTrend = sortedDates.map(date => ({ date, Beban: dailyAggregates[date].expense }));
-
-    const incomeStatementAccountIds = accounts.filter(a => a.category === 'Pendapatan' || a.category === 'Beban').map(a => a.name);
-    const accountPeriodChanges = new Map<string, number>();
-
-    journalSnapshot.docs.forEach(doc => {
-      const entry = doc.data() as JournalEntry;
-      entry.transactions.forEach(t => {
-        if (incomeStatementAccountIds.includes(t.accountId)) {
-          const acc = accounts.find(a => a.name === t.accountId)!;
+        
+        if (incomeStatementAccountIds.has(t.accountId)) {
           const currentChange = accountPeriodChanges.get(t.accountId) || 0;
           const change = acc.normalBalance === 'Kredit' ? t.credit - t.debit : t.debit - t.credit;
           accountPeriodChanges.set(t.accountId, currentChange + change);
@@ -424,13 +519,20 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
       });
     });
     
+    const sortedDates = Object.keys(dailyAggregates).sort();
+    report.incomeStatement.revenueTrend = sortedDates.map(date => ({ date, Pendapatan: dailyAggregates[date].revenue }));
+    report.incomeStatement.expenseTrend = sortedDates.map(date => ({ date, Beban: dailyAggregates[date].expense }));
+    
     accounts.forEach(acc => {
       if (acc.category === 'Pendapatan' || acc.category === 'Beban') {
-        const total = accountPeriodChanges.get(acc.name) || 0;
+        const total = accountPeriodChanges.get(acc.id!) || 0;
         if (total !== 0) {
             const item = { name: acc.name, total, budget: budgetMap.get(acc.id!) || 0 };
             if (acc.category === 'Pendapatan') report.incomeStatement.revenues.push(item);
-            else report.incomeStatement.expenses.push(item);
+            else {
+              report.incomeStatement.expenses.push(item);
+              report.incomeStatement.expenseComposition.push({ name: acc.name, value: total });
+            }
         }
       } else if (acc.balance !== 0) {
           const item = { name: acc.name, balance: acc.balance };

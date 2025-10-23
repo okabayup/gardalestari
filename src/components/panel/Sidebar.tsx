@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -13,7 +14,7 @@ import type { PermissionId } from '@/lib/definitions';
 import { usePanelBadges } from '@/hooks/use-panel-badges';
 import { Badge } from '../ui/badge';
 import { panelDirectoryItems } from '@/lib/definitions';
-import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuBadge } from '../ui/sidebar';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '../ui/sidebar';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 export function PanelSidebarContent() {
@@ -76,7 +77,6 @@ export function PanelSidebarContent() {
                                             <span>{item.label}</span>
                                         </Link>
                                     </SidebarMenuButton>
-                                    {badgeCount > 0 && <SidebarMenuBadge>{badgeCount}</SidebarMenuBadge>}
                                 </SidebarMenuItem>
                               )
                           })}
