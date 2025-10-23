@@ -1,8 +1,7 @@
 
-
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
-import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank } from 'lucide-react';
+import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact } from 'lucide-react';
 
 export const ALL_PERMISSIONS = [
     { id: 'manage_users', label: 'Kelola Anggota & Verifikasi' },
@@ -56,16 +55,73 @@ export const directoryItems = [
     { href: '/uji-aplikasi', label: 'Uji Aplikasi', icon: TestTube2 },
 ];
 
-export const panelDirectoryItems: { href: string; icon: LucideIcon; label: string; permission?: PermissionId }[] = [
-    { href: '/panel/dashboard', icon: Home, label: 'Dasbor' },
-    { href: '/panel/members', icon: Users, label: 'Anggota', permission: 'manage_users' },
-    { href: '/panel/berita', icon: Newspaper, label: 'Konten', permission: 'manage_news' },
-    { href: '/panel/programs', icon: Megaphone, label: 'Program', permission: 'manage_programs' },
-    { href: '/panel/ideas', icon: Lightbulb, label: 'Bank Ide', permission: 'manage_ideas'},
-    { href: '/panel/projects', icon: KanbanSquare, label: 'Proyek', permission: 'manage_projects' },
-    { href: '/panel/documents', icon: BookCopy, label: 'Persuratan', permission: 'manage_documents'},
-    { href: '/panel/finance/dashboard', icon: Wallet, label: 'Keuangan', permission: 'manage_finance'},
-    { href: '/panel/settings', icon: Settings, label: 'Pengaturan', permission: 'manage_settings' },
+export const panelDirectoryItems: {
+  group: string;
+  items: { href: string; icon: LucideIcon; label: string; permission?: PermissionId }[]
+}[] = [
+  {
+    group: 'Manajemen Keuangan',
+    items: [
+      { href: '/panel/finance/dashboard', icon: LayoutDashboard, label: 'Dasbor Keuangan', permission: 'manage_finance' },
+      { href: '/panel/finance/journal', icon: BookOpen, label: 'Jurnal Umum', permission: 'manage_finance' },
+      { href: '/panel/finance/accounts', icon: Notebook, label: 'Bagan Akun', permission: 'manage_finance' },
+      { href: '/panel/finance/contacts', icon: Contact, label: 'Kontak', permission: 'manage_finance' },
+      { href: '/panel/finance/assets', icon: Package, label: 'Manajemen Aset', permission: 'manage_finance' },
+      { href: '/panel/finance/budgets', icon: PiggyBank, label: 'Anggaran', permission: 'manage_finance' },
+      { href: '/panel/finance/reports', icon: AreaChart, label: 'Laporan Keuangan', permission: 'manage_finance' },
+    ]
+  },
+  {
+    group: 'Publikasi',
+    items: [
+      { href: '/panel/berita', icon: Newspaper, label: 'Konten', permission: 'manage_news' },
+      { href: '/panel/events', icon: Calendar, label: 'Acara', permission: 'manage_events' },
+      { href: '/panel/landing', icon: Landmark, label: 'Halaman Utama', permission: 'manage_landing_page' },
+    ],
+  },
+  {
+    group: 'Keterlibatan Anggota',
+    items: [
+      { href: '/panel/ideas', icon: Lightbulb, label: 'Lab Ide & Aksi', permission: 'manage_ideas'},
+      { href: '/panel/announcements', icon: Megaphone, label: 'Pengumuman', permission: 'manage_announcements'},
+      { href: '/panel/notifications', icon: Bell, label: 'Notifikasi', permission: 'send_notifications' },
+      { href: '/panel/evoting', icon: Vote, label: 'E-Voting', permission: 'manage_evoting' },
+      { href: '/panel/achievements', icon: Award, label: 'Prestasi', permission: 'manage_achievements' },
+      { href: '/panel/badges', icon: Award, label: 'Lencana', permission: 'manage_badges' },
+      { href: '/panel/redeem', icon: Gift, label: 'Item Hadiah', permission: 'manage_settings' },
+      { href: '/panel/missions', icon: Target, label: 'Misi', permission: 'manage_settings' },
+    ],
+  },
+  {
+    group: 'Manajemen Internal',
+    items: [
+      { href: '/panel/members', icon: Users, label: 'Anggota', permission: 'manage_users' },
+      { href: '/panel/positions', icon: UserCheck, label: 'Jabatan', permission: 'manage_positions' },
+      { href: '/panel/projects', icon: KanbanSquare, label: 'Proyek', permission: 'manage_projects' },
+      { href: '/panel/documents', icon: BookCopy, label: 'Persuratan', permission: 'manage_documents'},
+      { href: '/panel/reports', icon: Flag, label: 'Laporan Pengguna', permission: 'manage_reports' },
+    ],
+  },
+  {
+    group: 'Infrastruktur & Data',
+    items: [
+      { href: '/panel/partners', icon: Handshake, label: 'Mitra', permission: 'manage_partners' },
+      { href: '/panel/forms', icon: FileText, label: 'Formulir', permission: 'manage_forms' },
+      { href: '/panel/data-bank', icon: Database, label: 'Bank Data', permission: 'manage_data_bank'},
+      { href: '/panel/map-data', icon: Map, label: 'Data Peta', permission: 'manage_map_data' },
+      { href: '/panel/map-datasets', icon: Layers, label: 'Dataset Peta', permission: 'manage_map_datasets' },
+    ]
+  },
+  {
+    group: 'Lainnya',
+    items: [
+      { href: '/panel/whatsapp', icon: MessageCircle, label: 'Manajemen WhatsApp', permission: 'manage_whatsapp' },
+      { href: '/panel/recruitments', icon: Briefcase, label: 'Rekrutmen', permission: 'manage_recruitments' },
+      { href: '/panel/settings', icon: Settings, label: 'Pengaturan Aplikasi', permission: 'manage_settings' },
+      { href: '/panel/performance', icon: TrendingUp, label: 'Performa', permission: 'manage_settings' },
+      { href: '/panel/analytics/errors', icon: Bug, label: 'Log Error', permission: 'manage_settings' },
+    ]
+  }
 ];
 
 
@@ -176,6 +232,16 @@ export interface Budget {
     period: string; // YYYY-MM
     amount: number;
     createdAt: Timestamp;
+}
+
+export interface Contact {
+  id?: string;
+  name: string;
+  type: 'customer' | 'vendor' | 'other';
+  email?: string;
+  phoneNumber?: string;
+  address?: string;
+  createdAt: Timestamp;
 }
 
 

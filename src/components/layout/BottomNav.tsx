@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -9,6 +10,7 @@ import { Separator } from '../ui/separator';
 import { useAuth } from '@/hooks/use-auth';
 import { directoryItems, panelDirectoryItems, PermissionId } from '@/lib/definitions';
 import { ScrollArea } from '../ui/scroll-area';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const mainNavItems = [
   { href: '/feed', label: 'Beranda', icon: LayoutGrid },
@@ -19,7 +21,11 @@ const mainNavItems = [
 
 const DirectorySheet = () => {
     const { hasPermission } = useAuth();
-    const visiblePanelItems = panelDirectoryItems.filter(item => !item.permission || hasPermission(item.permission as PermissionId));
+    
+    const allPanelGroups = panelDirectoryItems.map(group => ({
+        ...group,
+        items: group.items.filter(item => !item.permission || hasPermission(item.permission as PermissionId))
+    })).filter(group => group.items.length > 0);
 
     return (
         <Sheet>
@@ -42,7 +48,7 @@ const DirectorySheet = () => {
                     </SheetDescription>
                 </SheetHeader>
                 <Separator className="my-4" />
-                <ScrollArea className="flex-1">
+                <ScrollArea className="flex-1 -mx-6 px-6">
                     <div className="grid grid-cols-3 gap-4">
                         {directoryItems.map(item => (
                              <Link key={item.label} href={item.href} className="flex flex-col items-center gap-2 p-4 rounded-lg bg-secondary/50 hover:bg-secondary">
@@ -52,20 +58,26 @@ const DirectorySheet = () => {
                         ))}
                     </div>
 
-                    {visiblePanelItems.length > 0 && (
-                        <>
-                            <Separator className="my-4" />
-                            <h4 className="mb-2 text-sm font-semibold text-muted-foreground">Panel Admin</h4>
-                            <div className="grid grid-cols-3 gap-4">
-                                {visiblePanelItems.map(item => (
-                                    <Link key={item.label} href={item.href} className="flex flex-col items-center gap-2 p-4 rounded-lg bg-destructive/10 hover:bg-destructive/20">
-                                        <item.icon className="h-6 w-6 text-destructive" />
-                                        <span className="font-medium text-sm text-center text-destructive">{item.label}</span>
-                                    </Link>
-                                ))}
-                            </div>
-                        </>
-                    )}
+                    <Separator className="my-4" />
+                    <h4 className="mb-2 text-sm font-semibold text-muted-foreground">Panel Admin</h4>
+                    
+                    <Accordion type="multiple" className="w-full">
+                        {allPanelGroups.map(group => (
+                            <AccordionItem key={group.group} value={group.group}>
+                                <AccordionTrigger>{group.group}</AccordionTrigger>
+                                <AccordionContent>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {group.items.map(item => (
+                                            <Link key={item.label} href={item.href} className="flex flex-col items-center gap-2 p-2 rounded-lg bg-destructive/5 hover:bg-destructive/10">
+                                                <item.icon className="h-5 w-5 text-destructive" />
+                                                <span className="font-medium text-xs text-center text-destructive">{item.label}</span>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        ))}
+                    </Accordion>
                 </ScrollArea>
             </SheetContent>
         </Sheet>
