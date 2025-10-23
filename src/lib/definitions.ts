@@ -1,3 +1,4 @@
+
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
 import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact, LayoutDashboard, Package, Landmark, Bell } from 'lucide-react';
@@ -64,10 +65,10 @@ export const panelDirectoryItems: {
     icon: Wallet,
     items: [
       { href: '/panel/finance/dashboard', icon: LayoutDashboard, label: 'Dasbor', permission: 'manage_finance' },
+      { href: '/panel/finance/transactions/new', icon: FilePlus, label: 'Catat Transaksi', permission: 'manage_finance' },
       { href: '/panel/finance/invoices', icon: FileText, label: 'Faktur Penjualan', permission: 'manage_finance' },
       { href: '/panel/finance/journal', icon: BookOpen, label: 'Buku Jurnal', permission: 'manage_finance' },
       { href: '/panel/finance/accounts', icon: Notebook, label: 'Daftar Akun', permission: 'manage_finance' },
-      { href: '/panel/finance/ledger', icon: BookCopy, label: 'Buku Besar', permission: 'manage_finance' },
       { href: '/panel/finance/contacts', icon: Contact, label: 'Kontak', permission: 'manage_finance' },
       { href: '/panel/finance/assets', icon: Package, label: 'Manajemen Aset', permission: 'manage_finance' },
       { href: '/panel/finance/budgets', icon: PiggyBank, label: 'Anggaran', permission: 'manage_finance' },
@@ -239,6 +240,7 @@ export interface FinancialReportData {
         netIncome: number;
         revenueTrend: { date: string; Pendapatan: number }[];
         expenseTrend: { date: string; Beban: number }[];
+        expenseComposition: { name: string; value: number }[];
     };
     balanceSheet: {
         assets: { name: string; balance: number }[];
@@ -1078,6 +1080,7 @@ export interface PublicProfile extends PublicUser {
 }
     
     
+
 
 
 
