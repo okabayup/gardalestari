@@ -25,7 +25,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }
   
   // If user is unverified, force them into the verification flow.
-  if (user.verificationStatus === 'unverified') {
+  if (user.verificationStatus === 'unverified' && !pathname.startsWith('/profile/me')) {
     return <VerificationFlow />;
   }
 
@@ -33,7 +33,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const showWaVerification = user.verificationStatus !== 'unverified' && !user.waVerified;
   
   const isMapPage = pathname === '/map';
-  const showHeader = !isMapPage;
+  const showHeader = !isMapPage && !pathname.startsWith('/panel');
   const showBottomNav = !isMapPage;
   
   return (

@@ -230,9 +230,9 @@ function SidebarComponent() {
           </nav>
         </div>
         <div className="mt-auto p-4">
-            <Button size="sm" className="w-full" onClick={handleSignOut}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Keluar
+            <Button size="sm" variant="outline" className="w-full" onClick={() => router.push('/feed')}>
+                <ChevronRight className="mr-2 h-4 w-4" />
+                Kembali ke Aplikasi
             </Button>
         </div>
       </div>
