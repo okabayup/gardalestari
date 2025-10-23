@@ -135,7 +135,9 @@ export const panelDirectoryItems: {
 
 export const initialAccounts = [
   // Aset Lancar
-  { code: '1-1100', name: 'Kas dan Setara Kas', category: 'Aset' as const, normalBalance: 'Debit' as const },
+  { code: '1-1110', name: 'Kas di Tangan', category: 'Aset' as const, normalBalance: 'Debit' as const },
+  { code: '1-1120', name: 'Bank Mandiri', category: 'Aset' as const, normalBalance: 'Debit' as const },
+  { code: '1-1130', name: 'Bank BCA', category: 'Aset' as const, normalBalance: 'Debit' as const },
   { code: '1-1200', name: 'Piutang Usaha', category: 'Aset' as const, normalBalance: 'Debit' as const },
   { code: '1-1300', name: 'Investasi Jangka Pendek', category: 'Aset' as const, normalBalance: 'Debit' as const },
   // Aset Tidak Lancar
@@ -145,25 +147,35 @@ export const initialAccounts = [
   
   // Liabilitas
   { code: '2-1100', name: 'Utang Usaha', category: 'Liabilitas' as const, normalBalance: 'Kredit' as const },
+  { code: '2-1200', name: 'Utang Gaji', category: 'Liabilitas' as const, normalBalance: 'Kredit' as const },
   { code: '2-2100', name: 'Utang Jangka Panjang', category: 'Liabilitas' as const, normalBalance: 'Kredit' as const },
 
   // Ekuitas
   { code: '3-1100', name: 'Modal Disetor', category: 'Ekuitas' as const, normalBalance: 'Kredit' as const },
   { code: '3-1200', name: 'Laba Ditahan', category: 'Ekuitas' as const, normalBalance: 'Kredit' as const },
-  { code: '3-3000', name: 'Laba (Rugi) Belum Direalisasi', category: 'Ekuitas' as const, normalBalance: 'Kredit' as const },
-
+  
   // Pendapatan
-  { code: '4-1100', name: 'Pendapatan Jasa', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
+  { code: '4-1100', name: 'Pendapatan Jasa Konsultasi', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
   { code: '4-1200', name: 'Pendapatan Donasi', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
-  { code: '4-8000', name: 'Pendapatan (Beban) Lain-lain', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
+  { code: '4-1300', name: 'Pendapatan Sponsor', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
+  { code: '4-1400', name: 'Pendapatan Iuran Anggota', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
+  { code: '4-1500', name: 'Pendapatan Penjualan Merchandise', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
+  { code: '4-1600', name: 'Pendapatan dari Program/Acara', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
+  { code: '4-8000', name: 'Pendapatan Lain-lain', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
 
   // Beban
-  { code: '5-1100', name: 'Beban Gaji', category: 'Beban' as const, normalBalance: 'Debit' as const },
-  { code: '5-1200', name: 'Beban Sewa', category: 'Beban' as const, normalBalance: 'Debit' as const },
-  { code: '5-1300', name: 'Beban Utilitas', category: 'Beban' as const, normalBalance: 'Debit' as const },
+  { code: '5-1100', name: 'Beban Gaji & Tunjangan', category: 'Beban' as const, normalBalance: 'Debit' as const },
+  { code: '5-1200', name: 'Beban Sewa Kantor', category: 'Beban' as const, normalBalance: 'Debit' as const },
+  { code: '5-1300', name: 'Beban Utilitas (Listrik, Air, Internet)', category: 'Beban' as const, normalBalance: 'Debit' as const },
   { code: '5-1400', name: 'Beban Operasional Program', category: 'Beban' as const, normalBalance: 'Debit' as const },
+  { code: '5-1500', name: 'Beban Pemasaran & Promosi', category: 'Beban' as const, normalBalance: 'Debit' as const },
+  { code: '5-1600', name: 'Beban Perjalanan & Akomodasi', category: 'Beban' as const, normalBalance: 'Debit' as const },
+  { code: '5-1700', name: 'Beban Perlengkapan Kantor', category: 'Beban' as const, normalBalance: 'Debit' as const },
+  { code: '5-1800', name: 'Beban Teknologi & Perangkat Lunak', category: 'Beban' as const, normalBalance: 'Debit' as const },
   { code: '5-2100', name: 'Beban Penyusutan', category: 'Beban' as const, normalBalance: 'Debit' as const },
+  { code: '5-8000', name: 'Beban Lain-lain', category: 'Beban' as const, normalBalance: 'Debit' as const },
 ];
+
 
 export const initialDocumentTypes = [
     { name: 'Surat Permohonan', code: 'SPm' },
@@ -1080,15 +1092,3 @@ export interface PublicProfile extends PublicUser {
 }
     
     
-
-
-
-
-
-
-
-
-
-
-
-
