@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -42,33 +43,37 @@ const DirectorySheet = () => {
             </SheetTrigger>
             <SheetContent side="bottom" className="rounded-t-lg h-[80vh] flex flex-col">
                 <SheetHeader className="text-left">
-                    <SheetTitle>Lainnya</SheetTitle>
+                    <SheetTitle>Direktori</SheetTitle>
                     <SheetDescription>
-                        Jelajahi informasi, peluang, dan sumber daya penting lainnya.
+                        Jelajahi semua fitur, informasi, dan alat yang tersedia.
                     </SheetDescription>
                 </SheetHeader>
-                <Separator className="my-4" />
+                <Separator className="my-2" />
                 <ScrollArea className="flex-1 -mx-6 px-6">
-                    <div className="grid grid-cols-3 gap-4">
-                        {directoryItems.map(item => (
-                             <Link key={item.label} href={item.href} className="flex flex-col items-center gap-2 p-4 rounded-lg bg-secondary/50 hover:bg-secondary">
-                                <item.icon className="h-6 w-6 text-primary" />
-                                <span className="font-medium text-sm text-center">{item.label}</span>
-                             </Link>
-                        ))}
-                    </div>
-
-                    <Separator className="my-4" />
-                    <h4 className="mb-2 text-sm font-semibold text-muted-foreground">Panel Admin</h4>
-                    
                     <Accordion type="multiple" className="w-full">
+                        <AccordionItem value="general">
+                            <AccordionTrigger>Fitur Umum</AccordionTrigger>
+                            <AccordionContent>
+                                <div className="grid grid-cols-3 gap-2 py-2">
+                                    {directoryItems.map(item => (
+                                        <Link key={item.label} href={item.href} className="flex flex-col items-center gap-2 p-2 rounded-lg bg-secondary/50 hover:bg-secondary">
+                                            <item.icon className="h-6 w-6 text-primary" />
+                                            <span className="font-medium text-xs text-center">{item.label}</span>
+                                        </Link>
+                                    ))}
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                        
+                        {allPanelGroups.length > 0 && <Separator className="my-2"/>}
+
                         {allPanelGroups.map(group => (
                             <AccordionItem key={group.group} value={group.group}>
                                 <AccordionTrigger>{group.group}</AccordionTrigger>
                                 <AccordionContent>
-                                    <div className="grid grid-cols-3 gap-2">
+                                    <div className="grid grid-cols-3 gap-2 py-2">
                                         {group.items.map(item => (
-                                            <Link key={item.label} href={item.href} className="flex flex-col items-center gap-2 p-2 rounded-lg bg-destructive/5 hover:bg-destructive/10">
+                                            <Link key={item.label} href={item.href} className="flex flex-col items-center gap-2 p-2 rounded-lg bg-red-500/5 hover:bg-red-500/10">
                                                 <item.icon className="h-5 w-5 text-destructive" />
                                                 <span className="font-medium text-xs text-center text-destructive">{item.label}</span>
                                             </Link>

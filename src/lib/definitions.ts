@@ -1,7 +1,7 @@
 
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
-import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact, LayoutDashboard, Package } from 'lucide-react';
+import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact, LayoutDashboard, Package, Landmark } from 'lucide-react';
 
 export const ALL_PERMISSIONS = [
     { id: 'manage_users', label: 'Kelola Anggota & Verifikasi' },
@@ -57,14 +57,17 @@ export const directoryItems = [
 
 export const panelDirectoryItems: {
   group: string;
+  icon: LucideIcon;
   items: { href: string; icon: LucideIcon; label: string; permission?: PermissionId }[]
 }[] = [
   {
     group: 'Manajemen Keuangan',
+    icon: Wallet,
     items: [
-      { href: '/panel/finance/dashboard', icon: LayoutDashboard, label: 'Dasbor Keuangan', permission: 'manage_finance' },
+      { href: '/panel/finance/dashboard', icon: LayoutDashboard, label: 'Dasbor', permission: 'manage_finance' },
       { href: '/panel/finance/journal', icon: BookOpen, label: 'Jurnal Umum', permission: 'manage_finance' },
       { href: '/panel/finance/accounts', icon: Notebook, label: 'Bagan Akun', permission: 'manage_finance' },
+      { href: '/panel/finance/ledger', icon: BookCopy, label: 'Buku Besar', permission: 'manage_finance' },
       { href: '/panel/finance/contacts', icon: Contact, label: 'Kontak', permission: 'manage_finance' },
       { href: '/panel/finance/assets', icon: Package, label: 'Manajemen Aset', permission: 'manage_finance' },
       { href: '/panel/finance/budgets', icon: PiggyBank, label: 'Anggaran', permission: 'manage_finance' },
@@ -73,14 +76,16 @@ export const panelDirectoryItems: {
   },
   {
     group: 'Publikasi',
+    icon: Presentation,
     items: [
       { href: '/panel/berita', icon: Newspaper, label: 'Konten', permission: 'manage_news' },
       { href: '/panel/events', icon: Calendar, label: 'Acara', permission: 'manage_events' },
-      { href: '/panel/landing', icon: Landmark, label: 'Halaman Utama', permission: 'manage_landing_page' },
+      { href: '/panel/landing', icon: Home, label: 'Halaman Utama', permission: 'manage_landing_page' },
     ],
   },
   {
     group: 'Keterlibatan Anggota',
+    icon: Users,
     items: [
       { href: '/panel/ideas', icon: Lightbulb, label: 'Lab Ide & Aksi', permission: 'manage_ideas'},
       { href: '/panel/announcements', icon: Megaphone, label: 'Pengumuman', permission: 'manage_announcements'},
@@ -94,6 +99,7 @@ export const panelDirectoryItems: {
   },
   {
     group: 'Manajemen Internal',
+    icon: Building2,
     items: [
       { href: '/panel/members', icon: Users, label: 'Anggota', permission: 'manage_users' },
       { href: '/panel/positions', icon: UserCheck, label: 'Jabatan', permission: 'manage_positions' },
@@ -104,6 +110,7 @@ export const panelDirectoryItems: {
   },
   {
     group: 'Infrastruktur & Data',
+    icon: Database,
     items: [
       { href: '/panel/partners', icon: Handshake, label: 'Mitra', permission: 'manage_partners' },
       { href: '/panel/forms', icon: FileText, label: 'Formulir', permission: 'manage_forms' },
@@ -114,6 +121,7 @@ export const panelDirectoryItems: {
   },
   {
     group: 'Lainnya',
+    icon: Settings,
     items: [
       { href: '/panel/whatsapp', icon: MessageCircle, label: 'Manajemen WhatsApp', permission: 'manage_whatsapp' },
       { href: '/panel/recruitments', icon: Briefcase, label: 'Rekrutmen', permission: 'manage_recruitments' },
