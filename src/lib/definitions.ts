@@ -1,7 +1,8 @@
 
+
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
-import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact, LayoutDashboard, Package, Landmark } from 'lucide-react';
+import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact, LayoutDashboard, Package, Bell } from 'lucide-react';
 
 export const ALL_PERMISSIONS = [
     { id: 'manage_users', label: 'Kelola Anggota & Verifikasi' },
@@ -65,6 +66,7 @@ export const panelDirectoryItems: {
     icon: Wallet,
     items: [
       { href: '/panel/finance/dashboard', icon: LayoutDashboard, label: 'Dasbor', permission: 'manage_finance' },
+      { href: '/panel/finance/invoices', icon: FileText, label: 'Faktur Penjualan', permission: 'manage_finance' },
       { href: '/panel/finance/journal', icon: BookOpen, label: 'Jurnal Umum', permission: 'manage_finance' },
       { href: '/panel/finance/accounts', icon: Notebook, label: 'Bagan Akun', permission: 'manage_finance' },
       { href: '/panel/finance/ledger', icon: BookCopy, label: 'Buku Besar', permission: 'manage_finance' },
@@ -173,6 +175,31 @@ export const initialDocumentTypes = [
 ];
 
 // --- Finance ---
+export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'void';
+
+export interface InvoiceItem {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
+export interface Invoice {
+  id?: string;
+  invoiceNumber: string;
+  contactId: string;
+  contactName: string;
+  date: Timestamp;
+  dueDate: Timestamp;
+  items: InvoiceItem[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  status: InvoiceStatus;
+  createdAt: Timestamp;
+  createdBy: string;
+}
+
 export type AccountCategory = 'Aset' | 'Liabilitas' | 'Ekuitas' | 'Pendapatan' | 'Beban';
 export type AccountNormalBalance = 'Debit' | 'Kredit';
 
@@ -199,6 +226,7 @@ export interface JournalEntry {
     transactions: JournalTransaction[];
     createdBy: string; // userId
     createdAt: Timestamp;
+    relatedInvoiceId?: string;
 }
 
 export interface FinancialReportData {
@@ -1048,3 +1076,5 @@ export interface PublicProfile extends PublicUser {
 }
     
     
+
+

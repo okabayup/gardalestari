@@ -22,13 +22,65 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
-import type { Account, JournalEntry, JournalTransaction, FinancialReportData, Budget, Contact } from '@/lib/definitions';
+import type { Account, JournalEntry, JournalTransaction, FinancialReportData, Budget, Contact, Invoice } from '@/lib/definitions';
 import { format, getMonth, getYear } from 'date-fns';
 
 const accountsCollection = collection(db, 'accounts');
 const journalEntriesCollection = collection(db, 'journalEntries');
 const budgetsCollection = collection(db, 'budgets');
 const contactsCollection = collection(db, 'contacts');
+const invoicesCollection = collection(db, 'invoices');
+
+
+// --- Invoicing (AR) Management ---
+export async function createInvoice(data: Omit<Invoice, 'id' | 'createdAt' | 'invoiceNumber'>, userId: string) {
+    try {
+        const invoiceNumber = `INV-${Date.now()}`;
+
+        await runTransaction(db, async (transaction) => {
+            const newInvoiceRef = doc(invoicesCollection);
+            
+            const invoiceData = {
+                ...data,
+                invoiceNumber,
+                status: 'draft' as const,
+                createdAt: serverTimestamp(),
+                createdBy: userId,
+            };
+            transaction.set(newInvoiceRef, invoiceData);
+
+            // Create corresponding journal entry
+            const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
+                date: data.date,
+                description: `Faktur Penjualan #${invoiceNumber} untuk ${data.contactName}`,
+                transactions: [
+                    { accountId: 'Piutang Usaha', debit: data.total, credit: 0 }, // Replace with actual account ID from user's CoA
+                    { accountId: 'Pendapatan Jasa', debit: 0, credit: data.subtotal }, // Replace with actual account ID
+                    // Add tax transaction if applicable
+                ],
+                createdBy: userId,
+                relatedInvoiceId: newInvoiceRef.id,
+            };
+            const newJournalRef = doc(journalEntriesCollection);
+            transaction.set(newJournalRef, { ...journalEntry, createdAt: serverTimestamp() });
+            
+            // Update account balances
+            const arAccountRef = doc(db, 'accounts', 'Piutang Usaha'); // Use actual ID
+            transaction.update(arAccountRef, { balance: increment(data.total) });
+            const revenueAccountRef = doc(db, 'accounts', 'Pendapatan Jasa'); // Use actual ID
+            transaction.update(revenueAccountRef, { balance: increment(data.subtotal) });
+
+        });
+
+        revalidatePath('/panel/finance/invoices');
+        revalidatePath('/panel/finance/journal');
+
+    } catch (error) {
+        console.error("[createInvoice Error]", error);
+        throw new Error(`Gagal membuat faktur: ${(error as Error).message}`);
+    }
+}
+
 
 // --- Contact Management ---
 export async function getContacts(): Promise<Contact[]> {
@@ -251,18 +303,17 @@ export async function getJournalEntries(): Promise<JournalEntry[]> {
 export async function getJournalEntriesForAccount(accountId: string, upToDate?: Date): Promise<JournalEntry[]> {
     try {
         const constraints = [
-            where('transactions', 'array-contains', { accountId: accountId, debit: 0, credit: 0 }), // This is a trick
-            orderBy('date', 'asc'),
+             orderBy('date', 'asc'),
         ];
         
         if (upToDate) {
-            constraints.push(where('date', '<=', Timestamp.fromDate(upToDate)));
+            constraints.push(where('date', '<=', Timestamp.fromDate(upToDate)) as any);
         }
         
-        const q = query(journalEntriesCollection, ...constraints as any);
+        const q = query(journalEntriesCollection, ...constraints);
         const snapshot = await getDocs(q);
 
-        // Firestore's array-contains-any is not perfect for this, so we need to filter in-memory
+        // Firestore can't query for array-contains on multiple fields, so filter in memory
         const filteredEntries = snapshot.docs
             .map(doc => ({ id: doc.id, ...doc.data() } as JournalEntry))
             .filter(entry => entry.transactions.some(t => t.accountId === accountId));
