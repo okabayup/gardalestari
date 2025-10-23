@@ -75,6 +75,9 @@ export function PanelSidebarContent() {
                                         <Link href={item.href}>
                                             <item.icon />
                                             <span>{item.label}</span>
+                                             {badgeCount > 0 && (
+                                                <Badge className="ml-auto group-data-[collapsible=icon]:hidden">{badgeCount}</Badge>
+                                            )}
                                         </Link>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>

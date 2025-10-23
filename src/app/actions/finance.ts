@@ -55,9 +55,12 @@ export async function createInvoice(data: Omit<Invoice, 'id' | 'createdAt' | 'in
                 date: data.date,
                 description: `Faktur Penjualan #${invoiceNumber} untuk ${data.contactName}`,
                 transactions: [
+                    // Piutang Usaha (AR) di Debit sebesar Total Tagihan
                     { accountId: 'Piutang Usaha', debit: data.total, credit: 0 }, 
+                    // Pendapatan di Kredit sebesar Subtotal (sebelum pajak)
                     { accountId: 'Pendapatan Jasa', debit: 0, credit: data.subtotal },
-                    // TODO: Add tax transaction if applicable, e.g., to 'Utang PPN'.
+                    // Utang PPN di Kredit sebesar Pajak yang dipungut
+                    { accountId: 'Utang PPN', debit: 0, credit: data.tax },
                 ],
                 createdBy: userId,
                 relatedInvoiceId: newInvoiceRef.id,
@@ -293,63 +296,29 @@ export async function getJournalEntries(): Promise<JournalEntry[]> {
     }
 }
 
-export async function getJournalEntriesForAccount(accountId: string, upToDate?: Date): Promise<{ entries: JournalEntry[], openingBalance: number }> {
+export async function getJournalEntriesForAccount(accountId: string): Promise<JournalEntry[]> {
     try {
-        const accountDoc = await getAccountDetails(accountId);
-        if (!accountDoc) throw new Error("Akun tidak ditemukan");
-
-        const q = query(collection(db, 'journalEntries'), orderBy('date', 'asc'));
+        const q = query(collection(db, 'journalEntries'), where('transactions', 'array-contains-any', [{accountId, credit:0, debit:0}]));
         const snapshot = await getDocs(q);
-
-        let openingBalance = 0;
-        let runningBalance = 0;
         
-        const relevantEntries: JournalEntry[] = [];
-        
-        snapshot.docs.forEach(doc => {
-            const entry = { id: doc.id, ...doc.data() } as JournalEntry;
-            const transaction = entry.transactions.find(t => t.accountId === accountId);
+        // This is a client-side filter because Firestore can't query inside array of objects precisely for this case.
+        // This is not performant for large datasets and should be improved with better data structure or a Cloud Function if needed.
+        const filteredEntries = snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() } as JournalEntry))
+            .filter(entry => entry.transactions.some(t => t.accountId === accountId));
 
-            if (transaction) {
-                const change = accountDoc.normalBalance === 'Debit' 
-                    ? transaction.debit - transaction.credit 
-                    : transaction.credit - transaction.debit;
-                
-                if (upToDate && entry.date.toDate() < upToDate) {
-                    openingBalance += change;
-                } else {
-                    runningBalance += change;
-                    relevantEntries.push(entry);
-                }
-            }
-        });
-        
-        // This calculation provides a different perspective on opening balance.
-        // Let's refine it in the component for presentation.
-        // For now, let's calculate a simpler opening balance.
-        
-        const allEntriesBeforeDate = await getDocs(query(collection(db, 'journalEntries'), where('date', '<', Timestamp.fromDate(upToDate || new Date(0)))));
-        let calculatedOpeningBalance = 0;
-        allEntriesBeforeDate.forEach(doc => {
-             const entry = { id: doc.id, ...doc.data() } as JournalEntry;
-             const transaction = entry.transactions.find(t => t.accountId === accountId);
-             if(transaction) {
-                 calculatedOpeningBalance += accountDoc.normalBalance === 'Debit' ? transaction.debit - transaction.credit : transaction.credit - transaction.debit;
-             }
-        });
-
-
-        return { entries: relevantEntries, openingBalance: calculatedOpeningBalance };
+        return filteredEntries.sort((a,b) => (a.date as any).toDate() - (b.date as any).toDate());
     } catch (error) {
         console.error("[getJournalEntriesForAccount Error]", error);
         throw new Error("Gagal mengambil data buku besar.");
     }
 }
 
+
 // --- Fixed Assets ---
 export async function getAssets(): Promise<FixedAsset[]> {
   try {
-    const q = query(accountsCollection, orderBy('acquisitionDate', 'desc'));
+    const q = query(collection(db, 'fixedAssets'), orderBy('acquisitionDate', 'desc'));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FixedAsset));
   } catch (error) {
@@ -410,15 +379,6 @@ export async function runMonthlyDepreciation(userId: string) {
         return { message: "Tidak ada aset aktif untuk disusutkan." };
     }
     
-    const depreciationExpenseAccount = await getDocs(query(accountsCollection, where("name", "==", "Beban Penyusutan"), limit(1)));
-    const accDepreciationAccount = await getDocs(query(accountsCollection, where("name", "==", "Akumulasi Penyusutan Aset"), limit(1)));
-
-    if (depreciationExpenseAccount.empty || accDepreciationAccount.empty) {
-        throw new Error("Akun 'Beban Penyusutan' atau 'Akumulasi Penyusutan Aset' tidak ditemukan.");
-    }
-    const depreciationAccountId = depreciationExpenseAccount.docs[0].id;
-    const accDepreciationAccountId = accDepreciationAccount.docs[0].id;
-
     let journalEntriesCreated = 0;
 
     for (const assetDoc of snapshot.docs) {
@@ -436,8 +396,8 @@ export async function runMonthlyDepreciation(userId: string) {
                 date: Timestamp.now(),
                 description: `Penyusutan bulanan untuk ${asset.name}`,
                 transactions: [
-                    { accountId: depreciationAccountId, debit: monthlyDepreciation, credit: 0 }, 
-                    { accountId: accDepreciationAccountId, debit: 0, credit: monthlyDepreciation }, 
+                    { accountId: 'Beban Penyusutan', debit: monthlyDepreciation, credit: 0 }, 
+                    { accountId: 'Akumulasi Penyusutan Aset', debit: 0, credit: monthlyDepreciation }, 
                 ],
                 createdBy: userId,
             });

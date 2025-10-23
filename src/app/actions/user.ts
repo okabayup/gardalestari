@@ -210,6 +210,7 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
         const verificationStatus = formData.get('verificationStatus') as VerificationStatus;
         const isSpecialMember = formData.get('isSpecialMember') === 'true';
         const isHidden = formData.get('isHidden') === 'true';
+        const isSuspended = formData.get('isSuspended') === 'true';
         const titlePrefix = formData.get('titlePrefix') as string;
         const titlePostfix = formData.get('titlePostfix') as string;
         const level = formData.get('level') as UserLevel;
@@ -240,6 +241,7 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
         dataToUpdate.titlePostfix = titlePostfix;
         dataToUpdate.isSpecialMember = isSpecialMember;
         dataToUpdate.isHidden = isHidden;
+        dataToUpdate.isSuspended = isSuspended;
         dataToUpdate.verificationStatus = verificationStatus;
         dataToUpdate.level = level;
 

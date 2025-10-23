@@ -70,9 +70,9 @@ export const panelDirectoryItems: {
       { href: '/panel/finance/journal', icon: BookOpen, label: 'Buku Jurnal', permission: 'manage_finance' },
       { href: '/panel/finance/accounts', icon: Notebook, label: 'Daftar Akun', permission: 'manage_finance' },
       { href: '/panel/finance/contacts', icon: Contact, label: 'Kontak', permission: 'manage_finance' },
-      { href: '/panel/finance/assets', icon: Package, label: 'Manajemen Aset', permission: 'manage_finance' },
+      { href: '/panel/finance/assets', icon: Package, label: 'Aset Tetap', permission: 'manage_finance' },
       { href: '/panel/finance/budgets', icon: PiggyBank, label: 'Anggaran', permission: 'manage_finance' },
-      { href: '/panel/finance/reports', icon: AreaChart, label: 'Laporan Keuangan', permission: 'manage_finance' },
+      { href: '/panel/finance/reports', icon: AreaChart, label: 'Laporan', permission: 'manage_finance' },
     ]
   },
   {
@@ -141,13 +141,14 @@ export const initialAccounts = [
   { code: '1-1200', name: 'Piutang Usaha', category: 'Aset' as const, normalBalance: 'Debit' as const },
   { code: '1-1300', name: 'Investasi Jangka Pendek', category: 'Aset' as const, normalBalance: 'Debit' as const },
   // Aset Tidak Lancar
-  { code: '1-2100', name: 'Aset Tetap', category: 'Aset' as const, normalBalance: 'Debit' as const },
+  { code: '1-2100', name: 'Peralatan Kantor', category: 'Aset' as const, normalBalance: 'Debit' as const },
   { code: '1-2199', name: 'Akumulasi Penyusutan Aset', category: 'Aset' as const, normalBalance: 'Kredit' as const },
   { code: '1-2200', name: 'Investasi Jangka Panjang', category: 'Aset' as const, normalBalance: 'Debit' as const },
   
   // Liabilitas
   { code: '2-1100', name: 'Utang Usaha', category: 'Liabilitas' as const, normalBalance: 'Kredit' as const },
   { code: '2-1200', name: 'Utang Gaji', category: 'Liabilitas' as const, normalBalance: 'Kredit' as const },
+  { code: '2-1300', name: 'Utang PPN', category: 'Liabilitas' as const, normalBalance: 'Kredit' as const },
   { code: '2-2100', name: 'Utang Jangka Panjang', category: 'Liabilitas' as const, normalBalance: 'Kredit' as const },
 
   // Ekuitas
@@ -155,23 +156,24 @@ export const initialAccounts = [
   { code: '3-1200', name: 'Laba Ditahan', category: 'Ekuitas' as const, normalBalance: 'Kredit' as const },
   
   // Pendapatan
-  { code: '4-1100', name: 'Pendapatan Jasa Konsultasi', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
+  { code: '4-1100', name: 'Pendapatan Jasa', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
   { code: '4-1200', name: 'Pendapatan Donasi', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
   { code: '4-1300', name: 'Pendapatan Sponsor', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
   { code: '4-1400', name: 'Pendapatan Iuran Anggota', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
   { code: '4-1500', name: 'Pendapatan Penjualan Merchandise', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
-  { code: '4-1600', name: 'Pendapatan dari Program/Acara', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
+  { code: '4-1600', name: 'Pendapatan Hibah', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
   { code: '4-8000', name: 'Pendapatan Lain-lain', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
 
   // Beban
   { code: '5-1100', name: 'Beban Gaji & Tunjangan', category: 'Beban' as const, normalBalance: 'Debit' as const },
-  { code: '5-1200', name: 'Beban Sewa Kantor', category: 'Beban' as const, normalBalance: 'Debit' as const },
-  { code: '5-1300', name: 'Beban Utilitas (Listrik, Air, Internet)', category: 'Beban' as const, normalBalance: 'Debit' as const },
+  { code: '5-1200', name: 'Beban Sewa', category: 'Beban' as const, normalBalance: 'Debit' as const },
+  { code: '5-1300', name: 'Beban Utilitas', category: 'Beban' as const, normalBalance: 'Debit' as const },
   { code: '5-1400', name: 'Beban Operasional Program', category: 'Beban' as const, normalBalance: 'Debit' as const },
   { code: '5-1500', name: 'Beban Pemasaran & Promosi', category: 'Beban' as const, normalBalance: 'Debit' as const },
   { code: '5-1600', name: 'Beban Perjalanan & Akomodasi', category: 'Beban' as const, normalBalance: 'Debit' as const },
   { code: '5-1700', name: 'Beban Perlengkapan Kantor', category: 'Beban' as const, normalBalance: 'Debit' as const },
   { code: '5-1800', name: 'Beban Teknologi & Perangkat Lunak', category: 'Beban' as const, normalBalance: 'Debit' as const },
+  { code: '5-1900', name: 'Beban Program Hibah', category: 'Beban' as const, normalBalance: 'Debit' as const },
   { code: '5-2100', name: 'Beban Penyusutan', category: 'Beban' as const, normalBalance: 'Debit' as const },
   { code: '5-8000', name: 'Beban Lain-lain', category: 'Beban' as const, normalBalance: 'Debit' as const },
 ];
