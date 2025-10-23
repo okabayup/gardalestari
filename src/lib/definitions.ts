@@ -215,16 +215,21 @@ export interface EduwisataPackage {
 export interface Booking {
     id: string;
     packageId: string;
-    userId: string;
+    userId?: string; // Optional if booked by guest
     customerName: string;
     customerEmail: string;
+    customerPhone: string;
     bookingDate: Timestamp;
     participants: number;
-    selectedAddons: { addonId: string; quantity: number }[];
+    selectedAddons: { addonId: string; quantity: number, price: number }[];
     totalPrice: number;
+    uniqueCode: number;
     status: 'pending' | 'paid' | 'confirmed' | 'cancelled' | 'completed';
-    paymentGatewayTransactionId?: string;
     createdAt: Timestamp;
+    // Fields for manual bank transfer confirmation
+    paymentSenderName?: string;
+    paymentSenderBank?: string;
+    paymentProofUrl?: string; // URL to uploaded payment proof
 }
 
 
@@ -1130,3 +1135,4 @@ export interface PublicProfile extends PublicUser {
 }
     
     
+

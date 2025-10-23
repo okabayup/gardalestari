@@ -19,9 +19,11 @@ const addonsCollection = collection(db, 'addons');
  * Creates a new booking for an Eduwisata package.
  * This function initiates the booking and sets its status to 'pending'.
  * @param bookingData - The core booking information.
- * @returns The ID of the newly created booking.
+ * @returns The ID of the newly created booking and the final amount to be paid.
  */
-export async function createBooking(bookingData: Omit<Booking, 'id' | 'createdAt' | 'status' | 'totalPrice'>): Promise<{ bookingId: string; finalAmount: number; }> {
+export async function createBooking(
+    bookingData: Omit<Booking, 'id' | 'createdAt' | 'status' | 'totalPrice' | 'uniqueCode'>
+): Promise<{ bookingId: string; finalAmount: number; }> {
   try {
     // Generate a unique 3-digit code for the transfer
     const uniqueCode = Math.floor(100 + Math.random() * 900);
@@ -59,6 +61,7 @@ export async function createBooking(bookingData: Omit<Booking, 'id' | 'createdAt
       const newBooking: Omit<Booking, 'id'> = {
         ...bookingData,
         totalPrice: finalAmount,
+        uniqueCode,
         status: 'pending', // Set initial status to pending payment
         createdAt: Timestamp.now(),
       };
@@ -80,38 +83,37 @@ export async function createBooking(bookingData: Omit<Booking, 'id' | 'createdAt
 }
 
 /**
- * --- BRAINSTORMING: UNIQUE CODE BANK TRANSFER PAYMENT ---
+ * --- WORKFLOW: PEMBAYARAN TRANSFER BANK DENGAN KODE UNIK ---
  * 
- * This method avoids direct payment gateway integration and relies on manual verification by an admin,
- * which is simplified by a unique payment amount.
+ * Metode ini menghindari integrasi payment gateway langsung dan mengandalkan verifikasi manual 
+ * oleh admin, yang disederhanakan dengan jumlah pembayaran yang unik.
  * 
- * 1. **Initiate Transaction (Client-side):**
- *    - User finalizes their booking details.
- *    - Client calls the `createBooking` server action.
- *    - The `createBooking` action:
- *      a. Generates a unique 3-digit code (e.g., 123).
- *      b. Calculates the `finalAmount` (e.g., total price of 150,000 becomes 150,123).
- *      c. Creates a booking document in Firestore with `status: 'pending'` and saves the `finalAmount`.
- *      d. Returns the `bookingId` and `finalAmount` to the client.
- *    - The client-side UI then displays a "Waiting for Payment" page with:
- *      a. The exact amount to transfer (Rp 150.123).
- *      b. The bank account details (Bank Name, Account Number, Account Holder Name).
- *      c. A deadline for the payment (e.g., "Please complete payment within 1 hour").
+ * 1. **Inisiasi Transaksi (Client-side):**
+ *    - Pengguna menyelesaikan detail pemesanan mereka.
+ *    - Client memanggil `createBooking` server action.
+ *    - `createBooking` akan:
+ *      a. Menghasilkan kode unik 3-digit (misal: 123).
+ *      b. Menghitung `finalAmount` (misal: total harga 150.000 menjadi 150.123).
+ *      c. Membuat dokumen booking di Firestore dengan `status: 'pending'` dan menyimpan `finalAmount` & `uniqueCode`.
+ *      d. Mengembalikan `bookingId` dan `finalAmount` ke client.
+ *    - UI client kemudian menampilkan halaman "Menunggu Pembayaran" dengan:
+ *      a. Jumlah yang harus ditransfer: Rp 150.123.
+ *      b. Detail rekening bank: BCA 1801802325 a.n. Oka Bayu Pratama.
+ *      c. Batas waktu pembayaran (misal, "Selesaikan pembayaran dalam 1 jam").
+ *      d. Form untuk konfirmasi pembayaran (opsional, tapi direkomendasikan), di mana pengguna memasukkan nama pengirim, nama bank, dan mengunggah bukti transfer.
  * 
- * 2. **Manual Payment Confirmation (Admin Workflow):**
- *    - The admin periodically checks their bank account statement.
- *    - They look for incoming transfers with unique amounts (e.g., Rp 150.123).
- *    - When a matching transfer is found, the admin goes to the Admin Panel (`/panel/bookings`).
- *    - In the panel, they find the booking with the corresponding `pending` status and `totalPrice`.
- *    - The admin manually updates the booking status from 'pending' to 'confirmed' or 'paid'.
+ * 2. **Konfirmasi Pembayaran (Admin Workflow):**
+ *    - Admin secara berkala memeriksa mutasi rekening bank.
+ *    - Saat menemukan transfer masuk sebesar Rp 150.123, admin dapat dengan mudah mencocokkannya dengan pesanan yang pending di panel admin.
+ *    - Admin mengubah status pesanan dari 'pending' menjadi 'paid' atau 'confirmed'.
  * 
- * 3. **Handle Payment Notification (Server-side):**
- *    - When the admin updates the status, a server-side trigger (or an explicit action) can be fired.
- *    - This trigger sends a confirmation notification (e.g., via WhatsApp or email) to the user,
- *      informing them that their payment has been received and their booking is confirmed.
+ * 3. **Notifikasi Pembayaran (Server-side):**
+ *    - Ketika status diubah, sebuah trigger (misalnya, Cloud Function atau action eksplisit di panel) dapat diaktifkan.
+ *    - Trigger ini akan mengirim notifikasi (WhatsApp/email) ke `customerPhone` yang tersimpan di dokumen booking, 
+ *      menginformasikan bahwa pembayaran telah diterima dan pesanan dikonfirmasi. Tautan untuk melihat detail pesanan bisa disertakan: `/pesanan/${bookingId}`.
  *
- * 4. **Handling Expired Bookings:**
- *    - A scheduled function (e.g., a cron job or Firebase Scheduled Function) can run periodically (e.g., every hour).
- *    - This function queries for `pending` bookings older than the payment deadline (e.g., 1 hour).
- *    - For each expired booking, it reverts the stock decremented in step 1 and updates the booking status to 'cancelled'.
+ * 4. **Penanganan Pesanan Kedaluwarsa:**
+ *    - Sebuah fungsi terjadwal (misalnya, cron job atau Firebase Scheduled Function) berjalan secara periodik.
+ *    - Fungsi ini mencari dokumen booking dengan status `pending` yang dibuat lebih dari 1-2 jam yang lalu.
+ *    - Untuk setiap pesanan yang kedaluwarsa, fungsi ini akan mengembalikan stok add-on dan mengubah status pesanan menjadi 'cancelled'.
  */
