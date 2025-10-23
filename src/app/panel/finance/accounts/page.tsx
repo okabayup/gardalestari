@@ -194,7 +194,7 @@ export default function ChartOfAccountsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Daftar Akun</CardTitle>
-          <CardDescription>Total {accounts.length} akun ditemukan.</CardDescription>
+          <CardDescription>Total {accounts.length} akun ditemukan. Klik nama akun untuk melihat buku besar.</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
