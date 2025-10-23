@@ -1,14 +1,38 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { getRedemptionHistory, RedemptionLog } from '@/app/actions/points';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DataTable } from '@/components/panel/DataTable';
+import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
+
+const columns: ColumnDef<RedemptionLog>[] = [
+    {
+        accessorKey: 'userName',
+        header: 'Anggota',
+    },
+    {
+        accessorKey: 'itemName',
+        header: 'Item',
+    },
+    {
+        accessorKey: 'pointsSpent',
+        header: 'Poin Dihabiskan',
+    },
+    {
+        accessorKey: 'redeemedAt',
+        header: 'Tanggal',
+        cell: ({ row }) => {
+            const date = new Date(row.original.redeemedAt);
+            return format(date, 'dd MMM yyyy, HH:mm', { locale: idLocale });
+        },
+    },
+];
 
 export default function RedemptionHistoryPage() {
   const { toast } = useToast();
@@ -47,34 +71,7 @@ export default function RedemptionHistoryPage() {
           {loading ? (
             <div className="flex justify-center items-center h-24"><Loader2 className="h-6 w-6 animate-spin" /></div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Anggota</TableHead>
-                  <TableHead>Item</TableHead>
-                  <TableHead>Poin Dihabiskan</TableHead>
-                  <TableHead>Tanggal</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {logs.length > 0 ? (
-                  logs.map(log => (
-                    <TableRow key={log.id}>
-                      <TableCell>{log.userName}</TableCell>
-                      <TableCell>{log.itemName}</TableCell>
-                      <TableCell>{log.pointsSpent}</TableCell>
-                      <TableCell>{format(new Date(log.redeemedAt), 'dd MMM yyyy, HH:mm', { locale: idLocale })}</TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground py-10">
-                      Belum ada riwayat penukaran.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+             <DataTable columns={columns} data={logs} placeholder="Cari nama anggota atau item..."/>
           )}
         </CardContent>
       </Card>

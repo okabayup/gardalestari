@@ -9,8 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { createPost, Mention } from '@/app/actions/posts';
-import { searchUsers } from '@/app/actions/members';
+import { createPost } from '@/app/actions/posts';
+import type { Mention } from '@/app/actions/posts';
+import { searchUsers } from '@/app/actions/user';
 import type { PublicUser } from '@/lib/definitions';
 import { Loader2, ArrowLeft, ImageIcon, X, Tag } from 'lucide-react';
 import Image from 'next/image';

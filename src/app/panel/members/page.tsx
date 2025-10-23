@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -9,7 +8,7 @@ import {
   resetVerificationData,
   deleteUserAccount,
   MemberWithStatus,
-} from '@/app/actions/user'; // Updated import
+} from '@/app/actions/user';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -40,7 +39,7 @@ import { columns } from './columns';
 import { Badge } from '@/components/ui/badge';
 import type { Timestamp } from 'firebase/firestore';
 import { memberTypes, verificationStatuses } from '@/lib/definitions';
-
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function AdminMembersPage() {
   const { toast } = useToast();
@@ -52,15 +51,15 @@ export default function AdminMembersPage() {
   const [isVerificationDialogOpen, setIsVerificationDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<MemberWithStatus | null>(null);
   
-  const [showResetAlert, setShowResetAlert] = useState(false);
-  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
   const [confirmationInput, setConfirmationInput] = useState("");
   const [actionToConfirm, setActionToConfirm] = useState<'reset' | 'delete' | null>(null);
+  const [activeTab, setActiveTab] = useState('all');
 
   const fetchMembers = useCallback(async () => {
     setLoading(true);
     try {
-      const fetchedMembers = await getMembers(false); // Fetch all members for admin
+      const fetchedMembers = await getMembers(false);
       setMembers(fetchedMembers);
     } catch (error) {
       toast({
@@ -76,6 +75,17 @@ export default function AdminMembersPage() {
     fetchMembers();
   }, [fetchMembers]);
 
+  const filteredMembers = useMemo(() => {
+    switch (activeTab) {
+      case 'pending':
+        return members.filter(m => m.verificationStatus === 'temporary');
+      case 'deletion-requests':
+        return members.filter(m => m.deletionRequestedAt);
+      case 'all':
+      default:
+        return members;
+    }
+  }, [members, activeTab]);
 
   const handleOpenDialog = (member: MemberWithStatus, dialog: 'edit' | 'verify') => {
     setSelectedMember(member);
@@ -100,7 +110,7 @@ export default function AdminMembersPage() {
   const handleOpenConfirmationDialog = (member: MemberWithStatus, action: 'reset' | 'delete') => {
     setSelectedMember(member);
     setActionToConfirm(action);
-    setShowResetAlert(true);
+    setShowConfirmationDialog(true);
   };
 
   const handleConfirmation = async () => {
@@ -128,7 +138,7 @@ export default function AdminMembersPage() {
           await resetVerificationData(selectedMember.id);
           toast({title: 'Data Verifikasi Direset', description: `Data verifikasi untuk ${selectedMember.name} telah dihapus.`});
           fetchMembers();
-          setShowResetAlert(false);
+          setShowConfirmationDialog(false);
       } catch (error) {
           toast({variant: 'destructive', title: 'Gagal Mereset', description: (error as Error).message });
       } finally {
@@ -145,7 +155,7 @@ export default function AdminMembersPage() {
           if (result.success) {
             toast({title: 'Akun Dihapus', description: `Akun ${selectedMember.name} telah dihapus permanen.`});
             fetchMembers();
-            setShowResetAlert(false);
+            setShowConfirmationDialog(false);
           } else {
             throw new Error(result.error);
           }
@@ -218,20 +228,29 @@ export default function AdminMembersPage() {
     { columnId: 'verificationStatus', title: 'Status', options: verificationStatuses.map(vs => ({ label: vs.label, value: vs.value })) },
   ];
 
+  const toolbarButtons = (
+      <Button onClick={() => router.push('/panel/members/new')}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Tambah Anggota
+      </Button>
+  );
 
   return (
     <>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="font-headline text-2xl font-bold">Manajemen Anggota</h1>
-            <p className="text-muted-foreground">Kelola jabatan, peran, dan status verifikasi anggota.</p>
-          </div>
-          <Button onClick={() => router.push('/panel/members/new')}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Tambah Anggota
-          </Button>
+        <div>
+          <h1 className="font-headline text-2xl font-bold">Manajemen Anggota</h1>
+          <p className="text-muted-foreground">Kelola jabatan, peran, dan status verifikasi anggota.</p>
         </div>
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList>
+                <TabsTrigger value="all">Semua Anggota</TabsTrigger>
+                <TabsTrigger value="pending">Menunggu Verifikasi</TabsTrigger>
+                <TabsTrigger value="deletion-requests">Permintaan Hapus</TabsTrigger>
+            </TabsList>
+        </Tabs>
+        
         {loading ? (
            <div className="flex justify-center py-10">
                 <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
@@ -239,9 +258,10 @@ export default function AdminMembersPage() {
         ) : (
             <DataTable 
               columns={memoizedColumns} 
-              data={members} 
+              data={filteredMembers} 
               placeholder="Cari anggota..."
               facetedFilters={facetedFilters}
+              toolbarButtons={toolbarButtons}
             />
         )}
       </div>
@@ -261,7 +281,7 @@ export default function AdminMembersPage() {
             />
         </>
       )}
-      <AlertDialog open={showResetAlert} onOpenChange={setShowResetAlert}>
+      <AlertDialog open={showConfirmationDialog} onOpenChange={setShowConfirmationDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Anda Yakin?</AlertDialogTitle>
@@ -280,7 +300,7 @@ export default function AdminMembersPage() {
             placeholder={`Ketik "${actionToConfirm === 'reset' ? 'RESET' : 'HAPUS'}" untuk konfirmasi`}
           />
           <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setConfirmationInput('')}>Batal</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90"
               disabled={(actionToConfirm === 'reset' && confirmationInput !== 'RESET') || (actionToConfirm === 'delete' && confirmationInput !== 'HAPUS') || isSavingDetails}

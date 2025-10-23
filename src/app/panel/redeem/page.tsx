@@ -10,7 +10,7 @@ import { getRedeemableItems, createRedeemableItem, updateRedeemableItem, deleteR
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, Trash2, PlusCircle, Edit, ShoppingBag, Coins } from 'lucide-react';
+import { Loader2, Trash2, PlusCircle, Edit, ShoppingBag, Coins, History } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -32,6 +32,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 const formSchema = z.object({
   name: z.string().min(3, 'Nama minimal 3 karakter'),
@@ -133,6 +134,7 @@ const ItemFormDialog = ({ item, onSave, isSaving, onClose }: { item?: Redeemable
 
 export default function RedeemItemsPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [items, setItems] = useState<RedeemableItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -177,7 +179,7 @@ export default function RedeemItemsPage() {
     }
   };
   
-  const handleDelete = async () => {
+   const handleDelete = async () => {
       if (itemToDelete?.id) {
           try {
               await deleteRedeemableItem(itemToDelete.id);
@@ -198,12 +200,17 @@ export default function RedeemItemsPage() {
           <h1 className="font-headline text-2xl font-bold">Manajemen Item Hadiah</h1>
           <p className="text-muted-foreground">Kelola item yang dapat ditukar dengan Poin Hijau.</p>
         </div>
-        <Button onClick={() => { setSelectedItem(null); setIsDialogOpen(true); }}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Tambah Item Baru
-        </Button>
+         <div className="flex gap-2">
+            <Button variant="outline" onClick={() => router.push('/panel/redeem/history')}>
+                <History className="mr-2 h-4 w-4" /> Riwayat Penukaran
+            </Button>
+            <Button onClick={() => { setSelectedItem(null); setIsDialogOpen(true); }}>
+              <PlusCircle className="mr-2 h-4 w-4" /> Tambah Item Baru
+            </Button>
+        </div>
       </div>
-
-      {isDialogOpen && <ItemFormDialog item={selectedItem} onSave={handleSave} isSaving={isSaving} onClose={() => setIsDialogOpen(false)} />}
+      
+       {isDialogOpen && <ItemFormDialog item={selectedItem} onSave={handleSave} isSaving={isSaving} onClose={() => setIsDialogOpen(false)} />}
       
       <Card>
         <CardHeader>

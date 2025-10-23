@@ -1,14 +1,13 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { getProgramTags, addProgramTag, deleteProgramTag, ProgramTag } from '@/app/actions/programs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Trash2, PlusCircle } from 'lucide-react';
 import {
   AlertDialog,
@@ -21,6 +20,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useRouter } from 'next/navigation';
+import { DataTable } from '@/components/panel/DataTable';
+import { ColumnDef } from '@tanstack/react-table';
+import { DataTableColumnHeader } from '@/components/panel/DataTableColumnHeader';
 
 interface FormData {
   name: string;
@@ -35,8 +37,7 @@ export default function TagProgramPage() {
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<ProgramTag | null>(null);
 
-  const fetchTags = async () => {
-    setLoading(true);
+ const fetchTags = useCallback(async () => {
     try {
       const fetchedTags = await getProgramTags();
       setTags(fetchedTags);
@@ -45,11 +46,12 @@ export default function TagProgramPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
+    setLoading(true);
     fetchTags();
-  }, []);
+  }, [fetchTags]);
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -81,6 +83,21 @@ export default function TagProgramPage() {
       }
     }
   };
+  
+  const columns = useMemo<ColumnDef<ProgramTag>[]>(() => [
+    {
+      accessorKey: 'name',
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Nama" />,
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => (
+        <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(row.original)}>
+            <Trash2 className="h-4 w-4 text-destructive" />
+        </Button>
+      ),
+    }
+  ], []);
 
   return (
     <>
@@ -96,7 +113,6 @@ export default function TagProgramPage() {
         <Card>
           <CardHeader>
             <CardTitle>Tambah Tag Baru</CardTitle>
-            <CardDescription>Buat tag baru untuk program Anda.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="flex gap-2">
@@ -113,7 +129,6 @@ export default function TagProgramPage() {
         <Card>
           <CardHeader>
             <CardTitle>Daftar Tag</CardTitle>
-            <CardDescription>Kelola tag program yang sudah ada.</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -121,29 +136,7 @@ export default function TagProgramPage() {
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nama</TableHead>
-                    <TableHead className="text-right">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {tags.map((tag) => (
-                    <TableRow key={tag.id}>
-                      <TableCell>{tag.name}</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(tag)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-            {tags.length === 0 && !loading && (
-              <p className="text-center text-sm text-muted-foreground py-4">Belum ada tag.</p>
+              <DataTable columns={columns} data={tags} placeholder="Cari tag..." />
             )}
           </CardContent>
         </Card>

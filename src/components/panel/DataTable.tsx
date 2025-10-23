@@ -14,6 +14,7 @@ import {
   SortingState,
   ColumnFiltersState,
   useReactTable,
+  RowSelectionState,
 } from '@tanstack/react-table';
 
 import {
@@ -30,8 +31,8 @@ import { DataTablePagination } from './DataTablePagination';
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  rowSelection?: Record<string, boolean>;
-  setRowSelection?: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  rowSelection?: RowSelectionState;
+  setRowSelection?: React.Dispatch<React.SetStateAction<RowSelectionState>>;
   placeholder?: string;
   facetedFilters?: {
     columnId: string;
@@ -42,6 +43,7 @@ interface DataTableProps<TData, TValue> {
       icon?: React.ComponentType<{ className?: string }>;
     }[];
   }[];
+  toolbarButtons?: React.ReactNode;
 }
 
 export function DataTable<TData, TValue>({
@@ -51,6 +53,7 @@ export function DataTable<TData, TValue>({
   setRowSelection,
   placeholder,
   facetedFilters,
+  toolbarButtons,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -63,8 +66,9 @@ export function DataTable<TData, TValue>({
       sorting,
       columnFilters,
       globalFilter,
-      ...(rowSelection && { rowSelection }),
+      ...(rowSelection && setRowSelection && { rowSelection }),
     },
+    enableRowSelection: !!setRowSelection,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -83,6 +87,7 @@ export function DataTable<TData, TValue>({
         table={table} 
         placeholder={placeholder} 
         facetedFilters={facetedFilters} 
+        toolbarButtons={toolbarButtons}
       />
       <div className="rounded-md border">
         <Table>

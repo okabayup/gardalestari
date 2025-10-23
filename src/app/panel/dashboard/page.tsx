@@ -43,12 +43,12 @@ export default async function Dashboard() {
     const [members, programs, news, events, mapData] = await Promise.all([
         getMembers(),
         getPrograms(),
-        getBeritaPosts(),
+        getBeritaPosts(undefined, true), // include drafts for total count
         getEvents(),
         getMapData()
     ]);
 
-    const verifiedMembers = members.filter(m => m.verificationStatus === 'permanent' || m.verificationStatus === 'temporary').length;
+    const verifiedMembers = members.filter(m => m.verificationStatus === 'permanent' || m.verificationStatus === 'manual').length;
     const pendingVerification = members.filter(m => m.verificationStatus === 'temporary');
 
   return (
@@ -78,7 +78,7 @@ export default async function Dashboard() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Berita Diterbitkan</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Konten</CardTitle>
             <Newspaper className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>

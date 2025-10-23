@@ -50,6 +50,10 @@ const DirectorySheet = () => {
                 </SheetHeader>
                 <Separator className="my-2" />
                 <ScrollArea className="flex-1 -mx-6 px-6">
+                    <div className="flex items-center gap-2 mb-4">
+                        <div className="h-3 w-3 rounded-full bg-primary" />
+                        <span className="text-xs font-semibold text-primary">Fitur Umum</span>
+                    </div>
                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 py-4">
                         {directoryItems.map(item => (
                             <Link key={item.label} href={item.href} className="flex flex-col items-center gap-2 p-2 rounded-lg bg-secondary/50 hover:bg-secondary">
