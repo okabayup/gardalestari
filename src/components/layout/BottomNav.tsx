@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Separator } from '../ui/separator';
 import { useAuth } from '@/hooks/use-auth';
 import { directoryItems, panelDirectoryItems, PermissionId } from '@/lib/definitions';
+import { ScrollArea } from '../ui/scroll-area';
 
 const mainNavItems = [
   { href: '/feed', label: 'Beranda', icon: LayoutGrid },
@@ -31,40 +32,42 @@ const DirectorySheet = () => {
                     )}
                     >
                     <FolderKanban className="h-5 w-5" />
-                    <span className="text-xs">Direktori</span>
+                    <span className="text-xs">Lainnya</span>
                 </div>
             </SheetTrigger>
-            <SheetContent side="bottom" className="rounded-t-lg">
+            <SheetContent side="bottom" className="rounded-t-lg h-[80vh] flex flex-col">
                 <SheetHeader className="text-left">
-                    <SheetTitle>Direktori</SheetTitle>
+                    <SheetTitle>Lainnya</SheetTitle>
                     <SheetDescription>
                         Jelajahi informasi, peluang, dan sumber daya penting lainnya.
                     </SheetDescription>
                 </SheetHeader>
                 <Separator className="my-4" />
-                <div className="grid grid-cols-3 gap-4">
-                    {directoryItems.map(item => (
-                         <Link key={item.label} href={item.href} className="flex flex-col items-center gap-2 p-4 rounded-lg bg-secondary/50 hover:bg-secondary">
-                            <item.icon className="h-6 w-6 text-primary" />
-                            <span className="font-medium text-sm text-center">{item.label}</span>
-                         </Link>
-                    ))}
-                </div>
+                <ScrollArea className="flex-1">
+                    <div className="grid grid-cols-3 gap-4">
+                        {directoryItems.map(item => (
+                             <Link key={item.label} href={item.href} className="flex flex-col items-center gap-2 p-4 rounded-lg bg-secondary/50 hover:bg-secondary">
+                                <item.icon className="h-6 w-6 text-primary" />
+                                <span className="font-medium text-sm text-center">{item.label}</span>
+                             </Link>
+                        ))}
+                    </div>
 
-                {visiblePanelItems.length > 0 && (
-                    <>
-                        <Separator className="my-4" />
-                        <h4 className="mb-2 text-sm font-semibold text-muted-foreground">Panel Admin</h4>
-                        <div className="grid grid-cols-3 gap-4">
-                            {visiblePanelItems.map(item => (
-                                <Link key={item.label} href={item.href} className="flex flex-col items-center gap-2 p-4 rounded-lg bg-destructive/10 hover:bg-destructive/20">
-                                    <item.icon className="h-6 w-6 text-destructive" />
-                                    <span className="font-medium text-sm text-center text-destructive">{item.label}</span>
-                                </Link>
-                            ))}
-                        </div>
-                    </>
-                )}
+                    {visiblePanelItems.length > 0 && (
+                        <>
+                            <Separator className="my-4" />
+                            <h4 className="mb-2 text-sm font-semibold text-muted-foreground">Panel Admin</h4>
+                            <div className="grid grid-cols-3 gap-4">
+                                {visiblePanelItems.map(item => (
+                                    <Link key={item.label} href={item.href} className="flex flex-col items-center gap-2 p-4 rounded-lg bg-destructive/10 hover:bg-destructive/20">
+                                        <item.icon className="h-6 w-6 text-destructive" />
+                                        <span className="font-medium text-sm text-center text-destructive">{item.label}</span>
+                                    </Link>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </ScrollArea>
             </SheetContent>
         </Sheet>
     )
