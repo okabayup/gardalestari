@@ -37,6 +37,7 @@ import {
   Bug,
   Flag,
   Wallet,
+  BookOpen,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
@@ -70,6 +71,7 @@ const navGroups: {
     icon: Wallet,
     items: [
       { href: '/panel/finance/accounts', icon: BookCopy, label: 'Bagan Akun', permission: 'manage_finance' },
+      { href: '/panel/finance/journal', icon: BookOpen, label: 'Jurnal Umum', permission: 'manage_finance' },
     ]
   },
   {

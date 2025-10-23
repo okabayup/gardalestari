@@ -122,6 +122,22 @@ export interface Account {
     createdAt: Timestamp;
 }
 
+export interface JournalTransaction {
+    accountId: string;
+    debit: number;
+    credit: number;
+}
+
+export interface JournalEntry {
+    id?: string;
+    date: Timestamp;
+    description: string;
+    transactions: JournalTransaction[];
+    createdBy: string; // userId
+    createdAt: Timestamp;
+}
+
+
 export interface IdeaStatus {
   // ... (previous definitions)
 }
@@ -129,7 +145,7 @@ export interface IdeaStatus {
 export type IdeaStatus = 'diajukan' | 'ditinjau' | 'disetujui' | 'diterapkan' | 'ditolak';
 export type IdeaType = 'INNOVATIVE' | 'SOLUTION';
 
-export const ideaStatusMap: Record<IdeaStatus, { label: string, color: string }> = {
+export const ideaStatusMap: Record<IdeaStatus, { label: string; color: string }> = {
     diajukan: { label: 'Diajukan', color: 'bg-gray-500' },
     ditinjau: { label: 'Ditinjau', color: 'bg-blue-500' },
     disetujui: { label: 'Disetujui', color: 'bg-green-500' },
