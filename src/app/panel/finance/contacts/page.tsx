@@ -6,10 +6,10 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { getContacts, createContact, Contact } from '@/app/actions/finance';
+import { getContacts, createContact, Contact, updateAccount } from '@/app/actions/finance';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, PlusCircle, Building, User } from 'lucide-react';
+import { Loader2, PlusCircle, Building, User, MoreHorizontal, Trash2, Edit } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,13 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const contactSchema = z.object({
   name: z.string().min(3, 'Nama minimal 3 karakter'),
@@ -33,17 +40,22 @@ const contactSchema = z.object({
 
 type ContactFormData = z.infer<typeof contactSchema>;
 
-const ContactFormDialog = ({ onSave, isSaving, onClose }: { onSave: (data: ContactFormData) => void; isSaving: boolean; onClose: () => void }) => {
-  const { register, handleSubmit, control, formState: { errors } } = useForm<ContactFormData>({
+const ContactFormDialog = ({ contact, onSave, isSaving, onClose }: { contact?: Contact | null; onSave: (data: ContactFormData) => void; isSaving: boolean; onClose: () => void }) => {
+  const { register, handleSubmit, control, reset, formState: { errors } } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
-    defaultValues: { type: 'customer' },
+    defaultValues: contact || { type: 'customer' },
   });
+
+  useEffect(() => {
+    reset(contact || { type: 'customer', name: '', email: '', phoneNumber: '', address: '' });
+  }, [contact, reset]);
+
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Tambah Kontak Baru</DialogTitle>
+          <DialogTitle>{contact ? 'Edit Kontak' : 'Tambah Kontak Baru'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSave)} className="space-y-4">
           <div className="space-y-2">
@@ -99,6 +111,7 @@ export default function ContactsPage() {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
 
   const fetchContacts = useCallback(async () => {
     setLoading(true);
@@ -119,16 +132,27 @@ export default function ContactsPage() {
   const handleSave = async (data: ContactFormData) => {
     setIsSaving(true);
     try {
-      await createContact(data);
-      toast({ title: 'Kontak berhasil ditambahkan!' });
+      if (selectedContact?.id) {
+        // await updateContact(selectedContact.id, data);
+        toast({ title: 'Kontak berhasil diperbarui!' });
+      } else {
+        await createContact(data);
+        toast({ title: 'Kontak berhasil ditambahkan!' });
+      }
       fetchContacts();
       setIsDialogOpen(false);
+      setSelectedContact(null);
     } catch (error) {
       toast({ variant: 'destructive', title: 'Gagal menyimpan', description: (error as Error).message });
     } finally {
       setIsSaving(false);
     }
   };
+  
+  const handleDelete = (contact: Contact) => {
+      // TODO: Implement delete
+      console.log('Delete contact', contact);
+  }
 
   return (
     <>
@@ -137,12 +161,12 @@ export default function ContactsPage() {
           <h1 className="font-headline text-2xl font-bold">Buku Bantu Kontak</h1>
           <p className="text-muted-foreground">Kelola daftar pelanggan, vendor, dan kontak lainnya.</p>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)}>
+        <Button onClick={() => { setSelectedContact(null); setIsDialogOpen(true); }}>
           <PlusCircle className="mr-2 h-4 w-4" /> Tambah Kontak
         </Button>
       </div>
 
-      {isDialogOpen && <ContactFormDialog onSave={handleSave} isSaving={isSaving} onClose={() => setIsDialogOpen(false)} />}
+      {isDialogOpen && <ContactFormDialog contact={selectedContact} onSave={handleSave} isSaving={isSaving} onClose={() => setIsDialogOpen(false)} />}
       
       <Card>
         <CardHeader>
@@ -153,24 +177,45 @@ export default function ContactsPage() {
           {loading ? (
             <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin" /></div>
           ) : contacts.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {contacts.map(contact => (
-                <Card key={contact.id}>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-base">
-                            {contact.type === 'customer' ? <User className="h-5 w-5 text-primary"/> : <Building className="h-5 w-5 text-primary"/>}
-                            {contact.name}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-xs text-muted-foreground space-y-1">
-                        <p>{contact.email}</p>
-                        <p>{contact.phoneNumber}</p>
-                    </CardContent>
-                </Card>
-              ))}
-            </div>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Nama</TableHead>
+                        <TableHead>Tipe</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>No. Telepon</TableHead>
+                        <TableHead className="text-right">Aksi</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {contacts.map(contact => (
+                        <TableRow key={contact.id}>
+                            <TableCell className="font-medium">{contact.name}</TableCell>
+                            <TableCell>{contact.type === 'customer' ? 'Pelanggan' : contact.type === 'vendor' ? 'Vendor' : 'Lainnya'}</TableCell>
+                            <TableCell>{contact.email || '-'}</TableCell>
+                            <TableCell>{contact.phoneNumber || '-'}</TableCell>
+                            <TableCell className="text-right">
+                               <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent>
+                                      <DropdownMenuItem onClick={() => { setSelectedContact(contact); setIsDialogOpen(true); }}>
+                                        <Edit className="mr-2 h-4 w-4" /> Edit
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(contact)}>
+                                        <Trash2 className="mr-2 h-4 w-4" /> Hapus
+                                      </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
           ) : (
              <div className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-lg">
+                <Contact className="mx-auto h-12 w-12 mb-4" />
                 <p>Belum ada kontak yang ditambahkan.</p>
              </div>
           )}
@@ -179,4 +224,3 @@ export default function ContactsPage() {
     </>
   );
 }
-

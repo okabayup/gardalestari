@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -30,6 +29,7 @@ const reasonLabels: Record<Report['reason'], string> = {
   pelecehan: 'Pelecehan',
   konten_ilegal: 'Konten Ilegal',
   lainnya: 'Lainnya',
+  csae: 'CSAE',
 };
 
 export default function ReportsPage() {

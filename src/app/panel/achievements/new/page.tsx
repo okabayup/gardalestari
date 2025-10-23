@@ -18,8 +18,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
 import { createAchievement } from '@/app/actions/achievements';
-import { searchUsers } from '@/app/actions/members';
-import type { PublicUser } from '@/lib/definitions';
+import { searchUsers, PublicUser } from '@/app/actions/user';
 import { cn } from '@/lib/utils';
 import { useDebounce } from 'use-debounce';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -170,7 +169,7 @@ export default function NewAchievementPage() {
                     <Button variant="ghost" size="sm" onClick={() => setValue('user', undefined as any)}>Ganti</Button>
                 </div>
             ) : (
-                <UserSearch onSelectUser={(user) => setValue('user', {id: user.id, name: user.fullName, avatarUrl: user.avatarUrl})} />
+                <UserSearch onSelectUser={(user) => setValue('user', {id: user.id, name: user.fullName, avatarUrl: user.avatarUrl || ''})} />
             )}
             {errors.user && <p className="text-sm text-destructive">{errors.user.message}</p>}
           </div>

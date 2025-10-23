@@ -1,8 +1,7 @@
 
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { getJournalEntriesForAccount, getAccountDetails, JournalEntry, Account } from '@/app/actions/finance';
@@ -31,80 +30,74 @@ export default function LedgerPage() {
   const [ledgerRows, setLedgerRows] = useState<LedgerRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (accountId) {
-      const fetchData = async () => {
-        setLoading(true);
-        try {
-          const accountDetails = await getAccountDetails(accountId);
-          if (!accountDetails) {
-            toast({ variant: 'destructive', title: 'Akun tidak ditemukan' });
-            router.push('/panel/finance/accounts');
-            return;
-          }
-          setAccount(accountDetails);
+  const fetchLedgerData = useCallback(async () => {
+    if (!accountId) return;
+    setLoading(true);
+    try {
+      const accountDetails = await getAccountDetails(accountId);
+      if (!accountDetails) {
+        toast({ variant: 'destructive', title: 'Akun tidak ditemukan' });
+        router.push('/panel/finance/accounts');
+        return;
+      }
+      setAccount(accountDetails);
 
-          const entries = await getJournalEntriesForAccount(accountId);
-          
-          let runningBalance = accountDetails.balance;
-          if (entries.length > 0) {
-            const allTransactionsBeforeFirst = await getJournalEntriesForAccount(accountId, (entries[0].date as any).toDate());
-            
-            const balanceBeforeFirstTx = allTransactionsBeforeFirst.reduce((balance, entry) => {
+      const entries = await getJournalEntriesForAccount(accountId);
+      
+      let openingBalance = 0;
+      if (entries.length > 0) {
+        // Calculate the balance of all transactions *before* the first one displayed.
+        const firstDate = (entries[0].date as any).toDate();
+        const entriesBefore = await getJournalEntriesForAccount(accountId, firstDate);
+        
+        openingBalance = entriesBefore.reduce((balance, entry) => {
+            if ((entry.date as any).toDate() < firstDate) {
               const transaction = entry.transactions.find(t => t.accountId === accountId)!;
               return balance + (accountDetails.normalBalance === 'Debit' ? transaction.debit - transaction.credit : transaction.credit - transaction.debit);
-            }, 0);
+            }
+            return balance;
+        }, 0);
+      } else {
+        openingBalance = accountDetails.balance;
+      }
 
-            // This is a correction factor. The running balance should start from the balance of the account
-            // minus the balance calculated from the transactions we are about to display.
-            const displayedTransactionsBalance = entries.reduce((balance, entry) => {
-                 const transaction = entry.transactions.find(t => t.accountId === accountId)!;
-                 return balance + (accountDetails.normalBalance === 'Debit' ? transaction.debit - transaction.credit : transaction.credit - transaction.debit);
-            }, 0);
+      let runningBalance = openingBalance;
+      const rows: LedgerRow[] = entries.map(entry => {
+        const transaction = entry.transactions.find(t => t.accountId === accountId)!;
+        const { debit, credit } = transaction;
+        const change = accountDetails.normalBalance === 'Debit' ? debit - credit : credit - debit;
+        runningBalance += change;
+        return {
+          date: (entry.date as any).toDate(),
+          description: entry.description,
+          debit,
+          credit,
+          balance: runningBalance,
+        };
+      });
 
-            runningBalance = accountDetails.balance - displayedTransactionsBalance;
-          } else {
-            runningBalance = accountDetails.balance;
-          }
-
-
-          const rows = entries.map(entry => {
-            const transaction = entry.transactions.find(t => t.accountId === accountId)!;
-            const { debit, credit } = transaction;
-            const change = accountDetails.normalBalance === 'Debit' ? debit - credit : credit - debit;
-            runningBalance += change;
-            return {
-              date: (entry.date as any).toDate(),
-              description: entry.description,
-              debit,
-              credit,
-              balance: runningBalance,
-            };
-          });
-
-          // Add opening balance row
-          if (entries.length > 0) {
-             const openingBalance = accountDetails.balance - displayedTransactionsBalance;
-             rows.unshift({
-                date: (entries[0].date as any).toDate(),
-                description: "Saldo Awal",
-                debit: 0,
-                credit: 0,
-                balance: openingBalance,
-             })
-          }
-          
-          setLedgerRows(rows);
-          
-        } catch (error) {
-          toast({ variant: 'destructive', title: 'Gagal memuat buku besar', description: (error as Error).message });
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchData();
+      // Add opening balance row
+      rows.unshift({
+        date: entries.length > 0 ? (entries[0].date as any).toDate() : new Date(),
+        description: "Saldo Awal Periode",
+        debit: 0,
+        credit: 0,
+        balance: openingBalance,
+      });
+      
+      setLedgerRows(rows);
+      
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Gagal memuat buku besar', description: (error as Error).message });
+    } finally {
+      setLoading(false);
     }
   }, [accountId, router, toast]);
+
+  useEffect(() => {
+    fetchLedgerData();
+  }, [fetchLedgerData]);
+
 
   if (loading) {
     return <div className="flex h-full w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -121,7 +114,10 @@ export default function LedgerPage() {
       <Card>
         <CardHeader>
           <CardTitle>Buku Besar: {account?.name}</CardTitle>
-          <CardDescription>Menampilkan semua transaksi untuk akun <span className="font-mono">{account?.code}</span>. Saldo Akhir: <span className="font-bold">{account?.balance.toLocaleString('id-ID', {style: 'currency', currency: 'IDR'}) || 'Rp 0'}</span></CardDescription>
+          <CardDescription>
+            Menampilkan semua transaksi untuk akun <span className="font-mono">{account?.code}</span>. 
+            Saldo Akhir: <span className="font-bold">{account?.balance.toLocaleString('id-ID', {style: 'currency', currency: 'IDR'}) || 'Rp 0'}</span>
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -150,7 +146,7 @@ export default function LedgerPage() {
                   <TableCell colSpan={5} className="text-center">Tidak ada transaksi untuk akun ini.</TableCell>
                 </TableRow>
               )}
-               {ledgerRows.length === 0 && (
+               {(ledgerRows.length === 0 || ledgerRows.length === 1) && (
                  <TableRow className="font-bold bg-muted/50">
                     <TableCell colSpan={4}>Saldo Akhir</TableCell>
                     <TableCell className="text-right font-mono">{account?.balance.toLocaleString('id-ID')}</TableCell>

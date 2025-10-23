@@ -16,7 +16,7 @@ import {
 import { arrayMove } from '@dnd-kit/sortable';
 import { produce } from 'immer';
 import { ProjectColumn, ProjectTask, updateTaskColumn, updateTeamMembers } from '@/app/actions/projects';
-import { getMembers, type MemberWithStatus } from '@/app/actions/members';
+import { getMembers, type MemberWithStatus } from '@/app/actions/user';
 import { useToast } from '@/hooks/use-toast';
 import ProjectColumnComponent from './ProjectColumn';
 import ProjectTaskCard from './ProjectTaskCard';
