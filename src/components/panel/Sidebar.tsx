@@ -4,7 +4,6 @@
 import Link from 'next/link';
 import {
   Home,
-  Menu,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
@@ -15,7 +14,8 @@ import type { PermissionId } from '@/lib/definitions';
 import { usePanelBadges } from '@/hooks/use-panel-badges';
 import { Badge } from '../ui/badge';
 import { panelDirectoryItems } from '@/lib/definitions';
-import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupLabel, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton, SidebarMenuBadge } from '../ui/sidebar';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupLabel, SidebarMenuBadge } from '../ui/sidebar';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 export function PanelSidebarContent() {
   const pathname = usePathname();
@@ -40,39 +40,45 @@ export function PanelSidebarContent() {
                   </Link>
               </SidebarMenuButton>
           </SidebarMenuItem>
+        </SidebarMenu>
+        <Accordion type="multiple" defaultValue={panelDirectoryItems.map(g => g.group)} className="w-full">
            {panelDirectoryItems.map((group) => {
               const visibleItems = group.items.filter(item => !item.permission || hasPermission(item.permission as PermissionId));
               if (visibleItems.length === 0) return null;
               
               return (
-                  <SidebarGroup key={group.group}>
-                      <SidebarGroupLabel asChild>
-                          <div className="flex items-center gap-2">
-                             {group.icon && <group.icon />}
-                             <span>{group.group}</span>
-                          </div>
-                      </SidebarGroupLabel>
-                      {visibleItems.map(item => {
-                          const isActive = pathname.startsWith(item.href);
-                          const badgeCount = (item.href === '/panel/members' && badges.pendingMembers > 0) 
-                              ? badges.pendingMembers 
-                              : 0;
-                          return (
-                            <SidebarMenuItem key={item.href}>
-                                <SidebarMenuButton asChild isActive={isActive} tooltip={{children: item.label}}>
-                                    <Link href={item.href}>
-                                        <item.icon />
-                                        <span>{item.label}</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                                {badgeCount > 0 && <SidebarMenuBadge>{badgeCount}</SidebarMenuBadge>}
-                            </SidebarMenuItem>
-                          )
-                      })}
-                  </SidebarGroup>
+                  <AccordionItem value={group.group} key={group.group} className="border-none">
+                     <AccordionTrigger className="px-2 py-1.5 text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-md group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+                         <div className="flex items-center gap-2">
+                           {group.icon && <group.icon className="h-4 w-4"/>}
+                           <span className="group-data-[collapsible=icon]:hidden">{group.group}</span>
+                         </div>
+                     </AccordionTrigger>
+                     <AccordionContent className="pb-0">
+                        <SidebarMenu className="pl-4 group-data-[collapsible=icon]:pl-0">
+                          {visibleItems.map(item => {
+                              const isActive = pathname.startsWith(item.href);
+                              const badgeCount = (item.href === '/panel/members' && badges.pendingMembers > 0) 
+                                  ? badges.pendingMembers 
+                                  : 0;
+                              return (
+                                <SidebarMenuItem key={item.href}>
+                                    <SidebarMenuButton asChild isActive={isActive} tooltip={{children: item.label}} size="sm">
+                                        <Link href={item.href}>
+                                            <item.icon />
+                                            <span>{item.label}</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                    {badgeCount > 0 && <SidebarMenuBadge>{badgeCount}</SidebarMenuBadge>}
+                                </SidebarMenuItem>
+                              )
+                          })}
+                        </SidebarMenu>
+                     </AccordionContent>
+                  </AccordionItem>
               )
            })}
-        </SidebarMenu>
+        </Accordion>
       </SidebarContent>
     </>
   );
