@@ -8,9 +8,11 @@ import { LayoutGrid, Users, Sprout, FolderKanban, Sparkles, Dot } from 'lucide-r
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { Separator } from '../ui/separator';
 import { useAuth } from '@/hooks/use-auth';
-import { directoryItems, panelDirectoryItems, PermissionId } from '@/lib/definitions';
+import { directoryItems, panelDirectoryItems, PermissionId, AppSettings } from '@/lib/definitions';
 import { ScrollArea } from '../ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { getAppSettings } from '@/app/actions/settings';
+import { useState, useEffect } from 'react';
 
 const mainNavItems = [
   { href: '/feed', label: 'Beranda', icon: LayoutGrid },
@@ -19,10 +21,18 @@ const mainNavItems = [
   { href: '/assistant', label: 'Agen AI', icon: Sparkles },
 ];
 
-const DirectorySheet = () => {
+const DirectorySheet = ({ settings }: { settings: AppSettings | null }) => {
     const { hasPermission } = useAuth();
     
-    // Filter only the panel groups the user has permission to see
+    // Filter out disabled features
+    const accessibleDirectoryItems = directoryItems.filter(item => {
+        if (item.href === '/ideas' && !settings?.isIdeasEnabled) return false;
+        if (item.href === '/achievements' && !settings?.isAchievementsEnabled) return false;
+        if (item.href === '/evoting' && !settings?.isEvotingEnabled) return false;
+        if (item.href === '/points' && !settings?.isPointsEnabled) return false;
+        return true;
+    });
+
     const accessiblePanelGroups = panelDirectoryItems.map(group => ({
         ...group,
         items: group.items.filter(item => !item.permission || hasPermission(item.permission as PermissionId))
@@ -55,7 +65,7 @@ const DirectorySheet = () => {
                         <span className="text-xs font-semibold text-primary">Fitur Umum</span>
                     </div>
                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 py-4">
-                        {directoryItems.map(item => (
+                        {accessibleDirectoryItems.map(item => (
                             <Link key={item.label} href={item.href} className="flex flex-col items-center gap-2 p-2 rounded-lg bg-secondary/50 hover:bg-secondary">
                                 <item.icon className="h-6 w-6 text-primary" />
                                 <span className="font-medium text-xs text-center">{item.label}</span>
@@ -71,7 +81,12 @@ const DirectorySheet = () => {
 export default function BottomNav() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const [settings, setSettings] = useState<AppSettings | null>(null);
   
+  useEffect(() => {
+    getAppSettings().then(setSettings);
+  }, []);
+
   if (user?.verificationStatus === 'unverified') {
     return null;
   }
@@ -95,7 +110,7 @@ export default function BottomNav() {
             </Link>
           );
         })}
-        <DirectorySheet />
+        <DirectorySheet settings={settings} />
       </nav>
     </div>
   );

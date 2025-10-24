@@ -21,6 +21,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../u
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { getNotificationsForUser, markNotificationsAsRead, Notification, getUnreadNotificationsCount } from '@/app/actions/notifications';
+import { getAppSettings, AppSettings } from '@/app/actions/settings';
 import { formatDistanceToNow } from 'date-fns';
 import { GlobalSearch } from '../search/GlobalSearch';
 
@@ -44,7 +45,12 @@ export default function Header() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [settings, setSettings] = useState<AppSettings | null>(null);
   const isAdmin = user?.permissions && user.permissions.length > 0;
+  
+  useEffect(() => {
+    getAppSettings().then(setSettings);
+  }, []);
   
   useEffect(() => {
     if (user) {
@@ -141,12 +147,14 @@ export default function Header() {
                 </SheetContent>
               </Sheet>
 
-              <Button variant="secondary" size="sm" className="h-8 gap-2" asChild>
-                  <Link href="/points">
-                    <Coins className="h-4 w-4 text-yellow-500" />
-                    <span className="text-sm font-bold">{user.greenPoints || 0}</span>
-                  </Link>
-              </Button>
+              {settings?.isPointsEnabled && (
+                <Button variant="secondary" size="sm" className="h-8 gap-2" asChild>
+                    <Link href="/points">
+                      <Coins className="h-4 w-4 text-yellow-500" />
+                      <span className="text-sm font-bold">{user.greenPoints || 0}</span>
+                    </Link>
+                </Button>
+              )}
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -164,12 +172,14 @@ export default function Header() {
                     <UserCircle className="mr-2 h-4 w-4" />
                     <span>Profil Saya</span>
                   </DropdownMenuItem>
-                   <DropdownMenuItem onClick={() => router.push('/points')} className="cursor-pointer flex justify-between items-center">
-                    <div className="flex items-center">
-                      <Coins className="mr-2 h-4 w-4" />
-                      <span>Poin Hijau</span>
-                    </div>
-                  </DropdownMenuItem>
+                   {settings?.isPointsEnabled && (
+                      <DropdownMenuItem onClick={() => router.push('/points')} className="cursor-pointer flex justify-between items-center">
+                        <div className="flex items-center">
+                          <Coins className="mr-2 h-4 w-4" />
+                          <span>Poin Hijau</span>
+                        </div>
+                      </DropdownMenuItem>
+                    )}
                   {isAdmin && (
                       <DropdownMenuItem onClick={() => router.push('/panel/dashboard')} className="cursor-pointer sm:hidden">
                           <Shield className="mr-2 h-4 w-4" />

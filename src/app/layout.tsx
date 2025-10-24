@@ -5,10 +5,14 @@ import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import FirebaseAnalytics from '@/components/FirebaseAnalytics';
 import { Suspense } from 'react';
+import { getAppSettings } from './actions/settings';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://gardalestari.org';
 
-export const metadata: Metadata = {
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getAppSettings();
+  
+  return {
     metadataBase: new URL(BASE_URL),
     title: {
       default: 'Tumbuh Bersama Bumi',
@@ -29,7 +33,7 @@ export const metadata: Metadata = {
       siteName: 'Garda Lestari',
       images: [
         {
-          url: '/og-image.png',
+          url: settings.heroImageUrl || '/og-image.png',
           width: 1200,
           height: 630,
           alt: 'Lanskap Pertanian Indonesia',
@@ -42,14 +46,15 @@ export const metadata: Metadata = {
       card: 'summary_large_image',
       title: 'Tumbuh Bersama Bumi',
       description: 'Inovasi pemuda untuk kelestarian agro-maritim dan kehutanan Indonesia.',
-      images: ['/og-image.png'],
+      images: [settings.heroImageUrl || '/og-image.png'],
     },
     appleWebApp: {
       capable: true,
       statusBarStyle: 'default',
       title: 'Garda Lestari',
     },
-};
+  }
+}
 
 
 export default function RootLayout({

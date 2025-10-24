@@ -1,7 +1,7 @@
 
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
-import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact, LayoutDashboard, Package, Landmark, Plane, Bell } from 'lucide-react';
+import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact, LayoutDashboard, Package, Landmark, Plane } from 'lucide-react';
 
 export const SHORTLINK_DOMAIN = 'https://gamules.io';
 
@@ -998,7 +998,12 @@ export interface AppSettings {
   dummyPrograms: number;
   dummyEvents: number;
   dummyNews: number;
-  isTestimonialsEnabled?: boolean;
+  isTestimonialsEnabled: boolean;
+  isReferralEnabled: boolean;
+  isPointsEnabled: boolean;
+  isAchievementsEnabled: boolean;
+  isIdeasEnabled: boolean;
+  isEvotingEnabled: boolean;
 }
 
 export type NotificationType =

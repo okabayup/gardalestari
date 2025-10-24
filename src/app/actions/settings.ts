@@ -15,7 +15,7 @@ export async function getAppSettings(): Promise<AppSettings> {
     const docSnap = await getDoc(settingsDocRef);
     if (docSnap.exists()) {
       const data = docSnap.data();
-      // Provide defaults for all fields, including new dummy fields
+      // Provide defaults for all fields, including new feature flags
       return {
         isRegistrationOpen: true,
         isWhatsappNotificationsEnabled: false,
@@ -32,6 +32,11 @@ export async function getAppSettings(): Promise<AppSettings> {
         dummyEvents: 0,
         dummyNews: 0,
         isTestimonialsEnabled: false,
+        isReferralEnabled: true,
+        isPointsEnabled: true,
+        isAchievementsEnabled: true,
+        isIdeasEnabled: true,
+        isEvotingEnabled: true,
         ...data,
       } as AppSettings;
     }
@@ -55,6 +60,11 @@ export async function getAppSettings(): Promise<AppSettings> {
     dummyEvents: 0,
     dummyNews: 0,
     isTestimonialsEnabled: false,
+    isReferralEnabled: true,
+    isPointsEnabled: true,
+    isAchievementsEnabled: true,
+    isIdeasEnabled: true,
+    isEvotingEnabled: true,
   };
 }
 
@@ -63,15 +73,21 @@ export async function updateAppSettings(formData: FormData) {
   try {
     const dataToUpdate: { [key: string]: any } = {};
     
-    // Handle simple string and boolean fields
+    // List of all boolean keys in AppSettings
+    const booleanKeys = [
+        'isRegistrationOpen', 'isWhatsappNotificationsEnabled', 'isInstallForced',
+        'isTestimonialsEnabled', 'isReferralEnabled', 'isPointsEnabled', 
+        'isAchievementsEnabled', 'isIdeasEnabled', 'isEvotingEnabled'
+    ];
+
+    // Handle simple string, boolean, and number fields
     for (const [key, value] of formData.entries()) {
         if (typeof value === 'string' && !key.endsWith('File')) {
-            if(key === 'isRegistrationOpen' || key === 'isWhatsappNotificationsEnabled' || key === 'isTestimonialsEnabled' || key === 'isInstallForced') {
-                 dataToUpdate[key] = value === 'true';
+            if (booleanKeys.includes(key)) {
+                dataToUpdate[key] = value === 'true';
             } else if (key.startsWith('dummy')) {
                 dataToUpdate[key] = Number(value) || 0;
-            }
-             else {
+            } else {
                 dataToUpdate[key] = value;
             }
         }
@@ -96,8 +112,7 @@ export async function updateAppSettings(formData: FormData) {
     await setDoc(settingsDocRef, dataToUpdate, { merge: true });
     
     // Revalidate relevant pages
-    revalidatePath('/');
-    revalidatePath('/register');
+    revalidatePath('/', 'layout');
     revalidatePath('/panel/settings');
     revalidatePath('/panel/landing');
 
