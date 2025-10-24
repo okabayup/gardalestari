@@ -16,6 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Home } from 'lucide-react';
 
 const getInitials = (name: string | null | undefined) => {
     if (!name) return 'GL';
@@ -29,12 +30,15 @@ export default function PanelHeader() {
   const { user } = useAuth();
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-      <div className="md:hidden">
-        <SidebarTrigger />
-      </div>
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
+      <SidebarTrigger />
       <div className="ml-auto flex items-center gap-2">
         <GlobalSearch />
+        <Button asChild variant="outline" size="icon">
+          <Link href="/">
+              <Home className="h-4 w-4" />
+          </Link>
+        </Button>
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon" className="overflow-hidden rounded-full">

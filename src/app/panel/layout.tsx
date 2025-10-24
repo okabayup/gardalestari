@@ -27,10 +27,10 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   return (
     <SidebarProvider>
       <PanelBadgesProvider>
-        <Sidebar collapsible="icon" variant="sidebar">
+        <Sidebar collapsible="offcanvas" variant="sidebar">
             <PanelSidebarContent />
         </Sidebar>
-        <div className="flex flex-1 flex-col md:ml-[var(--sidebar-width-icon)]">
+        <div className="flex flex-1 flex-col">
           <PanelHeader />
           <main className="flex-1 overflow-y-auto p-4 md:p-6">
               {children}
