@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/hooks/use-auth';
@@ -7,7 +8,7 @@ import { redirect } from 'next/navigation';
 import { PanelSidebarContent } from '@/components/panel/Sidebar';
 import { PanelBadgesProvider } from '@/hooks/use-panel-badges';
 import PanelHeader from '@/components/panel/PanelHeader';
-import PanelBottomNav from '@/components/panel/PanelBottomNav';
+import BottomNav from '@/components/layout/BottomNav';
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -37,7 +38,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
                 {children}
             </main>
           </div>
-          <PanelBottomNav />
+          <BottomNav />
         </div>
       </PanelBadgesProvider>
     </SidebarProvider>
