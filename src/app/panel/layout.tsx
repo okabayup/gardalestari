@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useAuth } from '@/hooks/use-auth';
@@ -8,6 +7,7 @@ import { redirect } from 'next/navigation';
 import { PanelSidebarContent } from '@/components/panel/Sidebar';
 import { PanelBadgesProvider } from '@/hooks/use-panel-badges';
 import PanelHeader from '@/components/panel/PanelHeader';
+import PanelBottomNav from '@/components/panel/PanelBottomNav';
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -27,14 +27,17 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   return (
     <SidebarProvider>
       <PanelBadgesProvider>
-        <Sidebar collapsible="offcanvas" variant="sidebar">
-            <PanelSidebarContent />
-        </Sidebar>
-        <div className="flex flex-1 flex-col">
-          <PanelHeader />
-          <main className="flex-1 overflow-y-auto p-4 md:p-6">
-              {children}
-          </main>
+        <div className="flex h-screen w-full bg-muted/40">
+          <Sidebar collapsible="offcanvas" variant="sidebar" className="hidden md:flex">
+              <PanelSidebarContent />
+          </Sidebar>
+          <div className="flex flex-1 flex-col">
+            <PanelHeader />
+            <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
+                {children}
+            </main>
+          </div>
+          <PanelBottomNav />
         </div>
       </PanelBadgesProvider>
     </SidebarProvider>
