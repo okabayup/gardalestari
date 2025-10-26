@@ -2,7 +2,7 @@
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import type { EduwisataPackage, Addon } from '@/lib/definitions';
@@ -52,6 +52,7 @@ export async function createEduwisataPackage(
   await createShortLink({
       title: `Eduwisata: ${data.title}`,
       longUrl: `/edutourism/${docRef.id}`,
+      slug: shortlinkSlug,
       type: 'edutourism',
       relatedId: docRef.id
   });
@@ -64,7 +65,7 @@ export async function createEduwisataPackage(
     images: galleryImageUrls,
     shortlinkSlug,
   };
-  await updateDoc(docRef, packageData);
+  await setDoc(docRef, packageData);
 
   revalidatePath('/panel/edutourism');
   return docRef.id;
@@ -87,7 +88,8 @@ export async function updateEduwisataPackage(
   }
 
   if (galleryFiles && galleryFiles.length > 0) {
-    const galleryImageUrls: string[] = data.images || [];
+    const existingPackage = await getEduwisataPackage(id);
+    const galleryImageUrls: string[] = existingPackage?.images || [];
     for (const file of Array.from(galleryFiles)) {
       const galleryImageRef = ref(storage, `eduwisata/gallery/${Date.now()}_${file.name}`);
       await uploadBytes(galleryImageRef, file);

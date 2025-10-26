@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, orderBy, serverTimestamp, increment } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, orderBy, serverTimestamp, increment, where, writeBatch } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { ShortLink } from '@/lib/definitions';
 
@@ -15,16 +15,24 @@ const shortlinksCollection = collection(db, 'shortlinks');
  */
 export async function createShortLink(data: Omit<ShortLink, 'id' | 'createdAt' | 'clicks'>): Promise<string> {
     try {
-        const docRef = await addDoc(shortlinksCollection, {
+        const q = query(shortlinksCollection, where('slug', '==', data.slug));
+        const existing = await getDocs(q);
+        if (!existing.empty) {
+            throw new Error(`Shortlink dengan slug "${data.slug}" sudah ada.`);
+        }
+
+        const docRef = doc(shortlinksCollection, data.slug);
+        await setDoc(docRef, {
             ...data,
             clicks: 0,
             createdAt: serverTimestamp(),
         });
+
         revalidatePath('/panel/shortlinks');
         return docRef.id;
     } catch (error) {
         console.error("Error creating shortlink:", error);
-        throw new Error("Gagal membuat shortlink.");
+        throw new Error(`Gagal membuat shortlink: ${(error as Error).message}`);
     }
 }
 
