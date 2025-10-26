@@ -133,7 +133,7 @@ export default function ContactsPage() {
     setIsSaving(true);
     try {
       if (selectedContact?.id) {
-        // await updateContact(selectedContact.id, data);
+        await updateContact(selectedContact.id, data);
         toast({ title: 'Kontak berhasil diperbarui!' });
       } else {
         await createContact(data);

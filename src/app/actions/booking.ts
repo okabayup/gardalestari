@@ -15,7 +15,7 @@ import {
   getDocsFromServer,
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
-import type { Booking, Addon } from '@/lib/definitions';
+import type { Booking, Addon, EduwisataPackage } from '@/lib/definitions';
 import { sendEmail } from '@/services/email';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 
@@ -34,7 +34,8 @@ const ADMIN_NOTIFICATION_EMAIL = 'halo@gardalestari.org';
  * @returns The ID of the newly created booking and the final amount to be paid.
  */
 export async function createBooking(
-    bookingData: Omit<Booking, 'id' | 'createdAt' | 'status' | 'totalPrice' | 'uniqueCode'>
+    bookingData: Omit<Booking, 'id' | 'createdAt' | 'status' | 'totalPrice' | 'uniqueCode'>,
+    pkg: EduwisataPackage
 ): Promise<{ bookingId: string; finalAmount: number; }> {
   try {
     // Generate a unique 3-digit code for the transfer
@@ -188,6 +189,3 @@ export async function getBookedMeetingSlots(date: Date): Promise<string[]> {
         return [];
     }
 }
-
-// Ensure this file has a default export if it's a module
-export default {};
