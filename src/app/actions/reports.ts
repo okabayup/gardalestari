@@ -20,7 +20,7 @@ import type { Report, ReportReason, ReportType, ReportStatus } from '@/lib/defin
 import { getUserByUid } from './user';
 import { suspendUser } from './user';
 import { updatePostStatus } from './posts';
-import { sendDevAlert } from './errors';
+import { sendDevAlert } from '@/services/whatsapp';
 
 
 const reportsCollection = collection(db, 'reports');
@@ -115,5 +115,6 @@ export async function takeModerationAction(action: 'suspend_user' | 'hide_post',
     throw new Error(`Gagal mengambil tindakan moderasi: ${(error as Error).message}`);
   }
 }
+
 
 
