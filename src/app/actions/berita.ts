@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -395,5 +396,4 @@ export async function getNotificationStatus(slug: string): Promise<IndexingStatu
         return null;
     }
 }
-
     

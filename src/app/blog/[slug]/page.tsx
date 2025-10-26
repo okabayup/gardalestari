@@ -42,7 +42,7 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
             </Avatar>
             <div>
               <p className="font-semibold">{post.author}</p>
-              <p className="text-sm text-muted-foreground">{post.date}</p>
+              <p className="text-sm text-muted-foreground">{new Date(post.date).toLocaleDateString()}</p>
             </div>
           </div>
           <div

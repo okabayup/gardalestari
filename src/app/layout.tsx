@@ -1,5 +1,6 @@
 
-import type { Metadata } from 'next';
+
+import type { Metadata, Viewport } from 'next';
 import { AuthProvider } from '@/hooks/use-auth';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
@@ -53,6 +54,10 @@ export async function generateMetadata(): Promise<Metadata> {
       title: 'Garda Lestari',
     },
   }
+}
+
+export const viewport: Viewport = {
+  themeColor: '#E8F0E5',
 }
 
 
