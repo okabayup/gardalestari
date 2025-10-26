@@ -8,7 +8,7 @@ import { redirect } from 'next/navigation';
 import { PanelSidebarContent } from '@/components/panel/Sidebar';
 import { PanelBadgesProvider } from '@/hooks/use-panel-badges';
 import PanelHeader from '@/components/panel/PanelHeader';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { useSidebar } from '@/components/ui/sidebar';
 
 
@@ -19,6 +19,10 @@ function MobileSidebar() {
     return (
         <Sheet open={openMobile} onOpenChange={setOpenMobile}>
             <SheetContent side="left" className="w-3/4 p-0">
+                 <SheetHeader className="p-4 border-b text-left">
+                    <SheetTitle>Panel Navigasi</SheetTitle>
+                    <SheetDescription>Pilih menu untuk mengelola aplikasi.</SheetDescription>
+                </SheetHeader>
                  <PanelSidebarContent />
             </SheetContent>
         </Sheet>

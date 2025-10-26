@@ -13,6 +13,7 @@ import {
   query,
   where,
   getDocsFromServer,
+  orderBy,
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { Booking, Addon, EduwisataPackage } from '@/lib/definitions';
@@ -35,9 +36,12 @@ const ADMIN_NOTIFICATION_EMAIL = 'halo@gardalestari.org';
  */
 export async function createBooking(
     bookingData: Omit<Booking, 'id' | 'createdAt' | 'status' | 'totalPrice' | 'uniqueCode'>,
-    pkg: EduwisataPackage
 ): Promise<{ bookingId: string; finalAmount: number; }> {
   try {
+    const pkgDoc = await getDoc(doc(db, 'edutourismPackages', bookingData.packageId));
+    if (!pkgDoc.exists()) throw new Error('Paket eduwisata tidak ditemukan.');
+    const pkg = pkgDoc.data() as EduwisataPackage;
+    
     // Generate a unique 3-digit code for the transfer
     const uniqueCode = Math.floor(100 + Math.random() * 900);
     const basePrice = (bookingData.participants * (pkg.price || 0)) + bookingData.selectedAddons.reduce((acc, item) => acc + (item.price * item.quantity), 0);
@@ -188,4 +192,25 @@ export async function getBookedMeetingSlots(date: Date): Promise<string[]> {
         console.error('[getBookedMeetingSlots Error]', error);
         return [];
     }
+}
+
+
+/**
+ * Fetches all meeting booking requests.
+ * @returns A promise that resolves to an array of meeting bookings.
+ */
+export async function getMeetings(): Promise<Booking[]> {
+  try {
+    const q = query(meetingsCollection, orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        bookingDate: (doc.data().bookingDate as Timestamp).toDate().toISOString(),
+        createdAt: (doc.data().createdAt as Timestamp).toDate().toISOString(),
+    } as unknown as Booking));
+  } catch (error) {
+    console.error("[getMeetings Error]", error);
+    throw new Error("Gagal mengambil data permintaan meeting.");
+  }
 }

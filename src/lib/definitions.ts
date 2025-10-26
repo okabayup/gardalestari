@@ -110,6 +110,7 @@ export const panelDirectoryItems: {
       { href: '/panel/positions', icon: UserCheck, label: 'Jabatan', permission: 'manage_positions' },
       { href: '/panel/projects', icon: KanbanSquare, label: 'Proyek', permission: 'manage_projects' },
       { href: '/panel/documents', icon: BookCopy, label: 'Persuratan', permission: 'manage_documents'},
+      { href: '/panel/meetings', icon: Handshake, label: 'Booking Meeting', permission: 'manage_documents' },
       { href: '/panel/reports', icon: Flag, label: 'Laporan Pengguna', permission: 'manage_reports' },
     ],
   },
@@ -308,12 +309,6 @@ export interface Account {
     normalBalance: AccountNormalBalance;
     balance: number;
     createdAt: Timestamp;
-}
-
-export interface JournalTransaction {
-    accountId: string;
-    debit: number;
-    credit: number;
 }
 
 export interface JournalEntry {
