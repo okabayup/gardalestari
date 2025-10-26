@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -74,7 +75,9 @@ const ShortlinkDialog = ({
   }
 
   const dialogTrigger = link ? (
-     <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Edit</DropdownMenuItem>
+     <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+        <Edit className="mr-2 h-4 w-4" /> Edit
+     </DropdownMenuItem>
   ) : (
      <Button><PlusCircle className="mr-2 h-4 w-4" /> Buat Shortlink</Button>
   );
