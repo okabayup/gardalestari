@@ -11,9 +11,16 @@ import {
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { Booking, Addon } from '@/lib/definitions';
+import { sendEmail } from '@/services/email';
+import { sendWhatsAppMessage } from '@/services/whatsapp';
 
 const bookingsCollection = collection(db, 'bookings');
+const meetingsCollection = collection(db, 'meetings');
 const addonsCollection = doc(db, 'edutourismAddons');
+
+const ADMIN_NOTIFICATION_PHONE = '6285144904161';
+const ADMIN_NOTIFICATION_EMAIL = 'halo@gardalestari.org';
+
 
 /**
  * Creates a new booking for an Eduwisata package.
@@ -70,10 +77,29 @@ export async function createBooking(
       return newBookingRef.id;
     });
 
-    // 3. Revalidate paths to update caches
+    // 3. Send notifications
+    const customerMessage = `Terima kasih, ${bookingData.customerName}! Pemesanan Eduwisata Anda untuk paket "${bookingData.packageName}" telah kami terima. Silakan selesaikan pembayaran sebesar Rp ${finalAmount.toLocaleString('id-ID')} agar pesanan dapat kami proses.`;
+    const adminMessage = `Booking Eduwisata Baru:\n- Nama: ${bookingData.customerName}\n- Paket: ${bookingData.packageName}\n- Peserta: ${bookingData.participants} orang\n- Total: Rp ${finalAmount.toLocaleString('id-ID')}`;
+    
+    await sendWhatsAppMessage(bookingData.customerPhone, customerMessage);
+    await sendWhatsAppMessage(ADMIN_NOTIFICATION_PHONE, adminMessage);
+    
+    await sendEmail({
+      to: bookingData.customerEmail,
+      subject: `Konfirmasi Pemesanan Eduwisata Garda Lestari (ID: ${bookingId.substring(0, 8)})`,
+      text: customerMessage,
+    });
+     await sendEmail({
+      to: ADMIN_NOTIFICATION_EMAIL,
+      subject: `Booking Eduwisata Baru: ${bookingData.customerName}`,
+      text: adminMessage,
+    });
+
+
+    // 4. Revalidate paths to update caches
     revalidatePath('/admin/bookings'); // Assuming an admin page for bookings
 
-    // 4. Return the booking ID and the final amount for the user to pay
+    // 5. Return the booking ID and the final amount for the user to pay
     return { bookingId, finalAmount };
 
   } catch (error) {
@@ -83,37 +109,43 @@ export async function createBooking(
 }
 
 /**
- * --- WORKFLOW: PEMBAYARAN TRANSFER BANK DENGAN KODE UNIK ---
- * 
- * Metode ini menghindari integrasi payment gateway langsung dan mengandalkan verifikasi manual 
- * oleh admin, yang disederhanakan dengan jumlah pembayaran yang unik.
- * 
- * 1. **Inisiasi Transaksi (Client-side):**
- *    - Pengguna menyelesaikan detail pemesanan mereka (paket, tanggal, addons, data diri).
- *    - Client memanggil `createBooking` server action.
- *    - `createBooking` akan:
- *      a. Menghasilkan kode unik 3-digit (misal: 123).
- *      b. Menghitung `finalAmount` (misal: total harga 150.000 menjadi 150.123).
- *      c. Membuat dokumen booking di Firestore dengan `status: 'pending'` dan menyimpan semua data termasuk `finalAmount` & `uniqueCode`.
- *      d. Mengembalikan `bookingId` dan `finalAmount` ke client.
- *    - UI client kemudian menampilkan halaman "Menunggu Pembayaran" dengan:
- *      a. Jumlah yang harus ditransfer: Rp 150.123.
- *      b. Detail rekening bank: BCA 1801802325 a.n. Oka Bayu Pratama.
- *      c. Batas waktu pembayaran (misal, "Selesaikan pembayaran dalam 1 jam").
- *      d. Form untuk konfirmasi pembayaran, di mana pengguna memasukkan nama pengirim, nama bank, dan mengunggah bukti transfer.
- * 
- * 2. **Konfirmasi Pembayaran (Admin Workflow):**
- *    - Admin secara berkala memeriksa mutasi rekening bank.
- *    - Saat menemukan transfer masuk sebesar Rp 150.123, admin dapat dengan mudah mencocokkannya dengan pesanan yang pending di panel admin.
- *    - Admin mengubah status pesanan dari 'pending' menjadi 'paid' atau 'confirmed'.
- * 
- * 3. **Notifikasi Pembayaran (Server-side):**
- *    - Ketika status diubah, sebuah trigger (misalnya, Cloud Function atau action eksplisit di panel) dapat diaktifkan.
- *    - Trigger ini akan mengirim notifikasi (WhatsApp/email) ke `customerPhone` yang tersimpan di dokumen booking, 
- *      menginformasikan bahwa pembayaran telah diterima dan pesanan dikonfirmasi. Tautan untuk melihat detail pesanan bisa disertakan: `/pesanan/${bookingId}`.
- *
- * 4. **Penanganan Pesanan Kedaluwarsa:**
- *    - Sebuah fungsi terjadwal (misalnya, cron job atau Firebase Scheduled Function) berjalan secara periodik.
- *    - Fungsi ini mencari dokumen booking dengan status `pending` yang dibuat lebih dari 1-2 jam yang lalu.
- *    - Untuk setiap pesanan yang kedaluwarsa, fungsi ini akan mengembalikan stok add-on dan mengubah status pesanan menjadi 'cancelled'.
+ * Creates a new meeting booking request.
+ * @param meetingData - The details of the meeting booking.
  */
+export async function createMeetingBooking(
+  meetingData: Omit<Booking, 'id' | 'createdAt' | 'status' | 'packageId' | 'packageName' | 'selectedAddons' | 'totalPrice' | 'uniqueCode'>
+): Promise<{ meetingId: string }> {
+  try {
+    const newMeetingRef = doc(meetingsCollection);
+    const newMeeting = {
+      ...meetingData,
+      status: 'pending',
+      createdAt: Timestamp.now(),
+    };
+    await addDoc(meetingsCollection, newMeeting);
+
+    // Send notifications
+    const customerMessage = `Halo ${meetingData.customerName}, permintaan meeting Anda dengan topik "${meetingData.meetingTopic}" telah kami terima. Tim kami akan segera menghubungi Anda untuk penjadwalan lebih lanjut.`;
+    const adminMessage = `Permintaan Meeting Baru:\n- Nama: ${meetingData.customerName}\n- Email: ${meetingData.customerEmail}\n- Telepon: ${meetingData.customerPhone}\n- Topik: ${meetingData.meetingTopic}`;
+
+    await sendWhatsAppMessage(meetingData.customerPhone, customerMessage);
+    await sendWhatsAppMessage(ADMIN_NOTIFICATION_PHONE, adminMessage);
+    
+    await sendEmail({
+      to: meetingData.customerEmail,
+      subject: `Konfirmasi Permintaan Meeting - Garda Lestari`,
+      text: customerMessage,
+    });
+    await sendEmail({
+      to: ADMIN_NOTIFICATION_EMAIL,
+      subject: `Permintaan Meeting Baru: ${meetingData.customerName}`,
+      text: adminMessage,
+    });
+
+    return { meetingId: newMeetingRef.id };
+  } catch (error) {
+    console.error('[createMeetingBooking Error]', error);
+    throw new Error(`Gagal membuat permintaan meeting: ${(error as Error).message}`);
+  }
+}
+

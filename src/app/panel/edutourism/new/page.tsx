@@ -83,7 +83,8 @@ export default function NewEduwisataPackagePage() {
     } catch (error) {
       console.error("[onSubmit Error]", "Failed to create package. Full error:", error);
       toast({ variant: 'destructive', title: 'Gagal menambahkan', description: (error as Error).message });
-      setLoading(false);
+    } finally {
+        setLoading(false);
     }
   };
 
