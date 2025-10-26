@@ -87,7 +87,7 @@ export async function createBooking(
 
 
     // 4. Revalidate paths to update caches
-    revalidatePath('/admin/bookings'); // Assuming an admin page for bookings
+    revalidatePath('/panel/bookings'); // Assuming an admin page for bookings
 
     // 5. Return the booking ID and the final amount for the user to pay
     return { bookingId, finalAmount };
