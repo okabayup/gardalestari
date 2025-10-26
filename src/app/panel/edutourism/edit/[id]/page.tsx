@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -40,6 +39,7 @@ export default function EditEduwisataPackagePage() {
   const [allAddons, setAllAddons] = useState<Addon[]>([]);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
+  const [initialPackageData, setInitialPackageData] = useState<EduwisataPackage | null>(null);
 
   const {
     control,
@@ -62,9 +62,9 @@ export default function EditEduwisataPackagePage() {
   useEffect(() => {
     if (watchGalleryFiles && watchGalleryFiles.length > 0) {
       const urls = Array.from(watchGalleryFiles).map((file: any) => URL.createObjectURL(file as Blob));
-      setGalleryPreviews(prev => [...prev, ...urls]);
+      setGalleryPreviews(prev => [...(initialPackageData?.images || []), ...urls]);
     }
-  }, [watchGalleryFiles]);
+  }, [watchGalleryFiles, initialPackageData]);
 
   useEffect(() => {
     async function fetchData() {
@@ -77,6 +77,7 @@ export default function EditEduwisataPackagePage() {
 
         if (pkg) {
           reset(pkg);
+          setInitialPackageData(pkg);
           setAllAddons(addons);
           setImagePreview(pkg.imageUrl);
           setGalleryPreviews(pkg.images || []);
@@ -96,8 +97,23 @@ export default function EditEduwisataPackagePage() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      const { imageFile, galleryFiles, ...rest } = data;
-      await updateEduwisataPackage(id, rest, imageFile?.[0], galleryFiles);
+        const formData = new FormData();
+        formData.append('title', data.title);
+        formData.append('description', data.description);
+        formData.append('price', String(data.price));
+        formData.append('duration', data.duration);
+        formData.append('availableAddonIds', (data.availableAddonIds || []).join(','));
+        
+        if (data.imageFile && data.imageFile.length > 0) {
+            formData.append('imageFile', data.imageFile[0]);
+        }
+        if (data.galleryFiles && data.galleryFiles.length > 0) {
+             for (const file of Array.from(data.galleryFiles)) {
+                formData.append('galleryFiles', file as Blob);
+            }
+        }
+        
+      await updateEduwisataPackage(id, formData);
       toast({ title: 'Paket berhasil diperbarui!' });
       router.push('/panel/edutourism');
     } catch (error) {
@@ -149,7 +165,7 @@ export default function EditEduwisataPackagePage() {
           </div>
           <div className="space-y-2">
             <Label>Gambar Utama (kosongkan jika tidak ingin mengubah)</Label>
-            {imagePreview && <Image src={imagePreview} alt="Preview" width={200} height={250} className="rounded-md object-cover border" />}
+            {imagePreview && <Image src={imagePreview} alt="Preview" width={200} height={125} className="rounded-md object-cover border" />}
             <Input id="imageFile" type="file" {...register('imageFile')} accept="image/*" />
           </div>
           <div className="space-y-2">

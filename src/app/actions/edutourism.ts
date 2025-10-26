@@ -86,29 +86,40 @@ export async function createEduwisataPackage(
 
 export async function updateEduwisataPackage(
   id: string,
-  data: Partial<Omit<EduwisataPackage, 'id' | 'imageUrl' | 'images'>>,
-  imageFile?: File,
-  galleryFiles?: FileList
+  formData: FormData,
 ) {
   const docRef = doc(db, 'edutourismPackages', id);
+  const existingPackage = await getEduwisataPackage(id);
+  if (!existingPackage) throw new Error("Package not found");
+
+  const data = {
+    title: formData.get('title') as string,
+    description: formData.get('description') as string,
+    price: Number(formData.get('price')),
+    duration: formData.get('duration') as string,
+    availableAddonIds: (formData.get('availableAddonIds') as string)?.split(',') || [],
+  };
+  const imageFile = formData.get('imageFile') as File | null;
+  const galleryFiles = formData.getAll('galleryFiles') as File[];
+
   const dataToUpdate: { [key: string]: any } = { ...data };
 
-  if (imageFile) {
+  if (imageFile && imageFile.size > 0) {
     const imageRef = ref(storage, `eduwisata/packages/${Date.now()}_${imageFile.name}`);
     await uploadBytes(imageRef, imageFile);
     dataToUpdate.imageUrl = await getDownloadURL(imageRef);
   }
 
-  if (galleryFiles && galleryFiles.length > 0) {
-    const existingPackage = await getEduwisataPackage(id);
-    const galleryImageUrls: string[] = existingPackage?.images || [];
-    for (const file of Array.from(galleryFiles)) {
+  if (galleryFiles && galleryFiles.length > 0 && galleryFiles[0].size > 0) {
+    const newImageUrls: string[] = [];
+    for (const file of galleryFiles) {
       const galleryImageRef = ref(storage, `eduwisata/gallery/${Date.now()}_${file.name}`);
       await uploadBytes(galleryImageRef, file);
-      galleryImageUrls.push(await getDownloadURL(galleryImageRef));
+      newImageUrls.push(await getDownloadURL(galleryImageRef));
     }
-    dataToUpdate.images = galleryImageUrls;
+    dataToUpdate.images = [...(existingPackage.images || []), ...newImageUrls];
   }
+
 
   await updateDoc(docRef, dataToUpdate);
   revalidatePath('/panel/edutourism');
