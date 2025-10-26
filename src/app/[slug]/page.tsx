@@ -1,4 +1,3 @@
-
 import { redirect } from 'next/navigation';
 import { getShortLink, incrementClickCount } from '@/app/actions/shortlinks';
 
@@ -27,7 +26,7 @@ export default async function ShortLinkRedirectPage({ params }: { params: { slug
       redirect('/slug-not-found');
     }
   } catch (error) {
-    console.error(`[gamules.io] Error redirecting for slug ${slug}:`, error);
+    console.error(`[Shortlink Error] Error redirecting for slug ${slug}:`, error);
     redirect('/slug-not-found');
   }
 }

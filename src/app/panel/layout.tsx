@@ -18,7 +18,7 @@ function MobileSidebar() {
     
     return (
         <Sheet open={openMobile} onOpenChange={setOpenMobile}>
-            <SheetContent side="left" className="w-3/4 p-0">
+            <SheetContent side="left" className="w-3/4 p-0 flex flex-col">
                  <SheetHeader className="p-4 border-b text-left">
                     <SheetTitle>Panel Navigasi</SheetTitle>
                     <SheetDescription>Pilih menu untuk mengelola aplikasi.</SheetDescription>
@@ -48,7 +48,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
     <SidebarProvider>
       <PanelBadgesProvider>
         <div className="grid h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-          <Sidebar collapsible="offcanvas" className="hidden border-r bg-muted/40 md:block">
+          <Sidebar collapsible="offcanvas" className="hidden border-r bg-muted/40 md:flex md:flex-col">
               <PanelSidebarContent />
           </Sidebar>
            <MobileSidebar />

@@ -1,0 +1,8 @@
+{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "org.gardalestari.twa",
+    "sha256_cert_fingerprints": ["6D:0B:4B:5F:C3:E4:0C:8C:9B:41:49:03:78:37:C3:78:E5:66:78:9D:3A:95:48:88:80:61:94:0A:7D:61:A0:84"]
+  }
+}]

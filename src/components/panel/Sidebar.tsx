@@ -24,7 +24,7 @@ export function PanelSidebarContent() {
 
   return (
     <>
-       <div className="hidden md:flex h-16 items-center border-b px-6 shrink-0">
+       <div className="flex h-16 items-center border-b px-6 shrink-0">
            <Link href="/panel/dashboard" className="flex items-center gap-2 font-semibold">
              <Image src="/logo.png" alt="Logo" width={24} height={24} />
              <span className="text-base">Panel Admin</span>
@@ -50,7 +50,7 @@ export function PanelSidebarContent() {
               Dasbor
             </Link>
         
-            <Accordion type="multiple" defaultValue={panelDirectoryItems.map(g => g.group)} className="w-full">
+            <Accordion type="single" collapsible defaultValue="Publikasi" className="w-full">
               {panelDirectoryItems.map((group) => {
                   const visibleItems = group.items.filter(item => !item.permission || hasPermission(item.permission as PermissionId));
                   if (visibleItems.length === 0) return null;
