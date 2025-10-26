@@ -1,5 +1,5 @@
 
-import { notFound, redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { getShortLink, incrementClickCount } from '@/app/actions/shortlinks';
 
 /**
@@ -10,7 +10,7 @@ export default async function ShortLinkRedirectPage({ params }: { params: { slug
   const { slug } = params;
 
   if (!slug) {
-    notFound();
+    redirect('/slug-not-found');
   }
 
   try {
@@ -23,11 +23,11 @@ export default async function ShortLinkRedirectPage({ params }: { params: { slug
       // Perform a permanent redirect to the long URL.
       redirect(shortLink.longUrl);
     } else {
-      // If no shortlink is found, it's a 404.
-      notFound();
+      // If no shortlink is found, redirect to a user-friendly "not found" page.
+      redirect('/slug-not-found');
     }
   } catch (error) {
     console.error(`[gamules.io] Error redirecting for slug ${slug}:`, error);
-    notFound();
+    redirect('/slug-not-found');
   }
 }
