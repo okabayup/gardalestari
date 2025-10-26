@@ -103,6 +103,14 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  async rewrites() {
+    return [
+      {
+        source: '/.well-known/assetlinks.json',
+        destination: '/assetlinks.json',
+      },
+    ]
+  },
   turbopack: {},
   images: {
     remotePatterns: [
