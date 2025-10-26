@@ -28,7 +28,14 @@ export async function getEduwisataPackage(id: string): Promise<EduwisataPackage 
 export async function createEduwisataPackage(
   formData: FormData,
 ): Promise<string> {
-    const data = Object.fromEntries(formData.entries());
+    // Manually parse FormData
+    const data = {
+        title: formData.get('title') as string,
+        description: formData.get('description') as string,
+        price: Number(formData.get('price')),
+        duration: formData.get('duration') as string,
+        availableAddonIds: (formData.get('availableAddonIds') as string)?.split(',') || [],
+    };
     const imageFile = formData.get('imageFile') as File;
     const galleryFiles = formData.getAll('galleryFiles') as File[];
 
@@ -39,7 +46,7 @@ export async function createEduwisataPackage(
 
     // 2. Upload gallery images if any
     let galleryImageUrls: string[] = [];
-    if (galleryFiles && galleryFiles[0].size > 0) {
+    if (galleryFiles && galleryFiles[0] && galleryFiles[0].size > 0) {
         for (const file of galleryFiles) {
             const galleryImageRef = ref(storage, `eduwisata/gallery/${Date.now()}_${file.name}`);
             await uploadBytes(galleryImageRef, file);
@@ -61,11 +68,11 @@ export async function createEduwisataPackage(
 
     // 4. Create package document
     const packageData: Omit<EduwisataPackage, 'id'> = {
-        title: data.title as string,
-        description: data.description as string,
-        price: Number(data.price),
-        duration: data.duration as string,
-        availableAddonIds: (data.availableAddonIds as string)?.split(',') || [],
+        title: data.title,
+        description: data.description,
+        price: data.price,
+        duration: data.duration,
+        availableAddonIds: data.availableAddonIds,
         imageUrl,
         images: galleryImageUrls,
         shortlinkSlug,
