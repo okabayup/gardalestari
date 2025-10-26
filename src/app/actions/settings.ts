@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -198,9 +199,9 @@ const defaultTemplates: Record<NotificationType, WhatsAppTemplate> = {
     app_tester_approved: {
         id: 'app_tester_approved',
         label: 'Persetujuan Penguji Aplikasi',
-        message: 'Selamat, {namaPengguna}! Anda telah disetujui sebagai penguji aplikasi versi beta. Silakan klik tautan berikut untuk bergabung dalam program pengujian: {linkPengujian}',
+        message: 'Selamat, {namaPengguna}! Anda telah disetujui sebagai penguji untuk aplikasi *"{namaAplikasi}"*. Silakan klik tautan berikut untuk bergabung dalam program pengujian: {linkPengujian}',
         isActive: true,
-        placeholders: ['{namaPengguna}', '{linkPengujian}']
+        placeholders: ['{namaPengguna}', '{namaAplikasi}', '{linkPengujian}']
     }
 };
 

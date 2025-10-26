@@ -1,4 +1,5 @@
 
+
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
 import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact, LayoutDashboard, Package, Landmark, Plane, Bell, Link, Mail } from 'lucide-react';
@@ -431,10 +432,21 @@ export interface AppTester {
     id?: string;
     name: string;
     email: string;
+    waNumber: string;
     reason: string;
     status: 'pending' | 'approved' | 'rejected';
+    appId: string;
+    appName: string;
     submittedAt: Timestamp;
     processedAt?: Timestamp;
+}
+
+export interface AppTesterApp {
+    id?: string;
+    name: string;
+    testingLink: string; // e.g., Play Store testing link
+    shortlinkSlug: string;
+    createdAt: Timestamp;
 }
 
 
