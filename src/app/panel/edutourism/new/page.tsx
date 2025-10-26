@@ -60,8 +60,24 @@ export default function NewEduwisataPackagePage() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      const { imageFile, galleryFiles, ...rest } = data;
-      await createEduwisataPackage(rest, imageFile[0], galleryFiles);
+      const formData = new FormData();
+      formData.append('title', data.title);
+      formData.append('description', data.description);
+      formData.append('price', data.price.toString());
+      formData.append('duration', data.duration);
+      if (data.availableAddonIds) {
+        formData.append('availableAddonIds', data.availableAddonIds.join(','));
+      }
+      if (data.imageFile && data.imageFile.length > 0) {
+        formData.append('imageFile', data.imageFile[0]);
+      }
+      if (data.galleryFiles && data.galleryFiles.length > 0) {
+        for (const file of Array.from(data.galleryFiles)) {
+          formData.append('galleryFiles', file as Blob);
+        }
+      }
+
+      await createEduwisataPackage(formData);
       toast({ title: 'Paket baru berhasil ditambahkan!' });
       router.push('/panel/edutourism');
     } catch (error) {

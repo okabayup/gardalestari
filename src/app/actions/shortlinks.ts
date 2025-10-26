@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, orderBy, serverTimestamp, increment, where, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, orderBy, serverTimestamp, increment, where, writeBatch, setDoc } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { ShortLink } from '@/lib/definitions';
 

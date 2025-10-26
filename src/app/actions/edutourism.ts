@@ -26,49 +26,54 @@ export async function getEduwisataPackage(id: string): Promise<EduwisataPackage 
 }
 
 export async function createEduwisataPackage(
-  data: Omit<EduwisataPackage, 'id' | 'imageUrl' | 'shortlinkSlug' | 'images'>,
-  imageFile: File,
-  galleryFiles?: FileList
+  formData: FormData,
 ): Promise<string> {
-  // 1. Upload main image
-  const imageRef = ref(storage, `eduwisata/packages/${Date.now()}_${imageFile.name}`);
-  await uploadBytes(imageRef, imageFile);
-  const imageUrl = await getDownloadURL(imageRef);
+    const data = Object.fromEntries(formData.entries());
+    const imageFile = formData.get('imageFile') as File;
+    const galleryFiles = formData.getAll('galleryFiles') as File[];
 
-  // 2. Upload gallery images if any
-  let galleryImageUrls: string[] = [];
-  if (galleryFiles) {
-    for (const file of Array.from(galleryFiles)) {
-      const galleryImageRef = ref(storage, `eduwisata/gallery/${Date.now()}_${file.name}`);
-      await uploadBytes(galleryImageRef, file);
-      galleryImageUrls.push(await getDownloadURL(galleryImageRef));
+    // 1. Upload main image
+    const imageRef = ref(storage, `eduwisata/packages/${Date.now()}_${imageFile.name}`);
+    await uploadBytes(imageRef, imageFile);
+    const imageUrl = await getDownloadURL(imageRef);
+
+    // 2. Upload gallery images if any
+    let galleryImageUrls: string[] = [];
+    if (galleryFiles && galleryFiles[0].size > 0) {
+        for (const file of galleryFiles) {
+            const galleryImageRef = ref(storage, `eduwisata/gallery/${Date.now()}_${file.name}`);
+            await uploadBytes(galleryImageRef, file);
+            galleryImageUrls.push(await getDownloadURL(galleryImageRef));
+        }
     }
-  }
 
-  const docRef = doc(packagesCollection);
+    const docRef = doc(collection(db, 'edutourismPackages'));
 
-  // 3. Create a shortlink
-  const shortlinkSlug = `edu-${docRef.id.substring(0, 5)}`;
-  await createShortLink({
-      title: `Eduwisata: ${data.title}`,
-      longUrl: `/edutourism/${docRef.id}`,
-      slug: shortlinkSlug,
-      type: 'edutourism',
-      relatedId: docRef.id
-  });
+    // 3. Create a shortlink
+    const shortlinkSlug = `edu-${docRef.id.substring(0, 5)}`;
+    await createShortLink({
+        title: `Eduwisata: ${data.title}`,
+        longUrl: `/edutourism/${docRef.id}`,
+        slug: shortlinkSlug,
+        type: 'edutourism',
+        relatedId: docRef.id
+    });
 
-  // 4. Create package document
-  const packageData: EduwisataPackage = {
-    ...data,
-    id: docRef.id,
-    imageUrl,
-    images: galleryImageUrls,
-    shortlinkSlug,
-  };
-  await setDoc(docRef, packageData);
+    // 4. Create package document
+    const packageData: Omit<EduwisataPackage, 'id'> = {
+        title: data.title as string,
+        description: data.description as string,
+        price: Number(data.price),
+        duration: data.duration as string,
+        availableAddonIds: (data.availableAddonIds as string)?.split(',') || [],
+        imageUrl,
+        images: galleryImageUrls,
+        shortlinkSlug,
+    };
+    await setDoc(docRef, packageData);
 
-  revalidatePath('/panel/edutourism');
-  return docRef.id;
+    revalidatePath('/panel/edutourism');
+    return docRef.id;
 }
 
 
