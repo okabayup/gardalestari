@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -22,6 +21,7 @@ const formSchema = z.object({
   title: z.string().min(1, 'Judul wajib diisi'),
   description: z.string().min(1, 'Deskripsi wajib diisi'),
   price: z.coerce.number().min(0, 'Harga tidak boleh negatif'),
+  minParticipants: z.coerce.number().min(1, 'Minimal peserta adalah 1'),
   duration: z.string().min(1, 'Durasi wajib diisi'),
   availableAddonIds: z.array(z.string()).optional(),
   imageFile: z.any().optional(),
@@ -102,6 +102,7 @@ export default function EditEduwisataPackagePage() {
         formData.append('title', data.title);
         formData.append('description', data.description);
         formData.append('price', String(data.price));
+        formData.append('minParticipants', String(data.minParticipants));
         formData.append('duration', data.duration);
         formData.append('availableAddonIds', (data.availableAddonIds || []).join(','));
         
@@ -153,11 +154,16 @@ export default function EditEduwisataPackagePage() {
             <Textarea id="description" {...register('description')} />
             {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="price">Harga (Rp)</Label>
               <Input id="price" type="number" {...register('price')} />
               {errors.price && <p className="text-sm text-destructive">{errors.price.message}</p>}
+            </div>
+             <div className="space-y-2">
+              <Label htmlFor="minParticipants">Minimal Peserta</Label>
+              <Input id="minParticipants" type="number" {...register('minParticipants')} />
+              {errors.minParticipants && <p className="text-sm text-destructive">{errors.minParticipants.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="duration">Durasi</Label>

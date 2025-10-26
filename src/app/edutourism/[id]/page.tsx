@@ -1,4 +1,3 @@
-
 'use server';
 
 import { notFound } from 'next/navigation';
@@ -62,6 +61,7 @@ export default async function EduwisataDetailPage({ params }: { params: { id: st
                                     <CardTitle>Formulir Pemesanan</CardTitle>
                                     <CardDescription>
                                         Mulai dari <span className="font-bold text-primary text-lg">Rp {pkg.price.toLocaleString('id-ID')}</span>/orang
+                                        (minimal {pkg.minParticipants} peserta)
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>

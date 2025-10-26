@@ -1,5 +1,3 @@
-
-
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
 import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact, LayoutDashboard, Package, Landmark, Plane, Bell, Link, Mail } from 'lucide-react';
@@ -57,6 +55,7 @@ export const directoryItems = [
     { href: '/points', label: 'Poin Hijau', icon: Coins },
     { href: '/content/new', label: 'Kirim Konten', icon: FilePlus },
     { href: '/uji-aplikasi', label: 'Uji Aplikasi', icon: TestTube2 },
+    { href: '/booking/meeting', label: 'Jadwalkan Meeting', icon: Handshake },
 ];
 
 export const panelDirectoryItems: {
@@ -215,6 +214,7 @@ export interface EduwisataPackage {
     title: string;
     description: string;
     price: number;
+    minParticipants: number;
     duration: string; // e.g., "3 Jam", "1 Hari"
     imageUrl: string; // Aspect ratio 4:5
     images?: string[]; // Gallery images

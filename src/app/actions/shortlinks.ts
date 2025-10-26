@@ -1,5 +1,3 @@
-
-
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -37,6 +35,26 @@ export async function createShortLink(data: Omit<ShortLink, 'id' | 'createdAt' |
     }
 }
 
+export async function createMeetingShortLink() {
+    try {
+        const q = query(shortlinksCollection, where('slug', '==', 'meet'));
+        const existing = await getDocs(q);
+        if (existing.empty) {
+            await createShortLink({
+                title: 'Jadwalkan Meeting',
+                slug: 'meet',
+                longUrl: '/booking/meeting',
+                type: 'custom',
+            });
+            console.log("Successfully created /meet shortlink.");
+        }
+    } catch (error) {
+        // Log error but don't block app startup
+        console.error("Failed to create meeting shortlink:", error);
+    }
+}
+
+
 export async function updateShortLink(id: string, data: Partial<Omit<ShortLink, 'id' | 'createdAt' | 'clicks'>>) {
     try {
         if (data.slug) {
@@ -66,7 +84,7 @@ export async function getShortLinks(): Promise<ShortLink[]> {
         return {
             id: doc.id,
             ...data,
-            createdAt: createdAt.toDate().toISOString(),
+            createdAt: createdAt ? createdAt.toDate().toISOString() : new Date().toISOString(),
         } as ShortLink;
     });
 }
@@ -115,4 +133,3 @@ export async function incrementClickCount(slug: string): Promise<void> {
         console.error(`Failed to increment click count for ${slug}:`, error);
     }
 }
-

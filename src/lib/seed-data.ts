@@ -3,6 +3,7 @@
 import { collection, addDoc, getDocs, query, limit } from 'firebase/firestore';
 import { db } from './firebase';
 import { initialAccounts, initialDocumentTypes } from './definitions';
+import { createMeetingShortLink } from '@/app/actions/shortlinks';
 
 const ideaCategoriesCollection = collection(db, 'ideaCategories');
 const beritaCategoriesCollection = collection(db, 'beritaCategories');
@@ -64,4 +65,5 @@ export async function seedInitialData() {
     await seedCollection(programTagsCollection, initialProgramTags, 'programTags');
     await seedCollection(accountsCollection, initialAccounts, 'accounts');
     await seedCollection(docTypesCollection, initialDocumentTypes, 'documentTypes');
+    await createMeetingShortLink();
 }

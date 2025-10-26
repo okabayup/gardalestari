@@ -1,4 +1,3 @@
-
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -28,25 +27,24 @@ export async function getEduwisataPackage(id: string): Promise<EduwisataPackage 
 export async function createEduwisataPackage(
   formData: FormData,
 ): Promise<string> {
+  console.log("Received form data on server");
   try {
-    // Manually parse FormData to handle files correctly
     const data = {
         title: formData.get('title') as string,
         description: formData.get('description') as string,
         price: Number(formData.get('price')),
+        minParticipants: Number(formData.get('minParticipants')),
         duration: formData.get('duration') as string,
         availableAddonIds: (formData.get('availableAddonIds') as string)?.split(',') || [],
     };
     const imageFile = formData.get('imageFile') as File;
     const galleryFiles = formData.getAll('galleryFiles') as File[];
 
-    // 1. Upload main image. No file size limit is enforced here on the server.
-    // Any limits would come from Firebase Storage rules or server configuration.
     const imageRef = ref(storage, `eduwisata/packages/${Date.now()}_${imageFile.name}`);
     await uploadBytes(imageRef, imageFile);
     const imageUrl = await getDownloadURL(imageRef);
+    console.log("Main image uploaded:", imageUrl);
 
-    // 2. Upload gallery images if any
     let galleryImageUrls: string[] = [];
     if (galleryFiles && galleryFiles[0] && galleryFiles[0].size > 0) {
         for (const file of galleryFiles) {
@@ -54,21 +52,19 @@ export async function createEduwisataPackage(
             await uploadBytes(galleryImageRef, file);
             galleryImageUrls.push(await getDownloadURL(galleryImageRef));
         }
+        console.log("Gallery images uploaded:", galleryImageUrls.length);
     }
     
     const docRef = doc(collection(db, 'edutourismPackages'));
 
     const packageData: Omit<EduwisataPackage, 'id'> = {
-        title: data.title,
-        description: data.description,
-        price: data.price,
-        duration: data.duration,
-        availableAddonIds: data.availableAddonIds,
+        ...data,
         imageUrl,
         images: galleryImageUrls,
-        shortlinkSlug: '', // Will be updated after creation
+        shortlinkSlug: '',
     };
     await setDoc(docRef, packageData);
+    console.log("Package data saved to Firestore with ID:", docRef.id);
 
     const shortlinkSlug = `edu-${docRef.id.substring(0, 5)}`;
     await createShortLink({
@@ -78,6 +74,7 @@ export async function createEduwisataPackage(
         type: 'edutourism',
         relatedId: docRef.id
     });
+    console.log("Shortlink created:", shortlinkSlug);
     
     await updateDoc(docRef, { shortlinkSlug });
 
@@ -95,6 +92,7 @@ export async function updateEduwisataPackage(
   id: string,
   formData: FormData,
 ) {
+  console.log("Received update form data on server");
   try {
     const docRef = doc(db, 'edutourismPackages', id);
     const existingPackage = await getEduwisataPackage(id);
@@ -104,6 +102,7 @@ export async function updateEduwisataPackage(
       title: formData.get('title') as string,
       description: formData.get('description') as string,
       price: Number(formData.get('price')),
+      minParticipants: Number(formData.get('minParticipants')),
       duration: formData.get('duration') as string,
       availableAddonIds: (formData.get('availableAddonIds') as string)?.split(',') || [],
     };
@@ -112,14 +111,16 @@ export async function updateEduwisataPackage(
 
     const dataToUpdate: { [key: string]: any } = { ...data };
     
-    // No file size limit is enforced here on the server.
     if (imageFile && imageFile.size > 0) {
+      console.log("Uploading new main image...");
       const imageRef = ref(storage, `eduwisata/packages/${Date.now()}_${imageFile.name}`);
       await uploadBytes(imageRef, imageFile);
       dataToUpdate.imageUrl = await getDownloadURL(imageRef);
+      console.log("New main image URL:", dataToUpdate.imageUrl);
     }
 
     if (galleryFiles && galleryFiles.length > 0 && galleryFiles[0].size > 0) {
+      console.log(`Uploading ${galleryFiles.length} new gallery images...`);
       const newImageUrls: string[] = [];
       for (const file of galleryFiles) {
         const galleryImageRef = ref(storage, `eduwisata/gallery/${Date.now()}_${file.name}`);
@@ -127,10 +128,12 @@ export async function updateEduwisataPackage(
         newImageUrls.push(await getDownloadURL(galleryImageRef));
       }
       dataToUpdate.images = [...(existingPackage.images || []), ...newImageUrls];
+      console.log("New gallery URLs:", newImageUrls);
     }
 
 
     await updateDoc(docRef, dataToUpdate);
+    console.log("Firestore document updated successfully.");
     revalidatePath('/panel/edutourism');
     revalidatePath(`/panel/edutourism/edit/${id}`);
   } catch (error) {
