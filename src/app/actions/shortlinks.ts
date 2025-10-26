@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, orderBy, serverTimestamp, increment, where, writeBatch, setDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, orderBy, serverTimestamp, increment, where, writeBatch, limit } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { ShortLink } from '@/lib/definitions';
 
@@ -21,8 +21,7 @@ export async function createShortLink(data: Omit<ShortLink, 'id' | 'createdAt' |
             throw new Error(`Shortlink dengan slug "${data.slug}" sudah ada.`);
         }
 
-        const docRef = doc(shortlinksCollection, data.slug);
-        await setDoc(docRef, {
+        const docRef = await addDoc(shortlinksCollection, {
             ...data,
             clicks: 0,
             createdAt: serverTimestamp(),
@@ -36,19 +35,46 @@ export async function createShortLink(data: Omit<ShortLink, 'id' | 'createdAt' |
     }
 }
 
+export async function updateShortLink(id: string, data: Partial<Omit<ShortLink, 'id' | 'createdAt' | 'clicks'>>) {
+    try {
+        if (data.slug) {
+            const q = query(shortlinksCollection, where('slug', '==', data.slug));
+            const existing = await getDocs(q);
+            if (!existing.empty && existing.docs[0].id !== id) {
+                 throw new Error(`Shortlink dengan slug "${data.slug}" sudah ada.`);
+            }
+        }
+        const docRef = doc(db, 'shortlinks', id);
+        await updateDoc(docRef, data);
+        revalidatePath('/panel/shortlinks');
+
+    } catch (error) {
+         console.error("Error updating shortlink:", error);
+        throw new Error(`Gagal memperbarui shortlink: ${(error as Error).message}`);
+    }
+}
+
+
 export async function getShortLinks(): Promise<ShortLink[]> {
     const q = query(shortlinksCollection, orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ShortLink));
 }
 
-export async function getShortLink(id: string): Promise<ShortLink | null> {
+export async function getShortLink(slug: string): Promise<ShortLink | null> {
     try {
-        const docRef = doc(db, 'shortlinks', id);
-        const docSnap = await getDoc(docRef);
-        return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as ShortLink : null;
+        const q = query(shortlinksCollection, where('slug', '==', slug), limit(1));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+            return null;
+        }
+
+        const doc = snapshot.docs[0];
+        return { id: doc.id, ...doc.data() } as ShortLink;
+
     } catch (error) {
-        console.error(`Error getting shortlink ${id}:`, error);
+        console.error(`Error getting shortlink for slug ${slug}:`, error);
         return null; // Return null on error to prevent breaking redirects
     }
 }
@@ -63,14 +89,19 @@ export async function deleteShortLink(id: string): Promise<void> {
     }
 }
 
-export async function incrementClickCount(id: string): Promise<void> {
+export async function incrementClickCount(slug: string): Promise<void> {
     try {
-        const docRef = doc(db, 'shortlinks', id);
-        await updateDoc(docRef, {
-            clicks: increment(1)
-        });
+        const q = query(shortlinksCollection, where('slug', '==', slug), limit(1));
+        const snapshot = await getDocs(q);
+
+        if (!snapshot.empty) {
+            const docRef = snapshot.docs[0].ref;
+            await updateDoc(docRef, {
+                clicks: increment(1)
+            });
+        }
     } catch (error) {
         // Log this error but don't throw, as the redirect is more important.
-        console.error(`Failed to increment click count for ${id}:`, error);
+        console.error(`Failed to increment click count for ${slug}:`, error);
     }
 }

@@ -4,9 +4,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { getShortLinks, createShortLink, deleteShortLink, ShortLink } from '@/app/actions/shortlinks';
+import { getShortLinks, createShortLink, deleteShortLink, ShortLink, updateShortLink } from '@/app/actions/shortlinks';
 import { Button } from '@/components/ui/button';
-import { Loader2, PlusCircle, Trash2, Link as LinkIcon, MoreHorizontal } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Link as LinkIcon, MoreHorizontal, Edit } from 'lucide-react';
 import { DataTable } from '@/components/panel/DataTable';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from '@/components/panel/DataTableColumnHeader';
@@ -17,7 +17,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import {
   AlertDialog,
@@ -35,6 +34,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { SHORTLINK_DOMAIN } from '@/lib/definitions';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 
 const formSchema = z.object({
@@ -44,27 +44,50 @@ const formSchema = z.object({
 });
 type FormData = z.infer<typeof formSchema>;
 
-const NewShortlinkDialog = ({ onSave, isSaving }: { onSave: (data: FormData) => Promise<boolean>, isSaving: boolean }) => {
+const ShortlinkDialog = ({
+    link,
+    onSave, 
+    isSaving 
+}: { 
+    link?: ShortLink | null,
+    onSave: (data: FormData, id?: string) => Promise<boolean>, 
+    isSaving: boolean 
+}) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(formSchema) });
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({ 
+      resolver: zodResolver(formSchema),
+      defaultValues: link || undefined,
+  });
+
+  useEffect(() => {
+    if (isOpen) {
+        reset(link || { title: '', slug: '', longUrl: '' });
+    }
+  }, [isOpen, link, reset]);
   
   const handleFormSubmit = async (data: FormData) => {
-    const success = await onSave(data);
+    const success = await onSave(data, link?.id);
     if (success) {
       reset();
       setIsOpen(false);
     }
   }
 
+  const dialogTrigger = link ? (
+     <DropdownMenuItem onSelect={(e) => e.preventDefault()}>Edit</DropdownMenuItem>
+  ) : (
+     <Button><PlusCircle className="mr-2 h-4 w-4" /> Buat Shortlink</Button>
+  );
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-            <Button><PlusCircle className="mr-2 h-4 w-4" /> Buat Shortlink</Button>
+            {dialogTrigger}
         </DialogTrigger>
         <DialogContent>
             <DialogHeader>
-                <DialogTitle>Buat Shortlink Baru</DialogTitle>
-                <DialogDescription>Buat tautan pendek baru dengan domain {SHORTLINK_DOMAIN}.</DialogDescription>
+                <DialogTitle>{link ? 'Edit Shortlink' : 'Buat Shortlink Baru'}</DialogTitle>
+                <DialogDescription>{link ? 'Perbarui detail untuk tautan ini.' : `Buat tautan pendek baru dengan domain ${SHORTLINK_DOMAIN}.`}</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
                 <div className="space-y-2">
@@ -86,6 +109,7 @@ const NewShortlinkDialog = ({ onSave, isSaving }: { onSave: (data: FormData) => 
                     {errors.longUrl && <p className="text-sm text-destructive">{errors.longUrl.message}</p>}
                 </div>
                  <DialogFooter>
+                    <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Batal</Button>
                     <Button type="submit" disabled={isSaving}>
                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Simpan
@@ -122,15 +146,20 @@ export default function ShortlinksPage() {
     fetchLinks();
   }, [fetchLinks]);
 
-  const handleCreate = async (data: FormData) => {
+  const handleSave = async (data: FormData, id?: string) => {
     setIsSaving(true);
     try {
-      await createShortLink({ ...data, type: 'custom' });
-      toast({ title: "Shortlink berhasil dibuat!" });
+      if (id) {
+        await updateShortLink(id, { ...data, type: 'custom' });
+        toast({ title: "Shortlink berhasil diperbarui!" });
+      } else {
+        await createShortLink({ ...data, type: 'custom' });
+        toast({ title: "Shortlink berhasil dibuat!" });
+      }
       fetchLinks();
-      return true; // Indicate success to close dialog
+      return true;
     } catch (error) {
-      toast({ variant: "destructive", title: "Gagal membuat shortlink", description: (error as Error).message });
+      toast({ variant: "destructive", title: "Gagal menyimpan", description: (error as Error).message });
       return false;
     } finally {
       setIsSaving(false);
@@ -182,16 +211,27 @@ export default function ShortlinksPage() {
     },
     {
       id: 'actions',
-      cell: ({ row }) => (
-        <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(row.original)}>
-            <Trash2 className="h-4 w-4 text-destructive" />
-        </Button>
-      ),
+      cell: ({ row }) => {
+          const link = row.original;
+          return (
+             <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                    <ShortlinkDialog link={link} onSave={handleSave} isSaving={isSaving} />
+                    <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(link)}>
+                        <Trash2 className="mr-2 h-4 w-4" /> Hapus
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+             </DropdownMenu>
+          )
+      }
     },
-  ], []);
+  ], [isSaving]);
 
   const toolbarButtons = (
-     <NewShortlinkDialog onSave={handleCreate} isSaving={isSaving} />
+     <ShortlinkDialog onSave={handleSave} isSaving={isSaving} />
   );
 
   return (
