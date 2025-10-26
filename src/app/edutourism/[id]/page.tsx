@@ -1,7 +1,8 @@
+
 'use server';
 
 import { notFound } from 'next/navigation';
-import { getEduwisataPackage, getAddons } from '@/app/actions/edutourism';
+import { getEduwisataPackage, getAddons, getBookedEduwisataDates } from '@/app/actions/edutourism';
 import LandingHeader from '@/components/layout/LandingHeader';
 import Footer from '@/components/landing/Footer';
 import Image from 'next/image';
@@ -16,7 +17,10 @@ export default async function EduwisataDetailPage({ params }: { params: { id: st
         notFound();
     }
     
-    const allAddons = await getAddons();
+    const [allAddons, bookedDates] = await Promise.all([
+        getAddons(),
+        getBookedEduwisataDates(params.id),
+    ]);
     const availableAddons = allAddons.filter(addon => pkg.availableAddonIds.includes(addon.id));
 
     return (
@@ -65,7 +69,7 @@ export default async function EduwisataDetailPage({ params }: { params: { id: st
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <BookingForm pkg={pkg} addons={availableAddons} />
+                                    <BookingForm pkg={pkg} addons={availableAddons} bookedDates={bookedDates} />
                                 </CardContent>
                             </Card>
                         </div>

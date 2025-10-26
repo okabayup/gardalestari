@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -9,6 +10,9 @@ import {
   Timestamp,
   getDocs,
   setDoc,
+  query,
+  where,
+  getDocsFromServer,
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { Booking, Addon } from '@/lib/definitions';
@@ -19,7 +23,7 @@ const bookingsCollection = collection(db, 'bookings');
 const meetingsCollection = collection(db, 'meetings');
 const addonsCollection = collection(db, 'edutourismAddons');
 
-const ADMIN_NOTIFICATION_PHONE = '6285144904161';
+const ADMIN_NOTIFICATION_PHONE = '6285937010409';
 const ADMIN_NOTIFICATION_EMAIL = 'halo@gardalestari.org';
 
 
@@ -137,4 +141,50 @@ export async function createMeetingBooking(
     console.error('[createMeetingBooking Error]', error);
     throw new Error(`Gagal membuat permintaan meeting: ${(error as Error).message}`);
   }
+}
+
+/**
+ * Fetches all booked dates for a specific edutourism package.
+ * @param packageId - The ID of the edutourism package.
+ * @returns An array of Date objects for booked dates.
+ */
+export async function getBookedEduwisataDates(packageId: string): Promise<Date[]> {
+    try {
+        const q = query(
+            bookingsCollection, 
+            where('packageId', '==', packageId),
+            where('status', 'in', ['paid', 'confirmed'])
+        );
+        const snapshot = await getDocsFromServer(q);
+        return snapshot.docs.map(doc => (doc.data().bookingDate as Timestamp).toDate());
+    } catch (error) {
+        console.error('[getBookedEduwisataDates Error]', error);
+        return [];
+    }
+}
+
+/**
+ * Fetches all booked time slots for a specific date for meetings.
+ * @param date - The date to check for booked slots.
+ * @returns An array of strings representing booked time slots (e.g., "09:00").
+ */
+export async function getBookedMeetingSlots(date: Date): Promise<string[]> {
+    try {
+        const startOfDay = Timestamp.fromDate(new Date(date.setHours(0, 0, 0, 0)));
+        const endOfDay = Timestamp.fromDate(new Date(date.setHours(23, 59, 59, 999)));
+
+        const q = query(
+            meetingsCollection,
+            where('bookingDate', '>=', startOfDay),
+            where('bookingDate', '<=', endOfDay),
+        );
+        const snapshot = await getDocsFromServer(q);
+        return snapshot.docs.map(doc => {
+            const bookingDate = (doc.data().bookingDate as Timestamp).toDate();
+            return `${String(bookingDate.getHours()).padStart(2, '0')}:${String(bookingDate.getMinutes()).padStart(2, '0')}`;
+        });
+    } catch (error) {
+        console.error('[getBookedMeetingSlots Error]', error);
+        return [];
+    }
 }

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -29,16 +29,18 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function BookingForm({ pkg, addons }: { pkg: EduwisataPackage, addons: Addon[] }) {
+export default function BookingForm({ pkg, addons, bookedDates }: { pkg: EduwisataPackage, addons: Addon[], bookedDates: Date[] }) {
     const router = useRouter();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [selectedAddons, setSelectedAddons] = useState<Record<string, number>>({});
 
-    const { control, register, handleSubmit, formState: { errors } } = useForm<FormData>({
+    const { control, register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
         resolver: zodResolver(formSchema),
-        defaultValues: { participants: 1 }
+        defaultValues: { participants: pkg.minParticipants }
     });
+
+    const watchParticipants = watch('participants');
     
     const handleAddonQuantityChange = (addonId: string, quantity: number) => {
         setSelectedAddons(prev => ({ ...prev, [addonId]: Math.max(0, quantity) }));
@@ -49,8 +51,8 @@ export default function BookingForm({ pkg, addons }: { pkg: EduwisataPackage, ad
             const addon = addons.find(a => a.id === addonId);
             return acc + (addon?.price || 0) * quantity;
         }, 0);
-        return (pkg.price * (control._getWatch('participants') || 1)) + addonsTotal;
-    }, [selectedAddons, addons, pkg.price, control]);
+        return (pkg.price * watchParticipants) + addonsTotal;
+    }, [selectedAddons, addons, pkg.price, watchParticipants]);
 
     const onSubmit = async (data: FormData) => {
         setLoading(true);
@@ -84,7 +86,7 @@ export default function BookingForm({ pkg, addons }: { pkg: EduwisataPackage, ad
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="participants">Jumlah Peserta</Label>
-                    <Input id="participants" type="number" {...register('participants')} />
+                    <Input id="participants" type="number" {...register('participants', { min: pkg.minParticipants })} />
                     {errors.participants && <p className="text-xs text-destructive">{errors.participants.message}</p>}
                 </div>
             </div>
@@ -113,7 +115,7 @@ export default function BookingForm({ pkg, addons }: { pkg: EduwisataPackage, ad
                                     {field.value ? format(field.value, "PPP") : <span>Pilih tanggal</span>}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus disabled={bookedDates} /></PopoverContent>
                         </Popover>
                     )}
                 />
