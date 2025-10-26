@@ -2,7 +2,7 @@
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, query, orderBy, serverTimestamp, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import type { EduwisataPackage, Addon } from '@/lib/definitions';
