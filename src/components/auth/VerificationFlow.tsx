@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Camera, User, Fingerprint, CheckCircle, MessageSquare } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { readKtp } from '@/ai/flows/ocr-ktp-flow';
+import { readDocumentText as readKtp } from '@/ai/flows/ocr-ktp-flow';
 import { saveWaNumber, verifyWaNumber } from '@/app/actions/user';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -268,7 +268,7 @@ export default function VerificationFlow() {
 
     try {
       toast({ title: 'Memproses KTP...', description: 'Mohon tunggu, sedang memverifikasi data KTP Anda dengan OCR.' });
-      const ocrResult = await readKtp({ photoDataUri: ktpDataUrl });
+      const ocrResult = await readKtp({ fileDataUri: ktpDataUrl });
 
       if (!ocrResult || !ocrResult.nik || !ocrResult.name) {
           throw new Error('Gagal membaca KTP. Pastikan foto jelas, terang, dan tidak buram.');
