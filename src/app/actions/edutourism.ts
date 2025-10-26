@@ -29,7 +29,7 @@ export async function createEduwisataPackage(
   formData: FormData,
 ): Promise<string> {
   try {
-    // Manually parse FormData
+    // Manually parse FormData to handle files correctly
     const data = {
         title: formData.get('title') as string,
         description: formData.get('description') as string,
@@ -40,7 +40,8 @@ export async function createEduwisataPackage(
     const imageFile = formData.get('imageFile') as File;
     const galleryFiles = formData.getAll('galleryFiles') as File[];
 
-    // 1. Upload main image
+    // 1. Upload main image. No file size limit is enforced here on the server.
+    // Any limits would come from Firebase Storage rules or server configuration.
     const imageRef = ref(storage, `eduwisata/packages/${Date.now()}_${imageFile.name}`);
     await uploadBytes(imageRef, imageFile);
     const imageUrl = await getDownloadURL(imageRef);
@@ -54,10 +55,9 @@ export async function createEduwisataPackage(
             galleryImageUrls.push(await getDownloadURL(galleryImageRef));
         }
     }
-
+    
     const docRef = doc(collection(db, 'edutourismPackages'));
 
-    // 4. Create package document
     const packageData: Omit<EduwisataPackage, 'id'> = {
         title: data.title,
         description: data.description,
@@ -70,7 +70,6 @@ export async function createEduwisataPackage(
     };
     await setDoc(docRef, packageData);
 
-    // 3. Create a shortlink
     const shortlinkSlug = `edu-${docRef.id.substring(0, 5)}`;
     await createShortLink({
         title: `Eduwisata: ${data.title}`,
@@ -80,7 +79,6 @@ export async function createEduwisataPackage(
         relatedId: docRef.id
     });
     
-    // Update the package with the shortlink
     await updateDoc(docRef, { shortlinkSlug });
 
     revalidatePath('/panel/edutourism');
@@ -113,7 +111,8 @@ export async function updateEduwisataPackage(
     const galleryFiles = formData.getAll('galleryFiles') as File[];
 
     const dataToUpdate: { [key: string]: any } = { ...data };
-
+    
+    // No file size limit is enforced here on the server.
     if (imageFile && imageFile.size > 0) {
       const imageRef = ref(storage, `eduwisata/packages/${Date.now()}_${imageFile.name}`);
       await uploadBytes(imageRef, imageFile);
@@ -152,12 +151,14 @@ export async function deleteEduwisataPackage(id: string) {
 // --- Addon Management ---
 
 export async function getAddons(): Promise<Addon[]> {
-  const snapshot = await getDocs(query(addonsCollection, orderBy('name', 'asc')));
+  const addonsCollectionRef = collection(db, 'edutourismAddons');
+  const snapshot = await getDocs(query(addonsCollectionRef, orderBy('name', 'asc')));
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Addon));
 }
 
 export async function createAddon(data: Omit<Addon, 'id'>) {
-  await addDoc(addonsCollection, data);
+  const addonsCollectionRef = collection(db, 'edutourismAddons');
+  await addDoc(addonsCollectionRef, data);
   revalidatePath('/panel/edutourism/addons');
 }
 
