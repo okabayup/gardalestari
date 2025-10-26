@@ -8,6 +8,22 @@ import { redirect } from 'next/navigation';
 import { PanelSidebarContent } from '@/components/panel/Sidebar';
 import { PanelBadgesProvider } from '@/hooks/use-panel-badges';
 import PanelHeader from '@/components/panel/PanelHeader';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { useSidebar } from '@/components/ui/sidebar';
+
+
+function MobileSidebar() {
+    const { isMobile, openMobile, setOpenMobile } = useSidebar();
+    if (!isMobile) return null;
+    
+    return (
+        <Sheet open={openMobile} onOpenChange={setOpenMobile}>
+            <SheetContent side="left" className="w-3/4 p-0">
+                 <PanelSidebarContent />
+            </SheetContent>
+        </Sheet>
+    );
+}
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -31,6 +47,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
           <Sidebar collapsible="offcanvas" className="hidden border-r bg-muted/40 md:block">
               <PanelSidebarContent />
           </Sidebar>
+           <MobileSidebar />
           <div className="flex flex-col">
             <PanelHeader />
             <main className="flex flex-1 flex-col gap-4 overflow-auto p-4 sm:p-6">

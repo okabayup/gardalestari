@@ -16,6 +16,8 @@ import { Badge } from '../ui/badge';
 import { panelDirectoryItems } from '@/lib/definitions';
 import { ScrollArea } from '../ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { SheetHeader, SheetTitle, SheetDescription } from '../ui/sheet';
+import { Separator } from '../ui/separator';
 
 export function PanelSidebarContent() {
   const pathname = usePathname();
@@ -24,12 +26,16 @@ export function PanelSidebarContent() {
 
   return (
     <>
-      <header className="flex h-16 items-center border-b px-6 shrink-0 md:hidden">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
-            <Image src="/logo.png" alt="Logo" width={24} height={24} />
-            <span className="text-base">Panel Admin</span>
-        </Link>
-      </header>
+      <SheetHeader className="p-4 border-b text-left md:hidden">
+        <SheetTitle>Panel Navigasi</SheetTitle>
+        <SheetDescription>Pilih menu untuk mengelola aplikasi.</SheetDescription>
+      </SheetHeader>
+       <div className="hidden md:flex h-16 items-center border-b px-6 shrink-0">
+           <Link href="/panel/dashboard" className="flex items-center gap-2 font-semibold">
+             <Image src="/logo.png" alt="Logo" width={24} height={24} />
+             <span className="text-base">Panel Admin</span>
+           </Link>
+       </div>
       <ScrollArea className="flex-1">
         <nav className="flex flex-col gap-1 p-4 text-sm font-medium">
             <Link
