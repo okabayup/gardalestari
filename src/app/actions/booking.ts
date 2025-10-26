@@ -14,6 +14,7 @@ import {
   where,
   getDocsFromServer,
   orderBy,
+  getDoc,
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { Booking, Addon, EduwisataPackage } from '@/lib/definitions';
@@ -103,15 +104,20 @@ export async function createBooking(
  * @param meetingData - The details of the meeting booking.
  */
 export async function createMeetingBooking(
-  meetingData: Omit<Booking, 'id' | 'createdAt' | 'status' | 'packageId' | 'packageName' | 'selectedAddons' | 'totalPrice' | 'uniqueCode'>
+  meetingData: Omit<Booking, 'id' | 'createdAt' | 'status' | 'packageId' | 'packageName' | 'selectedAddons' | 'totalPrice' | 'uniqueCode'> & { bookingDate: string }
 ): Promise<{ meetingId: string }> {
   try {
     const newMeetingRef = doc(collection(db, 'meetings'));
+    
+    const { bookingDate, ...restOfData } = meetingData;
+
     const newMeeting = {
-      ...meetingData,
+      ...restOfData,
+      bookingDate: Timestamp.fromDate(new Date(bookingDate)),
       status: 'pending',
       createdAt: Timestamp.now(),
     };
+
     await setDoc(newMeetingRef, newMeeting);
     const meetingId = newMeetingRef.id;
 

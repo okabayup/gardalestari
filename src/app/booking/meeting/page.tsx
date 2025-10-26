@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -69,12 +68,12 @@ export default function MeetingBookingPage() {
 
             const payload = {
                 ...data,
-                bookingDate: Timestamp.fromDate(bookingDateTime),
+                bookingDate: bookingDateTime.toISOString(), // Pass as ISO string
                 participants: 1, // Dummy value
                 meetingTopic: data.meetingTopic,
                 meetingDuration: '60min', // Default duration
             };
-            await createMeetingBooking(payload);
+            await createMeetingBooking(payload as any);
             toast({ title: "Permintaan Terkirim!", description: "Tim kami akan segera menghubungi Anda." });
             setIsSubmitted(true);
         } catch (error) {
