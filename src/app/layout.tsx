@@ -1,5 +1,4 @@
 
-
 import type { Metadata, Viewport } from 'next';
 import { AuthProvider } from '@/hooks/use-auth';
 import { Toaster } from '@/components/ui/toaster';
@@ -7,6 +6,9 @@ import './globals.css';
 import FirebaseAnalytics from '@/components/FirebaseAnalytics';
 import { Suspense } from 'react';
 import { getAppSettings } from './actions/settings';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://gardalestari.org';
 
@@ -89,5 +91,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-    
