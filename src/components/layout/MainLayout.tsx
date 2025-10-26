@@ -34,11 +34,15 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   
   const isMapPage = pathname === '/map';
   
-  // Determine if the current page is a panel page.
+  // Panel pages have their own layout and should not show the main header or bottom nav
   const isPanelPage = pathname.startsWith('/panel');
 
-  const showHeader = !isMapPage && !isPanelPage;
-  const showBottomNav = !isMapPage && !isPanelPage;
+  if (isPanelPage) {
+    return <>{children}</>;
+  }
+
+  const showHeader = !isMapPage;
+  const showBottomNav = !isMapPage;
   
   return (
     <div className="relative mx-auto flex h-dvh w-full max-w-lg flex-col bg-background">

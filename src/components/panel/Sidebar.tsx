@@ -24,10 +24,10 @@ export function PanelSidebarContent() {
 
   return (
     <>
-      <header className="flex h-16 items-center border-b px-6 shrink-0">
+      <header className="flex h-16 items-center border-b px-6 shrink-0 md:hidden">
         <Link href="/" className="flex items-center gap-2 font-semibold">
             <Image src="/logo.png" alt="Logo" width={24} height={24} />
-            <span className="text-base">Garda Lestari Panel</span>
+            <span className="text-base">Panel Admin</span>
         </Link>
       </header>
       <ScrollArea className="flex-1">

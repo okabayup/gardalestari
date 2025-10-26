@@ -8,7 +8,6 @@ import { redirect } from 'next/navigation';
 import { PanelSidebarContent } from '@/components/panel/Sidebar';
 import { PanelBadgesProvider } from '@/hooks/use-panel-badges';
 import PanelHeader from '@/components/panel/PanelHeader';
-import BottomNav from '@/components/layout/BottomNav';
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -28,17 +27,16 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   return (
     <SidebarProvider>
       <PanelBadgesProvider>
-        <div className="flex h-screen w-full bg-muted/40">
-          <Sidebar collapsible="offcanvas" variant="sidebar" className="hidden md:flex">
+        <div className="grid h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+          <Sidebar collapsible="offcanvas" className="hidden border-r bg-muted/40 md:block">
               <PanelSidebarContent />
           </Sidebar>
-          <div className="flex flex-1 flex-col">
+          <div className="flex flex-col">
             <PanelHeader />
-            <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
+            <main className="flex flex-1 flex-col gap-4 overflow-auto p-4 sm:p-6">
                 {children}
             </main>
           </div>
-          <BottomNav />
         </div>
       </PanelBadgesProvider>
     </SidebarProvider>

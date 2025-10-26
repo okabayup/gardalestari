@@ -3,7 +3,6 @@
 
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { GlobalSearch } from '../search/GlobalSearch';
-import { User } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '../ui/button';
 import { useAuth } from '@/hooks/use-auth';
@@ -17,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Home } from 'lucide-react';
+import Image from 'next/image';
 
 const getInitials = (name: string | null | undefined) => {
     if (!name) return 'GL';
@@ -30,8 +30,14 @@ export default function PanelHeader() {
   const { user } = useAuth();
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
-      <SidebarTrigger />
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+      <SidebarTrigger className="sm:hidden" />
+       <div className="hidden sm:block">
+           <Link href="/panel/dashboard" className="flex items-center gap-2 font-semibold">
+             <Image src="/logo.png" alt="Logo" width={24} height={24} />
+             <span className="text-base">Panel Admin</span>
+           </Link>
+       </div>
       <div className="ml-auto flex items-center gap-2">
         <GlobalSearch />
         <Button asChild variant="outline" size="icon">
