@@ -103,9 +103,6 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   webpack: (config, { isServer }) => {
     // This is to suppress the 'require.extensions' warning from handlebars
     // which is a dependency of dotprompt, used by Genkit.

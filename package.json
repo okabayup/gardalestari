@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 9002",
+    "dev": "next dev --webpack -p 9002",
     "genkit:dev": "genkit start -- ts-node src/ai/dev.ts",
     "genkit:watch": "genkit start -- ts-node --watch src/ai/dev.ts",
     "build": "next build",
@@ -62,7 +62,7 @@
     "lucide-react": "^0.475.0",
     "mammoth": "^1.8.0",
     "marked": "^14.0.0",
-    "next": "15.3.3",
+    "next": "16.0.0",
     "next-pwa": "^5.6.0",
     "pdf-lib": "^1.17.1",
     "pino": "^9.2.0",
