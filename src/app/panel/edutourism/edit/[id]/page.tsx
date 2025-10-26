@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -117,6 +118,7 @@ export default function EditEduwisataPackagePage() {
       toast({ title: 'Paket berhasil diperbarui!' });
       router.push('/panel/edutourism');
     } catch (error) {
+      console.error("[onSubmit Error]", "Failed to update package. Full error:", error);
       toast({ variant: 'destructive', title: 'Gagal memperbarui', description: (error as Error).message });
       setLoading(false);
     }

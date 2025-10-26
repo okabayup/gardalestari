@@ -28,6 +28,7 @@ export async function getEduwisataPackage(id: string): Promise<EduwisataPackage 
 export async function createEduwisataPackage(
   formData: FormData,
 ): Promise<string> {
+  try {
     // Manually parse FormData
     const data = {
         title: formData.get('title') as string,
@@ -56,16 +57,6 @@ export async function createEduwisataPackage(
 
     const docRef = doc(collection(db, 'edutourismPackages'));
 
-    // 3. Create a shortlink
-    const shortlinkSlug = `edu-${docRef.id.substring(0, 5)}`;
-    await createShortLink({
-        title: `Eduwisata: ${data.title}`,
-        longUrl: `/edutourism/${docRef.id}`,
-        slug: shortlinkSlug,
-        type: 'edutourism',
-        relatedId: docRef.id
-    });
-
     // 4. Create package document
     const packageData: Omit<EduwisataPackage, 'id'> = {
         title: data.title,
@@ -75,12 +66,30 @@ export async function createEduwisataPackage(
         availableAddonIds: data.availableAddonIds,
         imageUrl,
         images: galleryImageUrls,
-        shortlinkSlug,
+        shortlinkSlug: '', // Will be updated after creation
     };
     await setDoc(docRef, packageData);
 
+    // 3. Create a shortlink
+    const shortlinkSlug = `edu-${docRef.id.substring(0, 5)}`;
+    await createShortLink({
+        title: `Eduwisata: ${data.title}`,
+        longUrl: `/edutourism/${docRef.id}`,
+        slug: shortlinkSlug,
+        type: 'edutourism',
+        relatedId: docRef.id
+    });
+    
+    // Update the package with the shortlink
+    await updateDoc(docRef, { shortlinkSlug });
+
     revalidatePath('/panel/edutourism');
     return docRef.id;
+
+  } catch (error) {
+    console.error("[createEduwisataPackage Error]", "Failed to create package. Full error:", error);
+    throw new Error(`Gagal total membuat paket: ${(error as Error).message}`);
+  }
 }
 
 
@@ -88,42 +97,47 @@ export async function updateEduwisataPackage(
   id: string,
   formData: FormData,
 ) {
-  const docRef = doc(db, 'edutourismPackages', id);
-  const existingPackage = await getEduwisataPackage(id);
-  if (!existingPackage) throw new Error("Package not found");
+  try {
+    const docRef = doc(db, 'edutourismPackages', id);
+    const existingPackage = await getEduwisataPackage(id);
+    if (!existingPackage) throw new Error("Package not found");
 
-  const data = {
-    title: formData.get('title') as string,
-    description: formData.get('description') as string,
-    price: Number(formData.get('price')),
-    duration: formData.get('duration') as string,
-    availableAddonIds: (formData.get('availableAddonIds') as string)?.split(',') || [],
-  };
-  const imageFile = formData.get('imageFile') as File | null;
-  const galleryFiles = formData.getAll('galleryFiles') as File[];
+    const data = {
+      title: formData.get('title') as string,
+      description: formData.get('description') as string,
+      price: Number(formData.get('price')),
+      duration: formData.get('duration') as string,
+      availableAddonIds: (formData.get('availableAddonIds') as string)?.split(',') || [],
+    };
+    const imageFile = formData.get('imageFile') as File | null;
+    const galleryFiles = formData.getAll('galleryFiles') as File[];
 
-  const dataToUpdate: { [key: string]: any } = { ...data };
+    const dataToUpdate: { [key: string]: any } = { ...data };
 
-  if (imageFile && imageFile.size > 0) {
-    const imageRef = ref(storage, `eduwisata/packages/${Date.now()}_${imageFile.name}`);
-    await uploadBytes(imageRef, imageFile);
-    dataToUpdate.imageUrl = await getDownloadURL(imageRef);
-  }
-
-  if (galleryFiles && galleryFiles.length > 0 && galleryFiles[0].size > 0) {
-    const newImageUrls: string[] = [];
-    for (const file of galleryFiles) {
-      const galleryImageRef = ref(storage, `eduwisata/gallery/${Date.now()}_${file.name}`);
-      await uploadBytes(galleryImageRef, file);
-      newImageUrls.push(await getDownloadURL(galleryImageRef));
+    if (imageFile && imageFile.size > 0) {
+      const imageRef = ref(storage, `eduwisata/packages/${Date.now()}_${imageFile.name}`);
+      await uploadBytes(imageRef, imageFile);
+      dataToUpdate.imageUrl = await getDownloadURL(imageRef);
     }
-    dataToUpdate.images = [...(existingPackage.images || []), ...newImageUrls];
+
+    if (galleryFiles && galleryFiles.length > 0 && galleryFiles[0].size > 0) {
+      const newImageUrls: string[] = [];
+      for (const file of galleryFiles) {
+        const galleryImageRef = ref(storage, `eduwisata/gallery/${Date.now()}_${file.name}`);
+        await uploadBytes(galleryImageRef, file);
+        newImageUrls.push(await getDownloadURL(galleryImageRef));
+      }
+      dataToUpdate.images = [...(existingPackage.images || []), ...newImageUrls];
+    }
+
+
+    await updateDoc(docRef, dataToUpdate);
+    revalidatePath('/panel/edutourism');
+    revalidatePath(`/panel/edutourism/edit/${id}`);
+  } catch (error) {
+      console.error("[updateEduwisataPackage Error]", "Failed to update package. Full error:", error);
+      throw new Error(`Gagal total memperbarui paket: ${(error as Error).message}`);
   }
-
-
-  await updateDoc(docRef, dataToUpdate);
-  revalidatePath('/panel/edutourism');
-  revalidatePath(`/panel/edutourism/edit/${id}`);
 }
 
 

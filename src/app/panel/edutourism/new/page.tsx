@@ -81,6 +81,7 @@ export default function NewEduwisataPackagePage() {
       toast({ title: 'Paket baru berhasil ditambahkan!' });
       router.push('/panel/edutourism');
     } catch (error) {
+      console.error("[onSubmit Error]", "Failed to create package. Full error:", error);
       toast({ variant: 'destructive', title: 'Gagal menambahkan', description: (error as Error).message });
       setLoading(false);
     }
