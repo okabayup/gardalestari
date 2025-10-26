@@ -1,7 +1,8 @@
 
+
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
-import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact, LayoutDashboard, Package, Landmark, Plane, Bell, Link } from 'lucide-react';
+import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact, LayoutDashboard, Package, Landmark, Plane, Bell, Link, Mail } from 'lucide-react';
 
 export const SHORTLINK_DOMAIN = 'https://gamules.io';
 
@@ -129,6 +130,7 @@ export const panelDirectoryItems: {
     icon: Settings,
     items: [
       { href: '/panel/whatsapp', icon: MessageCircle, label: 'Manajemen WhatsApp', permission: 'manage_whatsapp' },
+      { href: '/panel/email', icon: Mail, label: 'Manajemen Email', permission: 'manage_settings' },
       { href: '/panel/recruitments', icon: Briefcase, label: 'Rekrutmen', permission: 'manage_recruitments' },
       { href: '/panel/app-testers', icon: TestTube2, label: 'Penguji Aplikasi', permission: 'manage_settings'},
       { href: '/panel/shortlinks', icon: Link, label: 'Shortlinks', permission: 'manage_shortlinks' },
