@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -192,6 +191,9 @@ export async function getBeritaPosts(type?: 'artikel' | 'video', includeDrafts =
 
 // Get a single berita post by slug
 export async function getBeritaPost(slug: string) {
+  if (!slug) {
+    return null;
+  }
   try {
     const q = query(beritaPostsCollection, where("slug", "==", slug));
     const snapshot = await getDocs(q);
@@ -393,3 +395,5 @@ export async function getNotificationStatus(slug: string): Promise<IndexingStatu
         return null;
     }
 }
+
+    

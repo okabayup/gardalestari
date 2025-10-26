@@ -7,7 +7,7 @@ import { getBeritaPosts, getBeritaPost } from '@/app/actions/berita';
 
 // This function tells Next.js which slugs to pre-render at build time
 export async function generateStaticParams() {
-  const posts = await getBeritaPosts();
+  const posts = await getBeritaPosts('artikel'); // Only get articles
   return posts.map((post) => ({
     slug: post.slug,
   }));
@@ -54,3 +54,5 @@ export default async function BlogPostPage({ params }: { params: { slug: string 
     </MainLayout>
   );
 }
+
+    

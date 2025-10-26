@@ -20,7 +20,6 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description: 'Garda Lestari adalah organisasi kepemudaan yang berfokus pada inovasi di sektor agro-maritim dan kehutanan untuk pembangunan berkelanjutan di Indonesia.',
     manifest: '/manifest.json',
-    themeColor: '#347C45',
     icons: {
       icon: '/icon-bg-putih.png',
       shortcut: '/icon-bg-putih.png',
@@ -85,3 +84,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+    
