@@ -1033,14 +1033,14 @@ export interface WhatsAppTemplate {
 
 // --- Shortlinks ---
 export interface ShortLink {
-    id?: string; // the short code
+    id?: string;
     title: string;
     slug: string;
     longUrl: string;
     type: 'event' | 'program' | 'custom' | 'app_tester' | 'edutourism';
-    relatedId?: string; // e.g., eventId or programId
+    relatedId?: string;
     clicks: number;
-    createdAt: Timestamp;
+    createdAt: string; // ISO string
 }
 
 

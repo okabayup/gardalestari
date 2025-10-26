@@ -1,8 +1,9 @@
 
+
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, orderBy, serverTimestamp, increment, where, writeBatch, limit } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, orderBy, serverTimestamp, increment, where, writeBatch, limit, setDoc, Timestamp } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { ShortLink } from '@/lib/definitions';
 
@@ -21,7 +22,8 @@ export async function createShortLink(data: Omit<ShortLink, 'id' | 'createdAt' |
             throw new Error(`Shortlink dengan slug "${data.slug}" sudah ada.`);
         }
 
-        const docRef = await addDoc(shortlinksCollection, {
+        const docRef = doc(shortlinksCollection);
+        await setDoc(docRef, {
             ...data,
             clicks: 0,
             createdAt: serverTimestamp(),
@@ -58,7 +60,15 @@ export async function updateShortLink(id: string, data: Partial<Omit<ShortLink, 
 export async function getShortLinks(): Promise<ShortLink[]> {
     const q = query(shortlinksCollection, orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ShortLink));
+    return snapshot.docs.map(doc => {
+        const data = doc.data();
+        const createdAt = data.createdAt as Timestamp;
+        return {
+            id: doc.id,
+            ...data,
+            createdAt: createdAt.toDate().toISOString(),
+        } as ShortLink;
+    });
 }
 
 export async function getShortLink(slug: string): Promise<ShortLink | null> {
@@ -105,3 +115,4 @@ export async function incrementClickCount(slug: string): Promise<void> {
         console.error(`Failed to increment click count for ${slug}:`, error);
     }
 }
+
