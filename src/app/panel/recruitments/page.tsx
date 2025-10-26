@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -28,7 +27,6 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/use-auth';
 import { Badge } from '@/components/ui/badge';
-import { Timestamp } from 'firebase/firestore';
 
 export default function AdminRecruitmentsPage() {
   const router = useRouter();

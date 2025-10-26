@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -6,7 +5,8 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { getContacts, createContact, Contact, updateAccount } from '@/app/actions/finance';
+import { getContacts, createContact, updateContact, deleteContact } from '@/app/actions/finance';
+import type { Contact } from '@/lib/definitions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, PlusCircle, Building, User, MoreHorizontal, Trash2, Edit } from 'lucide-react';
@@ -215,7 +215,7 @@ export default function ContactsPage() {
             </Table>
           ) : (
              <div className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-lg">
-                <Contact className="mx-auto h-12 w-12 mb-4" />
+                <Building className="mx-auto h-12 w-12 mb-4" />
                 <p>Belum ada kontak yang ditambahkan.</p>
              </div>
           )}

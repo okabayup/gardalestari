@@ -16,6 +16,16 @@ if (admin.apps.length === 0) {
 
 const achievementsCollection = collection(db, 'achievements');
 
+const toAchievement = (doc: any): Achievement => {
+    const data = doc.data();
+    return {
+        id: doc.id,
+        ...data,
+        date: (data.date as Timestamp).toDate().toISOString(),
+    } as Achievement;
+};
+
+
 // === Public Functions for AI Tool ===
 
 /**
@@ -33,7 +43,7 @@ export async function searchAchievements(searchQuery: string): Promise<Partial<A
     );
 
     const snapshot = await getDocs(q);
-    const allEntries: Achievement[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Achievement));
+    const allEntries: Achievement[] = snapshot.docs.map(toAchievement);
 
     const searchTerms = searchQuery.toLowerCase().split(' ');
     const results = allEntries.filter(entry => {
@@ -59,7 +69,7 @@ export async function getAchievements(): Promise<Achievement[]> {
   try {
     const q = query(achievementsCollection, orderBy('date', 'desc'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Achievement));
+    return snapshot.docs.map(toAchievement);
   } catch (error) {
     console.error("[getAchievements Error]", error);
     throw new Error("Gagal mengambil data prestasi.");
@@ -71,7 +81,7 @@ export async function getAchievementsByUserId(userId: string): Promise<Achieveme
   try {
     const q = query(achievementsCollection, where('userId', '==', userId));
     const snapshot = await getDocs(q);
-    const achievements = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Achievement));
+    const achievements = snapshot.docs.map(toAchievement);
     
     // Sort in memory instead of in the query
     return achievements.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -88,7 +98,7 @@ export async function getAchievement(id: string): Promise<Achievement | null> {
         const docRef = doc(db, 'achievements', id);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-            return { id: docSnap.id, ...docSnap.data() } as Achievement;
+            return toAchievement(docSnap);
         }
         return null;
     } catch (error) {

@@ -2,7 +2,8 @@
 'use server';
 
 import { notFound } from 'next/navigation';
-import { getEduwisataPackage, getAddons, getBookedEduwisataDates } from '@/app/actions/edutourism';
+import { getEduwisataPackage, getAddons } from '@/app/actions/edutourism';
+import { getBookedEduwisataDates } from '@/app/actions/booking';
 import LandingHeader from '@/components/layout/LandingHeader';
 import Footer from '@/components/landing/Footer';
 import Image from 'next/image';

@@ -1,9 +1,16 @@
-[{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "org.gardalestari.twa",
-    "sha256_cert_fingerprints":
-    ["1F:3B:BE:B4:ED:21:14:3B:A4:21:16:A0:C8:40:42:6D:E2:AF:0B:7D:1C:92:86:BA:52:BF:55:C7:20:89:82:8A"]
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "org.gardalestari.twa",
+      "sha256_cert_fingerprints": [
+        "1F:3B:BE:B4:ED:21:14:3B:A4:21:16:A0:C8:40:42:6D:E2:AF:0B:7D:1C:92:86:BA:52:BF:55:C7:20:89:82:8A",
+        "D6:3E:5D:CF:03:34:70:EE:F3:7E:C3:42:F8:4E:A2:DF:E8:AA:B6:3C:78:C9:29:D1:A4:BB:A7:DE:5E:85:14:3B"
+      ]
+    }
   }
-}]
+]

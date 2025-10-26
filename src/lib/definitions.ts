@@ -202,6 +202,26 @@ export const initialDocumentTypes = [
     { name: 'Lainnya', code: 'Lain' },
 ];
 
+export const initialPositions = [
+  'Dewan Pembina',
+  'Dewan Pengawas',
+  'Dewan Penasehat',
+  'Ketua Umum',
+  'Sekretaris Jenderal',
+  'Bendahara Umum',
+  'Ketua Bidang',
+  'Sekretaris Bidang',
+  'Anggota Bidang',
+  'Ketua DPD',
+  'Sekretaris DPD',
+  'Bendahara DPD',
+  'Ketua DPC',
+  'Sekretaris DPC',
+  'Bendahara DPC',
+  'Anggota',
+];
+
+
 // --- Booking & Eduwisata ---
 export interface Addon {
     id: string;
