@@ -39,7 +39,7 @@ export async function createBooking(
   try {
     // Generate a unique 3-digit code for the transfer
     const uniqueCode = Math.floor(100 + Math.random() * 900);
-    const basePrice = bookingData.selectedAddons.reduce((acc, item) => acc + (item.price * item.quantity), 0); // Assuming base package price is included or handled separately
+    const basePrice = (bookingData.participants * (pkg.price || 0)) + bookingData.selectedAddons.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     const finalAmount = basePrice + uniqueCode;
 
     const newBookingRef = doc(bookingsCollection);
@@ -188,3 +188,6 @@ export async function getBookedMeetingSlots(date: Date): Promise<string[]> {
         return [];
     }
 }
+
+// Ensure this file has a default export if it's a module
+export default {};
