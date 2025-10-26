@@ -44,20 +44,29 @@ const formSchema = z.object({
 });
 type FormData = z.infer<typeof formSchema>;
 
-const NewShortlinkDialog = ({ onSave, isSaving }: { onSave: (data: FormData) => void, isSaving: boolean }) => {
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(formSchema) });
+const NewShortlinkDialog = ({ onSave, isSaving }: { onSave: (data: FormData) => Promise<boolean>, isSaving: boolean }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(formSchema) });
+  
+  const handleFormSubmit = async (data: FormData) => {
+    const success = await onSave(data);
+    if (success) {
+      reset();
+      setIsOpen(false);
+    }
+  }
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
             <Button><PlusCircle className="mr-2 h-4 w-4" /> Buat Shortlink</Button>
         </DialogTrigger>
         <DialogContent>
             <DialogHeader>
                 <DialogTitle>Buat Shortlink Baru</DialogTitle>
-                <DialogDescription>Buat tautan pendek baru dengan domain gamules.io.</DialogDescription>
+                <DialogDescription>Buat tautan pendek baru dengan domain {SHORTLINK_DOMAIN}.</DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit(onSave)} className="space-y-4">
+            <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="title">Judul</Label>
                     <Input id="title" {...register('title')} placeholder="Contoh: Link Pendaftaran Acara" />

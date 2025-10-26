@@ -1,7 +1,7 @@
 
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
-import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact, LayoutDashboard, Package, Landmark, Plane, Bell } from 'lucide-react';
+import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact, LayoutDashboard, Package, Landmark, Plane, Bell, Link } from 'lucide-react';
 
 export const SHORTLINK_DOMAIN = 'https://gamules.io';
 
@@ -130,6 +130,8 @@ export const panelDirectoryItems: {
     items: [
       { href: '/panel/whatsapp', icon: MessageCircle, label: 'Manajemen WhatsApp', permission: 'manage_whatsapp' },
       { href: '/panel/recruitments', icon: Briefcase, label: 'Rekrutmen', permission: 'manage_recruitments' },
+      { href: '/panel/app-testers', icon: TestTube2, label: 'Penguji Aplikasi', permission: 'manage_settings'},
+      { href: '/panel/shortlinks', icon: Link, label: 'Shortlinks', permission: 'manage_shortlinks' },
       { href: '/panel/settings', icon: Settings, label: 'Pengaturan Aplikasi', permission: 'manage_settings' },
       { href: '/panel/performance', icon: TrendingUp, label: 'Performa', permission: 'manage_settings' },
       { href: '/panel/analytics/errors', icon: Bug, label: 'Log Error', permission: 'manage_settings' },
@@ -1031,6 +1033,7 @@ export interface WhatsAppTemplate {
 export interface ShortLink {
     id?: string; // the short code
     title: string;
+    slug: string;
     longUrl: string;
     type: 'event' | 'program' | 'custom' | 'app_tester' | 'edutourism';
     relatedId?: string; // e.g., eventId or programId
