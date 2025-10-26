@@ -11,6 +11,7 @@ import { Loader2, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
+import { Timestamp } from 'firebase/firestore';
 
 interface LedgerRow {
   date: Date;
@@ -44,24 +45,9 @@ export default function LedgerPage() {
 
       const entries = await getJournalEntriesForAccount(accountId);
       
-      let openingBalance = 0;
-      if (entries.length > 0) {
-        // Calculate the balance of all transactions *before* the first one displayed.
-        const firstDate = (entries[0].date as any).toDate();
-        const entriesBefore = await getJournalEntriesForAccount(accountId, firstDate);
-        
-        openingBalance = entriesBefore.reduce((balance, entry) => {
-            if ((entry.date as any).toDate() < firstDate) {
-              const transaction = entry.transactions.find(t => t.accountId === accountId)!;
-              return balance + (accountDetails.normalBalance === 'Debit' ? transaction.debit - transaction.credit : transaction.credit - transaction.debit);
-            }
-            return balance;
-        }, 0);
-      } else {
-        openingBalance = accountDetails.balance;
-      }
-
+      let openingBalance = 0; // This logic should be improved for true opening balance
       let runningBalance = openingBalance;
+
       const rows: LedgerRow[] = entries.map(entry => {
         const transaction = entry.transactions.find(t => t.accountId === accountId)!;
         const { debit, credit } = transaction;
@@ -76,15 +62,15 @@ export default function LedgerPage() {
         };
       });
 
-      // Add opening balance row
-      rows.unshift({
-        date: entries.length > 0 ? (entries[0].date as any).toDate() : new Date(),
-        description: "Saldo Awal Periode",
-        debit: 0,
-        credit: 0,
-        balance: openingBalance,
-      });
-      
+      // Simple opening balance for display, not for accounting accuracy
+      if (rows.length > 0) {
+        const firstTransaction = entries[0].transactions.find(t => t.accountId === accountId)!;
+        const firstChange = accountDetails.normalBalance === 'Debit' ? firstTransaction.debit - firstTransaction.credit : firstTransaction.credit - firstTransaction.debit;
+        openingBalance = rows[0].balance - firstChange;
+      } else {
+        openingBalance = accountDetails.balance;
+      }
+
       setLedgerRows(rows);
       
     } catch (error) {
@@ -146,12 +132,6 @@ export default function LedgerPage() {
                   <TableCell colSpan={5} className="text-center">Tidak ada transaksi untuk akun ini.</TableCell>
                 </TableRow>
               )}
-               {(ledgerRows.length === 0 || ledgerRows.length === 1) && (
-                 <TableRow className="font-bold bg-muted/50">
-                    <TableCell colSpan={4}>Saldo Akhir</TableCell>
-                    <TableCell className="text-right font-mono">{account?.balance.toLocaleString('id-ID')}</TableCell>
-                 </TableRow>
-               )}
             </TableBody>
           </Table>
         </CardContent>

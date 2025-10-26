@@ -321,6 +321,12 @@ export interface JournalEntry {
     relatedInvoiceId?: string;
 }
 
+export interface JournalTransaction {
+  accountId: string;
+  debit: number;
+  credit: number;
+}
+
 export interface FinancialReportData {
     incomeStatement: {
         revenues: { name: string; total: number; budget?: number }[];
@@ -1006,11 +1012,11 @@ export interface Recruitment {
   partnerId?: string;
   partnerName?: string;
   partnerLogoUrl?: string;
+  applicationUrl: string;
+  deadline: Timestamp; // Changed to Timestamp
+  createdAt: Timestamp; // Changed to Timestamp
   description: string;
   requirements: string;
-  applicationUrl: string;
-  deadline: string; // ISO string
-  createdAt: string; // ISO string
 }
 
 // --- Settings ---

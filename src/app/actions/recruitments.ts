@@ -47,7 +47,7 @@ export async function getRecruitment(id: string): Promise<Recruitment | null> {
 }
 
 // Create a new recruitment
-export async function createRecruitment(data: Omit<Recruitment, 'id' | 'createdAt' | 'partnerName' | 'partnerLogoUrl' | 'deadline'> & { deadline: Date }) {
+export async function createRecruitment(data: Omit<Recruitment, 'id' | 'createdAt' | 'partnerName' | 'partnerLogoUrl' | 'deadline' | 'description' | 'requirements'> & { deadline: Date, description: string, requirements: string }) {
   try {
     const dataToCreate: { [key: string]: any } = {
         ...data,
@@ -74,7 +74,7 @@ export async function createRecruitment(data: Omit<Recruitment, 'id' | 'createdA
 }
 
 // Update an existing recruitment
-export async function updateRecruitment(id: string, data: Partial<Omit<Recruitment, 'id' | 'createdAt' | 'deadline'>> & { deadline?: Date }) {
+export async function updateRecruitment(id: string, data: Partial<Omit<Recruitment, 'id' | 'createdAt' | 'deadline' | 'description' | 'requirements'>> & { deadline?: Date, description?: string, requirements?: string }) {
   try {
     const docRef = doc(db, 'recruitments', id);
     const dataToUpdate: { [key: string]: any } = { ...data };

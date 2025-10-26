@@ -2,6 +2,9 @@
 'use server';
 
 import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 interface EmailPayload {
   to: string;

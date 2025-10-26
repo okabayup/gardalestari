@@ -91,6 +91,9 @@ export async function getShortLinks(): Promise<ShortLink[]> {
 }
 
 export async function getShortLink(slug: string): Promise<ShortLink | null> {
+    if (!slug) {
+        return null;
+    }
     try {
         const q = query(shortlinksCollection, where('slug', '==', slug), limit(1));
         const snapshot = await getDocs(q);
