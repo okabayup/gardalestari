@@ -1,32 +1,52 @@
-import { redirect } from 'next/navigation';
+
+'use client';
+
+import { useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { getShortLink, incrementClickCount } from '@/app/actions/shortlinks';
+import { Loader2 } from 'lucide-react';
+import Image from 'next/image';
 
 /**
- * This is a dynamic server component that handles redirection for gamules.io shortlinks.
- * It fetches the long URL from Firestore and performs a server-side redirect.
+ * This is a dynamic client component that handles redirection for gamules.io shortlinks.
+ * It shows a loading state, fetches the long URL, and performs a client-side redirect.
  */
-export default async function ShortLinkRedirectPage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
+export default function ShortLinkRedirectPage() {
+  const params = useParams();
+  const router = useRouter();
+  const slug = params.slug as string;
 
-  if (!slug) {
-    redirect('/slug-not-found');
-  }
+  useEffect(() => {
+    if (slug) {
+      const handleRedirect = async () => {
+        try {
+          const shortLink = await getShortLink(slug);
+          
+          if (shortLink && shortLink.longUrl) {
+            // Don't await this, let it run in the background to avoid blocking the redirect.
+            incrementClickCount(slug);
+            
+            // Perform a client-side redirect.
+            window.location.href = shortLink.longUrl;
+          } else {
+            // If no shortlink is found, redirect to a user-friendly "not found" page.
+            router.replace('/slug-not-found');
+          }
+        } catch (error) {
+          console.error(`[Shortlink Error] Error redirecting for slug ${slug}:`, error);
+          router.replace('/slug-not-found');
+        }
+      };
 
-  try {
-    const shortLink = await getShortLink(slug);
-    
-    if (shortLink && shortLink.longUrl) {
-      // Don't await this, let it run in the background to avoid blocking the redirect.
-      incrementClickCount(slug);
-      
-      // Perform a permanent redirect to the long URL.
-      redirect(shortLink.longUrl);
-    } else {
-      // If no shortlink is found, redirect to a user-friendly "not found" page.
-      redirect('/slug-not-found');
+      handleRedirect();
     }
-  } catch (error) {
-    console.error(`[Shortlink Error] Error redirecting for slug ${slug}:`, error);
-    redirect('/slug-not-found');
-  }
+  }, [slug, router]);
+
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 text-center">
+        <Image src="/logo.png" alt="Garda Lestari Logo" width={160} height={42} className="h-auto w-40 mb-8" />
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="mt-4 text-muted-foreground">Mengarahkan tautan...</p>
+    </div>
+  );
 }

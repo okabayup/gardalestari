@@ -20,9 +20,11 @@ export default function Error({
 }) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const isPanel = pathname.startsWith('/panel');
 
   useEffect(() => {
     // Log the error to your error reporting service
+    console.error("Global Error Boundary Caught:", error);
     logError({
       message: error.message,
       stack: error.stack,
@@ -31,8 +33,8 @@ export default function Error({
       userId: user?.uid,
       userName: user?.displayName || undefined,
       userPhone: user?.phoneNumber || undefined,
-    });
-  }, [error, pathname, user]);
+    }, !isPanel); // Only send alert if it's not a panel error
+  }, [error, pathname, user, isPanel]);
 
 
   return (

@@ -2,7 +2,7 @@
 'use server';
 
 import { notFound } from 'next/navigation';
-import { getEduwisataPackage, getAddons } from '@/app/actions/edutourism';
+import { getEduwisataPackage, getEduwisataPackages, getAddons } from '@/app/actions/edutourism';
 import { getBookedEduwisataDates } from '@/app/actions/booking';
 import LandingHeader from '@/components/layout/LandingHeader';
 import Footer from '@/components/landing/Footer';
@@ -10,6 +10,13 @@ import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import BookingForm from '@/components/edutourism/BookingForm';
+
+export async function generateStaticParams() {
+  const packages = await getEduwisataPackages();
+  return packages.map((pkg) => ({
+    id: pkg.id,
+  }));
+}
 
 export default async function EduwisataDetailPage({ params }: { params: { id: string } }) {
     const pkg = await getEduwisataPackage(params.id);

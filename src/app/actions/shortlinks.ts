@@ -58,15 +58,31 @@ export async function createMeetingShortLink() {
 
 export async function updateShortLink(id: string, data: Partial<Omit<ShortLink, 'id' | 'createdAt' | 'clicks'>>) {
     try {
-        if (data.slug) {
+        const docRef = doc(db, 'shortlinks', id);
+        const currentDoc = await getDoc(docRef);
+        if (!currentDoc.exists()) {
+            throw new Error("Shortlink tidak ditemukan.");
+        }
+        const currentData = currentDoc.data() as ShortLink;
+        
+        if (data.slug && data.slug !== currentData.slug) {
             const q = query(shortlinksCollection, where('slug', '==', data.slug));
             const existing = await getDocs(q);
             if (!existing.empty && existing.docs[0].id !== id) {
                  throw new Error(`Shortlink dengan slug "${data.slug}" sudah ada.`);
             }
         }
-        const docRef = doc(db, 'shortlinks', id);
+       
         await updateDoc(docRef, data);
+        
+        // Sync with related entities if slug changed
+        if (data.slug && currentData.relatedId && currentData.type === 'edutourism') {
+            const edutourismRef = doc(db, 'edutourismPackages', currentData.relatedId);
+            await updateDoc(edutourismRef, { shortlinkSlug: data.slug });
+            revalidatePath(`/panel/edutourism/edit/${currentData.relatedId}`);
+        }
+
+
         revalidatePath('/panel/shortlinks');
 
     } catch (error) {

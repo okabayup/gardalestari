@@ -6,7 +6,7 @@ import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timesta
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import type { EduwisataPackage, Addon } from '@/lib/definitions';
-import { createShortLink } from '@/app/actions/shortlinks';
+import { createShortLink, updateShortLink, getShortLink } from '@/app/actions/shortlinks';
 import { SHORTLINK_DOMAIN } from '@/lib/definitions';
 
 const packagesCollection = collection(db, 'edutourismPackages');
@@ -141,6 +141,15 @@ export async function updateEduwisataPackage(
 
 
     await updateDoc(docRef, dataToUpdate);
+    
+    // Sync shortlink title
+    if (existingPackage.shortlinkSlug) {
+        const shortlink = await getShortLink(existingPackage.shortlinkSlug);
+        if (shortlink && shortlink.id) {
+            await updateShortLink(shortlink.id, { title: `Eduwisata: ${data.title}`});
+        }
+    }
+
     console.log("Firestore document updated successfully.");
     revalidatePath('/panel/edutourism');
     revalidatePath(`/panel/edutourism/edit/${id}`);
