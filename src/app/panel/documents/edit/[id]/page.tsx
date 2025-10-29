@@ -31,6 +31,7 @@ export default function EditDocumentPage() {
   const [categories, setCategories] = useState<DocumentCategory[]>([]);
   const [docTypes, setDocTypes] = useState<DocumentType[]>([]);
   const [currentFile, setCurrentFile] = useState<{name: string, url: string} | null>(null);
+  const TEMPLATE_URL = "/api/documents/template";
 
   const {
     control,
@@ -123,7 +124,7 @@ export default function EditDocumentPage() {
                     <CardDescription>Unduh template, isi, simpan sebagai PDF, lalu unggah.</CardDescription>
                 </div>
                  <Button variant="secondary" asChild>
-                    <a href="/templates/template_surat_resmi.docx" download>
+                    <a href={TEMPLATE_URL} download>
                         <Download className="mr-2 h-4 w-4" />
                         Unduh Template
                     </a>

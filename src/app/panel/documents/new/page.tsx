@@ -27,7 +27,7 @@ export default function NewDocumentPage() {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<DocumentCategory[]>([]);
   const [docTypes, setDocTypes] = useState<DocumentType[]>([]);
-  const TEMPLATE_URL = "/templates/template_surat_resmi.docx";
+  const TEMPLATE_URL = "/api/documents/template";
 
   const {
     control,
@@ -102,7 +102,7 @@ export default function NewDocumentPage() {
                     <CardDescription>Unduh template, isi, simpan sebagai PDF, lalu unggah.</CardDescription>
                 </div>
                 <Button variant="secondary" asChild>
-                    <a href="/templates/template_surat_resmi.docx" download>
+                    <a href={TEMPLATE_URL} download>
                         <Download className="mr-2 h-4 w-4" />
                         Unduh Template
                     </a>
