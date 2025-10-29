@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -26,7 +27,7 @@ export default function NewDocumentPage() {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<DocumentCategory[]>([]);
   const [docTypes, setDocTypes] = useState<DocumentType[]>([]);
-  const TEMPLATE_URL = "/api/templates/surat_resmi/route.ts";
+  const TEMPLATE_URL = "/templates/template_surat_resmi.docx";
 
   const {
     control,
@@ -98,7 +99,7 @@ export default function NewDocumentPage() {
             <div className="flex justify-between items-start">
                 <div>
                     <CardTitle>Detail Dokumen</CardTitle>
-                    <CardDescription>Unduh template, isi, lalu unggah sebagai file .docx.</CardDescription>
+                    <CardDescription>Unduh template, isi, simpan sebagai PDF, lalu unggah.</CardDescription>
                 </div>
                 <Button variant="secondary" asChild>
                     <a href="/templates/template_surat_resmi.docx" download>
@@ -165,8 +166,8 @@ export default function NewDocumentPage() {
             </div>
             
             <div className="space-y-2">
-                <Label htmlFor="file">File Dokumen (.docx)</Label>
-                <Input id="file" type="file" {...register('file')} accept=".docx" />
+                <Label htmlFor="file">File Dokumen (.pdf)</Label>
+                <Input id="file" type="file" {...register('file')} accept=".pdf" />
                  {uploadedFileName && <p className="text-sm text-muted-foreground flex items-center gap-2"><Paperclip className="h-4 w-4"/> {uploadedFileName}</p>}
                  {errors.file && <p className="text-sm text-destructive">File wajib diunggah</p>}
             </div>

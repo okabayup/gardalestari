@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -56,7 +57,7 @@ export default function EditDocumentPage() {
             setDocTypes(docTypesData);
 
             if (documentData) {
-                if (documentData.authorId !== user?.uid && documentData.status !== 'Draft' && documentData.status !== 'Ditolak') {
+                if (documentData.authorId !== user?.uid || (documentData.status !== 'Draft' && documentData.status !== 'Ditolak')) {
                     toast({ variant: 'destructive', title: 'Akses Ditolak', description: 'Anda tidak dapat mengedit dokumen ini.' });
                     router.push('/panel/documents');
                     return;
@@ -119,7 +120,7 @@ export default function EditDocumentPage() {
             <div className="flex justify-between items-start">
                 <div>
                     <CardTitle>Detail Dokumen</CardTitle>
-                    <CardDescription>Perbarui informasi dokumen di bawah ini. Anda hanya bisa mengedit dokumen yang masih berstatus "Draf".</CardDescription>
+                    <CardDescription>Unduh template, isi, simpan sebagai PDF, lalu unggah.</CardDescription>
                 </div>
                  <Button variant="secondary" asChild>
                     <a href="/templates/template_surat_resmi.docx" download>
@@ -186,8 +187,8 @@ export default function EditDocumentPage() {
             </div>
             
             <div className="space-y-2">
-                <Label htmlFor="file">Ganti File Dokumen (.docx)</Label>
-                <Input id="file" type="file" {...register('file')} accept=".docx" />
+                <Label htmlFor="file">Ganti File Dokumen (.pdf)</Label>
+                <Input id="file" type="file" {...register('file')} accept=".pdf" />
                 {uploadedFileName ? (
                     <p className="text-sm text-muted-foreground flex items-center gap-2"><Paperclip className="h-4 w-4"/> {uploadedFileName}</p>
                 ) : currentFile && (

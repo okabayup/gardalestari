@@ -4,14 +4,17 @@
 
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, runTransaction, where, getCountFromServer } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject, getBytes } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
-import { stampDocxAndConvertToPdf } from '@/ai/flows/stamp-docx-flow';
 import { sendNotification } from '@/app/actions/notifications';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getWhatsappTemplate } from '@/app/actions/settings';
 import type { LetterStatus, ImportantDocument, DocumentCategory, DocumentType, PermissionId, Position, MemberWithStatus } from '@/lib/definitions';
 import { getUserByUid } from '@/app/actions/user';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import QRCode from 'qrcode';
+import { format } from 'date-fns';
+import { id as idLocale } from 'date-fns/locale';
 
 
 const documentsCollection = collection(db, 'importantDocuments');
@@ -69,6 +72,10 @@ export async function createDocument(
     file: File
 ) {
   try {
+    if (file.type !== 'application/pdf') {
+        throw new Error("File harus dalam format PDF.");
+    }
+    
     const filePath = `documents/${Date.now()}_${file.name}`;
     const fileRef = ref(storage, filePath);
     await uploadBytes(fileRef, file);
@@ -97,6 +104,9 @@ export async function updateDocument(id: string, data: Partial<Omit<ImportantDoc
     const dataToUpdate: { [key: string]: any } = { ...data };
 
     if (newFile) {
+        if (newFile.type !== 'application/pdf') {
+            throw new Error("File baru harus dalam format PDF.");
+        }
         const currentDoc = await getDocument(id);
         if (currentDoc?.filePath) {
             try {
@@ -194,12 +204,14 @@ export async function approveDocument(documentId: string, approverId: string) {
     if (!docSnap.exists()) throw new Error("Dokumen tidak ditemukan.");
     const document = docSnap.data() as ImportantDocument;
 
-    // Simplified authorization: let the UI handle who can click the button.
-    // Server just checks if the document is in the correct state.
     if (document.status !== 'Menunggu Persetujuan') {
         throw new Error("Dokumen ini tidak sedang dalam status menunggu persetujuan.");
     }
     
+    if (document.fileName.split('.').pop()?.toLowerCase() !== 'pdf') {
+        throw new Error("Hanya file PDF yang bisa disahkan. Mohon unggah ulang dalam format PDF.");
+    }
+
     const docTypeQuery = query(docTypesCollection, where('name', '==', document.type));
     const docTypeSnapshot = await getDocs(docTypeQuery);
     if (docTypeSnapshot.empty) {
@@ -208,28 +220,62 @@ export async function approveDocument(documentId: string, approverId: string) {
     const docTypeCode = docTypeSnapshot.docs[0].data().code;
     
     const documentNumber = await generateDocumentNumber(docTypeCode);
-    
-    // The core stamping logic is now in a separate flow
-    const stampedFileResult = await stampDocxAndConvertToPdf({
-      documentId,
-      documentNumber,
-      filePath: document.filePath!,
-    });
+    const approvedAt = new Date();
 
+    // 1. Fetch the original file from storage
+    const originalFileRef = ref(storage, document.filePath);
+    const originalFileBuffer = await getBytes(originalFileRef);
+    const pdfDoc = await PDFDocument.load(originalFileBuffer);
+
+
+    // 2. Generate QR Code & Stamping Info
+    const verificationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/dokumen/verifikasi/${documentId}`;
+    const qrCodeImageBuffer = await QRCode.toBuffer(verificationUrl, { type: 'png', width: 200, errorCorrectionLevel: 'H' });
+    const qrImage = await pdfDoc.embedPng(qrCodeImageBuffer);
+    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const helveticaBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+    const stampText1 = `Dokumen ini telah disahkan secara digital oleh Garda Lestari`;
+    const stampText2 = `Nomor: ${documentNumber}`;
+    const stampText3 = `Tanggal: ${format(approvedAt, 'dd MMMM yyyy, HH:mm', { locale: idLocale })} WIB`;
+    
+    const firstPage = pdfDoc.getPages()[0];
+    const { width, height } = firstPage.getSize();
+    
+    // 3. Add QR and text to the PDF
+    firstPage.drawImage(qrImage, {
+        x: 40,
+        y: 40,
+        width: 60,
+        height: 60,
+    });
+    
+    firstPage.drawText(stampText1, { x: 110, y: 85, font: helveticaBoldFont, size: 8, color: rgb(0, 0, 0) });
+    firstPage.drawText(stampText2, { x: 110, y: 72, font: helveticaFont, size: 8, color: rgb(0, 0, 0) });
+    firstPage.drawText(stampText3, { x: 110, y: 59, font: helveticaFont, size: 8, color: rgb(0, 0, 0) });
+
+    // 4. Save the new PDF and upload
+    const stampedPdfBytes = await pdfDoc.save();
+    const newFileName = document.fileName.replace(/\.docx?$/, '.pdf');
+    const newFilePath = `documents/signed/${Date.now()}_${newFileName}`;
+    const newFileRef = ref(storage, newFilePath);
+    
+    await uploadBytes(newFileRef, stampedPdfBytes, { contentType: 'application/pdf' });
+    const newFileUrl = await getDownloadURL(newFileRef);
+    
+    // 5. Update Firestore
     const approverUser = await getUserByUid(approverId);
-    const approvedByName = approverUser?.name || "Admin";
-    const approvedByPosition = approverUser?.position || "Admin";
     
     await updateDoc(docRef, {
       documentNumber: documentNumber,
       status: 'Disetujui',
       approvedById: approverId,
-      approvedByName: approvedByName,
-      approvedByPosition: approvedByPosition,
-      approvedAt: Timestamp.now(),
-      fileUrl: stampedFileResult.newFileUrl,
-      filePath: stampedFileResult.newFilePath,
-      fileName: stampedFileResult.newFileName,
+      approvedByName: approverUser?.name || "Admin",
+      approvedByPosition: approverUser?.position || "Admin",
+      approvedAt: Timestamp.fromDate(approvedAt),
+      fileUrl: newFileUrl,
+      filePath: newFilePath,
+      fileName: newFileName,
     });
 
     const author = await getUserByUid(document.authorId);

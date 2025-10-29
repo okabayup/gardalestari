@@ -1,21 +1,13 @@
 
+
 'use client';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ImportantDocument } from '@/lib/definitions';
 import { Check, X, Loader2 } from 'lucide-react';
-import dynamic from 'next/dynamic';
-
-// Dynamically import the DocxViewer only on the client side
-const DocxViewer = dynamic(() => import('@/components/utils/DocxViewer.client'), {
-  loading: () => (
-    <div className="flex items-center justify-center h-full">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
-  ),
-  ssr: false, // This is crucial
-});
+import PdfViewer from '@/components/utils/PdfViewer';
+import { useEffect, useState } from 'react';
 
 
 interface DocumentPreviewDialogProps {
@@ -27,6 +19,15 @@ interface DocumentPreviewDialogProps {
 }
 
 export default function DocumentPreviewDialog({ document, isOpen, onClose, onApprove, onReject }: DocumentPreviewDialogProps) {
+  const [fileUrlToRender, setFileUrlToRender] = useState('');
+
+  useEffect(() => {
+    if (document) {
+      // Add a timestamp to the URL to bypass browser cache
+      setFileUrlToRender(`${document.fileUrl}?t=${new Date().getTime()}`);
+    }
+  }, [document]);
+
   if (!document) return null;
 
   return (
@@ -39,7 +40,7 @@ export default function DocumentPreviewDialog({ document, isOpen, onClose, onApp
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 border-t border-b overflow-hidden">
-             <DocxViewer fileUrl={document.fileUrl} />
+             <PdfViewer file={fileUrlToRender} />
         </div>
         <DialogFooter className="sm:justify-between p-6 pt-4">
             <Button variant="destructive" onClick={onReject}>
@@ -48,7 +49,7 @@ export default function DocumentPreviewDialog({ document, isOpen, onClose, onApp
             <div className="flex gap-2">
                  <Button variant="outline" onClick={onClose}>Tutup</Button>
                 <Button onClick={onApprove}>
-                    <Check className="mr-2 h-4 w-4" /> Setujui
+                    <Check className="mr-2 h-4 w-4" /> Setujui & Sahkan Digital
                 </Button>
             </div>
         </DialogFooter>
