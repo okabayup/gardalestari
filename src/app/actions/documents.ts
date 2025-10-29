@@ -4,7 +4,7 @@
 
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, runTransaction, where, getCountFromServer } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject, getBytes } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import { sendNotification } from '@/app/actions/notifications';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
@@ -222,9 +222,12 @@ export async function approveDocument(documentId: string, approverId: string) {
     const documentNumber = await generateDocumentNumber(docTypeCode);
     const approvedAt = new Date();
 
-    // 1. Fetch the original file from storage
-    const originalFileRef = ref(storage, document.filePath);
-    const originalFileBuffer = await getBytes(originalFileRef);
+    // 1. Fetch the original file from storage using its public URL
+    const fileResponse = await fetch(document.fileUrl);
+    if (!fileResponse.ok) {
+      throw new Error(`Gagal mengunduh file asli: ${fileResponse.statusText}`);
+    }
+    const originalFileBuffer = await fileResponse.arrayBuffer();
     const pdfDoc = await PDFDocument.load(originalFileBuffer);
 
 
