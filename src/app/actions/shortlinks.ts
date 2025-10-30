@@ -6,6 +6,7 @@ import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, orderBy, serverTimestamp, increment, where, writeBatch, limit, setDoc, Timestamp } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { ShortLink } from '@/lib/definitions';
+import { getEduwisataPackages } from './edutourism';
 
 const shortlinksCollection = collection(db, 'shortlinks');
 
@@ -155,3 +156,50 @@ export async function incrementClickCount(slug: string): Promise<void> {
     }
 }
 
+export async function syncShortlinks(): Promise<{ created: number, updated: number, message: string }> {
+    let created = 0;
+    let updated = 0;
+
+    try {
+        const [packages, shortlinks] = await Promise.all([
+            getEduwisataPackages(),
+            getShortLinks()
+        ]);
+        
+        const shortlinksMap = new Map(shortlinks.map(link => [link.relatedId, link]));
+        
+        for (const pkg of packages) {
+            const expectedUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/edutourism/${pkg.id}`;
+            const expectedTitle = `Eduwisata: ${pkg.title}`;
+
+            const existingShortlink = shortlinksMap.get(pkg.id);
+
+            if (existingShortlink) {
+                // Update if title or URL is out of sync
+                if (existingShortlink.title !== expectedTitle || existingShortlink.longUrl !== expectedUrl) {
+                    await updateShortLink(existingShortlink.id!, { title: expectedTitle, longUrl: expectedUrl });
+                    updated++;
+                }
+            } else {
+                // Create if it doesn't exist
+                 const shortlinkSlug = `edu-${pkg.id.substring(0, 5)}`;
+                 await createShortLink({
+                    title: expectedTitle,
+                    longUrl: expectedUrl,
+                    slug: shortlinkSlug,
+                    type: 'edutourism',
+                    relatedId: pkg.id
+                });
+                await updateDoc(doc(db, 'edutourismPackages', pkg.id), { shortlinkSlug });
+                created++;
+            }
+        }
+        
+        revalidatePath('/panel/shortlinks');
+        revalidatePath('/panel/edutourism');
+        return { created, updated, message: `Sinkronisasi selesai: ${created} dibuat, ${updated} diperbarui.` };
+    } catch (error) {
+        console.error("[syncShortlinks Error]", error);
+        throw new Error("Gagal melakukan sinkronisasi shortlink.");
+    }
+}

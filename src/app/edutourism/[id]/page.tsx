@@ -19,6 +19,9 @@ export async function generateStaticParams() {
 }
 
 export default async function EduwisataDetailPage({ params }: { params: { id: string } }) {
+    if (!params || !params.id) {
+        notFound();
+    }
     const pkg = await getEduwisataPackage(params.id);
 
     if (!pkg) {

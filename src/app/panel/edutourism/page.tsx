@@ -5,8 +5,9 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { getEduwisataPackages, deleteEduwisataPackage, EduwisataPackage } from '@/app/actions/edutourism';
+import { syncShortlinks } from '@/app/actions/shortlinks';
 import { Button } from '@/components/ui/button';
-import { Loader2, PlusCircle, MoreHorizontal, Trash2, Link as LinkIcon, Plane } from 'lucide-react';
+import { Loader2, PlusCircle, MoreHorizontal, Trash2, Link as LinkIcon, Plane, RefreshCw } from 'lucide-react';
 import { DataTable } from '@/components/panel/DataTable';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from '@/components/panel/DataTableColumnHeader';
@@ -35,6 +36,7 @@ export default function EduwisataPackagesPage() {
   const [packages, setPackages] = useState<EduwisataPackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<EduwisataPackage | null>(null);
 
@@ -58,6 +60,19 @@ export default function EduwisataPackagesPage() {
     setItemToDelete(item);
     setShowDeleteAlert(true);
   };
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      const result = await syncShortlinks();
+      toast({ title: 'Sinkronisasi Selesai', description: result.message });
+      fetchPackages();
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Gagal melakukan sinkronisasi', description: (error as Error).message });
+    } finally {
+      setIsSyncing(false);
+    }
+  }
 
   const handleDeleteConfirm = async () => {
     if (!itemToDelete?.id) return;
@@ -96,7 +111,7 @@ export default function EduwisataPackagesPage() {
             <a href={`${SHORTLINK_DOMAIN}/${row.original.shortlinkSlug}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
                 {`${SHORTLINK_DOMAIN}/${row.original.shortlinkSlug}`} <LinkIcon className="h-3 w-3" />
             </a>
-        ) : '-'
+        ) : <span className="text-muted-foreground text-xs">Belum ada</span>
     },
     {
       id: 'actions',
@@ -120,6 +135,10 @@ export default function EduwisataPackagesPage() {
 
   const toolbarButtons = (
      <div className="flex gap-2">
+        <Button variant="outline" onClick={handleSync} disabled={isSyncing}>
+          {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+          Sinkronisasi Shortlink
+        </Button>
         <Button variant="outline" onClick={() => router.push('/panel/edutourism/addons')}>
             <Plane className="mr-2 h-4 w-4" /> Kelola Add-ons
         </Button>
