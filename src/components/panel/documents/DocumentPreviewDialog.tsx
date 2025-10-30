@@ -5,7 +5,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ImportantDocument } from '@/lib/definitions';
-import { Check, X, Loader2 } from 'lucide-react';
+import { Check, X, Loader2, Link as LinkIcon } from 'lucide-react';
 import PdfViewer from '@/components/utils/PdfViewer';
 import { useEffect, useState } from 'react';
 
@@ -37,6 +37,14 @@ export default function DocumentPreviewDialog({ document, isOpen, onClose, onApp
           <DialogTitle>Tinjau Dokumen: {document.title}</DialogTitle>
           <DialogDescription>
             Periksa konten dokumen di bawah ini sebelum memberikan persetujuan.
+            {document.canvaUrl && (
+                <span className="flex items-center gap-2 mt-2">
+                    <LinkIcon className="h-4 w-4" />
+                    <a href={document.canvaUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+                        Buka Tautan Canva untuk Edit
+                    </a>
+                </span>
+            )}
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 border-t border-b overflow-hidden">

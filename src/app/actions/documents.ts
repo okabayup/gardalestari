@@ -75,6 +75,16 @@ export async function createDocument(
     if (file.type !== 'application/pdf') {
         throw new Error("File harus dalam format PDF.");
     }
+
+    const docTypeQuery = query(docTypesCollection, where('name', '==', data.type));
+    const docTypeSnapshot = await getDocs(docTypeQuery);
+    if (docTypeSnapshot.empty) {
+      throw new Error("Jenis dokumen tidak valid.");
+    }
+    const docTypeCode = docTypeSnapshot.docs[0].data().code;
+    
+    // Generate document number immediately
+    const documentNumber = await generateDocumentNumber(docTypeCode);
     
     const filePath = `documents/${Date.now()}_${file.name}`;
     const fileRef = ref(storage, filePath);
@@ -83,9 +93,9 @@ export async function createDocument(
 
     const docData = {
         ...data,
-        documentNumber: '', // Will be generated on approval
+        documentNumber,
         fileUrl,
-        filePath: filePath, // Store path for server-side access
+        filePath,
         fileName: file.name,
         createdAt: Timestamp.now(),
         status: 'Draft' as LetterStatus,
@@ -211,18 +221,14 @@ export async function approveDocument(documentId: string, approverId: string) {
     if (document.fileName.split('.').pop()?.toLowerCase() !== 'pdf') {
         throw new Error("Hanya file PDF yang bisa disahkan. Mohon unggah ulang dalam format PDF.");
     }
-
-    const docTypeQuery = query(docTypesCollection, where('name', '==', document.type));
-    const docTypeSnapshot = await getDocs(docTypeQuery);
-    if (docTypeSnapshot.empty) {
-      throw new Error("Jenis dokumen tidak valid.");
-    }
-    const docTypeCode = docTypeSnapshot.docs[0].data().code;
     
-    const documentNumber = await generateDocumentNumber(docTypeCode);
+    const documentNumber = document.documentNumber;
+    if (!documentNumber) {
+        throw new Error("Nomor surat tidak ditemukan pada dokumen. Proses tidak dapat dilanjutkan.");
+    }
+
     const approvedAt = new Date();
 
-    // 1. Fetch the original file from storage using its public URL
     const fileResponse = await fetch(document.fileUrl);
     if (!fileResponse.ok) {
       throw new Error(`Gagal mengunduh file asli: ${fileResponse.statusText}`);
@@ -231,7 +237,6 @@ export async function approveDocument(documentId: string, approverId: string) {
     const pdfDoc = await PDFDocument.load(originalFileBuffer);
 
 
-    // 2. Generate QR Code & Stamping Info
     const verificationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/dokumen/verifikasi/${documentId}`;
     const qrCodeImageBuffer = await QRCode.toBuffer(verificationUrl, { type: 'png', width: 200, errorCorrectionLevel: 'H' });
     const qrImage = await pdfDoc.embedPng(qrCodeImageBuffer);
@@ -251,7 +256,6 @@ export async function approveDocument(documentId: string, approverId: string) {
     const firstPage = pdfDoc.getPages()[0];
     const { width, height } = firstPage.getSize();
     
-    // 3. Add QR and text to the PDF
     firstPage.drawImage(qrImage, {
         x: 40,
         y: 40,
@@ -266,7 +270,6 @@ export async function approveDocument(documentId: string, approverId: string) {
     firstPage.drawText(stampLines[4], { x: 120, y: 60, font: helveticaFont, size: 8, color: rgb(0, 0, 0) });
     firstPage.drawText(stampLines[5], { x: 120, y: 50, font: helveticaObliqueFont, size: 6, color: rgb(0.3, 0.3, 0.3) });
 
-    // 4. Save the new PDF and upload
     const stampedPdfBytes = await pdfDoc.save();
     const newFileName = document.fileName.replace(/\.docx?$/, '.pdf');
     const newFilePath = `documents/signed/${Date.now()}_${newFileName}`;
@@ -275,11 +278,9 @@ export async function approveDocument(documentId: string, approverId: string) {
     await uploadBytes(newFileRef, stampedPdfBytes, { contentType: 'application/pdf' });
     const newFileUrl = await getDownloadURL(newFileRef);
     
-    // 5. Update Firestore
     const approverUser = await getUserByUid(approverId);
     
     await updateDoc(docRef, {
-      documentNumber: documentNumber,
       status: 'Disetujui',
       approvedById: approverId,
       approvedByName: approverUser?.name || "Admin",
@@ -405,7 +406,7 @@ export async function generateDocumentNumber(typeCode: string): Promise<string> 
       const romanMonth = romanMonthMap[month];
 
       const prefix = `${typeCode}/GL/DPP`;
-      const queryPrefix = `/GL/${typeCode}/${romanMonth}/${year}`;
+      const queryPrefix = `/GL/DPP/${romanMonth}/${year}`;
       
       const q = query(documentsCollection, 
         where('documentNumber', '>=', `001${queryPrefix}`), 
@@ -421,4 +422,3 @@ export async function generateDocumentNumber(typeCode: string): Promise<string> 
       throw new Error("Gagal membuat nomor dokumen.");
   }
 }
-

@@ -1,4 +1,5 @@
 
+
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
 import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact, LayoutDashboard, Package, Landmark, Plane, Bell, Link, Mail } from 'lucide-react';
@@ -538,6 +539,7 @@ export interface ImportantDocument {
   category: string;
   type: string; // Jenis Dokumen
   attachments: string; // Jumlah Lampiran
+  canvaUrl?: string; // Link edit Canva
   createdAt: Timestamp;
   fileUrl: string;
   fileName: string;

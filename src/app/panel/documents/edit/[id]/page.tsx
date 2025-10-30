@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Paperclip, Download } from 'lucide-react';
+import { Loader2, Paperclip, Download, Link as LinkIcon } from 'lucide-react';
 import { getDocument, updateDocument, DocumentCategory, ImportantDocument, getDocumentTypes, DocumentType } from '@/app/actions/documents';
 import { getDocumentCategories } from '@/app/actions/documents';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -125,7 +125,7 @@ export default function EditDocumentPage() {
                 </div>
                  <Button variant="secondary" asChild>
                     <a href={TEMPLATE_URL} target="_blank">
-                        <Download className="mr-2 h-4 w-4" />
+                        <LinkIcon className="mr-2 h-4 w-4" />
                         Buka Template di Canva
                     </a>
                 </Button>
@@ -187,6 +187,12 @@ export default function EditDocumentPage() {
                 </div>
             </div>
             
+            <div className="space-y-2">
+                <Label htmlFor="canvaUrl">Tautan Edit Canva (Opsional)</Label>
+                <Input id="canvaUrl" {...register('canvaUrl')} placeholder="https://canva.com/design/..." />
+                <p className="text-xs text-muted-foreground">Isi dengan tautan yang bisa diakses oleh admin untuk menambahkan nomor surat.</p>
+            </div>
+
             <div className="space-y-2">
                 <Label htmlFor="file">Ganti File Dokumen (.pdf)</Label>
                 <Input id="file" type="file" {...register('file')} accept=".pdf" />
