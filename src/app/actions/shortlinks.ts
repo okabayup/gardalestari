@@ -58,7 +58,7 @@ export async function createMeetingShortLink() {
 }
 
 
-export async function updateShortLink(id: string, data: Partial<Omit<ShortLink, 'id' | 'createdAt' | 'clicks'>>) {
+export async function updateShortLink(id: string, data: Partial<Omit<ShortLink, 'id' | 'createdAt' | 'clicks' | 'type'>>) {
     try {
         const docRef = doc(db, 'shortlinks', id);
         const currentDoc = await getDoc(docRef);
@@ -80,7 +80,7 @@ export async function updateShortLink(id: string, data: Partial<Omit<ShortLink, 
         // Sync with related entities if slug changed
         if (data.slug && data.slug !== currentData.slug && currentData.relatedId && currentData.type === 'edutourism') {
             const edutourismRef = doc(db, 'edutourismPackages', currentData.relatedId);
-            await updateDoc(edutourismRef, { shortlinkSlug: data.slug });
+             await updateDoc(edutourismRef, { shortlinkSlug: data.slug });
             revalidatePath(`/panel/edutourism/edit/${currentData.relatedId}`);
         }
 
@@ -166,31 +166,34 @@ export async function syncShortlinks(): Promise<{ created: number, updated: numb
             getShortLinks()
         ]);
         
-        const shortlinksMap = new Map(shortlinks.map(link => [link.relatedId, link]));
+        const shortlinksMap = new Map(shortlinks.map(link => [link.id, link]));
         
         for (const pkg of packages) {
             const expectedUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/edutourism/${pkg.id}`;
             const expectedTitle = `Eduwisata: ${pkg.title}`;
 
-            const existingShortlink = shortlinksMap.get(pkg.id);
-
-            if (existingShortlink) {
+            if (pkg.shortlinkId && shortlinksMap.has(pkg.shortlinkId)) {
+                 const existingShortlink = shortlinksMap.get(pkg.shortlinkId)!;
                 // Update if title or URL is out of sync
-                if (existingShortlink.title !== expectedTitle || existingShortlink.longUrl !== expectedUrl) {
-                    await updateShortLink(existingShortlink.id!, { title: expectedTitle, longUrl: expectedUrl });
+                const updates: Partial<ShortLink> = {};
+                if (existingShortlink.title !== expectedTitle) updates.title = expectedTitle;
+                if (existingShortlink.longUrl !== expectedUrl) updates.longUrl = expectedUrl;
+
+                if (Object.keys(updates).length > 0) {
+                     await updateShortLink(existingShortlink.id!, updates);
                     updated++;
                 }
+
             } else {
-                // Create if it doesn't exist
-                 const shortlinkSlug = `edu-${pkg.id.substring(0, 5)}`;
-                 await createShortLink({
+                 // Create if it doesn't exist
+                 const shortlinkId = await createShortLink({
                     title: expectedTitle,
                     longUrl: expectedUrl,
-                    slug: shortlinkSlug,
+                    slug: `edu-${pkg.id.substring(0, 5)}`,
                     type: 'edutourism',
                     relatedId: pkg.id
                 });
-                await updateDoc(doc(db, 'edutourismPackages', pkg.id), { shortlinkSlug });
+                await updateDoc(doc(db, 'edutourismPackages', pkg.id), { shortlinkId: shortlinkId });
                 created++;
             }
         }

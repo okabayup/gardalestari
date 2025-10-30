@@ -242,7 +242,7 @@ export interface EduwisataPackage {
     imageUrl: string; // Aspect ratio 4:5
     images?: string[]; // Gallery images
     availableAddonIds: string[];
-    shortlinkSlug?: string;
+    shortlinkId?: string;
 }
 
 export interface Booking {
@@ -551,7 +551,7 @@ export interface ImportantDocument {
   approvedById?: string; // UID of the user who approved
   approvedByName?: string; // denormalized
   approvedByPosition?: string; // denormalized
-  approvedAt?: Timestamp;
+  approvedAt?: string; // ISO string
   rejectionReason?: string;
   rejectedById?: string;
   rejectedByName?: string;
@@ -1073,7 +1073,7 @@ export interface ShortLink {
     title: string;
     slug: string;
     longUrl: string;
-    type: 'edutourism' | 'app_tester' | 'custom';
+    type: 'edutourism' | 'app_tester' | 'custom' | 'manual';
     relatedId?: string;
     clicks: number;
     createdAt: string; // ISO string

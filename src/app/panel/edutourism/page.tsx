@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { getEduwisataPackages, deleteEduwisataPackage, EduwisataPackage } from '@/app/actions/edutourism';
-import { syncShortlinks } from '@/app/actions/shortlinks';
+import { getShortLinks, syncShortlinks, ShortLink } from '@/app/actions/shortlinks';
 import { Button } from '@/components/ui/button';
 import { Loader2, PlusCircle, MoreHorizontal, Trash2, Link as LinkIcon, Plane, RefreshCw, Tags } from 'lucide-react';
 import { DataTable } from '@/components/panel/DataTable';
@@ -35,27 +35,32 @@ export default function EduwisataPackagesPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [packages, setPackages] = useState<EduwisataPackage[]>([]);
+  const [shortlinks, setShortlinks] = useState<Map<string, ShortLink>>(new Map());
   const [loading, setLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<EduwisataPackage | null>(null);
 
-  const fetchPackages = useCallback(async () => {
+  const fetchPackagesAndLinks = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getEduwisataPackages();
-      setPackages(data);
+      const [packageData, shortlinkData] = await Promise.all([
+          getEduwisataPackages(),
+          getShortLinks()
+      ]);
+      setPackages(packageData);
+      setShortlinks(new Map(shortlinkData.map(link => [link.id!, link])));
     } catch (error) {
-      toast({ variant: "destructive", title: "Gagal memuat paket eduwisata" });
+      toast({ variant: "destructive", title: "Gagal memuat data" });
     } finally {
       setLoading(false);
     }
   }, [toast]);
   
   useEffect(() => {
-    fetchPackages();
-  }, [fetchPackages]);
+    fetchPackagesAndLinks();
+  }, [fetchPackagesAndLinks]);
 
    const handleDeleteClick = (item: EduwisataPackage) => {
     setItemToDelete(item);
@@ -67,7 +72,7 @@ export default function EduwisataPackagesPage() {
     try {
       const result = await syncShortlinks();
       toast({ title: 'Sinkronisasi Selesai', description: result.message });
-      fetchPackages();
+      fetchPackagesAndLinks();
     } catch (error) {
       toast({ variant: 'destructive', title: 'Gagal melakukan sinkronisasi', description: (error as Error).message });
     } finally {
@@ -81,7 +86,7 @@ export default function EduwisataPackagesPage() {
     try {
       await deleteEduwisataPackage(itemToDelete.id);
       toast({ title: "Paket berhasil dihapus." });
-      fetchPackages();
+      fetchPackagesAndLinks();
     } catch (error) {
       toast({ variant: "destructive", title: "Gagal menghapus", description: (error as Error).message });
     } finally {
@@ -113,13 +118,16 @@ export default function EduwisataPackagesPage() {
         }
     },
     {
-        accessorKey: 'shortlinkSlug',
+        accessorKey: 'shortlinkId',
         header: 'Shortlink',
-        cell: ({row}) => row.original.shortlinkSlug ? (
-            <a href={`${SHORTLINK_DOMAIN}/${row.original.shortlinkSlug}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
-                {`${SHORTLINK_DOMAIN}/${row.original.shortlinkSlug}`} <LinkIcon className="h-3 w-3" />
-            </a>
-        ) : <span className="text-muted-foreground text-xs">Belum ada</span>
+        cell: ({row}) => {
+            const shortlink = shortlinks.get(row.original.shortlinkId || '');
+            return shortlink ? (
+                <a href={`${SHORTLINK_DOMAIN}/${shortlink.slug}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
+                    {`${SHORTLINK_DOMAIN}/${shortlink.slug}`} <LinkIcon className="h-3 w-3" />
+                </a>
+            ) : <span className="text-muted-foreground text-xs">Belum ada</span>
+        }
     },
     {
       id: 'actions',
@@ -139,7 +147,7 @@ export default function EduwisataPackagesPage() {
         </DropdownMenu>
       ),
     },
-  ], [isDeleting, router]);
+  ], [isDeleting, router, shortlinks]);
 
   const toolbarButtons = (
      <div className="flex gap-2">

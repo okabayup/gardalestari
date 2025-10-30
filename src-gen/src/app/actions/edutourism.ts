@@ -64,28 +64,29 @@ export async function createEduwisataPackage(
         console.log("Gallery images uploaded:", galleryImageUrls.length);
     }
     
-    const docRef = doc(collection(db, 'edutourismPackages'));
+    // This is a temporary ID for the package until it's created.
+    const tempPackageId = doc(collection(db, 'edutourismPackages')).id;
+    
+    // Create the shortlink first to get its ID
+    const shortlinkId = await createShortLink({
+        title: `Eduwisata: ${data.title}`,
+        longUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/edutourism/${tempPackageId}`,
+        slug: `edu-${tempPackageId.substring(0, 5)}`,
+        type: 'edutourism',
+        relatedId: tempPackageId,
+    });
+    console.log("Shortlink created with ID:", shortlinkId);
 
+    const docRef = doc(db, 'edutourismPackages', tempPackageId);
+    
     const packageData: Omit<EduwisataPackage, 'id'> = {
         ...data,
         imageUrl,
         images: galleryImageUrls,
-        shortlinkSlug: '',
+        shortlinkId: shortlinkId,
     };
     await setDoc(docRef, packageData);
     console.log("Package data saved to Firestore with ID:", docRef.id);
-
-    const shortlinkSlug = `edu-${docRef.id.substring(0, 5)}`;
-    await createShortLink({
-        title: `Eduwisata: ${data.title}`,
-        longUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/edutourism/${docRef.id}`,
-        slug: shortlinkSlug,
-        type: 'edutourism',
-        relatedId: docRef.id
-    });
-    console.log("Shortlink created:", shortlinkSlug);
-    
-    await updateDoc(docRef, { shortlinkSlug });
 
     revalidatePath('/panel/edutourism');
     return docRef.id;
@@ -144,11 +145,8 @@ export async function updateEduwisataPackage(
     await updateDoc(docRef, dataToUpdate);
     
     // Sync shortlink title
-    if (existingPackage.shortlinkSlug && data.title !== existingPackage.title) {
-        const shortlink = await getShortLink(existingPackage.shortlinkSlug);
-        if (shortlink && shortlink.id) {
-            await updateShortLink(shortlink.id, { title: `Eduwisata: ${data.title}`});
-        }
+    if (existingPackage.shortlinkId && data.title !== existingPackage.title) {
+        await updateShortLink(existingPackage.shortlinkId, { title: `Eduwisata: ${data.title}`});
     }
 
     console.log("Firestore document updated successfully.");
