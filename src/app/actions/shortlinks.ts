@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -76,7 +77,7 @@ export async function updateShortLink(id: string, data: Partial<Omit<ShortLink, 
         await updateDoc(docRef, data);
         
         // Sync with related entities if slug changed
-        if (data.slug && currentData.relatedId && currentData.type === 'edutourism') {
+        if (data.slug && data.slug !== currentData.slug && currentData.relatedId && currentData.type === 'edutourism') {
             const edutourismRef = doc(db, 'edutourismPackages', currentData.relatedId);
             await updateDoc(edutourismRef, { shortlinkSlug: data.slug });
             revalidatePath(`/panel/edutourism/edit/${currentData.relatedId}`);
@@ -153,3 +154,4 @@ export async function incrementClickCount(slug: string): Promise<void> {
         console.error(`Failed to increment click count for ${slug}:`, error);
     }
 }
+
