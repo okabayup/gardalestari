@@ -12,13 +12,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import BookingForm from '@/components/edutourism/BookingForm';
 
-export async function generateStaticParams() {
-  const packages = await getEduwisataPackages();
-  return packages.map((pkg) => ({
-    id: pkg.id,
-  }));
-}
-
 export default async function EduwisataDetailPage({ params }: { params: { id: string } }) {
     if (!params || !params.id) {
         notFound();
