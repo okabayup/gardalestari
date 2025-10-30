@@ -1057,7 +1057,8 @@ export type NotificationType =
   | 'event_reminder'
   | 'new_program_announcement'
   | 'kta_activated'
-  | 'app_tester_approved';
+  | 'app_tester_approved'
+  | 'booking_payment_confirmed';
 
 export interface WhatsAppTemplate {
   id: NotificationType;

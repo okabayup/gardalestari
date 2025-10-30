@@ -202,6 +202,13 @@ const defaultTemplates: Record<NotificationType, WhatsAppTemplate> = {
         message: 'Selamat, {namaPengguna}! Anda telah disetujui sebagai penguji untuk aplikasi *"{namaAplikasi}"*. Silakan klik tautan berikut untuk bergabung dalam program pengujian: {linkPengujian}',
         isActive: true,
         placeholders: ['{namaPengguna}', '{namaAplikasi}', '{linkPengujian}']
+    },
+    booking_payment_confirmed: {
+        id: 'booking_payment_confirmed',
+        label: 'Konfirmasi Pembayaran Eduwisata',
+        message: 'Terima kasih, {namaPengguna}! Pembayaran Anda untuk paket *"{namaPaket}"* telah kami terima. Pemesanan Anda untuk tanggal *{tanggalKunjungan}* telah dikonfirmasi. Sampai jumpa!',
+        isActive: true,
+        placeholders: ['{namaPengguna}', '{namaPaket}', '{tanggalKunjungan}']
     }
 };
 

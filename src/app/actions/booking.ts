@@ -16,11 +16,13 @@ import {
   getDocsFromServer,
   orderBy,
   getDoc,
+  updateDoc,
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { Booking, Addon, EduwisataPackage } from '@/lib/definitions';
 import { sendEmail } from '@/services/email';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
+import { getWhatsappTemplate } from './settings';
 
 const bookingsCollection = collection(db, 'bookings');
 const meetingsCollection = collection(db, 'meetings');
@@ -37,7 +39,7 @@ const ADMIN_NOTIFICATION_EMAIL = 'halo@gardalestari.org';
  * @returns The ID of the newly created booking and the final amount to be paid.
  */
 export async function createBooking(
-    bookingData: Omit<Booking, 'id' | 'createdAt' | 'status' | 'totalPrice' | 'uniqueCode'> & { bookingDate: string },
+    bookingData: Omit<Booking, 'id' | 'createdAt' | 'status' | 'totalPrice' | 'uniqueCode'>,
 ): Promise<{ bookingId: string; finalAmount: number; }> {
   try {
     const pkgDoc = await getDoc(doc(db, 'edutourismPackages', bookingData.packageId));
@@ -51,8 +53,8 @@ export async function createBooking(
 
     const newBookingRef = doc(bookingsCollection);
     const newBooking: Omit<Booking, 'id'> = {
-        ...(bookingData as Omit<Booking, 'id' | 'bookingDate'>),
-        bookingDate: Timestamp.fromDate(new Date(bookingData.bookingDate)),
+        ...bookingData,
+        bookingDate: bookingData.bookingDate,
         totalPrice: finalAmount,
         uniqueCode,
         status: 'pending', // Set initial status to pending payment
@@ -100,6 +102,56 @@ export async function createBooking(
     throw new Error(`Gagal membuat pemesanan: ${(error as Error).message}`);
   }
 }
+
+export async function getBookings(): Promise<Booking[]> {
+    const q = query(bookingsCollection, orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            id: doc.id,
+            ...data,
+        } as Booking;
+    });
+}
+
+export async function confirmPayment(bookingId: string): Promise<void> {
+    const bookingRef = doc(db, 'bookings', bookingId);
+    await runTransaction(db, async (transaction) => {
+        const bookingDoc = await transaction.get(bookingRef);
+        if (!bookingDoc.exists()) {
+            throw new Error("Pemesanan tidak ditemukan.");
+        }
+        
+        const bookingData = bookingDoc.data() as Booking;
+        if (bookingData.status !== 'pending') {
+            throw new Error("Pemesanan ini tidak dalam status menunggu pembayaran.");
+        }
+
+        transaction.update(bookingRef, { status: 'paid' });
+
+        const template = await getWhatsappTemplate('booking_payment_confirmed');
+        const waMessage = template.message
+            .replace('{namaPengguna}', bookingData.customerName)
+            .replace('{namaPaket}', bookingData.packageName)
+            .replace('{tanggalKunjungan}', bookingData.bookingDate.toDate().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }));
+        
+        const emailSubject = `Pembayaran Dikonfirmasi - Pemesanan Eduwisata Anda (ID: ${bookingId.substring(0,8)})`;
+
+        if (template.isActive && bookingData.customerPhone) {
+            await sendWhatsAppMessage(bookingData.customerPhone, waMessage);
+        }
+        if (bookingData.customerEmail) {
+            await sendEmail({
+                to: bookingData.customerEmail,
+                subject: emailSubject,
+                text: waMessage,
+            });
+        }
+    });
+    revalidatePath('/panel/bookings');
+}
+
 
 /**
  * Creates a new meeting booking request.
