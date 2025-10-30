@@ -8,7 +8,7 @@ import type { EduwisataPackage, Addon } from '@/lib/definitions';
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import LandingHeader from '@/components/layout/LandingHeader';
-import Footer from '@/components/layout/Footer';
+import Footer from '@/components/landing/Footer';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
