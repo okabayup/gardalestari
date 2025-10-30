@@ -25,6 +25,9 @@ if (admin.apps.length === 0) {
 const usersCollection = collection(db, 'users');
 const positionsCollection = collection(db, 'positions');
 const OFFICIAL_ACCOUNT_PHONE = process.env.SATUCONNECT_DEVICE_ID;
+const ADMIN_NOTIFICATION_PHONE = '6285937010409';
+const ADMIN_NOTIFICATION_EMAIL = 'halo@gardalestari.org';
+
 
 // === FROM members.ts (MERGED) ===
 
@@ -305,8 +308,8 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
             
             if (templateId) {
                 const template = await getWhatsappTemplate(templateId);
+                const message = template.message.replace('{namaPengguna}', memberName);
                 if (template.isActive) {
-                    const message = template.message.replace('{namaPengguna}', memberName);
                     if (memberPhoneNumber) {
                          await sendWhatsAppMessage(memberPhoneNumber, message);
                     }
@@ -341,11 +344,19 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
             );
 
             const template = await getWhatsappTemplate('member_position_updated');
+            const message = template.message
+                .replace('{namaPengguna}', memberName)
+                .replace('{namaJabatan}', newPositionName);
+
             if (template.isActive && memberPhoneNumber) {
-                const message = template.message
-                    .replace('{namaPengguna}', memberName)
-                    .replace('{namaJabatan}', newPositionName);
                 await sendWhatsAppMessage(memberPhoneNumber, message);
+            }
+            if(memberEmail) {
+                await sendEmail({
+                    to: memberEmail,
+                    subject: 'Pembaruan Jabatan di Garda Lestari',
+                    text: message,
+                });
             }
         }
         
@@ -517,7 +528,7 @@ export async function searchUsers(searchQuery: string, limitCount: number = 5): 
 
     const [usernameSnapshot, fullNameSnapshot] = await Promise.all([
         getDocs(usernameQuery),
-        getDocs(fullNameQuery)
+        getDocs(fullNameSnapshot)
     ]);
     
     const usersMap = new Map<string, PublicUser>();
@@ -762,13 +773,21 @@ export async function requestDataDeletion(userId: string) {
         deletionRequestedAt: Timestamp.now(),
     });
 
-    const adminPhoneNumber = '6285937010409';
     const message = `🚨 PERMINTAAN HAPUS DATA 🚨\n\nPengguna:\n- Nama: ${userData.fullName}\n- Username: ${userData.username}\n- UID: ${userId}\n\nTelah mengajukan permintaan penghapusan data. Mohon tinjau di panel admin.`;
     
     try {
-        await sendWhatsAppMessage(adminPhoneNumber, message);
+        await sendWhatsAppMessage(ADMIN_NOTIFICATION_PHONE, message);
     } catch (e) {
         console.error("Failed to send WhatsApp alert for deletion request:", e);
+    }
+     try {
+        await sendEmail({
+            to: ADMIN_NOTIFICATION_EMAIL,
+            subject: `Permintaan Hapus Data: ${userData.fullName}`,
+            text: message,
+        });
+    } catch(e) {
+        console.error("Failed to send email alert for deletion request:", e);
     }
 
     revalidatePath('/panel/members');

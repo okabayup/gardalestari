@@ -25,6 +25,7 @@ import { getUserByUid } from '@/app/actions/user';
 import { getWhatsappTemplate } from '@/app/actions/settings';
 import type { Project, ProjectColumn, ProjectTask, CommentWithAuthor, IdeaAuthor } from '@/lib/definitions';
 import { sendNotification } from './notifications';
+import { sendEmail } from '@/services/email';
 
 const projectsCollection = collection(db, 'projects');
 const usersCollection = collection(db, 'users');
@@ -232,21 +233,31 @@ export async function updateTask(projectId: string, taskId: string, updates: Par
             if (newAssignees.length > 0) {
                 const project = await getProjectById(projectId);
                 const template = await getWhatsappTemplate('new_task_assigned');
+                const taskTitle = updates.title || currentTask.title;
+                const projectName = project?.title || 'tanpa nama';
 
                 for (const assigneeId of newAssignees) {
                     const user = await getUserByUid(assigneeId);
                     if (user) {
+                        const message = template.message
+                            .replace('{namaPengguna}', user.name)
+                            .replace('{namaTugas}', taskTitle)
+                            .replace('{namaProyek}', projectName);
+
                         if (template.isActive && user.waNumber) {
-                            const message = template.message
-                                .replace('{namaPengguna}', user.name)
-                                .replace('{namaTugas}', updates.title || currentTask.title)
-                                .replace('{namaProyek}', project?.title || 'tanpa nama');
                             await sendWhatsAppMessage(user.waNumber, message);
+                        }
+                        if (user.email) {
+                            await sendEmail({
+                                to: user.email,
+                                subject: `Tugas Baru: ${taskTitle}`,
+                                text: message,
+                            });
                         }
                         await sendNotification(
                             { 
                                 title: 'Tugas Baru untuk Anda', 
-                                body: `Anda ditugaskan pada tugas "${updates.title || currentTask.title}" di proyek "${project?.title || ''}".`,
+                                body: `Anda ditugaskan pada tugas "${taskTitle}" di proyek "${projectName}".`,
                                 link: `/panel/projects/${projectId}`
                             },
                             { type: 'users', userIds: [assigneeId] }

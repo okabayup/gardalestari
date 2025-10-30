@@ -24,6 +24,7 @@ const categoriesCollection = collection(db, 'documentCategories');
 const docTypesCollection = collection(db, 'documentTypes');
 
 const ADMIN_NOTIFICATION_PHONE = '6285937010409';
+const ADMIN_NOTIFICATION_EMAIL = 'halo@gardalestari.org';
 
 const toImportantDocument = (doc: any): ImportantDocument => {
     const data = doc.data();
@@ -176,15 +177,20 @@ export async function submitForApproval(documentId: string, authorId: string) {
       status: 'Menunggu Persetujuan',
     });
     
-    // Always send WA to admin number
     const template = await getWhatsappTemplate('document_submission');
+    const message = template.message
+        .replace('{namaPenerima}', approver?.name || 'Ketua Umum')
+        .replace('{judulDokumen}', document.title)
+        .replace('{namaPengirim}', document.authorName);
+
     if (template.isActive) {
-        const message = template.message
-            .replace('{namaPenerima}', approver?.name || 'Ketua Umum')
-            .replace('{judulDokumen}', document.title)
-            .replace('{namaPengirim}', document.authorName);
         await sendWhatsAppMessage(ADMIN_NOTIFICATION_PHONE, message);
     }
+    await sendEmail({
+        to: ADMIN_NOTIFICATION_EMAIL,
+        subject: `Permintaan Persetujuan Dokumen: ${document.title}`,
+        text: message,
+    });
     
     if (approver) {
         await sendNotification(
@@ -367,13 +373,22 @@ export async function rejectDocument(documentId: string, rejectorId: string, rea
     const author = await getUserByUid(document.authorId);
     if (author) {
         const template = await getWhatsappTemplate('document_rejected');
+        const message = template.message
+            .replace('{namaPengguna}', author.name)
+            .replace('{judulDokumen}', document.title)
+            .replace('{namaPenolak}', rejector?.name || 'Admin')
+            .replace('{alasanPenolakan}', reason);
+
         if (template.isActive && author.waNumber) {
-            const message = template.message
-                .replace('{namaPengguna}', author.name)
-                .replace('{judulDokumen}', document.title)
-                .replace('{namaPenolak}', rejector?.name || 'Admin')
-                .replace('{alasanPenolakan}', reason);
             await sendWhatsAppMessage(author.waNumber, message);
+        }
+        
+        if (author.email) {
+            await sendEmail({
+                to: author.email,
+                subject: `Dokumen Ditolak: ${document.title}`,
+                text: message,
+            });
         }
 
         await sendNotification(
