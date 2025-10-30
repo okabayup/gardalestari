@@ -5,9 +5,10 @@ import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { sendDevAlert } from '@/services/whatsapp';
 import type { ErrorLog } from '@/lib/definitions';
-
+import { sendEmail } from '@/services/email';
 
 const errorLogsCollection = collection(db, 'errorLogs');
+const ADMIN_ERROR_NOTIFICATION_EMAIL = 'okabayu2001@gmail.com';
 
 /**
  * Logs an error to Firestore and optionally sends a notification to the developer.
@@ -34,10 +35,21 @@ export async function logError(
       resolved: false,
     });
     
-    // Conditionally send WhatsApp Alert
+    // Conditionally send alerts
     if (sendAlert) {
       const alertMessage = `🚨 *Garda App Error* 🚨\n\n*Context:* ${errorData.context}\n*User:* ${errorData.userName || 'N/A'} (${errorData.userPhone || errorData.userId || 'N/A'})\n*Path:* ${errorData.path || 'N/A'}\n*Error:* ${errorData.message}\n\n*Stack:* ${errorData.stack || 'No stack'}`;
-      await sendDevAlert(alertMessage);
+      
+      // Send WhatsApp Alert (fire-and-forget)
+      sendDevAlert(alertMessage);
+
+      // Send Email Alert (fire-and-forget)
+      sendEmail({
+        to: ADMIN_ERROR_NOTIFICATION_EMAIL,
+        subject: `🚨 Garda App Error: ${errorData.context}`,
+        text: alertMessage,
+      }).catch(emailError => {
+        console.error("CRITICAL: Failed to send error email alert.", emailError);
+      });
     }
     
   } catch (loggingError) {
