@@ -108,7 +108,9 @@ export default function DocumentVerificationPage() {
           if (doc && doc.status === 'Disetujui' && doc.approvedAt) {
             setDocument(doc);
             const { id } = await import('date-fns/locale/id');
-            setFormattedDate(format(doc.approvedAt as Date, 'dd MMMM yyyy, HH:mm', { locale: id }));
+             // Manually adjust for WIB (GMT+7)
+            const approvedAtWib = new Date(doc.approvedAt.getTime() + 7 * 60 * 60 * 1000);
+            setFormattedDate(format(approvedAtWib, 'dd MMMM yyyy, HH:mm', { locale: id }));
           } else if (doc) {
              setError('Dokumen ini belum disahkan atau statusnya tidak valid.');
           }
@@ -227,8 +229,8 @@ export default function DocumentVerificationPage() {
                                 )}
                                 <div>
                                     <p className="text-sm text-muted-foreground">Disahkan oleh</p>
-                                    <p className="font-semibold">L. Andri Saputro</p>
-                                    <p className="text-xs text-muted-foreground">Ketua Umum</p>
+                                    <p className="font-semibold">{document.approvedByName || 'L. Andri Saputro'}</p>
+                                    <p className="text-xs text-muted-foreground">{document.approvedByPosition || 'Ketua Umum'}</p>
                                 </div>
                                 <div>
                                     <p className="text-sm text-muted-foreground">Tanggal Pengesahan</p>

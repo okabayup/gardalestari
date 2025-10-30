@@ -227,7 +227,9 @@ export async function approveDocument(documentId: string, approverId: string) {
         throw new Error("Nomor surat tidak ditemukan pada dokumen. Proses tidak dapat dilanjutkan.");
     }
 
-    const approvedAt = new Date();
+    const now = new Date();
+    const wibOffset = 7 * 60 * 60 * 1000;
+    const approvedAtWib = new Date(now.getTime() + wibOffset);
 
     const fileResponse = await fetch(document.fileUrl);
     if (!fileResponse.ok) {
@@ -249,7 +251,7 @@ export async function approveDocument(documentId: string, approverId: string) {
         `L. Andri Saputro`,
         `Ketua Umum`,
         `Nomor: ${documentNumber}`,
-        `Tanggal: ${format(approvedAt, 'dd MMMM yyyy, HH:mm', { locale: idLocale })} WIB`,
+        `Tanggal: ${format(approvedAtWib, 'dd MMMM yyyy, HH:mm', { locale: idLocale })} WIB`,
         `Selalu verifikasi melalui scan dan pastikan dokumen sama dengan yang ada di web gardalestari.org`
     ];
     
@@ -285,7 +287,7 @@ export async function approveDocument(documentId: string, approverId: string) {
       approvedById: approverId,
       approvedByName: approverUser?.name || "Admin",
       approvedByPosition: approverUser?.position || "Admin",
-      approvedAt: Timestamp.fromDate(approvedAt),
+      approvedAt: Timestamp.fromDate(now), // Store original timestamp in DB
       fileUrl: newFileUrl,
       filePath: newFilePath,
       fileName: newFileName,
