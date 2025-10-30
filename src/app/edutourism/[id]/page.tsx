@@ -1,7 +1,4 @@
 
-
-'use server';
-
 import { notFound } from 'next/navigation';
 import { getEduwisataPackage, getEduwisataPackages, getAddons } from '@/app/actions/edutourism';
 import { getBookedEduwisataDates } from '@/app/actions/booking';
