@@ -64,20 +64,17 @@ export async function createEduwisataPackage(
         console.log("Gallery images uploaded:", galleryImageUrls.length);
     }
     
-    // This is a temporary ID for the package until it's created.
-    const tempPackageId = doc(collection(db, 'edutourismPackages')).id;
+    const docRef = doc(collection(db, 'edutourismPackages'));
     
     // Create the shortlink first to get its ID
     const shortlinkId = await createShortLink({
         title: `Eduwisata: ${data.title}`,
-        longUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/edutourism/${tempPackageId}`,
-        slug: `edu-${tempPackageId.substring(0, 5)}`,
+        longUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/edutourism/${docRef.id}`,
+        slug: `edu-${docRef.id.substring(0, 5)}`,
         type: 'edutourism',
-        relatedId: tempPackageId,
+        relatedId: docRef.id,
     });
     console.log("Shortlink created with ID:", shortlinkId);
-
-    const docRef = doc(db, 'edutourismPackages', tempPackageId);
     
     const packageData: Omit<EduwisataPackage, 'id'> = {
         ...data,
@@ -116,6 +113,8 @@ export async function updateEduwisataPackage(
       duration: formData.get('duration') as string,
       availableAddonIds: (formData.get('availableAddonIds') as string)?.split(',') || [],
     };
+    const newShortlinkSlug = formData.get('shortlinkSlug') as string | undefined;
+
     const imageFile = formData.get('imageFile') as File | null;
     const galleryFiles = formData.getAll('galleryFiles') as File[];
 
@@ -144,10 +143,22 @@ export async function updateEduwisataPackage(
 
     await updateDoc(docRef, dataToUpdate);
     
-    // Sync shortlink title
-    if (existingPackage.shortlinkId && data.title !== existingPackage.title) {
-        await updateShortLink(existingPackage.shortlinkId, { title: `Eduwisata: ${data.title}`});
+    // Sync shortlink title and slug
+    if (existingPackage.shortlinkId) {
+        const existingShortlink = await getShortLink(existingPackage.shortlinkId);
+        const updates: Partial<ShortLink> = {};
+        if (data.title !== existingPackage.title) {
+            updates.title = `Eduwisata: ${data.title}`;
+        }
+        if (newShortlinkSlug && newShortlinkSlug !== existingShortlink?.slug) {
+            updates.slug = newShortlinkSlug;
+        }
+
+        if (Object.keys(updates).length > 0) {
+             await updateShortLink(existingPackage.shortlinkId, updates);
+        }
     }
+
 
     console.log("Firestore document updated successfully.");
     revalidatePath('/panel/edutourism');
@@ -192,3 +203,4 @@ export async function deleteAddon(id: string) {
   await deleteDoc(docRef);
   revalidatePath('/panel/edutourism/addons');
 }
+

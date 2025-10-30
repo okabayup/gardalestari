@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -14,9 +15,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, PlusCircle, Trash2, Upload } from 'lucide-react';
 import { getEduwisataPackage, updateEduwisataPackage, getAddons } from '@/app/actions/edutourism';
+import { getShortLink, ShortLink } from '@/app/actions/shortlinks';
 import type { Addon, EduwisataPackage } from '@/lib/definitions';
 import Image from 'next/image';
 import { Checkbox } from '@/components/ui/checkbox';
+import { SHORTLINK_DOMAIN } from '@/lib/definitions';
 
 const formSchema = z.object({
   title: z.string().min(1, 'Judul wajib diisi'),
@@ -27,6 +30,7 @@ const formSchema = z.object({
   availableAddonIds: z.array(z.string()).optional(),
   imageFile: z.any().optional(),
   galleryFiles: z.any().optional(),
+  shortlinkSlug: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -39,6 +43,7 @@ export default function EditEduwisataPackagePage() {
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [allAddons, setAllAddons] = useState<Addon[]>([]);
+  const [shortlink, setShortlink] = useState<ShortLink | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
   const [initialPackageData, setInitialPackageData] = useState<EduwisataPackage | null>(null);
@@ -49,7 +54,7 @@ export default function EditEduwisataPackagePage() {
     handleSubmit,
     watch,
     reset,
-    formState: { errors },
+    setValue,
   } = useForm<FormData>({ resolver: zodResolver(formSchema) });
 
   const watchImageFile = watch('imageFile');
@@ -78,7 +83,12 @@ export default function EditEduwisataPackagePage() {
         ]);
 
         if (pkg) {
-          reset(pkg);
+            let fetchedShortlink = null;
+            if (pkg.shortlinkId) {
+                fetchedShortlink = await getShortLink(pkg.shortlinkId);
+                setShortlink(fetchedShortlink);
+            }
+          reset({ ...pkg, shortlinkSlug: fetchedShortlink?.slug || '' });
           setInitialPackageData(pkg);
           setAllAddons(addons);
           setImagePreview(pkg.imageUrl);
@@ -100,21 +110,19 @@ export default function EditEduwisataPackagePage() {
     setLoading(true);
     try {
         const formData = new FormData();
-        formData.append('title', data.title);
-        formData.append('description', data.description);
-        formData.append('price', String(data.price));
-        formData.append('minParticipants', String(data.minParticipants));
-        formData.append('duration', data.duration);
-        formData.append('availableAddonIds', (data.availableAddonIds || []).join(','));
-        
-        if (data.imageFile && data.imageFile.length > 0) {
-            formData.append('imageFile', data.imageFile[0]);
-        }
-        if (data.galleryFiles && data.galleryFiles.length > 0) {
-             for (const file of Array.from(data.galleryFiles)) {
-                formData.append('galleryFiles', file as Blob);
+        Object.entries(data).forEach(([key, value]) => {
+          if (key === 'availableAddonIds' && Array.isArray(value)) {
+            formData.append(key, value.join(','));
+          } else if (key === 'imageFile' && value instanceof FileList && value.length > 0) {
+            formData.append('imageFile', value[0]);
+          } else if (key === 'galleryFiles' && value instanceof FileList && value.length > 0) {
+            for (const file of Array.from(value)) {
+              formData.append('galleryFiles', file as Blob);
             }
-        }
+          } else if (value !== undefined && value !== null) {
+            formData.append(key, String(value));
+          }
+        });
         
       await updateEduwisataPackage(id, formData);
       toast({ title: 'Paket berhasil diperbarui!' });
@@ -149,6 +157,14 @@ export default function EditEduwisataPackagePage() {
             <Label htmlFor="title">Nama Paket</Label>
             <Input id="title" {...register('title')} />
             {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
+          </div>
+           <div className="space-y-2">
+            <Label htmlFor="shortlinkSlug">Slug Shortlink</Label>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">{SHORTLINK_DOMAIN}/</span>
+              <Input id="shortlinkSlug" {...register('shortlinkSlug')} placeholder="slug-unik" />
+            </div>
+             {errors.shortlinkSlug && <p className="text-sm text-destructive">{errors.shortlinkSlug.message}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="description">Deskripsi</Label>
