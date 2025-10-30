@@ -68,7 +68,7 @@ export async function getDocument(id: string): Promise<ImportantDocument | null>
 }
 
 export async function createDocument(
-    data: Omit<ImportantDocument, 'id' | 'createdAt' | 'fileUrl' | 'fileName' | 'status' | 'documentNumber'>, 
+    data: Omit<ImportantDocument, 'id' | 'createdAt' | 'fileUrl' | 'fileName' | 'status' | 'documentNumber' | 'filePath'>, 
     file: File
 ) {
   try {
@@ -237,10 +237,16 @@ export async function approveDocument(documentId: string, approverId: string) {
     const qrImage = await pdfDoc.embedPng(qrCodeImageBuffer);
     const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const helveticaBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const helveticaObliqueFont = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
 
-    const stampText1 = `Dokumen ini telah disahkan secara digital oleh Garda Lestari`;
-    const stampText2 = `Nomor: ${documentNumber}`;
-    const stampText3 = `Tanggal: ${format(approvedAt, 'dd MMMM yyyy, HH:mm', { locale: idLocale })} WIB`;
+    const stampLines = [
+        `Dokumen ini telah disahkan secara digital oleh:`,
+        `L. Andri Saputro`,
+        `Ketua Umum`,
+        `Nomor: ${documentNumber}`,
+        `Tanggal: ${format(approvedAt, 'dd MMMM yyyy, HH:mm', { locale: idLocale })} WIB`,
+        `Selalu verifikasi melalui scan dan pastikan dokumen sama dengan yang ada di web gardalestari.org`
+    ];
     
     const firstPage = pdfDoc.getPages()[0];
     const { width, height } = firstPage.getSize();
@@ -249,13 +255,16 @@ export async function approveDocument(documentId: string, approverId: string) {
     firstPage.drawImage(qrImage, {
         x: 40,
         y: 40,
-        width: 60,
-        height: 60,
+        width: 70,
+        height: 70,
     });
     
-    firstPage.drawText(stampText1, { x: 110, y: 85, font: helveticaBoldFont, size: 8, color: rgb(0, 0, 0) });
-    firstPage.drawText(stampText2, { x: 110, y: 72, font: helveticaFont, size: 8, color: rgb(0, 0, 0) });
-    firstPage.drawText(stampText3, { x: 110, y: 59, font: helveticaFont, size: 8, color: rgb(0, 0, 0) });
+    firstPage.drawText(stampLines[0], { x: 120, y: 100, font: helveticaFont, size: 8, color: rgb(0, 0, 0) });
+    firstPage.drawText(stampLines[1], { x: 120, y: 90, font: helveticaBoldFont, size: 8, color: rgb(0, 0, 0) });
+    firstPage.drawText(stampLines[2], { x: 120, y: 80, font: helveticaFont, size: 8, color: rgb(0, 0, 0) });
+    firstPage.drawText(stampLines[3], { x: 120, y: 70, font: helveticaFont, size: 8, color: rgb(0, 0, 0) });
+    firstPage.drawText(stampLines[4], { x: 120, y: 60, font: helveticaFont, size: 8, color: rgb(0, 0, 0) });
+    firstPage.drawText(stampLines[5], { x: 120, y: 50, font: helveticaObliqueFont, size: 6, color: rgb(0.3, 0.3, 0.3) });
 
     // 4. Save the new PDF and upload
     const stampedPdfBytes = await pdfDoc.save();
@@ -412,3 +421,4 @@ export async function generateDocumentNumber(typeCode: string): Promise<string> 
       throw new Error("Gagal membuat nomor dokumen.");
   }
 }
+

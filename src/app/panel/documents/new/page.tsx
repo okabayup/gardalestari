@@ -17,7 +17,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 
-type FormData = Omit<ImportantDocument, 'id' | 'createdAt' | 'authorId' | 'authorName' | 'status' | 'fileUrl' | 'fileName' | 'approvedAt' | 'approvedById' | 'approvedByName' | 'approverId' | 'rejectionReason' | 'documentNumber'> & { file: FileList };
+type FormData = Omit<ImportantDocument, 'id' | 'createdAt' | 'authorId' | 'authorName' | 'status' | 'fileUrl' | 'fileName' | 'approvedAt' | 'approvedById' | 'approvedByName' | 'approverId' | 'rejectionReason' | 'documentNumber' | 'filePath'> & { file: FileList };
 
 
 export default function NewDocumentPage() {
@@ -27,7 +27,7 @@ export default function NewDocumentPage() {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<DocumentCategory[]>([]);
   const [docTypes, setDocTypes] = useState<DocumentType[]>([]);
-  const TEMPLATE_URL = "/api/documents/template";
+  const TEMPLATE_URL = "https://www.canva.com/design/DAG1iEQwEnk/dkJaRIGTpYl3JmEmWMK--Q/edit?utm_content=DAG1iEQwEnk&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton";
 
   const {
     control,
@@ -63,7 +63,7 @@ export default function NewDocumentPage() {
     setLoading(true);
     try {
       const { file, ...documentData } = data;
-      const payload: Omit<ImportantDocument, 'id' | 'fileUrl' | 'fileName' | 'status' | 'createdAt' | 'documentNumber'> = {
+      const payload: Omit<ImportantDocument, 'id' | 'fileUrl' | 'fileName' | 'status' | 'createdAt' | 'documentNumber' | 'filePath'> = {
           ...documentData,
           authorId: user.uid,
           authorName: user.displayName || 'Pengguna',
@@ -99,12 +99,12 @@ export default function NewDocumentPage() {
             <div className="flex justify-between items-start">
                 <div>
                     <CardTitle>Detail Dokumen</CardTitle>
-                    <CardDescription>Unduh template, isi, simpan sebagai PDF, lalu unggah.</CardDescription>
+                    <CardDescription>Gunakan template, isi, simpan sebagai PDF, lalu unggah.</CardDescription>
                 </div>
                 <Button variant="secondary" asChild>
-                    <a href={TEMPLATE_URL} download>
+                    <a href={TEMPLATE_URL} target="_blank">
                         <Download className="mr-2 h-4 w-4" />
-                        Unduh Template
+                        Buka Template di Canva
                     </a>
                 </Button>
             </div>
