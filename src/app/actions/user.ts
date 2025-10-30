@@ -305,12 +305,14 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
             
             if (templateId) {
                 const template = await getWhatsappTemplate(templateId);
-                const message = template.message.replace('{namaPengguna}', memberName);
-                if (template.isActive && memberPhoneNumber) {
-                     await sendWhatsAppMessage(memberPhoneNumber, message);
-                }
-                if (memberEmail) {
-                    await sendEmail({ to: memberEmail, subject: emailSubject, text: message });
+                if (template.isActive) {
+                    const message = template.message.replace('{namaPengguna}', memberName);
+                    if (memberPhoneNumber) {
+                         await sendWhatsAppMessage(memberPhoneNumber, message);
+                    }
+                    if (memberEmail) {
+                        await sendEmail({ to: memberEmail, subject: emailSubject, text: message });
+                    }
                 }
             }
 
@@ -545,18 +547,30 @@ export async function searchUsers(searchQuery: string, limitCount: number = 5): 
   }
 }
 
+const normalizePhoneNumber = (phone: string): string => {
+    let normalized = phone.replace(/\D/g, ''); // Remove non-digit characters
+    if (normalized.startsWith('0')) {
+        normalized = '62' + normalized.substring(1);
+    } else if (!normalized.startsWith('62')) {
+        normalized = '62' + normalized;
+    }
+    return normalized;
+};
+
+
 export async function saveWaNumber(userId: string, waNumber: string) {
     try {
         const userDocRef = doc(db, 'users', userId);
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const formattedNumber = normalizePhoneNumber(waNumber);
         
         await setDoc(userDocRef, {
-            waNumber: waNumber,
+            waNumber: formattedNumber,
             waOtp: otp,
             waVerified: false,
         }, { merge: true });
 
-        const result = await sendWhatsAppMessage(waNumber, `Kode verifikasi Garda Lestari Anda adalah: ${otp}`);
+        const result = await sendWhatsAppMessage(formattedNumber, `Kode verifikasi Garda Lestari Anda adalah: ${otp}`);
         
         if (!result.success) {
             throw new Error(result.error || 'Gagal mengirim OTP dari layanan WhatsApp.');
@@ -576,7 +590,7 @@ export async function verifyWaNumber(userId: string, otp: string): Promise<boole
         if (userDoc.exists() && userDoc.data().waOtp === otp) {
             await setDoc(userDocRef, {
                 waVerified: true,
-                waOtp: null, // Clear OTP after verification
+                waOtp: deleteField(), // Clear OTP after verification
             }, { merge: true });
             return true;
         }
@@ -668,13 +682,14 @@ export async function processVerificationSubmission(
     }
     
     const username = await generateUniqueUsername(data.fullName);
+    const formattedWaNumber = normalizePhoneNumber(data.waNumber);
 
     const verificationData: { [key: string]: any } = {
         fullName: data.fullName,
         displayName: data.fullName,
         username: username,
         nik: data.nik,
-        waNumber: data.waNumber,
+        waNumber: formattedWaNumber,
         waVerified: true,
         verificationStatus: 'temporary' as VerificationStatus,
         ktpImageUrl,

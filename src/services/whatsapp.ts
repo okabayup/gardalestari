@@ -40,23 +40,17 @@ export async function sendWhatsAppMessage(phoneNumber: string, message: string):
     
     const responseBody = await response.json().catch(() => response.text());
 
-    if (response.ok) {
-        if (typeof responseBody === 'object' && (responseBody.status === true || responseBody.message === 'Message sent successfully')) {
-            console.log('Successfully sent WhatsApp message to', phoneNumber);
-            return { success: true, data: responseBody.data };
-        } else {
-            const errorMessage = typeof responseBody === 'object' ? responseBody.message : responseBody;
-            console.error('SatuConnect API Error:', errorMessage);
-            return { success: false, error: errorMessage, data: responseBody };
-        }
+    if (response.ok && typeof responseBody === 'object' && responseBody.status === true) {
+        console.log('Successfully sent WhatsApp message to', phoneNumber);
+        return { success: true, data: responseBody.data };
     } else {
-        const errorText = typeof responseBody === 'string' ? responseBody : JSON.stringify(responseBody);
-        console.error(`SatuConnect API Error: Status ${response.status}`, errorText);
-        throw new Error(errorText || `API responded with status ${response.status}`);
+        const errorMessage = typeof responseBody === 'object' ? responseBody.message : (responseBody || `API responded with status ${response.status}`);
+        console.error('SatuConnect API Error:', errorMessage);
+        return { success: false, error: errorMessage, data: responseBody };
     }
 
   } catch (error) {
-    const errorMessage = (error instanceof Error) ? error.message : 'Unknown error occurred during API call.';
+    const errorMessage = (error as Error).message || 'Unknown error occurred during API call.';
     console.error('[sendWhatsAppMessage Error] Failed to call SatuConnect service:', errorMessage);
     return { success: false, error: errorMessage };
   }
@@ -111,7 +105,7 @@ export async function sendBulkWhatsAppMessage(phoneNumbers: string[], message: s
     }
 
   } catch (error) {
-    const errorMessage = (error instanceof Error) ? error.message : 'Unknown error occurred during bulk API call.';
+    const errorMessage = (error as Error).message || 'Unknown error occurred during bulk API call.';
     console.error('[sendBulkWhatsAppMessage Error] Failed to call SatuConnect bulk service:', errorMessage);
     return { success: false, error: errorMessage };
   }
