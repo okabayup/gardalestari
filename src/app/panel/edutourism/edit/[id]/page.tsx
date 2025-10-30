@@ -55,6 +55,7 @@ export default function EditEduwisataPackagePage() {
     watch,
     reset,
     setValue,
+    formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(formSchema) });
 
   const watchImageFile = watch('imageFile');
