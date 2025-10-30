@@ -434,7 +434,7 @@ export interface ErrorLog {
     stack?: string;
     context: string;
     userId?: string;
-    timestamp: Timestamp;
+    timestamp: string; // ISO String for client
     resolved: boolean;
 }
 
@@ -540,7 +540,7 @@ export interface ImportantDocument {
   type: string; // Jenis Dokumen
   attachments: string; // Jumlah Lampiran
   canvaUrl?: string; // Link edit Canva
-  createdAt: Timestamp;
+  createdAt: string; // ISO string
   fileUrl: string;
   fileName: string;
   filePath: string;
@@ -551,7 +551,7 @@ export interface ImportantDocument {
   approvedById?: string; // UID of the user who approved
   approvedByName?: string; // denormalized
   approvedByPosition?: string; // denormalized
-  approvedAt?: Timestamp;
+  approvedAt?: string; // ISO string
   rejectionReason?: string;
   rejectedById?: string;
   rejectedByName?: string;

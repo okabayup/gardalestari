@@ -24,6 +24,16 @@ const docTypesCollection = collection(db, 'documentTypes');
 
 const ADMIN_NOTIFICATION_PHONE = '6285937010409';
 
+const toImportantDocument = (doc: any): ImportantDocument => {
+    const data = doc.data();
+    return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate().toISOString() : new Date().toISOString(),
+        approvedAt: data.approvedAt ? (data.approvedAt as Timestamp).toDate().toISOString() : undefined,
+    } as ImportantDocument;
+}
+
 
 // --- Document Management ---
 
@@ -33,7 +43,7 @@ export async function getDocuments(): Promise<ImportantDocument[]> {
     const snapshot = await getDocs(q);
     const documents: ImportantDocument[] = [];
     snapshot.forEach(doc => {
-      documents.push({ id: doc.id, ...doc.data() } as ImportantDocument);
+      documents.push(toImportantDocument(doc));
     });
     return documents;
   } catch(error) {
@@ -47,7 +57,7 @@ export async function getDocument(id: string): Promise<ImportantDocument | null>
         const docRef = doc(db, 'importantDocuments', id);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-            return { id: docSnap.id, ...docSnap.data() } as ImportantDocument;
+            return toImportantDocument(docSnap);
         }
         return null;
     } catch(error) {
@@ -226,7 +236,6 @@ export async function approveDocument(documentId: string, approverId: string) {
     }
 
     const now = new Date();
-    const jakartaTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
     
     const fileResponse = await fetch(document.fileUrl);
     if (!fileResponse.ok) {
@@ -248,6 +257,8 @@ export async function approveDocument(documentId: string, approverId: string) {
     const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const helveticaBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const helveticaObliqueFont = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+
+    const jakartaTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
 
     const stampLines = [
         `Dokumen ini telah disahkan secara digital oleh:`,

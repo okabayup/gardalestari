@@ -108,7 +108,8 @@ export default function DocumentVerificationPage() {
           if (doc && doc.status === 'Disetujui' && doc.approvedAt) {
             setDocument(doc);
             const { id } = await import('date-fns/locale/id');
-            const approvedAtDate = doc.approvedAt.toDate(); // Convert Firestore Timestamp to JS Date
+            // The approvedAt is now an ISO string, convert to Date object
+            const approvedAtDate = new Date(doc.approvedAt);
             setFormattedDate(format(approvedAtDate, 'dd MMMM yyyy, HH:mm', { locale: id }));
           } else if (doc) {
              setError('Dokumen ini belum disahkan atau statusnya tidak valid.');
