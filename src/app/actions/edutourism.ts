@@ -143,7 +143,7 @@ export async function updateEduwisataPackage(
     await updateDoc(docRef, dataToUpdate);
     
     // Sync shortlink title
-    if (existingPackage.shortlinkSlug) {
+    if (existingPackage.shortlinkSlug && data.title !== existingPackage.title) {
         const shortlink = await getShortLink(existingPackage.shortlinkSlug);
         if (shortlink && shortlink.id) {
             await updateShortLink(shortlink.id, { title: `Eduwisata: ${data.title}`});
