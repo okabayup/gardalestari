@@ -15,6 +15,7 @@ import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import QRCode from 'qrcode';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
+import { readDocumentText } from '@/ai/flows/ocr-pdf-flow';
 
 
 const documentsCollection = collection(db, 'importantDocuments');
@@ -194,6 +195,15 @@ export async function submitForApproval(documentId: string, authorId: string) {
   }
 }
 
+const handleFileToDataUri = (file: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+};
+
 export async function approveDocument(documentId: string, approverId: string) {
   try {
     const docRef = doc(db, 'importantDocuments', documentId);
@@ -216,13 +226,20 @@ export async function approveDocument(documentId: string, approverId: string) {
     }
 
     const now = new Date();
+    const jakartaTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
     
     const fileResponse = await fetch(document.fileUrl);
     if (!fileResponse.ok) {
       throw new Error(`Gagal mengunduh file asli: ${fileResponse.statusText}`);
     }
-    const originalFileBuffer = await fileResponse.arrayBuffer();
-    const pdfDoc = await PDFDocument.load(originalFileBuffer);
+    const originalFileBlob = await fileResponse.blob();
+    
+    // Extract text from the original document for later comparison
+    const originalDataUri = await handleFileToDataUri(originalFileBlob);
+    const ocrResult = await readDocumentText({ fileDataUri: originalDataUri });
+    const originalContent = ocrResult.text.replace(/\s+/g, ' ').trim();
+    
+    const pdfDoc = await PDFDocument.load(await originalFileBlob.arrayBuffer());
 
 
     const verificationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/dokumen/verifikasi/${documentId}`;
@@ -237,7 +254,7 @@ export async function approveDocument(documentId: string, approverId: string) {
         `L. Andri Saputro`,
         `Ketua Umum`,
         `Nomor: ${documentNumber}`,
-        `Tanggal: ${format(now, 'dd MMMM yyyy, HH:mm', { locale: idLocale })} WIB`,
+        `Tanggal: ${format(jakartaTime, 'dd MMMM yyyy, HH:mm', { locale: idLocale })} WIB`,
         `Selalu verifikasi melalui scan dan pastikan dokumen sama dengan yang ada di web gardalestari.org`
     ];
     
@@ -277,6 +294,7 @@ export async function approveDocument(documentId: string, approverId: string) {
       fileUrl: newFileUrl,
       filePath: newFilePath,
       fileName: newFileName,
+      originalContent,
     });
 
     const author = await getUserByUid(document.authorId);
@@ -410,3 +428,5 @@ export async function generateDocumentNumber(typeCode: string): Promise<string> 
       throw new Error("Gagal membuat nomor dokumen.");
   }
 }
+
+    

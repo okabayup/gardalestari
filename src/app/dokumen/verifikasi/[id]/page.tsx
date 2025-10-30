@@ -147,22 +147,13 @@ export default function DocumentVerificationPage() {
       setOcrResult(null);
 
       try {
-        const officialFileResponse = await fetch(document.fileUrl);
-        const officialFileBlob = await officialFileResponse.blob();
-        const officialDataUri = await handleFileToDataUri(new File([officialFileBlob], "official.pdf"));
-
-        const [officialTextResult, uploadedTextResult] = await Promise.all([
-          readDocumentText({ fileDataUri: officialDataUri }),
-          readDocumentText({ fileDataUri: uploadedDataUri }),
-        ]);
-
-        const cleanOfficialText = officialTextResult.text.replace(/\s+/g, ' ').trim();
+        const uploadedTextResult = await readDocumentText({ fileDataUri: uploadedDataUri });
         const cleanUploadedText = uploadedTextResult.text.replace(/\s+/g, ' ').trim();
 
-        if (cleanOfficialText === cleanUploadedText) {
-          setOcrResult({ match: true, message: 'Isi teks dari kedua dokumen identik.' });
+        if (document.originalContent === cleanUploadedText) {
+          setOcrResult({ match: true, message: 'Isi teks dari dokumen yang diunggah identik dengan dokumen asli sebelum penandatanganan.' });
         } else {
-          setOcrResult({ match: false, message: 'Isi teks dari kedua dokumen berbeda.' });
+          setOcrResult({ match: false, message: 'Isi teks dari dokumen yang diunggah berbeda dengan dokumen asli. Dokumen mungkin telah diubah.' });
         }
       } catch (ocrError) {
         console.error("OCR Comparison Error:", ocrError);
@@ -211,7 +202,7 @@ export default function DocumentVerificationPage() {
                         <VerificationStatus icon={CheckCircle} title="Dokumen Terverifikasi" description="Dokumen ini adalah asli dan tercatat dalam sistem kami." variant="success" />
                         
                         <div className="aspect-[4/5] w-full bg-gray-200 rounded-lg overflow-hidden border">
-                           <PdfViewer file={fileUrlToRender} />
+                           <PdfViewer file={document.fileUrl} />
                         </div>
                         
                         <Card className="bg-background">
@@ -274,3 +265,5 @@ export default function DocumentVerificationPage() {
     </>
   );
 }
+
+    

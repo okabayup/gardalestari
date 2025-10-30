@@ -555,6 +555,7 @@ export interface ImportantDocument {
   rejectionReason?: string;
   rejectedById?: string;
   rejectedByName?: string;
+  originalContent?: string; // The extracted text from original PDF before stamping
 }
 
 export interface DocumentCategory {
@@ -1192,4 +1193,6 @@ export interface PublicProfile extends PublicUser {
   interests?: string[];
 }
     
+    
+
     
