@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -36,7 +37,7 @@ const ADMIN_NOTIFICATION_EMAIL = 'halo@gardalestari.org';
  * @returns The ID of the newly created booking and the final amount to be paid.
  */
 export async function createBooking(
-    bookingData: Omit<Booking, 'id' | 'createdAt' | 'status' | 'totalPrice' | 'uniqueCode' | 'bookingDate'> & { bookingDate: string },
+    bookingData: Omit<Booking, 'id' | 'createdAt' | 'status' | 'totalPrice' | 'uniqueCode'> & { bookingDate: string },
 ): Promise<{ bookingId: string; finalAmount: number; }> {
   try {
     const pkgDoc = await getDoc(doc(db, 'edutourismPackages', bookingData.packageId));
@@ -62,7 +63,7 @@ export async function createBooking(
     const bookingId = newBookingRef.id;
 
     // 3. Send notifications
-    const customerMessage = `Terima kasih, ${bookingData.customerName}! Pemesanan Eduwisata Anda untuk paket "${bookingData.packageName}" telah kami terima. Silakan selesaikan pembayaran sebesar Rp ${finalAmount.toLocaleString('id-ID')} agar pesanan dapat kami proses.`;
+    const customerMessage = `Terima kasih, ${bookingData.customerName}! Pemesanan Eduwisata Anda untuk paket "${bookingData.packageName}" telah kami terima. Silakan selesaikan pembayaran sebesar Rp ${finalAmount.toLocaleString('id-ID')} ke rekening berikut agar pesanan dapat kami proses:\n\nBank: BCA\nNo. Rek: 1801802325\na.n. Oka Bayu Pratama`;
     const adminMessage = `Booking Eduwisata Baru:\n- Nama: ${bookingData.customerName}\n- Paket: ${bookingData.packageName}\n- Peserta: ${bookingData.participants} orang\n- Total: Rp ${finalAmount.toLocaleString('id-ID')}`;
     
     try {
