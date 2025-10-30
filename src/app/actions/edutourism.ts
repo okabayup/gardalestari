@@ -20,9 +20,6 @@ export async function getEduwisataPackages(): Promise<EduwisataPackage[]> {
 }
 
 export async function getEduwisataPackage(id: string): Promise<EduwisataPackage | null> {
-  if (!id) {
-    return null;
-  }
   const docRef = doc(db, 'edutourismPackages', id);
   const docSnap = await getDoc(docRef);
   return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as EduwisataPackage : null;
