@@ -229,8 +229,8 @@ export default function DocumentVerificationPage() {
                                 )}
                                 <div>
                                     <p className="text-sm text-muted-foreground">Disahkan oleh</p>
-                                    <p className="font-semibold">{document.approvedByName || 'L. Andri Saputro'}</p>
-                                    <p className="text-xs text-muted-foreground">{document.approvedByPosition || 'Ketua Umum'}</p>
+                                    <p className="font-semibold">L. Andri Saputro</p>
+                                    <p className="text-xs text-muted-foreground">Ketua Umum</p>
                                 </div>
                                 <div>
                                     <p className="text-sm text-muted-foreground">Tanggal Pengesahan</p>
