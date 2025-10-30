@@ -551,7 +551,7 @@ export interface ImportantDocument {
   approvedById?: string; // UID of the user who approved
   approvedByName?: string; // denormalized
   approvedByPosition?: string; // denormalized
-  approvedAt?: string; // ISO string
+  approvedAt?: Timestamp;
   rejectionReason?: string;
   rejectedById?: string;
   rejectedByName?: string;
@@ -1073,7 +1073,7 @@ export interface ShortLink {
     title: string;
     slug: string;
     longUrl: string;
-    type: 'event' | 'program' | 'custom' | 'app_tester' | 'edutourism';
+    type: 'edutourism' | 'app_tester' | 'custom';
     relatedId?: string;
     clicks: number;
     createdAt: string; // ISO string

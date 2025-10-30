@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -7,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getEduwisataPackages, deleteEduwisataPackage, EduwisataPackage } from '@/app/actions/edutourism';
 import { syncShortlinks } from '@/app/actions/shortlinks';
 import { Button } from '@/components/ui/button';
-import { Loader2, PlusCircle, MoreHorizontal, Trash2, Link as LinkIcon, Plane, RefreshCw } from 'lucide-react';
+import { Loader2, PlusCircle, MoreHorizontal, Trash2, Link as LinkIcon, Plane, RefreshCw, Tags } from 'lucide-react';
 import { DataTable } from '@/components/panel/DataTable';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from '@/components/panel/DataTableColumnHeader';
@@ -95,14 +96,21 @@ export default function EduwisataPackagesPage() {
       accessorKey: 'title',
       header: ({ column }) => <DataTableColumnHeader column={column} title="Nama Paket" />,
     },
-     {
-      accessorKey: 'price',
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Harga" />,
-      cell: ({ row }) => `Rp ${row.original.price.toLocaleString('id-ID')}`
+    {
+      accessorKey: 'id',
+      header: 'ID Paket',
     },
     {
-        accessorKey: 'duration',
-        header: 'Durasi',
+        accessorKey: 'longUrl',
+        header: 'URL Halaman',
+        cell: ({row}) => {
+            const url = `${process.env.NEXT_PUBLIC_BASE_URL}/edutourism/${row.original.id}`;
+            return (
+                 <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs max-w-[200px] truncate block">
+                    {url}
+                </a>
+            )
+        }
     },
     {
         accessorKey: 'shortlinkSlug',
@@ -135,12 +143,12 @@ export default function EduwisataPackagesPage() {
 
   const toolbarButtons = (
      <div className="flex gap-2">
+        <Button variant="outline" onClick={() => router.push('/panel/edutourism/addons')}>
+          <Tags className="mr-2 h-4 w-4" /> Kelola Add-ons
+        </Button>
         <Button variant="outline" onClick={handleSync} disabled={isSyncing}>
           {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
           Sinkronisasi Shortlink
-        </Button>
-        <Button variant="outline" onClick={() => router.push('/panel/edutourism/addons')}>
-            <Plane className="mr-2 h-4 w-4" /> Kelola Add-ons
         </Button>
         <Button onClick={() => router.push('/panel/edutourism/new')}>
             <PlusCircle className="mr-2 h-4 w-4" /> Buat Paket Baru
