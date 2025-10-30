@@ -79,8 +79,8 @@ export default function EduwisataDetailPage() {
                                 <CarouselContent>
                                     {[pkg.imageUrl, ...pkg.images].map((img, index) => (
                                     <CarouselItem key={index}>
-                                        <div className="aspect-video relative overflow-hidden rounded-lg">
-                                            <Image src={img} alt={`${pkg.title} - Gambar ${index + 1}`} fill className="object-cover"/>
+                                        <div className="aspect-video relative overflow-hidden rounded-lg bg-muted">
+                                            <Image src={img} alt={`${pkg.title} - Gambar ${index + 1}`} fill className="object-contain"/>
                                         </div>
                                     </CarouselItem>
                                     ))}
@@ -89,8 +89,8 @@ export default function EduwisataDetailPage() {
                                 <CarouselNext className="right-2" />
                                 </Carousel>
                             ) : (
-                                <div className="aspect-video relative overflow-hidden rounded-lg">
-                                    <Image src={pkg.imageUrl} alt={pkg.title} fill className="object-cover"/>
+                                <div className="aspect-video relative overflow-hidden rounded-lg bg-muted">
+                                    <Image src={pkg.imageUrl} alt={pkg.title} fill className="object-contain"/>
                                 </div>
                             )}
                             <Card className="mt-6">
