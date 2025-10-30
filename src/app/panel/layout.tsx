@@ -48,7 +48,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
     <SidebarProvider>
       <PanelBadgesProvider>
         <div className="grid h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-          <Sidebar collapsible="offcanvas" className="hidden border-r bg-muted/40 md:flex md:flex-col">
+          <Sidebar collapsible="icon" className="hidden border-r bg-muted/40 md:flex md:flex-col">
               <PanelSidebarContent />
           </Sidebar>
            <MobileSidebar />
