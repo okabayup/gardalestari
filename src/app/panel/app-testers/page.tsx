@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, PlusCircle, TestTube2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getTesterApplications, approveTesterApplication, rejectTesterApplication, AppTester } from '@/app/actions/app-testers';
 import { DataTable } from '@/components/panel/DataTable';
@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import { TestTube2 } from 'lucide-react';
 
 export default function AppTestersPage() {
   const [applications, setApplications] = useState<AppTester[]>([]);
@@ -66,7 +67,7 @@ export default function AppTestersPage() {
     { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'appName', header: 'Aplikasi yg Diuji' },
     { accessorKey: 'reason', header: 'Alasan Bergabung', cell: ({ row }) => <p className="max-w-xs truncate">{row.original.reason}</p> },
-    { accessorKey: 'submittedAt', header: 'Tanggal', cell: ({ row }) => format(row.original.submittedAt.toDate(), 'dd MMM yyyy') },
+    { accessorKey: 'submittedAt', header: 'Tanggal', cell: ({ row }) => format(new Date(row.original.submittedAt as unknown as string), 'dd MMM yyyy') },
     {
       accessorKey: 'status',
       header: 'Status',

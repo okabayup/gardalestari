@@ -3,7 +3,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, Timestamp, query, orderBy, getDoc, where } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, Timestamp, query, orderBy, getDoc, where, deleteDoc } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import { AppTester, AppTesterApp } from '@/lib/definitions';
 import { getWhatsappTemplate } from '@/app/actions/settings';
@@ -30,10 +30,14 @@ export async function submitTesterApplication(data: Omit<AppTester, 'id' | 'stat
 export async function getTesterApplications(): Promise<AppTester[]> {
     const q = query(appTestersCollection, orderBy('submittedAt', 'desc'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-    } as AppTester));
+    return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            id: doc.id,
+            ...data,
+            submittedAt: (data.submittedAt as Timestamp).toDate().toISOString(),
+        } as AppTester;
+    });
 }
 
 export async function approveTesterApplication(id: string): Promise<void> {

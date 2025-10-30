@@ -458,8 +458,8 @@ export interface AppTester {
     status: 'pending' | 'approved' | 'rejected';
     appId: string;
     appName: string;
-    submittedAt: Timestamp;
-    processedAt?: Timestamp;
+    submittedAt: string; // ISO string
+    processedAt?: string; // ISO string
 }
 
 export interface AppTesterApp {
