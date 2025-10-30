@@ -36,7 +36,7 @@ const ADMIN_NOTIFICATION_EMAIL = 'halo@gardalestari.org';
  * @returns The ID of the newly created booking and the final amount to be paid.
  */
 export async function createBooking(
-    bookingData: Omit<Booking, 'id' | 'createdAt' | 'status' | 'totalPrice' | 'uniqueCode'>,
+    bookingData: Omit<Booking, 'id' | 'createdAt' | 'status' | 'totalPrice' | 'uniqueCode' | 'bookingDate'> & { bookingDate: string },
 ): Promise<{ bookingId: string; finalAmount: number; }> {
   try {
     const pkgDoc = await getDoc(doc(db, 'edutourismPackages', bookingData.packageId));
@@ -50,7 +50,8 @@ export async function createBooking(
 
     const newBookingRef = doc(bookingsCollection);
     const newBooking: Omit<Booking, 'id'> = {
-        ...bookingData,
+        ...(bookingData as Omit<Booking, 'id' | 'bookingDate'>),
+        bookingDate: Timestamp.fromDate(new Date(bookingData.bookingDate)),
         totalPrice: finalAmount,
         uniqueCode,
         status: 'pending', // Set initial status to pending payment

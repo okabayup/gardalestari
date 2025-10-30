@@ -61,7 +61,7 @@ export default function BookingForm({ pkg, addons, bookedDates }: { pkg: Eduwisa
                 ...data,
                 packageId: pkg.id,
                 packageName: pkg.title,
-                bookingDate: Timestamp.fromDate(data.bookingDate),
+                bookingDate: data.bookingDate.toISOString(), // Send as ISO string
                 selectedAddons: Object.entries(selectedAddons).filter(([, quantity]) => quantity > 0).map(([addonId, quantity]) => {
                     const addon = addons.find(a => a.id === addonId)!;
                     return { addonId, addonName: addon.name, quantity, price: addon.price };
