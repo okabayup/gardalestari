@@ -42,7 +42,7 @@ export async function sendEmail({ to, subject, text, html }: EmailPayload): Prom
       body: formData,
     });
     
-    const responseBody = await response.json();
+    const responseBody = await response.json().catch(() => response.text());
 
     if (response.ok) {
       console.log(`Email sent successfully to ${to} via Mailgun:`, responseBody.message);

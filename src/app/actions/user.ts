@@ -12,6 +12,7 @@ import { getWhatsappTemplate } from '@/app/actions/settings';
 import { sendNotification } from './notifications';
 import { awardPointsForAction } from '@/app/actions/points';
 import admin from 'firebase-admin';
+import { sendEmail } from '@/services/email';
 
 if (admin.apps.length === 0) {
   try {
@@ -100,6 +101,7 @@ export async function getMembers(forPublic: boolean = false): Promise<MemberWith
         isSuspended: data.isSuspended || false,
         joinDate: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
         ktpImageUrl: data.ktpImageUrl,
+        email: data.email,
         createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
         permissions: permissions,
         referralCode: data.referralCode,
@@ -267,14 +269,17 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
 
         const memberPhoneNumber = currentMemberData.waNumber;
         const memberName = currentMemberData.fullName;
+        const memberEmail = currentMemberData.email;
 
         // --- REFERRAL & NOTIFICATION LOGIC ---
         if (verificationStatus && verificationStatus !== currentMemberData.verificationStatus) {
             let templateId: 'kta_activated' | 'member_verification_rejected' | null = null;
+            let emailSubject = '';
             let notificationPayload: { title: string, body: string } | null = null;
             
             if (verificationStatus === 'permanent' && !currentMemberData.referralPointsAwarded) {
                 templateId = 'kta_activated';
+                emailSubject = 'Selamat! KTA Garda Lestari Anda Telah Aktif';
                 notificationPayload = { title: 'Verifikasi Berhasil!', body: 'Selamat! Akun Anda telah diverifikasi secara permanen.' };
 
                 // --- AWARD MULTI-LEVEL REFERRAL POINTS ---
@@ -294,14 +299,18 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
 
             } else if (verificationStatus === 'rejected') {
                 templateId = 'member_verification_rejected';
+                emailSubject = 'Pembaruan Status Verifikasi Garda Lestari Anda';
                  notificationPayload = { title: 'Verifikasi Ditolak', body: 'Pengajuan verifikasi Anda ditolak. Silakan periksa kembali data Anda.' };
             }
             
             if (templateId) {
                 const template = await getWhatsappTemplate(templateId);
+                const message = template.message.replace('{namaPengguna}', memberName);
                 if (template.isActive && memberPhoneNumber) {
-                     const message = template.message.replace('{namaPengguna}', memberName);
                      await sendWhatsAppMessage(memberPhoneNumber, message);
+                }
+                if (memberEmail) {
+                    await sendEmail({ to: memberEmail, subject: emailSubject, text: message });
                 }
             }
 
@@ -350,7 +359,7 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
 // === END OF MERGED FROM members.ts ===
 
 
-export async function getUserByUid(uid: string): Promise<(MemberWithStatus & { waNumber?: string }) | null> {
+export async function getUserByUid(uid: string): Promise<(MemberWithStatus & { email?:string, waNumber?: string }) | null> {
     if (!uid) return null;
     try {
         const userDocRef = doc(db, 'users', uid);
@@ -377,6 +386,7 @@ export async function getUserByUid(uid: string): Promise<(MemberWithStatus & { w
             id: userDoc.id,
             name: data.fullName || data.displayName || 'Nama Tidak Diketahui',
             username: data.username,
+            email: data.email,
             avatarUrl: data.avatarUrl,
             phoneNumber: data.phoneNumber || 'N/A',
             verificationStatus: data.verificationStatus || 'unverified',

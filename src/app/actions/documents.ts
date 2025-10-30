@@ -16,6 +16,7 @@ import QRCode from 'qrcode';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { readDocumentText } from '@/ai/flows/ocr-pdf-flow';
+import { sendEmail } from '@/services/email';
 
 
 const documentsCollection = collection(db, 'importantDocuments');
@@ -311,12 +312,20 @@ export async function approveDocument(documentId: string, approverId: string) {
     const author = await getUserByUid(document.authorId);
     if (author) {
         const template = await getWhatsappTemplate('document_approved');
+        const waMessage = template.message
+            .replace('{namaPengguna}', author.name)
+            .replace('{judulDokumen}', document.title)
+            .replace('{nomorDokumen}', documentNumber);
+
         if (template.isActive && author.waNumber) {
-            const message = template.message
-                .replace('{namaPengguna}', author.name)
-                .replace('{judulDokumen}', document.title)
-                .replace('{nomorDokumen}', documentNumber);
-            await sendWhatsAppMessage(author.waNumber, message);
+            await sendWhatsAppMessage(author.waNumber, waMessage);
+        }
+        if (author.email) {
+            await sendEmail({
+                to: author.email,
+                subject: `Dokumen Disetujui: ${document.title}`,
+                text: waMessage,
+            })
         }
         await sendNotification(
         {
