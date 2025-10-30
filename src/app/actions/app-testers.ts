@@ -36,6 +36,7 @@ export async function getTesterApplications(): Promise<AppTester[]> {
             id: doc.id,
             ...data,
             submittedAt: (data.submittedAt as Timestamp).toDate().toISOString(),
+            processedAt: data.processedAt ? (data.processedAt as Timestamp).toDate().toISOString() : undefined,
         } as AppTester;
     });
 }
