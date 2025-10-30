@@ -108,9 +108,8 @@ export default function DocumentVerificationPage() {
           if (doc && doc.status === 'Disetujui' && doc.approvedAt) {
             setDocument(doc);
             const { id } = await import('date-fns/locale/id');
-             // Manually adjust for WIB (GMT+7)
-            const approvedAtWib = new Date(doc.approvedAt.getTime() + 7 * 60 * 60 * 1000);
-            setFormattedDate(format(approvedAtWib, 'dd MMMM yyyy, HH:mm', { locale: id }));
+            const approvedAtDate = doc.approvedAt.toDate(); // Convert Firestore Timestamp to JS Date
+            setFormattedDate(format(approvedAtDate, 'dd MMMM yyyy, HH:mm', { locale: id }));
           } else if (doc) {
              setError('Dokumen ini belum disahkan atau statusnya tidak valid.');
           }
@@ -212,7 +211,7 @@ export default function DocumentVerificationPage() {
                         <VerificationStatus icon={CheckCircle} title="Dokumen Terverifikasi" description="Dokumen ini adalah asli dan tercatat dalam sistem kami." variant="success" />
                         
                         <div className="aspect-[4/5] w-full bg-gray-200 rounded-lg overflow-hidden border">
-                           <PdfViewer file={document.fileUrl} />
+                           <PdfViewer file={fileUrlToRender} />
                         </div>
                         
                         <Card className="bg-background">

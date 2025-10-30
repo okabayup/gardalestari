@@ -24,18 +24,6 @@ const docTypesCollection = collection(db, 'documentTypes');
 const ADMIN_NOTIFICATION_PHONE = '6285937010409';
 
 
-// Helper function to convert Timestamps in a document to serializable Dates
-const convertTimestamps = (docData: { [key: string]: any }): any => {
-    const data = { ...docData };
-    for (const key in data) {
-        if (data[key] instanceof Timestamp) {
-            data[key] = data[key].toDate();
-        }
-    }
-    return data;
-};
-
-
 // --- Document Management ---
 
 export async function getDocuments(): Promise<ImportantDocument[]> {
@@ -44,7 +32,7 @@ export async function getDocuments(): Promise<ImportantDocument[]> {
     const snapshot = await getDocs(q);
     const documents: ImportantDocument[] = [];
     snapshot.forEach(doc => {
-      documents.push({ id: doc.id, ...convertTimestamps(doc.data()) } as ImportantDocument);
+      documents.push({ id: doc.id, ...doc.data() } as ImportantDocument);
     });
     return documents;
   } catch(error) {
@@ -58,7 +46,7 @@ export async function getDocument(id: string): Promise<ImportantDocument | null>
         const docRef = doc(db, 'importantDocuments', id);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-            return { id: docSnap.id, ...convertTimestamps(docSnap.data()) } as ImportantDocument;
+            return { id: docSnap.id, ...docSnap.data() } as ImportantDocument;
         }
         return null;
     } catch(error) {
@@ -228,9 +216,7 @@ export async function approveDocument(documentId: string, approverId: string) {
     }
 
     const now = new Date();
-    const wibOffset = 7 * 60 * 60 * 1000;
-    const approvedAtWib = new Date(now.getTime() + wibOffset);
-
+    
     const fileResponse = await fetch(document.fileUrl);
     if (!fileResponse.ok) {
       throw new Error(`Gagal mengunduh file asli: ${fileResponse.statusText}`);
@@ -251,7 +237,7 @@ export async function approveDocument(documentId: string, approverId: string) {
         `L. Andri Saputro`,
         `Ketua Umum`,
         `Nomor: ${documentNumber}`,
-        `Tanggal: ${format(approvedAtWib, 'dd MMMM yyyy, HH:mm', { locale: idLocale })} WIB`,
+        `Tanggal: ${format(now, 'dd MMMM yyyy, HH:mm', { locale: idLocale })} WIB`,
         `Selalu verifikasi melalui scan dan pastikan dokumen sama dengan yang ada di web gardalestari.org`
     ];
     
@@ -287,7 +273,7 @@ export async function approveDocument(documentId: string, approverId: string) {
       approvedById: approverId,
       approvedByName: approverUser?.name || "Admin",
       approvedByPosition: approverUser?.position || "Admin",
-      approvedAt: Timestamp.fromDate(now), // Store original timestamp in DB
+      approvedAt: Timestamp.fromDate(now),
       fileUrl: newFileUrl,
       filePath: newFilePath,
       fileName: newFileName,
