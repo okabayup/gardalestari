@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -225,16 +226,6 @@ export default function DocumentsPage() {
                                     <Send className="mr-2 h-4 w-4" /> Ajukan Persetujuan
                                 </DropdownMenuItem>
                             )}
-                             {item.status === 'Menunggu Persetujuan' && canManageDocuments && (
-                                <>
-                                <DropdownMenuItem onClick={() => handleApproveConfirm()}>
-                                    <Check className="mr-2 h-4 w-4" /> Setujui
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setRejectDialogItem(item)} className="text-destructive">
-                                    <X className="mr-2 h-4 w-4" /> Tolak
-                                </DropdownMenuItem>
-                                </>
-                            )}
                             {(item.authorId === user?.uid) && <DropdownMenuSeparator />}
                             <DropdownMenuItem onClick={() => router.push(`/panel/documents/edit/${item.id}`)} disabled={item.status !== 'Draft' && item.authorId !== user?.uid}>Edit</DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteClick(item)}>
@@ -288,5 +279,3 @@ export default function DocumentsPage() {
     </>
   );
 }
-
-    
