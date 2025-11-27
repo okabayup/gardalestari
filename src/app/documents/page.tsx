@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { Separator } from '@/components/ui/separator';
 
 const DocumentItem = ({ document }: { document: ImportantDocument }) => {
   return (
@@ -37,7 +38,7 @@ const DocumentItem = ({ document }: { document: ImportantDocument }) => {
 export default async function PublicDocumentsPage() {
   const allDocuments = await getDocuments();
   // Only show approved documents on the public page
-  const approvedDocuments = allDocuments.filter(doc => doc.status === 'Disetujui' && doc.approvedAt);
+  const approvedDocuments = allDocuments.filter(doc => doc.status === 'Disetujui');
 
   return (
     <MainLayout>
@@ -64,5 +65,3 @@ export default async function PublicDocumentsPage() {
     </MainLayout>
   );
 }
-
-    
