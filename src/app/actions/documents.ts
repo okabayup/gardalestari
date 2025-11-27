@@ -212,15 +212,6 @@ export async function submitForApproval(documentId: string, authorId: string) {
   }
 }
 
-const handleFileToDataUri = (file: Blob): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-};
-
 export async function approveDocument(documentId: string, approverId: string) {
   try {
     const docRef = doc(db, 'importantDocuments', documentId);
@@ -250,8 +241,10 @@ export async function approveDocument(documentId: string, approverId: string) {
     }
     const originalFileBlob = await fileResponse.blob();
     
-    // Extract text from the original document for later comparison
-    const originalDataUri = await handleFileToDataUri(originalFileBlob);
+    // Convert blob to data URI for OCR flow
+    const originalFileBuffer = Buffer.from(await originalFileBlob.arrayBuffer());
+    const originalDataUri = `data:application/pdf;base64,${originalFileBuffer.toString('base64')}`;
+
     const ocrResult = await readDocumentText({ fileDataUri: originalDataUri });
     const originalContent = ocrResult.text.replace(/\s+/g, ' ').trim();
     
