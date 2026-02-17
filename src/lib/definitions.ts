@@ -191,16 +191,30 @@ export const initialAccounts = [
 
 
 export const initialDocumentTypes = [
-    { name: 'Surat Permohonan', code: 'SPm' },
-    { name: 'Surat Keputusan', code: 'SKep' },
-    { name: 'Surat Kuasa', code: 'SK' },
-    { name: 'Surat Perintah', code: 'SP' },
-    { name: 'Surat Pengantar', code: 'SPeng' },
+    { name: 'Surat Keputusan', code: 'SK' },
     { name: 'Surat Edaran', code: 'SE' },
     { name: 'Surat Undangan', code: 'SU' },
-    { name: 'Laporan', code: 'Lap' },
+    { name: 'Surat Tugas', code: 'ST' },
+    { name: 'Surat Perintah Perjalanan Dinas', code: 'SPPD' },
+    { name: 'Surat Permohonan', code: 'SPm' },
+    { name: 'Surat Keterangan', code: 'SKet' },
+    { name: 'Surat Kuasa', code: 'SKua' },
+    { name: 'Surat Peringatan', code: 'SPering' },
     { name: 'Nota Kesepahaman', code: 'MoU' },
-    { name: 'Lainnya', code: 'Lain' },
+    { name: 'Perjanjian Kerja Sama', code: 'PKS' },
+    { name: 'Sertifikat', code: 'Sert' },
+    { name: 'Notulen Rapat', code: 'Notula' },
+    { name: 'Laporan', code: 'Lap' },
+    { name: 'Siaran Pers', code: 'Pers' },
+    { name: 'Lainnya', code: 'LL' },
+];
+
+export const initialDocumentCategories = [
+    { name: 'Internal' },
+    { name: 'Eksternal & Kemitraan' },
+    { name: 'Personalia & Keanggotaan' },
+    { name: 'Laporan & Publikasi' },
+    { name: 'Lainnya' },
 ];
 
 export const initialPositions = [
