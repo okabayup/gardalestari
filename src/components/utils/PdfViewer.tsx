@@ -9,8 +9,10 @@ import { Loader2, ZoomIn, ZoomOut, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useElementSize } from '@/hooks/use-element-size';
 
-// pdf.js worker from CDN
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url,
+).toString();
 
 interface PdfViewerProps {
   file: string;
