@@ -28,7 +28,7 @@ yarn-error.log*
 .env
 .env*.local
 .env.development.local
-.env.test.local
+.env.test.lofcal
 .env.production.local
 
 # genkit
