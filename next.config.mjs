@@ -1,10 +1,7 @@
+/** @type {import('next').NextConfig} */
+import nextPwa from 'next-pwa';
 
-import type {NextConfig} from 'next';
-import dotenv from 'dotenv';
-
-dotenv.config();
-
-const withPWA = require('next-pwa')({
+const withPWA = nextPwa({
   dest: 'public',
   register: true,
   skipWaiting: true,
@@ -98,7 +95,7 @@ const withPWA = require('next-pwa')({
 });
 
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   /* config options here */
   typescript: {
     ignoreBuildErrors: true,
@@ -141,14 +138,6 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       }
-      // Untuk menggunakan URL logo eksternal dari mitra,
-      // tambahkan hostname mereka di sini. Contoh:
-      // {
-      //   protocol: 'https'
-      //   hostname: 'media.corporate.com',
-      //   port: '',
-      //   pathname: '/**',
-      // },
     ],
   },
 };
