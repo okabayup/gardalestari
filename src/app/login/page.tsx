@@ -43,12 +43,6 @@ export default function LoginPage() {
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
 
   useEffect(() => {
-    if (document.referrer && !document.referrer.includes('android-app://')) {
-      window.location.href = 'https://play.google.com/store/apps/details?id=org.gardalestari.twa';
-    }
-  }, []);
-
-  useEffect(() => {
     if (!loading && !user && recaptchaContainerRef.current && !recaptchaVerifierRef.current) {
         try {
             const verifier = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
