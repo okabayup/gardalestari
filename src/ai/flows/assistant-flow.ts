@@ -122,7 +122,7 @@ const createDocumentTool = ai.defineTool(
                 x: 50,
                 y: height - 4 * fontSize,
                 font,
-                size: fontSize,
+                size: fontSize, // Corrected property from fontSize to size
                 lineHeight: 15,
                 maxWidth: width - 100,
             });
@@ -307,7 +307,7 @@ const assistantFlow = ai.defineFlow(
                     break;
                 }
 
-                const toolCalls = response.message.content.filter(p => !!p.toolCall);
+                const toolCalls = response.message.content.filter(p => !!p.toolRequest); // Corrected property from toolCall to toolRequest
                 if (!toolCalls || toolCalls.length === 0) {
                     break; // No more tool calls, exit loop
                 }
@@ -316,7 +316,7 @@ const assistantFlow = ai.defineFlow(
                 const toolResponses: Part[] = [];
 
                 for (const part of toolCalls) {
-                    const call = part.toolCall!;
+                    const call = part.toolRequest!; // Corrected property from toolCall to toolRequest
                     console.log(`[assistantFlow] Calling tool: ${call.name} with args:`, call.args);
                     const tool = availableTools[call.name];
                     
