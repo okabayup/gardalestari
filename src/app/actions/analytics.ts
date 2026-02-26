@@ -1,4 +1,3 @@
-
 'use server';
 
 import { BetaAnalyticsDataClient } from '@google-analytics/data';
@@ -50,6 +49,7 @@ export async function getAnalyticsReport(
             })),
             metricHeaders: (response.metricHeaders || []).map(header => ({
                 name: header.name || '',
+                type: header.type?.toString() || 'TYPE_UNSPECIFIED',
             })),
             rows: response.rows || [],
         };
