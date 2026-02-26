@@ -2,7 +2,7 @@
 
 import { collection, addDoc, getDocs, query, limit } from 'firebase/firestore';
 import { db } from './firebase';
-import { initialAccounts, initialDocumentTypes } from './definitions';
+import { initialAccounts, initialDocumentTypes, initialDocumentCategories } from './definitions';
 import { createMeetingShortLink } from '@/app/actions/shortlinks';
 
 const ideaCategoriesCollection = collection(db, 'ideaCategories');
@@ -18,10 +18,6 @@ const initialIdeaCategories = [
 
 const initialBeritaCategories = [
     'Pertanian', 'Perikanan', 'Kehutanan', 'Konservasi', 'Teknologi', 'Komunitas', 'Acara'
-];
-
-const initialDocumentCategories = [
-    'Surat Keterangan', 'Surat Permohonan', 'Surat Undangan', 'Laporan', 'Nota Kesepahaman'
 ];
 
 const initialProgramTags = [
@@ -49,8 +45,6 @@ async function seedCollection(collRef: any, initialData: any[], collectionName: 
             });
             await Promise.all(batchPromises);
             console.log(`Successfully seeded '${collectionName}'.`);
-        } else {
-             // console.log(`Collection '${collectionName}' already contains data. Skipping seed.`);
         }
     } catch (error) {
         console.error(`Error seeding '${collectionName}':`, error);
@@ -62,8 +56,8 @@ export async function seedInitialData() {
     await seedCollection(ideaCategoriesCollection, initialIdeaCategories, 'ideaCategories');
     await seedCollection(beritaCategoriesCollection, initialBeritaCategories, 'beritaCategories');
     await seedCollection(documentCategoriesCollection, initialDocumentCategories, 'documentCategories');
+    await seedCollection(docTypesCollection, initialDocumentTypes, 'documentTypes');
     await seedCollection(programTagsCollection, initialProgramTags, 'programTags');
     await seedCollection(accountsCollection, initialAccounts, 'accounts');
-    await seedCollection(docTypesCollection, initialDocumentTypes, 'documentTypes');
     await createMeetingShortLink();
 }
