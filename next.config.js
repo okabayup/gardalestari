@@ -27,7 +27,13 @@ const nextConfig = {
       },
     ],
   },
-  // Konfigurasi webpack untuk menangani dependensi tertentu jika diperlukan
+  // Konfigurasi Turbopack untuk Next.js 16+
+  turbopack: {
+    resolveAlias: {
+      canvas: false,
+    },
+  },
+  // Konfigurasi webpack untuk fallback atau versi lama
   webpack: (config) => {
     config.resolve.alias.canvas = false;
     return config;
