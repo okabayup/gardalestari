@@ -1,5 +1,3 @@
-
-
 import { Timestamp } from "firebase/firestore";
 import {z} from 'zod';
 import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact, LayoutDashboard, Package, Landmark, Plane, Bell, Link, Mail } from 'lucide-react';
@@ -545,6 +543,14 @@ export interface DataBankEntry {
 }
 
 // --- Documents ---
+export type SignatoryRole = 'Ketua Umum' | 'Sekretaris' | 'Bendahara Umum';
+
+export interface DigitalSigner {
+    name: string;
+    role: SignatoryRole;
+    signedAt: string;
+}
+
 export interface ImportantDocument {
   id?: string;
   title: string; // Perihal
@@ -562,6 +568,8 @@ export interface ImportantDocument {
   authorName: string; // denormalized
   status: LetterStatus;
   approverId?: string; // UID of the user who needs to approve
+  signers?: DigitalSigner[];
+  originalFileUrl?: string;
   approvedById?: string; // UID of the user who approved
   approvedByName?: string; // denormalized
   approvedByPosition?: string; // denormalized
@@ -1207,7 +1215,3 @@ export interface PublicProfile extends PublicUser {
   skills?: string[];
   interests?: string[];
 }
-    
-    
-
-    

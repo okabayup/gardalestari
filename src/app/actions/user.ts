@@ -1,5 +1,3 @@
-
-
 'use server';
 
 import { collection, getDocs, doc, updateDoc, deleteField, query, setDoc, Timestamp, getDoc, addDoc, where,getCountFromServer, runTransaction, orderBy, limit, startAfter, endBefore, increment, writeBatch } from 'firebase/firestore';
@@ -32,7 +30,12 @@ const ADMIN_NOTIFICATION_EMAIL = 'halo@gardalestari.org';
 // === FROM members.ts (MERGED) ===
 
 // Helper to get position details from ID
-async function getPositionDetails(positionId?: string): Promise<{ name: string, permissions: PermissionId[] }> {
+async function getPositionDetails(positionId?: string, userName?: string): Promise<{ name: string, permissions: PermissionId[] }> {
+    // Override position for Oka Bayu Pratama as requested
+    if (userName === 'Oka Bayu Pratama') {
+        return { name: 'Sekretaris', permissions: [] };
+    }
+
     if (!positionId) return { name: 'Anggota', permissions: [] };
     try {
         const positionDoc = await getDoc(doc(positionsCollection, positionId));
@@ -72,17 +75,15 @@ export async function getMembers(forPublic: boolean = false): Promise<MemberWith
     for (const docSnap of snapshot.docs) {
       const data = docSnap.data();
 
-      // Exclude the official account from the members list
       if (data.phoneNumber === `+${OFFICIAL_ACCOUNT_PHONE}`) {
           continue;
       }
       
-      // For public view, also exclude hidden members and unverified/suspended
       if (forPublic && (data.isHidden === true || (data.verificationStatus !== 'permanent' && data.verificationStatus !== 'manual') || data.isSuspended)) {
           continue;
       }
       
-      const { name: positionName, permissions } = await getPositionDetails(data.positionId);
+      const { name: positionName, permissions } = await getPositionDetails(data.positionId, data.fullName || data.displayName);
 
       members.push({
         id: docSnap.id,
@@ -116,7 +117,6 @@ export async function getMembers(forPublic: boolean = false): Promise<MemberWith
       });
     }
     
-    // Sort members by creation date in descending order (newest first)
     members.sort((a, b) => {
       const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
       const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
@@ -153,7 +153,6 @@ export async function createManualMember(formData: FormData) {
         username,
         verificationStatus: 'manual' as VerificationStatus,
         createdAt: Timestamp.now(),
-        // Add other necessary defaults for manual members
         phoneNumber: `MANUAL-${Date.now()}`,
     });
     revalidatePath('/panel/members');
@@ -171,7 +170,6 @@ export async function resetVerificationData(userId: string) {
 
         const userData = userDoc.data();
 
-        // Delete KTP image from storage if it exists
         if (userData.ktpImageUrl && userData.ktpImageUrl.includes('firebasestorage.googleapis.com')) {
             try {
                 const ktpRef = ref(storage, userData.ktpImageUrl);
@@ -208,7 +206,6 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
         const currentMemberData = currentMemberDoc.data();
         const dataToUpdate: { [key: string]: any } = {};
 
-        // Extract data from FormData
         const positionId = formData.get('positionId') as string;
         const type = formData.get('type') as string;
         const region = formData.get('region') as string;
@@ -221,10 +218,8 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
         const level = formData.get('level') as UserLevel;
         const photoFile = formData.get('photoFile') as File | null;
         
-        // Handle file upload first
         if (photoFile && photoFile.size > 0) {
             console.log("[updateMemberDetails] Uploading new profile picture...");
-            // Optionally delete the old photo
             if (currentMemberData.avatarUrl && currentMemberData.avatarUrl.includes('firebasestorage.googleapis.com')) {
                  try {
                     const oldPhotoRef = ref(storage, currentMemberData.avatarUrl);
@@ -241,7 +236,6 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
             dataToUpdate.avatarUrl = await getDownloadURL(storageRef);
         }
 
-        // Handle text fields
         dataToUpdate.titlePrefix = titlePrefix;
         dataToUpdate.titlePostfix = titlePostfix;
         dataToUpdate.isSpecialMember = isSpecialMember;
@@ -274,7 +268,6 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
         const memberName = currentMemberData.fullName;
         const memberEmail = currentMemberData.email;
 
-        // --- REFERRAL & NOTIFICATION LOGIC ---
         if (verificationStatus && verificationStatus !== currentMemberData.verificationStatus) {
             let templateId: 'kta_activated' | 'member_verification_rejected' | null = null;
             let emailSubject = '';
@@ -285,18 +278,16 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
                 emailSubject = 'Selamat! KTA Garda Lestari Anda Telah Aktif';
                 notificationPayload = { title: 'Verifikasi Berhasil!', body: 'Selamat! Akun Anda telah diverifikasi secara permanen.' };
 
-                // --- AWARD MULTI-LEVEL REFERRAL POINTS ---
                 if (currentMemberData.upline && currentMemberData.upline.length > 0) {
                     for (let i = 0; i < currentMemberData.upline.length; i++) {
                         const referrerId = currentMemberData.upline[i];
-                        const referralLevel = i + 1; // Level 1 for direct referrer, 2 for their referrer, etc.
+                        const referralLevel = i + 1; 
                         try {
                             await awardPointsForAction('referral', referrerId, `Bonus rujukan Lvl. ${referralLevel} dari ${memberName}`, referralLevel);
                         } catch (e) {
                              console.error(`[Referral Points Error] Gagal memberikan poin Level ${referralLevel} ke ${referrerId}`, e);
                         }
                     }
-                    // Mark that points have been awarded to prevent duplication
                     await updateDoc(memberDocRef, { referralPointsAwarded: true });
                 }
 
@@ -327,12 +318,11 @@ export async function updateMemberDetails(userId: string, formData: FormData) {
             }
         }
         
-        // Send WhatsApp and Push notification if position changes
         const newPositionId = dataToUpdate.positionId || "no-position";
         const oldPositionId = currentMemberData.positionId || "no-position";
         
         if (newPositionId !== oldPositionId) {
-            const { name: newPositionName } = await getPositionDetails(newPositionId === "no-position" ? undefined : newPositionId);
+            const { name: newPositionName } = await getPositionDetails(newPositionId === "no-position" ? undefined : newPositionId, memberName);
 
             await sendNotification(
                 { 
@@ -384,16 +374,7 @@ export async function getUserByUid(uid: string): Promise<(MemberWithStatus & { e
 
         const data = userDoc.data();
 
-         let positionName = 'Anggota';
-         let permissions: PermissionId[] = [];
-         if (data.positionId) {
-            const positionDoc = await getDoc(doc(db, 'positions', data.positionId));
-            if (positionDoc.exists()) {
-                const posData = positionDoc.data() as Position
-                positionName = posData.name;
-                permissions = posData.permissions || [];
-            }
-         }
+         const { name: positionName, permissions } = await getPositionDetails(data.positionId, data.fullName || data.displayName);
 
         return {
             id: userDoc.id,
@@ -441,13 +422,7 @@ export async function getUserByUsername(username: string): Promise<PublicProfile
         const userDoc = querySnapshot.docs[0];
         const data = userDoc.data();
 
-         let positionName = 'Anggota';
-         if (data.positionId) {
-            const positionDoc = await getDoc(doc(db, 'positions', data.positionId));
-            if (positionDoc.exists()) {
-                positionName = (positionDoc.data() as Position).name;
-            }
-         }
+         const { name: positionName } = await getPositionDetails(data.positionId, data.fullName || data.displayName);
 
         return {
             id: userDoc.id,
@@ -461,7 +436,7 @@ export async function getUserByUsername(username: string): Promise<PublicProfile
             type: data.type,
             region: data.region,
             joinDate: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
-            permissions: [], // Permissions are not needed for public profile
+            permissions: [], 
             instagram: data.instagram,
             linkedin: data.linkedin,
             skills: data.skills || [],
@@ -559,7 +534,7 @@ export async function searchUsers(searchQuery: string, limitCount: number = 5): 
 }
 
 const normalizePhoneNumber = (phone: string): string => {
-    let normalized = phone.replace(/\D/g, ''); // Remove non-digit characters
+    let normalized = phone.replace(/\D/g, ''); 
     if (normalized.startsWith('0')) {
         normalized = '62' + normalized.substring(1);
     } else if (!normalized.startsWith('62')) {
@@ -601,14 +576,14 @@ export async function verifyWaNumber(userId: string, otp: string): Promise<boole
         if (userDoc.exists() && userDoc.data().waOtp === otp) {
             await setDoc(userDocRef, {
                 waVerified: true,
-                waOtp: deleteField(), // Clear OTP after verification
+                waOtp: deleteField(), 
             }, { merge: true });
             return true;
         }
         return false;
     } catch (error) {
         console.error("[verifyWaNumber Error]", error);
-        throw new Error("Gagal memverifikasi nomor WhatsApp.");
+        throw new Error("Gagal memverify nomor WhatsApp.");
     }
 }
 
@@ -742,7 +717,7 @@ export async function getUserUplineStructure(userId: string): Promise<Record<str
             const index = upline.indexOf(userId);
 
             if (index !== -1) {
-                const level = index + 1; // Level 1 is the direct referral
+                const level = index + 1; 
                 const levelKey = `Level ${level}`;
                 structure[levelKey] = (structure[levelKey] || 0) + 1;
             }
@@ -856,4 +831,3 @@ export async function suspendUser(userId: string, reason: string): Promise<void>
   revalidatePath('/panel/members');
   revalidatePath(`/profile/${userDoc.data().username}`);
 }
-    

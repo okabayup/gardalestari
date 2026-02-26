@@ -1,14 +1,13 @@
-
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, runTransaction, where, getCountFromServer } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, runTransaction, where, getCountFromServer, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import { sendNotification } from '@/app/actions/notifications';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getWhatsappTemplate } from '@/app/actions/settings';
-import type { LetterStatus, ImportantDocument, DocumentCategory, DocumentType, PermissionId, Position, MemberWithStatus } from '@/lib/definitions';
+import type { LetterStatus, ImportantDocument, DocumentCategory, DocumentType, DigitalSigner, SignatoryRole } from '@/lib/definitions';
 import { getUserByUid } from '@/app/actions/user';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import QRCode from 'qrcode';
@@ -24,6 +23,12 @@ const docTypesCollection = collection(db, 'documentTypes');
 
 const ADMIN_NOTIFICATION_PHONE = '6285937010409';
 const ADMIN_NOTIFICATION_EMAIL = 'halo@gardalestari.org';
+
+const SIGNATORY_NAMES: Record<SignatoryRole, string> = {
+    'Ketua Umum': 'L. Andri Saputro',
+    'Sekretaris': 'Oka Bayu Pratama',
+    'Bendahara Umum': 'Hj. Siti Rohmah'
+};
 
 const toImportantDocument = (doc: any): ImportantDocument => {
     const data = doc.data();
@@ -68,7 +73,7 @@ export async function getDocument(id: string): Promise<ImportantDocument | null>
 }
 
 export async function createDocument(
-    data: Omit<ImportantDocument, 'id' | 'createdAt' | 'fileUrl' | 'fileName' | 'status' | 'documentNumber' | 'filePath'>, 
+    data: Omit<ImportantDocument, 'id' | 'createdAt' | 'fileUrl' | 'fileName' | 'status' | 'documentNumber' | 'filePath' | 'originalFileUrl'>, 
     file: File
 ) {
   try {
@@ -83,7 +88,6 @@ export async function createDocument(
     }
     const docTypeCode = docTypeSnapshot.docs[0].data().code;
     
-    // Generate document number immediately
     const documentNumber = await generateDocumentNumber(docTypeCode);
     
     const filePath = `documents/${Date.now()}_${file.name}`;
@@ -95,10 +99,12 @@ export async function createDocument(
         ...data,
         documentNumber,
         fileUrl,
+        originalFileUrl: fileUrl, // Save original for multi-signing
         filePath,
         fileName: file.name,
         createdAt: Timestamp.now(),
         status: 'Draft' as LetterStatus,
+        signers: [],
     };
     await addDoc(documentsCollection, docData);
     revalidatePath('/panel/documents');
@@ -131,8 +137,10 @@ export async function updateDocument(id: string, data: Partial<Omit<ImportantDoc
         const fileRef = ref(storage, filePath);
         await uploadBytes(fileRef, newFile);
         dataToUpdate.fileUrl = await getDownloadURL(fileRef);
+        dataToUpdate.originalFileUrl = dataToUpdate.fileUrl;
         dataToUpdate.filePath = filePath;
         dataToUpdate.fileName = newFile.name;
+        dataToUpdate.signers = []; // Reset signers if file changes
     }
 
     await updateDoc(docRef, dataToUpdate);
@@ -200,8 +208,6 @@ export async function submitForApproval(documentId: string, authorId: string) {
         },
         { type: 'users', userIds: [document.approverId!] }
         );
-    } else {
-        console.warn(`[submitForApproval Warn] Approver with UID ${document.approverId} not found. Cannot send push notification.`);
     }
 
     revalidatePath('/panel/documents');
@@ -211,134 +217,161 @@ export async function submitForApproval(documentId: string, authorId: string) {
   }
 }
 
-export async function approveDocument(documentId: string, approverId: string) {
+export async function approveDocument(documentId: string, approverId: string, role: SignatoryRole, isFinal: boolean) {
   try {
     const docRef = doc(db, 'importantDocuments', documentId);
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) throw new Error("Dokumen tidak ditemukan.");
-    const document = docSnap.data() as ImportantDocument;
+    const documentData = docSnap.data() as ImportantDocument;
 
-    if (document.status !== 'Menunggu Persetujuan') {
+    if (documentData.status !== 'Menunggu Persetujuan') {
         throw new Error("Dokumen ini tidak sedang dalam status menunggu persetujuan.");
     }
     
-    if (document.fileName.split('.').pop()?.toLowerCase() !== 'pdf') {
-        throw new Error("Hanya file PDF yang bisa disahkan. Mohon unggah ulang dalam format PDF.");
-    }
-    
-    const documentNumber = document.documentNumber;
-    if (!documentNumber) {
-        throw new Error("Nomor surat tidak ditemukan pada dokumen. Proses tidak dapat dilanjutkan.");
-    }
-
+    const signerName = SIGNATORY_NAMES[role];
     const now = new Date();
     
-    const fileResponse = await fetch(document.fileUrl);
-    if (!fileResponse.ok) {
-      throw new Error(`Gagal mengunduh file asli: ${fileResponse.statusText}`);
-    }
-    const originalFileBlob = await fileResponse.blob();
+    // 1. Update Signers Array
+    const newSigner: DigitalSigner = {
+        name: signerName,
+        role: role,
+        signedAt: now.toISOString(),
+    };
     
-    // Convert blob to data URI for OCR flow
-    const originalFileBuffer = Buffer.from(await originalFileBlob.arrayBuffer());
-    const originalDataUri = `data:application/pdf;base64,${originalFileBuffer.toString('base64')}`;
-
-    const ocrResult = await readDocumentText({ fileDataUri: originalDataUri });
-    const originalContent = ocrResult.text.replace(/\s+/g, ' ').trim();
+    const updatedSigners = [...(documentData.signers || []), newSigner];
     
-    const pdfDoc = await PDFDocument.load(await originalFileBlob.arrayBuffer());
-
-
-    const verificationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/dokumen/verifikasi/${documentId}`;
-    const qrCodeImageBuffer = await QRCode.toBuffer(verificationUrl, { type: 'png', width: 200, errorCorrectionLevel: 'H' });
-    const qrImage = await pdfDoc.embedPng(qrCodeImageBuffer);
+    // 2. Load Original PDF to avoid cumulative stamps
+    const sourceUrl = documentData.originalFileUrl || documentData.fileUrl;
+    const fileResponse = await fetch(sourceUrl);
+    if (!fileResponse.ok) throw new Error("Gagal mengunduh file asli.");
+    const pdfBytes = await fileResponse.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(pdfBytes);
     const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const helveticaBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const helveticaObliqueFont = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
 
-    const jakartaTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Jakarta"}));
-
-    const stampLines = [
-        `Dokumen ini telah disahkan secara digital oleh:`,
-        `L. Andri Saputro`,
-        `Ketua Umum`,
-        `Nomor: ${documentNumber}`,
-        `Tanggal: ${format(jakartaTime, 'dd MMMM yyyy, HH:mm', { locale: idLocale })} WIB`,
-        `Selalu verifikasi melalui scan dan pastikan dokumen sama dengan yang ada di web gardalestari.org`
-    ];
-    
     const firstPage = pdfDoc.getPages()[0];
-    const { width, height } = firstPage.getSize();
-    
-    firstPage.drawImage(qrImage, {
-        x: 40,
-        y: 40,
-        width: 70,
-        height: 70,
-    });
-    
-    firstPage.drawText(stampLines[0], { x: 120, y: 100, font: helveticaFont, size: 8, color: rgb(0, 0, 0) });
-    firstPage.drawText(stampLines[1], { x: 120, y: 90, font: helveticaBoldFont, size: 8, color: rgb(0, 0, 0) });
-    firstPage.drawText(stampLines[2], { x: 120, y: 80, font: helveticaFont, size: 8, color: rgb(0, 0, 0) });
-    firstPage.drawText(stampLines[3], { x: 120, y: 70, font: helveticaFont, size: 8, color: rgb(0, 0, 0) });
-    firstPage.drawText(stampLines[4], { x: 120, y: 60, font: helveticaFont, size: 8, color: rgb(0, 0, 0) });
-    firstPage.drawText(stampLines[5], { x: 120, y: 50, font: helveticaObliqueFont, size: 6, color: rgb(0.3, 0.3, 0.3) });
+    const { width: pageWidth, height: pageHeight } = firstPage.getSize();
 
+    // 3. Layout constants
+    const margin = 40;
+    const availableWidth = pageWidth - (2 * margin);
+    const sigCount = updatedSigners.length;
+    const blockWidth = Math.min(160, availableWidth / sigCount);
+    const boxHeight = 85;
+    const startY = 40;
+    const fontSize = sigCount > 2 ? 7 : 8;
+
+    // 4. Draw all signers
+    for (let i = 0; i < sigCount; i++) {
+        const signer = updatedSigners[i];
+        const startX = margin + (i * (availableWidth / sigCount)) + ((availableWidth / sigCount - blockWidth) / 2);
+        
+        // Draw Border
+        firstPage.drawRectangle({
+            x: startX,
+            y: startY,
+            width: blockWidth,
+            height: boxHeight,
+            borderColor: rgb(0.8, 0.8, 0.8),
+            borderWidth: 0.5,
+        });
+
+        // Generate QR for verification
+        const verificationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/dokumen/verifikasi/${documentId}`;
+        const qrBuffer = await QRCode.toBuffer(verificationUrl, { type: 'png', width: 100 });
+        const qrImage = await pdfDoc.embedPng(qrBuffer);
+        
+        const qrSize = 45;
+        firstPage.drawImage(qrImage, {
+            x: startX + (blockWidth - qrSize) / 2,
+            y: startY + boxHeight - qrSize - 5,
+            width: qrSize,
+            height: qrSize,
+        });
+
+        // Draw Text
+        const jakartaTime = new Date(signer.signedAt).toLocaleString("en-US", {timeZone: "Asia/Jakarta"});
+        const formattedDate = format(new Date(jakartaTime), 'dd/MM/yy HH:mm', { locale: idLocale });
+
+        const lines = [
+            `Disahkan Digital oleh:`,
+            signer.name,
+            signer.role,
+            `${formattedDate} WIB`
+        ];
+
+        let currentY = startY + 30;
+        firstPage.drawText(lines[0], { x: startX + 5, y: currentY, font: helveticaFont, size: fontSize - 1 });
+        currentY -= fontSize + 2;
+        firstPage.drawText(lines[1], { x: startX + 5, y: currentY, font: helveticaBoldFont, size: fontSize });
+        currentY -= fontSize + 2;
+        firstPage.drawText(lines[2], { x: startX + 5, y: currentY, font: helveticaFont, size: fontSize });
+        currentY -= fontSize + 2;
+        firstPage.drawText(lines[3], { x: startX + 5, y: currentY, font: helveticaObliqueFont, size: fontSize - 1 });
+    }
+
+    // 5. Save and Upload
     const stampedPdfBytes = await pdfDoc.save();
-    const newFileName = document.fileName.replace(/\.docx?$/, '.pdf');
+    const newFileName = documentData.fileName.replace(/\.docx?$/, '.pdf');
     const newFilePath = `documents/signed/${Date.now()}_${newFileName}`;
     const newFileRef = ref(storage, newFilePath);
-    
     await uploadBytes(newFileRef, stampedPdfBytes, { contentType: 'application/pdf' });
     const newFileUrl = await getDownloadURL(newFileRef);
-    
-    const approverUser = await getUserByUid(approverId);
-    
-    await updateDoc(docRef, {
-      status: 'Disetujui',
-      approvedById: approverId,
-      approvedByName: approverUser?.name || "Admin",
-      approvedByPosition: approverUser?.position || "Admin",
-      approvedAt: Timestamp.fromDate(now),
-      fileUrl: newFileUrl,
-      filePath: newFilePath,
-      fileName: newFileName,
-      originalContent,
-    });
 
-    const author = await getUserByUid(document.authorId);
-    if (author) {
-        const template = await getWhatsappTemplate('document_approved');
-        const waMessage = template.message
-            .replace('{namaPengguna}', author.name)
-            .replace('{judulDokumen}', document.title)
-            .replace('{nomorDokumen}', documentNumber);
+    // OCR for original content if first time
+    let originalContent = documentData.originalContent;
+    if (!originalContent) {
+        const originalDataUri = `data:application/pdf;base64,${Buffer.from(pdfBytes).toString('base64')}`;
+        const ocrResult = await readDocumentText({ fileDataUri: originalDataUri });
+        originalContent = ocrResult.text.replace(/\s+/g, ' ').trim();
+    }
 
-        if (template.isActive && author.waNumber) {
-            await sendWhatsAppMessage(author.waNumber, waMessage);
+    // 6. Update Firestore
+    const updatePayload: any = {
+        signers: updatedSigners,
+        fileUrl: newFileUrl,
+        filePath: newFilePath,
+        fileName: newFileName,
+        originalContent,
+        originalFileUrl: sourceUrl,
+    };
+
+    if (isFinal) {
+        updatePayload.status = 'Disetujui';
+        updatePayload.approvedAt = Timestamp.fromDate(now);
+        updatePayload.approvedById = approverId;
+        const approverUser = await getUserByUid(approverId);
+        updatePayload.approvedByName = approverUser?.name || "Admin";
+    }
+
+    await updateDoc(docRef, updatePayload);
+
+    // Notifications if final
+    if (isFinal) {
+        const author = await getUserByUid(documentData.authorId);
+        if (author) {
+            const template = await getWhatsappTemplate('document_approved');
+            const waMessage = template.message
+                .replace('{namaPengguna}', author.name)
+                .replace('{judulDokumen}', documentData.title)
+                .replace('{nomorDokumen}', documentData.documentNumber);
+
+            if (template.isActive && author.waNumber) {
+                await sendWhatsAppMessage(author.waNumber, waMessage);
+            }
+            await sendNotification(
+                { title: 'Dokumen Disahkan', body: `Dokumen "${documentData.title}" telah selesai disahkan.`, link: `/panel/documents` },
+                { type: 'users', userIds: [documentData.authorId] }
+            );
         }
-        if (author.email) {
-            await sendEmail({
-                to: author.email,
-                subject: `Dokumen Disetujui: ${document.title}`,
-                text: waMessage,
-            })
-        }
-        await sendNotification(
-        {
-            title: 'Dokumen Disetujui',
-            body: `Dokumen Anda "${document.title}" telah disetujui dan disahkan.`,
-            link: `/panel/documents`
-        },
-        { type: 'users', userIds: [document.authorId] }
-        );
     }
 
     revalidatePath('/panel/documents');
   } catch (error) {
     console.error("[approveDocument Error]", error);
-    throw new Error(`Gagal menyetujui dokumen: ${(error as Error).message}`);
+    throw new Error(`Gagal mengesahkan dokumen: ${(error as Error).message}`);
   }
 }
 
@@ -439,11 +472,9 @@ export async function generateDocumentNumber(typeCode: string): Promise<string> 
       };
       const romanMonth = romanMonthMap[month];
 
-      // Define year boundaries for annual reset
       const startOfYear = new Date(year, 0, 1);
       const endOfYear = new Date(year, 11, 31, 23, 59, 59, 999);
 
-      // Query documents within the current year to get global annual sequence
       const q = query(
         documentsCollection, 
         where('createdAt', '>=', Timestamp.fromDate(startOfYear)), 
@@ -453,7 +484,6 @@ export async function generateDocumentNumber(typeCode: string): Promise<string> 
       const countSnapshot = await getCountFromServer(q);
       const nextNumber = (countSnapshot.data().count + 1).toString().padStart(3, '0');
       
-      // Format: [No Urut]/[Kode Jenis]/GL/DPP/[Bulan Romawi]/[Tahun]
       return `${nextNumber}/${typeCode}/GL/DPP/${romanMonth}/${year}`;
   } catch (error) {
       console.error("[generateDocumentNumber Error]", error);

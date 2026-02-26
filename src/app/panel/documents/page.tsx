@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -31,6 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import DocumentPreviewDialog from '@/components/panel/documents/DocumentPreviewDialog';
+import { SignatoryRole } from '@/lib/definitions';
 
 
 const RejectDialog = ({ document, isOpen, onClose, onConfirm }: { document: ImportantDocument | null, isOpen: boolean, onClose: () => void, onConfirm: (reason: string) => void }) => {
@@ -107,15 +106,15 @@ export default function DocumentsPage() {
     }
   }
 
-  const handleApproveConfirm = async () => {
+  const handleApproveConfirm = async (role: SignatoryRole, isFinal: boolean) => {
     if (!previewDialogItem?.id || !user?.uid) return;
     const docToApprove = previewDialogItem;
     setPreviewDialogItem(null); 
     handleAction(
-      () => approveDocument(docToApprove.id!, user.uid),
+      () => approveDocument(docToApprove.id!, user.uid, role, isFinal),
       docToApprove.id!,
-      'Dokumen disetujui!',
-      'Gagal Menyetujui'
+      isFinal ? 'Dokumen disahkan!' : 'Tanda tangan dibubuhkan.',
+      'Gagal Mengesahkan'
     );
   };
   
@@ -177,10 +176,15 @@ export default function DocumentsPage() {
               <CardTitle>Arsip Dokumen</CardTitle>
               <CardDescription>Total {documents.length} dokumen ditemukan.</CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={() => router.push('/panel/documents/categories')}>
-                <Tags className="mr-2 h-4 w-4" />
-                Kelola Atribut
-            </Button>
+            <div className="flex gap-2">
+                <Button variant="outline" size="sm" asChild>
+                    <Link href="/nomor-surat.md" target="_blank">Aturan Penomoran</Link>
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => router.push('/panel/documents/categories')}>
+                    <Tags className="mr-2 h-4 w-4" />
+                    Kelola Atribut
+                </Button>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             <Table>
@@ -208,7 +212,14 @@ export default function DocumentsPage() {
                         </span>
                          <p className="text-xs text-muted-foreground font-mono">{item.documentNumber || 'Belum ada nomor'}</p>
                       </TableCell>
-                      <TableCell>{getStatusBadge(item.status)}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                            {getStatusBadge(item.status)}
+                            {item.signers && item.signers.length > 0 && (
+                                <span className="text-[10px] text-muted-foreground">{item.signers.length} tanda tangan dibubuhkan</span>
+                            )}
+                        </div>
+                      </TableCell>
                       <TableCell>{item.authorName}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
