@@ -8,11 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Paperclip, Download, Link as LinkIcon, RefreshCw } from 'lucide-react';
+import { Loader2, Paperclip, Download, Link as LinkIcon, RefreshCw, Info } from 'lucide-react';
 import { createDocument, DocumentCategory, DocumentType, ImportantDocument, getDocumentCategories, getDocumentTypes } from '@/app/actions/documents';
 import { useAuth } from '@/hooks/use-auth';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 type FormData = Omit<ImportantDocument, 'id' | 'createdAt' | 'authorId' | 'authorName' | 'status' | 'fileUrl' | 'fileName' | 'approvedAt' | 'approvedById' | 'approvedByName' | 'approverId' | 'rejectionReason' | 'documentNumber' | 'filePath'> & { file: FileList };
 
@@ -124,16 +125,19 @@ export default function NewDocumentPage() {
                 </div>
             </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
             <div className="space-y-2">
                 <Label htmlFor="title">Perihal Dokumen</Label>
                 <Input id="title" {...register('title', { required: "Perihal wajib diisi" })} placeholder="Contoh: Permohonan Audiensi dengan Kementerian" />
                  {errors.title && <p className="text-sm text-destructive">{errors.title?.message}</p>}
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                    <Label htmlFor="type">Jenis Dokumen</Label>
+                    <div className="flex items-center gap-2">
+                        <Label htmlFor="type">Jenis Dokumen (untuk Penomoran)</Label>
+                        <Info className="h-3 w-3 text-muted-foreground" title="Menentukan kode nomor surat (SK, SE, ST, dll)" />
+                    </div>
                     <Controller
                     name="type"
                     control={control}
@@ -141,25 +145,22 @@ export default function NewDocumentPage() {
                     render={({ field }) => (
                         <Select onValueChange={field.onChange} value={field.value}>
                             <SelectTrigger>
-                                <SelectValue placeholder={fetchingOptions ? "Memuat..." : "Pilih jenis dokumen"} />
+                                <SelectValue placeholder={fetchingOptions ? "Memuat..." : "Pilih format hukum surat"} />
                             </SelectTrigger>
                             <SelectContent>
-                            {docTypes.map(t => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}
+                            {docTypes.map(t => <SelectItem key={t.id} value={t.name}>{t.name} ({t.code})</SelectItem>)}
                             </SelectContent>
                         </Select>
                     )}
                     />
+                    <p className="text-[10px] text-muted-foreground">Pilihan ini menentukan kode yang akan muncul di nomor surat.</p>
                     {errors.type && <p className="text-sm text-destructive">{errors.type?.message}</p>}
                 </div>
                  <div className="space-y-2">
-                  <Label htmlFor="attachments">Jumlah Lampiran</Label>
-                  <Input id="attachments" {...register('attachments')} placeholder="Contoh: 1 Berkas" />
-              </div>
-            </div>
-
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <div className="space-y-2">
-                    <Label htmlFor="category">Kategori Dokumen</Label>
+                    <div className="flex items-center gap-2">
+                        <Label htmlFor="category">Bidang / Klasifikasi Urusan</Label>
+                        <Info className="h-3 w-3 text-muted-foreground" title="Digunakan untuk pengelompokan arsip" />
+                    </div>
                     <Controller
                     name="category"
                     control={control}
@@ -167,7 +168,7 @@ export default function NewDocumentPage() {
                     render={({ field }) => (
                         <Select onValueChange={field.onChange} value={field.value}>
                             <SelectTrigger>
-                                <SelectValue placeholder={fetchingOptions ? "Memuat..." : "Pilih kategori surat"} />
+                                <SelectValue placeholder={fetchingOptions ? "Memuat..." : "Pilih bidang organisasi"} />
                             </SelectTrigger>
                             <SelectContent>
                             {categories.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
@@ -175,25 +176,34 @@ export default function NewDocumentPage() {
                         </Select>
                     )}
                     />
+                    <p className="text-[10px] text-muted-foreground">Gunakan ini untuk mengelompokkan dokumen berdasarkan departemen.</p>
                     {errors.category && <p className="text-sm text-destructive">{errors.category?.message}</p>}
-                </div>
-                 <div className="space-y-2">
-                  <Label htmlFor="description">Tujuan Dokumen</Label>
-                  <Input id="description" {...register('description', { required: "Tujuan wajib diisi" })} placeholder="Contoh: Yth. Menteri Pertanian Republik Indonesia" />
-                  {errors.description && <p className="text-sm text-destructive">{errors.description?.message}</p>}
                 </div>
             </div>
 
-             <div className="space-y-2">
-                <Label htmlFor="canvaUrl">Tautan Edit Canva (Opsional)</Label>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="space-y-2">
+                  <Label htmlFor="description">Tujuan Dokumen (Penerima)</Label>
+                  <Input id="description" {...register('description', { required: "Tujuan wajib diisi" })} placeholder="Contoh: Yth. Menteri Pertanian Republik Indonesia" />
+                  {errors.description && <p className="text-sm text-destructive">{errors.description?.message}</p>}
+                </div>
+                 <div className="space-y-2">
+                  <Label htmlFor="attachments">Jumlah Lampiran</Label>
+                  <Input id="attachments" {...register('attachments')} placeholder="Contoh: 1 Berkas" />
+              </div>
+            </div>
+
+             <div className="space-y-2 pt-4 border-t">
+                <Label htmlFor="canvaUrl">Tautan Kolaborasi Canva (Opsional)</Label>
                 <Input id="canvaUrl" {...register('canvaUrl')} placeholder="https://canva.com/design/..." />
-                <p className="text-xs text-muted-foreground">Isi dengan tautan yang bisa diakses oleh admin untuk menambahkan nomor surat.</p>
+                <p className="text-xs text-muted-foreground italic">Tempelkan tautan desain Canva Anda jika ingin admin membantu melakukan penyesuaian tata letak.</p>
             </div>
             
-            <div className="space-y-2">
-                <Label htmlFor="file">File Dokumen (.pdf)</Label>
+            <div className="space-y-2 pt-4 border-t">
+                <Label htmlFor="file">File Dokumen Final (.pdf)</Label>
                 <Input id="file" type="file" {...register('file', { required: "File wajib diunggah" })} accept=".pdf" />
                  {uploadedFileName && <p className="text-sm text-muted-foreground flex items-center gap-2"><Paperclip className="h-4 w-4"/> {uploadedFileName}</p>}
+                 <p className="text-xs text-muted-foreground">Pastikan dokumen sudah dalam format PDF sebelum diunggah.</p>
                  {errors.file && <p className="text-sm text-destructive">{errors.file.message}</p>}
             </div>
         </CardContent>

@@ -8,11 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Paperclip, Download, Link as LinkIcon } from 'lucide-react';
+import { Loader2, Paperclip, Download, Link as LinkIcon, Info } from 'lucide-react';
 import { getDocument, updateDocument, DocumentCategory, ImportantDocument, getDocumentTypes, DocumentType, getDocumentCategories } from '@/app/actions/documents';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
+import { cn } from '@/lib/utils';
 
 type FormData = Omit<ImportantDocument, 'id' | 'createdAt' | 'authorId' | 'authorName' | 'status' | 'fileUrl' | 'fileName' | 'approvedAt' | 'approvedById' | 'approvedByName' | 'approverId' | 'rejectionReason' | 'documentNumber' | 'filePath'> & { file?: FileList };
 
@@ -120,35 +121,38 @@ export default function EditDocumentPage() {
             <div className="flex justify-between items-start">
                 <div>
                     <CardTitle>Detail Dokumen</CardTitle>
-                    <CardDescription>Gunakan template, isi, simpan sebagai PDF, lalu unggah.</CardDescription>
+                    <CardDescription>Perbarui informasi untuk dokumen yang sedang diproses.</CardDescription>
                 </div>
                  <Button variant="secondary" asChild>
                     <a href={TEMPLATE_URL} target="_blank" rel="noopener noreferrer">
                         <LinkIcon className="mr-2 h-4 w-4" />
-                        Buka Template di Canva
+                        Buka Template
                     </a>
                 </Button>
             </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
              <div className="space-y-2">
                 <Label htmlFor="title">Perihal Dokumen</Label>
                 <Input id="title" {...register('title', { required: "Perihal wajib diisi" })} placeholder="Contoh: Permohonan Audiensi dengan Kementerian" />
                  {errors.title && <p className="text-sm text-destructive">{errors.title?.message}</p>}
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                    <Label htmlFor="type">Jenis Dokumen</Label>
+                    <div className="flex items-center gap-2">
+                        <Label htmlFor="type">Jenis Dokumen (Format Nomor)</Label>
+                        <Info className="h-3 w-3 text-muted-foreground" title="Menentukan kode hukum nomor surat" />
+                    </div>
                     <Controller
                     name="type"
                     control={control}
                     rules={{ required: "Jenis wajib dipilih" }}
                     render={({ field }) => (
                         <Select onValueChange={field.onChange} value={field.value}>
-                            <SelectTrigger><SelectValue placeholder="Pilih jenis dokumen" /></SelectTrigger>
+                            <SelectTrigger><SelectValue placeholder="Pilih format hukum surat" /></SelectTrigger>
                             <SelectContent>
-                            {docTypes.map(t => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}
+                            {docTypes.map(t => <SelectItem key={t.id} value={t.name}>{t.name} ({t.code})</SelectItem>)}
                             </SelectContent>
                         </Select>
                     )}
@@ -156,21 +160,17 @@ export default function EditDocumentPage() {
                     {errors.type && <p className="text-sm text-destructive">{errors.type?.message}</p>}
                 </div>
                  <div className="space-y-2">
-                  <Label htmlFor="attachments">Jumlah Lampiran</Label>
-                  <Input id="attachments" {...register('attachments')} placeholder="Contoh: 1 Berkas" />
-              </div>
-            </div>
-
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <div className="space-y-2">
-                    <Label htmlFor="category">Kategori Dokumen</Label>
+                    <div className="flex items-center gap-2">
+                        <Label htmlFor="category">Bidang / Klasifikasi Urusan</Label>
+                        <Info className="h-3 w-3 text-muted-foreground" title="Pengelompokan untuk sistem arsip" />
+                    </div>
                     <Controller
                     name="category"
                     control={control}
                     rules={{ required: "Kategori wajib dipilih" }}
                     render={({ field }) => (
                         <Select onValueChange={field.onChange} value={field.value}>
-                            <SelectTrigger><SelectValue placeholder="Pilih kategori surat" /></SelectTrigger>
+                            <SelectTrigger><SelectValue placeholder="Pilih bidang organisasi" /></SelectTrigger>
                             <SelectContent>
                             {categories.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
                             </SelectContent>
@@ -179,20 +179,26 @@ export default function EditDocumentPage() {
                     />
                     {errors.category && <p className="text-sm text-destructive">{errors.category?.message}</p>}
                 </div>
+            </div>
+
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <div className="space-y-2">
-                  <Label htmlFor="description">Tujuan Dokumen</Label>
+                  <Label htmlFor="description">Tujuan Dokumen (Penerima)</Label>
                   <Input id="description" {...register('description', { required: "Tujuan wajib diisi" })} placeholder="Contoh: Yth. Menteri Pertanian Republik Indonesia" />
                   {errors.description && <p className="text-sm text-destructive">{errors.description?.message}</p>}
                 </div>
+                 <div className="space-y-2">
+                  <Label htmlFor="attachments">Jumlah Lampiran</Label>
+                  <Input id="attachments" {...register('attachments')} placeholder="Contoh: 1 Berkas" />
+              </div>
             </div>
             
-            <div className="space-y-2">
-                <Label htmlFor="canvaUrl">Tautan Edit Canva (Opsional)</Label>
+            <div className="space-y-2 pt-4 border-t">
+                <Label htmlFor="canvaUrl">Tautan Kolaborasi Canva (Opsional)</Label>
                 <Input id="canvaUrl" {...register('canvaUrl')} placeholder="https://canva.com/design/..." />
-                <p className="text-xs text-muted-foreground">Isi dengan tautan yang bisa diakses oleh admin untuk menambahkan nomor surat.</p>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 pt-4 border-t">
                 <Label htmlFor="file">Ganti File Dokumen (.pdf)</Label>
                 <Input id="file" type="file" {...register('file')} accept=".pdf" />
                 {uploadedFileName ? (

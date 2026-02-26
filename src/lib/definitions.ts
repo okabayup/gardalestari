@@ -208,11 +208,11 @@ export const initialDocumentTypes = [
 ];
 
 export const initialDocumentCategories = [
-    { name: 'Internal' },
+    { name: 'Internal Organisasi' },
     { name: 'Eksternal & Kemitraan' },
     { name: 'Personalia & Keanggotaan' },
     { name: 'Laporan & Publikasi' },
-    { name: 'Lainnya' },
+    { name: 'Keuangan & Aset' },
 ];
 
 export const initialPositions = [
