@@ -24,13 +24,8 @@ import {
   AssistantOutputSchema,
   type AssistantInput, 
   type AssistantOutput,
-  type DataBankEntry,
-  type Idea,
-  type Program,
-  type Event,
-  type Achievement,
 } from '@/lib/definitions';
-import { Message, Part, Tool, content, genkit } from 'genkit';
+import type { Message, Part } from 'genkit';
 import { generateImage as generateImageFlow } from './image-generate-flow';
 
 
@@ -40,7 +35,7 @@ const searchDataBankTool = ai.defineTool(
     name: 'searchDataBank',
     description: 'Search the Garda Lestari data bank for information on policies, sectoral data, research, etc.',
     inputSchema: z.object({ query: z.string() }),
-    outputSchema: z.array(z.custom<Partial<DataBankEntry>>()),
+    outputSchema: z.array(z.any()),
   },
   async ({ query }) => searchDataBank(query)
 );
@@ -50,7 +45,7 @@ const searchIdeaBankTool = ai.defineTool(
     name: 'searchIdeaBank',
     description: 'Search the Garda Lestari idea bank for existing ideas and proposals from members.',
     inputSchema: z.object({ query: z.string() }),
-    outputSchema: z.array(z.custom<Partial<Idea>>()),
+    outputSchema: z.array(z.any()),
   },
   async ({ query }) => searchIdeaBank(query)
 );
@@ -60,7 +55,7 @@ const searchProgramsTool = ai.defineTool(
     name: 'searchPrograms',
     description: 'Search for ongoing or past programs run by Garda Lestari or its partners.',
     inputSchema: z.object({ query: z.string() }),
-    outputSchema: z.array(z.custom<Partial<Program>>()),
+    outputSchema: z.array(z.any()),
   },
   async ({ query }) => searchPrograms(query)
 );
@@ -70,7 +65,7 @@ const searchEventsTool = ai.defineTool(
     name: 'searchEvents',
     description: 'Search for upcoming or past events, workshops, or webinars.',
     inputSchema: z.object({ query: z.string() }),
-    outputSchema: z.array(z.custom<Partial<Event>>()),
+    outputSchema: z.array(z.any()),
   },
   async ({ query }) => searchEvents(query)
 );
@@ -80,7 +75,7 @@ const searchAchievementsTool = ai.defineTool(
     name: 'searchAchievements',
     description: "Search for achievements and awards won by Garda Lestari's members.",
     inputSchema: z.object({ query: z.string() }),
-    outputSchema: z.array(z.custom<Partial<Achievement>>()),
+    outputSchema: z.array(z.any()),
   },
   async ({ query }) => searchAchievements(query)
 );
@@ -204,7 +199,7 @@ const generateImageTool = ai.defineTool(
 );
 
 
-const availableTools: Record<string, Tool> = {
+const availableTools: Record<string, any> = {
     searchDataBank: searchDataBankTool,
     searchIdeaBank: searchIdeaBankTool,
     searchPrograms: searchProgramsTool,
@@ -287,13 +282,13 @@ const assistantFlow = ai.defineFlow(
         }
 
         const messages: Message[] = [
-            ...history?.map(h => genkit.role(h.role, h.content)) || [],
-            genkit.role('user', userPrompt),
+            ...history?.map(h => ({ role: h.role, content: [{ text: h.content }] } as Message)) || [],
+            { role: 'user', content: userPrompt } as Message,
         ];
 
         try {
             console.log('[assistantFlow] Initial generation call...');
-            let {candidates} = await ai.generate({
+            let { candidates } = await ai.generate({
                 tools,
                 system: systemPrompt,
                 messages,
@@ -304,66 +299,89 @@ const assistantFlow = ai.defineFlow(
                 },
             });
 
-            for (const candidate of candidates) {
-                let choice = candidate;
-                // Loop to handle tool calls
-                while(true) {
-                    const toolCalls = choice.toolCalls();
-                    if (!toolCalls || toolCalls.length === 0) {
-                        break; // No more tool calls, exit loop
-                    }
+            if (!candidates[0]) {
+                throw new Error('AI failed to generate a response.');
+            }
 
-                    console.log(`[assistantFlow] Processing ${toolCalls.length} tool call(s).`);
-                    const toolResponses: Part[] = [];
+            let choice = candidates[0];
+            
+            // Loop to handle tool calls
+            while(true) {
+                const toolCalls = choice.message.content.filter(p => !!p.toolCall);
+                if (!toolCalls || toolCalls.length === 0) {
+                    break; // No more tool calls, exit loop
+                }
 
-                    for (const call of toolCalls) {
-                        console.log(`[assistantFlow] Calling tool: ${call.name} with args:`, call.args);
-                        const tool = availableTools[call.name];
-                        if (!tool) {
-                            const errorMsg = `Tool ${call.name} not found.`;
-                            console.error(`[assistantFlow] ${errorMsg}`);
-                            toolResponses.push(content('tool', { name: call.name, error: errorMsg }));
-                            continue;
-                        }
-                        try {
-                            const result = await tool.fn(call.args);
-                            toolResponses.push(content('tool', result, {name: call.name}));
-                            console.log(`[assistantFlow] Tool ${call.name} returned successfully.`);
-                        } catch (e) {
-                            const toolError = `Tool ${call.name} failed: ${(e as Error).message}`;
-                            console.error(`[assistantFlow] ${toolError}`);
-                            toolResponses.push(content('tool', { name: call.name, error: toolError }));
-                        }
-                    }
+                console.log(`[assistantFlow] Processing ${toolCalls.length} tool call(s).`);
+                const toolResponses: Part[] = [];
+
+                for (const part of toolCalls) {
+                    const call = part.toolCall!;
+                    console.log(`[assistantFlow] Calling tool: ${call.name} with args:`, call.args);
+                    const tool = availableTools[call.name];
                     
-                    messages.push(choice.message);
-                    messages.push({ role: 'tool', content: toolResponses});
-                    
-                    console.log('[assistantFlow] Re-generating with tool responses...');
-                    const nextResponse = await ai.generate({
-                        tools,
-                        system: systemPrompt, // Re-pass system prompt
-                        messages,
-                        config: generationConfig,
-                        output: {
-                            format: 'json',
-                            schema: AssistantOutputSchema
-                        },
-                    });
-                    if (!nextResponse.candidates[0]) {
-                        throw new Error('AI failed to generate a subsequent response after tool call.');
+                    if (!tool) {
+                        const errorMsg = `Tool ${call.name} not found.`;
+                        console.error(`[assistantFlow] ${errorMsg}`);
+                        toolResponses.push({ 
+                            toolResponse: { 
+                                name: call.name, 
+                                ref: call.ref, 
+                                output: { error: errorMsg } 
+                            } 
+                        });
+                        continue;
                     }
-                    choice = nextResponse.candidates[0];
+                    try {
+                        const result = await tool.fn(call.args);
+                        toolResponses.push({ 
+                            toolResponse: { 
+                                name: call.name, 
+                                ref: call.ref, 
+                                output: result 
+                            } 
+                        });
+                        console.log(`[assistantFlow] Tool ${call.name} returned successfully.`);
+                    } catch (e) {
+                        const toolError = `Tool ${call.name} failed: ${(e as Error).message}`;
+                        console.error(`[assistantFlow] ${toolError}`);
+                        toolResponses.push({ 
+                            toolResponse: { 
+                                name: call.name, 
+                                ref: call.ref, 
+                                output: { error: toolError } 
+                            } 
+                        });
+                    }
                 }
                 
-                const finalOutput = choice.output<AssistantOutput>();
-                if (finalOutput) {
-                    console.log('[assistantFlow] Final output generated:', JSON.stringify(finalOutput, null, 2));
-                    return {
-                        responseText: finalOutput.responseText || 'Maaf, saya tidak dapat memproses permintaan Anda saat ini.',
-                        citations: finalOutput.citations || [],
-                    };
+                messages.push(choice.message);
+                messages.push({ role: 'tool', content: toolResponses });
+                
+                console.log('[assistantFlow] Re-generating with tool responses...');
+                const nextResponse = await ai.generate({
+                    tools,
+                    system: systemPrompt,
+                    messages,
+                    config: generationConfig,
+                    output: {
+                        format: 'json',
+                        schema: AssistantOutputSchema
+                    },
+                });
+                if (!nextResponse.candidates[0]) {
+                    throw new Error('AI failed to generate a subsequent response after tool call.');
                 }
+                choice = nextResponse.candidates[0];
+            }
+            
+            const finalOutput = choice.output as AssistantOutput;
+            if (finalOutput) {
+                console.log('[assistantFlow] Final output generated:', JSON.stringify(finalOutput, null, 2));
+                return {
+                    responseText: finalOutput.responseText || 'Maaf, saya tidak dapat memproses permintaan Anda saat ini.',
+                    citations: finalOutput.citations || [],
+                };
             }
         } catch (e) {
              console.error('[assistantFlow] Critical error during generation pipeline:', e);
