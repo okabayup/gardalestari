@@ -288,7 +288,7 @@ const assistantFlow = ai.defineFlow(
 
         try {
             console.log('[assistantFlow] Initial generation call...');
-            let { candidates } = await ai.generate({
+            let response = await ai.generate({
                 tools,
                 system: systemPrompt,
                 messages,
@@ -299,15 +299,9 @@ const assistantFlow = ai.defineFlow(
                 },
             });
 
-            if (!candidates[0]) {
-                throw new Error('AI failed to generate a response.');
-            }
-
-            let choice = candidates[0];
-            
             // Loop to handle tool calls
             while(true) {
-                const toolCalls = choice.message.content.filter(p => !!p.toolCall);
+                const toolCalls = response.message.content.filter(p => !!p.toolCall);
                 if (!toolCalls || toolCalls.length === 0) {
                     break; // No more tool calls, exit loop
                 }
@@ -355,11 +349,11 @@ const assistantFlow = ai.defineFlow(
                     }
                 }
                 
-                messages.push(choice.message);
+                messages.push(response.message);
                 messages.push({ role: 'tool', content: toolResponses });
                 
                 console.log('[assistantFlow] Re-generating with tool responses...');
-                const nextResponse = await ai.generate({
+                response = await ai.generate({
                     tools,
                     system: systemPrompt,
                     messages,
@@ -369,13 +363,9 @@ const assistantFlow = ai.defineFlow(
                         schema: AssistantOutputSchema
                     },
                 });
-                if (!nextResponse.candidates[0]) {
-                    throw new Error('AI failed to generate a subsequent response after tool call.');
-                }
-                choice = nextResponse.candidates[0];
             }
             
-            const finalOutput = choice.output as AssistantOutput;
+            const finalOutput = response.output as AssistantOutput;
             if (finalOutput) {
                 console.log('[assistantFlow] Final output generated:', JSON.stringify(finalOutput, null, 2));
                 return {
