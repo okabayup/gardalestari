@@ -20,7 +20,7 @@ async function getGoogleAuth() {
  * @param dimensions An array of dimension names.
  * @param metrics An array of metric names.
  * @param dateRanges An array of date ranges.
- * @returns A promise that resolves to the analytics report.
+ * @returns A promise that resolves to an analytics report.
  */
 export async function getAnalyticsReport(
     dimensions: { name: string }[],
@@ -51,7 +51,14 @@ export async function getAnalyticsReport(
                 name: header.name || '',
                 type: header.type?.toString() || 'TYPE_UNSPECIFIED',
             })),
-            rows: response.rows || [],
+            rows: (response.rows || []).map(row => ({
+                dimensionValues: (row.dimensionValues || []).map(dim => ({
+                    value: dim.value || '',
+                })),
+                metricValues: (row.metricValues || []).map(met => ({
+                    value: met.value || '',
+                })),
+            })),
         };
 
     } catch (error: any) {
