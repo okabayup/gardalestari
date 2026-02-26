@@ -122,7 +122,7 @@ const createDocumentTool = ai.defineTool(
                 x: 50,
                 y: height - 4 * fontSize,
                 font,
-                size: fontSize, // Corrected property from fontSize to size
+                size: fontSize,
                 lineHeight: 15,
                 maxWidth: width - 100,
             });
@@ -300,24 +300,28 @@ const assistantFlow = ai.defineFlow(
                 },
             });
 
-            // Loop to handle tool calls
-            while(true) {
-                // Fix: Check if response.message and response.message.content exist before filtering
+            // Loop to handle tool calls with MAX_STEPS limit
+            let stepCount = 0;
+            const MAX_STEPS = 5;
+            while(stepCount < MAX_STEPS) {
+                stepCount++;
+                
+                // Check if response.message and response.message.content exist before filtering
                 if (!response.message || !response.message.content) {
                     break;
                 }
 
-                const toolCalls = response.message.content.filter(p => !!p.toolRequest); // Corrected property from toolCall to toolRequest
+                const toolCalls = response.message.content.filter(p => !!p.toolRequest); 
                 if (!toolCalls || toolCalls.length === 0) {
                     break; // No more tool calls, exit loop
                 }
 
-                console.log(`[assistantFlow] Processing ${toolCalls.length} tool call(s).`);
+                console.log(`[assistantFlow] Step ${stepCount}: Processing ${toolCalls.length} tool call(s).`);
                 const toolResponses: Part[] = [];
 
                 for (const part of toolCalls) {
-                    const call = part.toolRequest!; // Corrected property from toolCall to toolRequest
-                    console.log(`[assistantFlow] Calling tool: ${call.name} with args:`, call.args);
+                    const call = part.toolRequest!; 
+                    console.log(`[assistantFlow] Calling tool: ${call.name} with input:`, call.input);
                     const tool = availableTools[call.name];
                     
                     if (!tool) {
@@ -333,7 +337,8 @@ const assistantFlow = ai.defineFlow(
                         continue;
                     }
                     try {
-                        const result = await tool.fn(call.args);
+                        // Call the tool directly as an action (Genkit 1.x)
+                        const result = await tool(call.input);
                         toolResponses.push({ 
                             toolResponse: { 
                                 name: call.name, 
@@ -369,6 +374,10 @@ const assistantFlow = ai.defineFlow(
                         schema: AssistantOutputSchema
                     },
                 });
+            }
+
+            if (stepCount >= MAX_STEPS) {
+                console.warn('[assistantFlow] Max tool execution steps reached!');
             }
             
             const finalOutput = response.output as AssistantOutput;
