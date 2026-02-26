@@ -1,4 +1,3 @@
-
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -247,23 +246,32 @@ export async function updateBeritaPost(id: string, post: Partial<BeritaPost>) {
     const postDoc = doc(db, 'beritaPosts', id);
     const oldPostSnap = await getDoc(postDoc);
     const oldData = oldPostSnap.data();
-    const oldStatus = oldData?.status as string | undefined;
+    if (!oldData) throw new Error("Konten tidak ditemukan.");
+
+    const oldStatus = oldData.status as string | undefined;
+    const oldType = oldData.type as 'artikel' | 'video' | undefined;
+    const oldSlug = oldData.slug as string | undefined;
 
     await updateDoc(postDoc, post);
     
-    const pathSegment = post.type === 'video' ? 'video' : 'berita';
+    const currentType = post.type || oldType;
+    const currentSlug = post.slug || oldSlug;
+    const currentStatus = post.status || oldStatus;
+
+    const pathSegment = currentType === 'video' ? 'video' : 'berita';
+    
     revalidatePath('/panel/berita');
-    revalidatePath(`/panel/berita/edit/${post.slug}`);
-    revalidatePath(`/${pathSegment}`);
-     if (post.slug) {
-        revalidatePath(`/${pathSegment}/${post.slug}`);
+    if (currentSlug) {
+        revalidatePath(`/panel/berita/edit/${currentSlug}`);
+        revalidatePath(`/${pathSegment}/${currentSlug}`);
     }
+    revalidatePath(`/${pathSegment}`);
     revalidatePath('/');
 
 
-    // Notify Google Indexing API only if status changes to published or if a published post is updated
-    if (post.slug && (post.status === 'published' || (oldStatus === 'published' && (post.status === 'published' || post.status === undefined)))) {
-      const publicUrl = `${BASE_URL}/${pathSegment}/${post.slug}`;
+    // Notify Google Indexing API only if status is published
+    if (currentSlug && currentStatus === 'published') {
+      const publicUrl = `${BASE_URL}/${pathSegment}/${currentSlug}`;
       notifyGoogleOfUpdate(publicUrl, 'URL_UPDATED');
     }
 
