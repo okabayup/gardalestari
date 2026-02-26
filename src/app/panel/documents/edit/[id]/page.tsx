@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,8 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, Paperclip, Download, Link as LinkIcon } from 'lucide-react';
-import { getDocument, updateDocument, DocumentCategory, ImportantDocument, getDocumentTypes, DocumentType } from '@/app/actions/documents';
-import { getDocumentCategories } from '@/app/actions/documents';
+import { getDocument, updateDocument, DocumentCategory, ImportantDocument, getDocumentTypes, DocumentType, getDocumentCategories } from '@/app/actions/documents';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
@@ -63,7 +60,9 @@ export default function EditDocumentPage() {
                     router.push('/panel/documents');
                     return;
                 }
-                reset(documentData);
+                reset({
+                    ...documentData,
+                });
                 if (documentData.fileName && documentData.fileUrl) {
                     setCurrentFile({ name: documentData.fileName, url: documentData.fileUrl });
                 }
@@ -124,7 +123,7 @@ export default function EditDocumentPage() {
                     <CardDescription>Gunakan template, isi, simpan sebagai PDF, lalu unggah.</CardDescription>
                 </div>
                  <Button variant="secondary" asChild>
-                    <a href={TEMPLATE_URL} target="_blank">
+                    <a href={TEMPLATE_URL} target="_blank" rel="noopener noreferrer">
                         <LinkIcon className="mr-2 h-4 w-4" />
                         Buka Template di Canva
                     </a>
@@ -134,7 +133,7 @@ export default function EditDocumentPage() {
         <CardContent className="space-y-4">
              <div className="space-y-2">
                 <Label htmlFor="title">Perihal Dokumen</Label>
-                <Input id="title" {...register('title')} placeholder="Contoh: Permohonan Audiensi dengan Kementerian" />
+                <Input id="title" {...register('title', { required: "Perihal wajib diisi" })} placeholder="Contoh: Permohonan Audiensi dengan Kementerian" />
                  {errors.title && <p className="text-sm text-destructive">{errors.title?.message}</p>}
             </div>
             
@@ -182,7 +181,7 @@ export default function EditDocumentPage() {
                 </div>
                  <div className="space-y-2">
                   <Label htmlFor="description">Tujuan Dokumen</Label>
-                  <Input id="description" {...register('description')} placeholder="Contoh: Yth. Menteri Pertanian Republik Indonesia" />
+                  <Input id="description" {...register('description', { required: "Tujuan wajib diisi" })} placeholder="Contoh: Yth. Menteri Pertanian Republik Indonesia" />
                   {errors.description && <p className="text-sm text-destructive">{errors.description?.message}</p>}
                 </div>
             </div>

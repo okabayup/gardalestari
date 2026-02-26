@@ -45,6 +45,8 @@ async function seedCollection(collRef: any, initialData: any[], collectionName: 
             });
             await Promise.all(batchPromises);
             console.log(`Successfully seeded '${collectionName}'.`);
+        } else {
+            console.log(`Collection '${collectionName}' is not empty. Skipping seed.`);
         }
     } catch (error) {
         console.error(`Error seeding '${collectionName}':`, error);

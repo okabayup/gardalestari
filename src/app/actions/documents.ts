@@ -84,7 +84,7 @@ export async function createDocument(
     const docTypeQuery = query(docTypesCollection, where('name', '==', data.type));
     const docTypeSnapshot = await getDocs(docTypeQuery);
     if (docTypeSnapshot.empty) {
-      throw new Error("Jenis dokumen tidak valid.");
+      throw new Error(`Jenis dokumen '${data.type}' tidak ditemukan di sistem. Mohon hubungi admin.`);
     }
     const docTypeCode = docTypeSnapshot.docs[0].data().code;
     
@@ -436,7 +436,9 @@ export async function getDocumentCategories(): Promise<DocumentCategory[]> {
     try {
         const q = query(categoriesCollection, orderBy('name', 'asc'));
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DocumentCategory));
+        const cats = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DocumentCategory));
+        console.log(`[getDocumentCategories] Fetched ${cats.length} categories.`);
+        return cats;
     } catch (error) {
         console.error("[getDocumentCategories Error]", error);
         throw new Error("Gagal memuat kategori dokumen.");
@@ -447,7 +449,9 @@ export async function getDocumentTypes(): Promise<DocumentType[]> {
     try {
         const q = query(docTypesCollection, orderBy('name', 'asc'));
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DocumentType));
+        const types = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DocumentType));
+        console.log(`[getDocumentTypes] Fetched ${types.length} types.`);
+        return types;
     } catch (error) {
         console.error("[getDocumentTypes Error]", error);
         throw new Error("Gagal memuat jenis dokumen.");
