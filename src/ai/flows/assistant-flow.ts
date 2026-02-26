@@ -1,5 +1,3 @@
-
-
 'use server';
 /**
  * @fileOverview The main AI assistant flow for Garda Lestari.
@@ -12,11 +10,11 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { searchDataBank, DataBankEntry } from '@/app/actions/bank-data';
-import { searchIdeaBank, Idea } from '@/app/actions/ideas';
-import { searchPrograms, Program } from '@/app/actions/programs';
-import { searchEvents, Event } from '@/app/actions/events';
-import { searchAchievements, Achievement } from '@/app/actions/achievements';
+import { searchDataBank } from '@/app/actions/bank-data';
+import { searchIdeaBank } from '@/app/actions/ideas';
+import { searchPrograms } from '@/app/actions/programs';
+import { searchEvents } from '@/app/actions/events';
+import { searchAchievements } from '@/app/actions/achievements';
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Document as DocxDocument, Packer, Paragraph, TextRun } from 'docx';
@@ -26,8 +24,13 @@ import {
   AssistantOutputSchema,
   type AssistantInput, 
   type AssistantOutput,
+  type DataBankEntry,
+  type Idea,
+  type Program,
+  type Event,
+  type Achievement,
 } from '@/lib/definitions';
-import { Message, Part, Tool, defineTool, GenerationCommon, generate, content, genkit } from 'genkit';
+import { Message, Part, Tool, content, genkit } from 'genkit';
 import { generateImage as generateImageFlow } from './image-generate-flow';
 
 
@@ -274,7 +277,7 @@ const assistantFlow = ai.defineFlow(
         
         const tools = Object.values(availableTools);
 
-        const generationConfig: GenerationCommon = {
+        const generationConfig = {
             temperature: 0.2,
         };
         
@@ -290,7 +293,7 @@ const assistantFlow = ai.defineFlow(
 
         try {
             console.log('[assistantFlow] Initial generation call...');
-            let {candidates} = await generate({
+            let {candidates} = await ai.generate({
                 tools,
                 system: systemPrompt,
                 messages,
@@ -337,7 +340,7 @@ const assistantFlow = ai.defineFlow(
                     messages.push({ role: 'tool', content: toolResponses});
                     
                     console.log('[assistantFlow] Re-generating with tool responses...');
-                    const nextResponse = await generate({
+                    const nextResponse = await ai.generate({
                         tools,
                         system: systemPrompt, // Re-pass system prompt
                         messages,

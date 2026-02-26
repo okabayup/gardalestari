@@ -51,6 +51,7 @@
     "embla-carousel-autoplay": "^8.0.0",
     "embla-carousel-react": "^8.6.0",
     "firebase": "^11.2.0",
+    "firebase-admin": "^12.1.0",
     "framer-motion": "^11.2.12",
     "genkit": "1.29.0",
     "googleapis": "^142.0.0",

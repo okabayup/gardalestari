@@ -16,6 +16,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
+export type { DataBankEntry } from '@/lib/definitions';
 import type { DataBankEntry } from '@/lib/definitions';
 
 

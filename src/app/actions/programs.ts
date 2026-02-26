@@ -1,5 +1,3 @@
-
-
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -8,6 +6,7 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { revalidatePath } from 'next/cache';
 import { getWhatsappTemplate } from '@/app/actions/settings';
 import { sendBulkWhatsAppMessage } from '@/services/whatsapp';
+export type { Program, ProgramFormData, ProgramTag } from '@/lib/definitions';
 import type { Program, ProgramFormData, ProgramTag } from '@/lib/definitions';
 import { generateImage } from '@/ai/flows/image-generate-flow';
 import { sendNotification } from '@/app/actions/notifications';

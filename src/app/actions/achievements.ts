@@ -1,10 +1,10 @@
-
 'use server';
 
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, where, limit } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
+export type { Achievement } from '@/lib/definitions';
 import type { Achievement } from '@/lib/definitions';
 import { getAuth } from 'firebase-admin/auth';
 import admin from 'firebase-admin';

@@ -1,5 +1,3 @@
-
-
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -18,10 +16,10 @@ import {
   orderBy,
   runTransaction,
   increment,
-  startAfter,
   limit,
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
+export type { Idea, IdeaWithAuthor, IdeaAuthor, IdeaCategory, VoteType, IdeaStatus, IdeaType, Challenge } from '@/lib/definitions';
 import type { Idea, IdeaWithAuthor, IdeaAuthor, IdeaCategory, VoteType, IdeaStatus, IdeaType, Challenge } from '@/lib/definitions';
 import { checkAndAwardBadges } from '@/app/actions/badges';
 

@@ -1,11 +1,10 @@
-
-
 'use server';
 
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, limit, arrayUnion } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
+export type { Event } from '@/lib/definitions';
 import type { Event } from '@/lib/definitions';
 import { generateImage } from '@/ai/flows/image-generate-flow';
 import { getWhatsappTemplate } from './settings';
@@ -192,7 +191,7 @@ export async function updateEvent(id: string, formData: FormData) {
         const currentEvent = await getEvent(id);
         if (currentEvent?.attachmentUrl) {
             try {
-                const oldAttachmentRef = ref(storage, currentEvent.attachmentUrl);
+                const oldAttachmentRef = ref(storage, currentProgram.attachmentUrl);
                 await deleteObject(oldAttachmentRef);
             } catch (storageError: any) {
                 if (storageError.code !== 'storage/object-not-found') {
