@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Paperclip, Download, Link as LinkIcon } from 'lucide-react';
+import { Loader2, Paperclip, Download, Link as LinkIcon, RefreshCw } from 'lucide-react';
 import { createDocument, DocumentCategory, DocumentType, ImportantDocument, getDocumentCategories, getDocumentTypes } from '@/app/actions/documents';
 import { useAuth } from '@/hooks/use-auth';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -39,24 +39,26 @@ export default function NewDocumentPage() {
   const uploadedFile = watch("file");
   const uploadedFileName = uploadedFile?.[0]?.name;
 
-  useEffect(() => {
-    async function fetchOptions() {
-        setFetchingOptions(true);
-        try {
-            const [cats, types] = await Promise.all([
-                getDocumentCategories(),
-                getDocumentTypes()
-            ]);
-            setCategories(cats);
-            setDocTypes(types);
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Gagal memuat pilihan', description: 'Data jenis dokumen belum siap.' });
-        } finally {
-            setFetchingOptions(false);
-        }
+  const loadOptions = async () => {
+    setFetchingOptions(true);
+    try {
+        const [cats, types] = await Promise.all([
+            getDocumentCategories(),
+            getDocumentTypes()
+        ]);
+        setCategories(cats);
+        setDocTypes(types);
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Gagal memuat pilihan', description: 'Silakan segarkan halaman.' });
+    } finally {
+        setFetchingOptions(false);
     }
-    fetchOptions();
-  }, [toast]);
+  };
+
+  useEffect(() => {
+    loadOptions();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onSubmit = async (data: FormData) => {
     if (!user) {
@@ -108,12 +110,18 @@ export default function NewDocumentPage() {
                     <CardTitle>Detail Dokumen</CardTitle>
                     <CardDescription>Gunakan template, isi, simpan sebagai PDF, lalu unggah.</CardDescription>
                 </div>
-                <Button variant="secondary" asChild>
-                    <a href={TEMPLATE_URL} target="_blank" rel="noopener noreferrer">
-                        <LinkIcon className="mr-2 h-4 w-4" />
-                        Buka Template di Canva
-                    </a>
-                </Button>
+                <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" type="button" onClick={loadOptions} disabled={fetchingOptions}>
+                        <RefreshCw className={cn("h-4 w-4 mr-2", fetchingOptions && "animate-spin")} />
+                        Refresh Data
+                    </Button>
+                    <Button variant="secondary" asChild>
+                        <a href={TEMPLATE_URL} target="_blank" rel="noopener noreferrer">
+                            <LinkIcon className="mr-2 h-4 w-4" />
+                            Buka Template
+                        </a>
+                    </Button>
+                </div>
             </div>
         </CardHeader>
         <CardContent className="space-y-4">

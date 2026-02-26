@@ -1,6 +1,6 @@
 'use server';
 
-import { collection, addDoc, getDocs, query, limit } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, limit, where } from 'firebase/firestore';
 import { db } from './firebase';
 import { initialAccounts, initialDocumentTypes, initialDocumentCategories } from './definitions';
 import { createMeetingShortLink } from '@/app/actions/shortlinks';
@@ -25,41 +25,40 @@ const initialProgramTags = [
 ];
 
 /**
- * Seeds a specific collection with initial data if it's empty.
+ * Ensures all items in initialData exist in the collection.
  * @param collRef Firestore collection reference.
- * @param initialData Array of objects to be added as documents.
- * @param collectionName Name of the collection for logging purposes.
+ * @param initialData Array of objects or strings to be added.
+ * @param collectionName Name for logging.
+ * @param uniqueKey The key used to check existence (default 'name').
  */
-async function seedCollection(collRef: any, initialData: any[], collectionName: string) {
+async function syncCollection(collRef: any, initialData: any[], collectionName: string, uniqueKey: string = 'name') {
     try {
-        const q = query(collRef, limit(1));
-        const snapshot = await getDocs(q);
+        console.log(`Checking '${collectionName}' consistency...`);
+        for (const item of initialData) {
+            const itemName = typeof item === 'string' ? item : item[uniqueKey];
+            const q = query(collRef, where(uniqueKey, '==', itemName), limit(1));
+            const snapshot = await getDocs(q);
 
-        if (snapshot.empty) {
-            console.log(`No documents found in '${collectionName}'. Seeding initial data...`);
-            const batchPromises = initialData.map(item => {
-                if (typeof item === 'string') {
-                    return addDoc(collRef, { name: item });
-                }
-                return addDoc(collRef, item);
-            });
-            await Promise.all(batchPromises);
-            console.log(`Successfully seeded '${collectionName}'.`);
-        } else {
-            console.log(`Collection '${collectionName}' is not empty. Skipping seed.`);
+            if (snapshot.empty) {
+                console.log(`Adding missing item '${itemName}' to '${collectionName}'`);
+                await addDoc(collRef, typeof item === 'string' ? { [uniqueKey]: item } : item);
+            }
         }
     } catch (error) {
-        console.error(`Error seeding '${collectionName}':`, error);
+        console.error(`Error syncing '${collectionName}':`, error);
     }
 }
 
-// This function checks if categories exist and seeds them if the collection is empty.
 export async function seedInitialData() {
-    await seedCollection(ideaCategoriesCollection, initialIdeaCategories, 'ideaCategories');
-    await seedCollection(beritaCategoriesCollection, initialBeritaCategories, 'beritaCategories');
-    await seedCollection(documentCategoriesCollection, initialDocumentCategories, 'documentCategories');
-    await seedCollection(docTypesCollection, initialDocumentTypes, 'documentTypes');
-    await seedCollection(programTagsCollection, initialProgramTags, 'programTags');
-    await seedCollection(accountsCollection, initialAccounts, 'accounts');
+    // Sync all lookup collections
+    await syncCollection(ideaCategoriesCollection, initialIdeaCategories, 'ideaCategories');
+    await syncCollection(beritaCategoriesCollection, initialBeritaCategories, 'beritaCategories');
+    await syncCollection(documentCategoriesCollection, initialDocumentCategories, 'documentCategories');
+    await syncCollection(docTypesCollection, initialDocumentTypes, 'documentTypes');
+    await syncCollection(programTagsCollection, initialProgramTags, 'programTags');
+    
+    // For accounts, we use 'code' as the unique key
+    await syncCollection(accountsCollection, initialAccounts, 'accounts', 'code');
+    
     await createMeetingShortLink();
 }
