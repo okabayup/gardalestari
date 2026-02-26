@@ -361,7 +361,7 @@ const assistantFlow = ai.defineFlow(
                 }
                 
                 messages.push(response.message);
-                messages.push({ role: 'tool', content: toolResponses });
+                messages.push({ role: 'tool', content: toolResponses } as Message);
                 
                 console.log('[assistantFlow] Re-generating with tool responses...');
                 response = await ai.generate({
