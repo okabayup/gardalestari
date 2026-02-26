@@ -45,8 +45,12 @@ export async function getAnalyticsReport(
         });
         
         return {
-            dimensionHeaders: response.dimensionHeaders || [],
-            metricHeaders: response.metricHeaders || [],
+            dimensionHeaders: (response.dimensionHeaders || []).map(header => ({
+                name: header.name || '',
+            })),
+            metricHeaders: (response.metricHeaders || []).map(header => ({
+                name: header.name || '',
+            })),
             rows: response.rows || [],
         };
 
