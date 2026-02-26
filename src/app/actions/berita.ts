@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -247,7 +246,8 @@ export async function updateBeritaPost(id: string, post: Partial<BeritaPost>) {
   try {
     const postDoc = doc(db, 'beritaPosts', id);
     const oldPostSnap = await getDoc(postDoc);
-    const oldStatus = oldPostSnap.data()?.status;
+    const oldData = oldPostSnap.data();
+    const oldStatus = oldData?.status as string | undefined;
 
     await updateDoc(postDoc, post);
     
@@ -262,7 +262,7 @@ export async function updateBeritaPost(id: string, post: Partial<BeritaPost>) {
 
 
     // Notify Google Indexing API only if status changes to published or if a published post is updated
-    if (post.slug && (post.status === 'published' || (oldStatus === 'published' && post.status === 'published'))) {
+    if (post.slug && (post.status === 'published' || (oldStatus === 'published' && (post.status === 'published' || post.status === undefined)))) {
       const publicUrl = `${BASE_URL}/${pathSegment}/${post.slug}`;
       notifyGoogleOfUpdate(publicUrl, 'URL_UPDATED');
     }
@@ -396,4 +396,3 @@ export async function getNotificationStatus(slug: string): Promise<IndexingStatu
         return null;
     }
 }
-    

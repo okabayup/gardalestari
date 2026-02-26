@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -63,11 +64,11 @@ export async function updateRedeemableItem(id: string, data: Partial<Omit<Redeem
 }
 
 export async function deleteRedeemableItem(id: string) {
-  const docRef = doc(redeemableItemsCollection, id);
-  const docSnap = await getDoc(docRef);
-  if (docSnap.exists() && docSnap.data().imageUrl) {
+  const docRef = redeemableItemsCollection;
+  const itemDoc = await getDoc(doc(docRef, id));
+  if (itemDoc.exists() && itemDoc.data().imageUrl) {
       try {
-        const imageRef = ref(storage, docSnap.data().imageUrl);
+        const imageRef = ref(storage, itemDoc.data().imageUrl);
         await deleteObject(imageRef);
       } catch (error: any) {
           if (error.code !== 'storage/object-not-found') {
@@ -75,7 +76,7 @@ export async function deleteRedeemableItem(id: string) {
           }
       }
   }
-  await deleteDoc(docRef);
+  await deleteDoc(doc(docRef, id));
   revalidatePath('/panel/redeem');
   revalidatePath('/points');
 }
@@ -204,7 +205,8 @@ export async function awardPointsForAction(actionType: Mission['type'] | BadgeMe
     const userRef = doc(usersCollection, userId);
 
     // FIX: Perform the query outside the transaction to avoid runtime errors
-    const missionsQuery = query(missionsCollection, where(actionType === 'referral' ? 'type' : 'criteria.metric', '==', actionType), limit(1));
+    const filterField = actionType === 'referral' ? 'type' : 'criteria.metric';
+    const missionsQuery = query(missionsCollection, where(filterField, '==', actionType), limit(1));
     const missionsSnapshot = await getDocs(missionsQuery);
     
     if (missionsSnapshot.empty) {

@@ -1,6 +1,7 @@
+
 'use server';
 
-import { db, storage } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, arrayUnion, arrayRemove, where, getCountFromServer } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { Badge, BadgeMetric, Mission } from '@/lib/definitions';
@@ -9,7 +10,6 @@ import { awardPointsForAction } from '@/app/actions/points';
 
 const badgesCollection = collection(db, 'badges');
 const missionsCollection = collection(db, 'missions');
-const usersCollection = collection(db, 'users');
 
 export async function getBadges(): Promise<Badge[]> {
   try {
@@ -142,8 +142,7 @@ export async function checkAndAwardBadges(userId: string, triggeredMetric: Badge
             
             // Check if current value is a multiple of target (to allow repeating rewards)
             if (userValue > 0 && userValue % mission.criteria.value === 0) {
-                 console.log(`[checkAndAwardBadges] Awarding points for mission '${mission.name}' to user ${userId}`);
-                 // FIX: Pass the metric name instead of mission ID to satisfy type requirements
+                 console.log(`[checkAndAwardBadges] Awarding points for mission '${mission.name}' to user ${userId} for metric '${mission.criteria.metric}' (value ${userValue} is multiple of ${mission.criteria.value})`);
                  await awardPointsForAction(triggeredMetric, userId, `Menyelesaikan Misi: ${mission.name}`);
             }
         }
