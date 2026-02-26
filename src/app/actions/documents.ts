@@ -99,7 +99,7 @@ export async function createDocument(
         ...data,
         documentNumber,
         fileUrl,
-        originalFileUrl: fileUrl, // Save original for multi-signing
+        originalFileUrl: fileUrl, 
         filePath,
         fileName: file.name,
         createdAt: Timestamp.now(),
@@ -140,7 +140,7 @@ export async function updateDocument(id: string, data: Partial<Omit<ImportantDoc
         dataToUpdate.originalFileUrl = dataToUpdate.fileUrl;
         dataToUpdate.filePath = filePath;
         dataToUpdate.fileName = newFile.name;
-        dataToUpdate.signers = []; // Reset signers if file changes
+        dataToUpdate.signers = []; 
     }
 
     await updateDoc(docRef, dataToUpdate);
@@ -232,7 +232,6 @@ export async function approveDocument(documentId: string, approverId: string, ro
     const signerName = SIGNATORY_NAMES[role];
     const now = new Date();
     
-    // 1. Update Signers Array
     const newSigner: DigitalSigner = {
         name: signerName,
         role: role,
@@ -262,6 +261,7 @@ export async function approveDocument(documentId: string, approverId: string, ro
     const boxHeight = 85;
     const startY = 40;
     const fontSize = sigCount > 2 ? 7 : 8;
+    const qrSize = sigCount > 2 ? 35 : 45;
 
     // 4. Draw all signers
     for (let i = 0; i < sigCount; i++) {
@@ -278,12 +278,10 @@ export async function approveDocument(documentId: string, approverId: string, ro
             borderWidth: 0.5,
         });
 
-        // Generate QR for verification
         const verificationUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/dokumen/verifikasi/${documentId}`;
         const qrBuffer = await QRCode.toBuffer(verificationUrl, { type: 'png', width: 100 });
         const qrImage = await pdfDoc.embedPng(qrBuffer);
         
-        const qrSize = 45;
         firstPage.drawImage(qrImage, {
             x: startX + (blockWidth - qrSize) / 2,
             y: startY + boxHeight - qrSize - 5,
@@ -291,7 +289,6 @@ export async function approveDocument(documentId: string, approverId: string, ro
             height: qrSize,
         });
 
-        // Draw Text
         const jakartaTime = new Date(signer.signedAt).toLocaleString("en-US", {timeZone: "Asia/Jakarta"});
         const formattedDate = format(new Date(jakartaTime), 'dd/MM/yy HH:mm', { locale: idLocale });
 
@@ -302,7 +299,7 @@ export async function approveDocument(documentId: string, approverId: string, ro
             `${formattedDate} WIB`
         ];
 
-        let currentY = startY + 30;
+        let currentY = startY + (sigCount > 2 ? 25 : 30);
         firstPage.drawText(lines[0], { x: startX + 5, y: currentY, font: helveticaFont, size: fontSize - 1 });
         currentY -= fontSize + 2;
         firstPage.drawText(lines[1], { x: startX + 5, y: currentY, font: helveticaBoldFont, size: fontSize });
@@ -328,7 +325,6 @@ export async function approveDocument(documentId: string, approverId: string, ro
         originalContent = ocrResult.text.replace(/\s+/g, ' ').trim();
     }
 
-    // 6. Update Firestore
     const updatePayload: any = {
         signers: updatedSigners,
         fileUrl: newFileUrl,
@@ -348,7 +344,6 @@ export async function approveDocument(documentId: string, approverId: string, ro
 
     await updateDoc(docRef, updatePayload);
 
-    // Notifications if final
     if (isFinal) {
         const author = await getUserByUid(documentData.authorId);
         if (author) {

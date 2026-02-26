@@ -1,5 +1,3 @@
-
-
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -87,8 +85,6 @@ export async function removeBadgeFromUser(userId: string, badgeId: string) {
 // --- Automatic Badge & Mission Awarding Logic ---
 
 async function getUserMetric(userId: string, metric: BadgeMetric): Promise<number> {
-    const userRef = doc(usersCollection, userId);
-    
     switch(metric) {
         case 'post_count':
             const postQuery = query(collection(db, 'posts'), where('authorId', '==', userId));
@@ -100,18 +96,13 @@ async function getUserMetric(userId: string, metric: BadgeMetric): Promise<numbe
             const achievementQuery = query(collection(db, 'achievements'), where('userId', '==', userId));
             return (await getCountFromServer(achievementQuery)).data().count;
         case 'vote_casted':
-            // This requires querying all voting topics, which is inefficient.
-            // For now, we'll return 0. A better implementation would be a counter on the user document.
+            // Logic can be added here if we track votes per user
             return 0;
         case 'comment_count':
-            // This is more complex and would require aggregating across posts/ideas.
-            // For now, we'll return 0. A more scalable solution (e.g., Cloud Functions) is needed.
             return 0; 
         case 'upvote_count':
-            // Same as above, requires aggregation.
             return 0;
         case 'project_completed':
-            // Needs logic based on your project management module.
             return 0;
         default:
             return 0;
@@ -134,10 +125,10 @@ export async function checkAndAwardBadges(userId: string, triggeredMetric: Badge
 
         for (const badge of autoBadges) {
             if (!badge.id || !badge.criteria) continue;
-            if (userAssignedBadges.includes(badge.id)) continue; // Already has the badge
+            if (userAssignedBadges.includes(badge.id)) continue; 
 
             if (userValue >= badge.criteria.value) {
-                console.log(`[checkAndAwardBadges] Awarding badge '${badge.name}' to user ${userId} for metric '${badge.criteria.metric}' (${userValue} >= ${badge.criteria.value})`);
+                console.log(`[checkAndAwardBadges] Awarding badge '${badge.name}' to user ${userId}`);
                 await assignBadgeToUser(userId, badge.id);
             }
         }
@@ -149,15 +140,15 @@ export async function checkAndAwardBadges(userId: string, triggeredMetric: Badge
         for (const mission of autoMissions) {
             if (!mission.id || !mission.criteria || !mission.points) continue;
             
-            // Check if the current user value is a multiple of the mission's target value
+            // Check if current value is a multiple of target (to allow repeating rewards)
             if (userValue > 0 && userValue % mission.criteria.value === 0) {
-                 console.log(`[checkAndAwardBadges] Awarding points for mission '${mission.name}' to user ${userId} for metric '${mission.criteria.metric}' (value ${userValue} is multiple of ${mission.criteria.value})`);
-                 await awardPointsForAction(mission.id, userId, `Menyelesaikan Misi: ${mission.name}`);
+                 console.log(`[checkAndAwardBadges] Awarding points for mission '${mission.name}' to user ${userId}`);
+                 // FIX: Pass the metric name instead of mission ID to satisfy type requirements
+                 await awardPointsForAction(triggeredMetric, userId, `Menyelesaikan Misi: ${mission.name}`);
             }
         }
 
     } catch (error) {
         console.error(`[checkAndAwardBadges] Error processing for user ${userId}:`, error);
-        // We don't re-throw here to not block the main operation (e.g., creating a post).
     }
 }

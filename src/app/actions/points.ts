@@ -1,5 +1,3 @@
-
-
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -136,7 +134,6 @@ export async function redeemItem(userId: string, itemId: string) {
         const redemptionLogRef = doc(redemptionLogsCollection);
         const pointLogRef = doc(logsCollection);
 
-        // Deduct points, decrement stock, and log the redemption
         transaction.update(userRef, { greenPoints: increment(-itemData.pointsRequired) });
         transaction.update(itemRef, { stock: increment(-1) });
         
@@ -173,12 +170,8 @@ export async function getRedemptionHistory(): Promise<RedemptionLog[]> {
     });
 }
 
-// --- Point History Logic ---
-
 /**
  * Gets the point history for a specific user.
- * @param userId - The ID of the user.
- * @returns A promise that resolves to an array of point log entries.
  */
 export async function getPointHistory(userId: string): Promise<PointLog[]> {
     try {
@@ -206,44 +199,39 @@ export async function getPointHistory(userId: string): Promise<PointLog[]> {
 
 /**
  * Awards points to a user for a specific action and creates a log entry.
- * @param actionType The type of mission action (e.g., 'referral').
- * @param userId The ID of the user to award points to.
- * @param description A description for the point log entry.
- * @param level The referral level for multi-level referral missions.
  */
 export async function awardPointsForAction(actionType: Mission['type'] | BadgeMetric, userId: string, description: string, level: number = 1) {
     const userRef = doc(usersCollection, userId);
 
+    // FIX: Perform the query outside the transaction to avoid runtime errors
+    const missionsQuery = query(missionsCollection, where(actionType === 'referral' ? 'type' : 'criteria.metric', '==', actionType), limit(1));
+    const missionsSnapshot = await getDocs(missionsQuery);
+    
+    if (missionsSnapshot.empty) {
+        console.warn(`[awardPoints] No mission found for action type: ${actionType}.`);
+        return;
+    }
+
+    const mission = missionsSnapshot.docs[0].data() as Mission;
+    let pointsToAward = 0;
+    
+    if (actionType === 'referral' && mission.pointsPerLevel) {
+        if (level > 0 && level <= mission.pointsPerLevel.length) {
+            pointsToAward = mission.pointsPerLevel[level - 1] || 0;
+        }
+    } else if (mission.points) {
+        pointsToAward = mission.points;
+    }
+
+    if (pointsToAward <= 0) {
+        console.warn(`[awardPoints] No points to award for mission ${mission.name} to user ${userId}.`);
+        return;
+    }
+
     await runTransaction(db, async (transaction) => {
         const userDoc = await transaction.get(userRef);
         if (!userDoc.exists()) {
-            console.error(`[awardPoints] User ${userId} not found.`);
-            return;
-        }
-
-        const missionsQuery = query(missionsCollection, where(actionType === 'referral' ? 'type' : 'criteria.metric', '==', actionType), limit(1));
-        const missionsSnapshot = await getDocs(missionsQuery);
-        
-        if (missionsSnapshot.empty) {
-            console.warn(`[awardPoints] No mission found for action type: ${actionType}.`);
-            return;
-        }
-
-        const mission = missionsSnapshot.docs[0].data() as Mission;
-        let pointsToAward = 0;
-        
-        if (actionType === 'referral' && mission.pointsPerLevel) {
-            if (level > 0 && level <= mission.pointsPerLevel.length) {
-                pointsToAward = mission.pointsPerLevel[level - 1] || 0;
-            }
-        } else if (mission.points) {
-            pointsToAward = mission.points;
-        }
-
-
-        if (pointsToAward <= 0) {
-            console.warn(`[awardPoints] No points to award for mission ${mission.name} to user ${userId}.`);
-            return;
+            throw new Error("User not found");
         }
         
         const pointLogRef = doc(collection(userRef, 'pointLogs'));
