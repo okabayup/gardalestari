@@ -121,7 +121,7 @@ const createDocumentTool = ai.defineTool(
                 x: 50,
                 y: height - 4 * fontSize,
                 font,
-                fontSize,
+                size: fontSize,
                 lineHeight: 15,
                 maxWidth: width - 100,
             });
