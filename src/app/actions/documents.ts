@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -430,8 +429,9 @@ export async function getDocumentTypes(): Promise<DocumentType[]> {
 
 export async function generateDocumentNumber(typeCode: string): Promise<string> {
   try {
-      const year = new Date().getFullYear();
-      const month = new Date().getMonth() + 1;
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
       
       const romanMonthMap: { [key: number]: string } = {
         1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI',
@@ -439,22 +439,24 @@ export async function generateDocumentNumber(typeCode: string): Promise<string> 
       };
       const romanMonth = romanMonthMap[month];
 
-      const prefix = `${typeCode}/GL/DPP`;
-      const queryPrefix = `/GL/DPP/${romanMonth}/${year}`;
-      
-      const q = query(documentsCollection, 
-        where('documentNumber', '>=', `001${queryPrefix}`), 
-        where('documentNumber', '<=', `999${queryPrefix}`)
+      // Define year boundaries for annual reset
+      const startOfYear = new Date(year, 0, 1);
+      const endOfYear = new Date(year, 11, 31, 23, 59, 59, 999);
+
+      // Query documents within the current year to get global annual sequence
+      const q = query(
+        documentsCollection, 
+        where('createdAt', '>=', Timestamp.fromDate(startOfYear)), 
+        where('createdAt', '<=', Timestamp.fromDate(endOfYear))
       );
 
       const countSnapshot = await getCountFromServer(q);
       const nextNumber = (countSnapshot.data().count + 1).toString().padStart(3, '0');
       
-      return `${nextNumber}/${prefix}/${romanMonth}/${year}`;
+      // Format: [No Urut]/[Kode Jenis]/GL/DPP/[Bulan Romawi]/[Tahun]
+      return `${nextNumber}/${typeCode}/GL/DPP/${romanMonth}/${year}`;
   } catch (error) {
       console.error("[generateDocumentNumber Error]", error);
       throw new Error("Gagal membuat nomor dokumen.");
   }
 }
-
-    

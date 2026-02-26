@@ -1,6 +1,7 @@
+
 # Dokumentasi Penomoran Surat Garda Lestari
 
-Sistem ini menggunakan penomoran otomatis yang dihitung berdasarkan periode bulan dan tahun berjalan.
+Sistem ini menggunakan penomoran otomatis yang dihitung berdasarkan periode tahun berjalan.
 
 ## 1. Format Nomor Surat
 Format standar yang digunakan adalah:
@@ -19,8 +20,8 @@ Format standar yang digunakan adalah:
 ## 2. Logika Pengurutan & Penomoran (Sequencing)
 Sistem pengurutan nomor surat didasarkan pada aturan berikut:
 
-1.  **Reset Bulanan:** Nomor urut (`001`) akan direset setiap pergantian bulan baru. Artinya, surat pertama di bulan Maret akan selalu dimulai dari `001`, meskipun di bulan Februari sudah mencapai nomor `050`.
-2.  **Global vs Per Jenis:** Saat ini, sistem menghitung nomor urut secara **global per bulan**. Jika surat `001` adalah jenis `SK`, maka surat berikutnya (jenis apa pun) di bulan yang sama akan mendapatkan nomor `002`.
+1.  **Reset Tahunan:** Nomor urut (`001`) akan direset setiap pergantian tahun baru (1 Januari). Artinya, nomor urut akan terus bertambah dari Januari hingga Desember dan kembali ke `001` di tahun berikutnya.
+2.  **Global per Tahun:** Sistem menghitung nomor urut secara **global per tahun**. Jika surat `001` adalah jenis `SK`, maka surat berikutnya (jenis apa pun) di tahun yang sama akan mendapatkan nomor `002`.
 3.  **Pengurutan Tampilan:** Pada daftar dokumen di aplikasi, surat diurutkan berdasarkan waktu pembuatan (`createdAt`) secara **descending** (dokumen terbaru muncul paling atas).
 
 ## 3. Daftar Kode Jenis Dokumen
