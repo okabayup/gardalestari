@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview The main AI assistant flow for Garda Lestari.
@@ -301,6 +302,11 @@ const assistantFlow = ai.defineFlow(
 
             // Loop to handle tool calls
             while(true) {
+                // Fix: Check if response.message and response.message.content exist before filtering
+                if (!response.message || !response.message.content) {
+                    break;
+                }
+
                 const toolCalls = response.message.content.filter(p => !!p.toolCall);
                 if (!toolCalls || toolCalls.length === 0) {
                     break; // No more tool calls, exit loop
