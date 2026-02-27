@@ -141,29 +141,82 @@ export const panelDirectoryItems: {
   }
 ];
 
+export interface Position {
+  id?: string;
+  name: string;
+  permissions: PermissionId[];
+}
+
+export interface Notification {
+    id?: string;
+    userId: string;
+    title: string;
+    body: string;
+    link?: string;
+    read: boolean;
+    createdAt: Timestamp | string;
+}
+
+export interface CommentWithAuthor {
+    id: string;
+    author: {
+        id: string;
+        name: string;
+        username: string;
+        avatarUrl: string;
+    };
+    text: string;
+    timestamp: string;
+}
+
+export type VoteType = 'up' | 'down';
+export type IdeaStatus = 'diajukan' | 'ditinjau' | 'disetujui' | 'diterapkan' | 'ditolak';
+export type IdeaType = 'INNOVATIVE' | 'SOLUTION';
+
+export const ideaStatusMap: Record<IdeaStatus, { label: string; color: string }> = {
+    diajukan: { label: 'Diajukan', color: 'bg-gray-500' },
+    ditinjau: { label: 'Ditinjau', color: 'bg-blue-500' },
+    disetujui: { label: 'Disetujui', color: 'bg-green-500' },
+    diterapkan: { label: 'Diterapkan', color: 'bg-purple-500' },
+    ditolak: { label: 'Ditolak', color: 'bg-red-500' },
+};
+
+export type LetterStatus = 'Draft' | 'Menunggu Persetujuan' | 'Disetujui' | 'Ditolak';
+
+export const initialPositions = [
+  'Dewan Pembina',
+  'Dewan Pengawas',
+  'Dewan Penasehat',
+  'Ketua Umum',
+  'Sekretaris Jenderal',
+  'Bendahara Umum',
+  'Ketua Bidang',
+  'Sekretaris Bidang',
+  'Anggota Bidang',
+  'Ketua DPD',
+  'Sekretaris DPD',
+  'Bendahara DPD',
+  'Ketua DPC',
+  'Sekretaris DPC',
+  'Bendahara DPC',
+  'Anggota',
+];
+
 export const initialAccounts = [
-  // Aset Lancar
   { code: '1-1110', name: 'Kas di Tangan', category: 'Aset' as const, normalBalance: 'Debit' as const },
   { code: '1-1120', name: 'Bank Mandiri', category: 'Aset' as const, normalBalance: 'Debit' as const },
   { code: '1-1130', name: 'Bank BCA', category: 'Aset' as const, normalBalance: 'Debit' as const },
   { code: '1-1200', name: 'Piutang Usaha', category: 'Aset' as const, normalBalance: 'Debit' as const },
   { code: '1-1300', name: 'Investasi Jangka Pendek', category: 'Aset' as const, normalBalance: 'Debit' as const },
-  // Aset Tidak Lancar
   { code: '1-2100', name: 'Peralatan Kantor', category: 'Aset' as const, normalBalance: 'Debit' as const },
   { code: '1-2199', name: 'Akumulasi Penyusutan Aset', category: 'Aset' as const, normalBalance: 'Kredit' as const },
   { code: '1-2200', name: 'Investasi Jangka Panjang', category: 'Aset' as const, normalBalance: 'Debit' as const },
-  
-  // Liabilitas
   { code: '2-1100', name: 'Utang Usaha', category: 'Liabilitas' as const, normalBalance: 'Kredit' as const },
   { code: '2-1200', name: 'Utang Gaji', category: 'Liabilitas' as const, normalBalance: 'Kredit' as const },
   { code: '2-1300', name: 'Utang PPN', category: 'Liabilitas' as const, normalBalance: 'Kredit' as const },
   { code: '2-2100', name: 'Utang Jangka Panjang', category: 'Liabilitas' as const, normalBalance: 'Kredit' as const },
-
-  // Ekuitas
   { code: '3-1100', name: 'Modal Disetor', category: 'Ekuitas' as const, normalBalance: 'Kredit' as const },
   { code: '3-1200', name: 'Laba Ditahan', category: 'Ekuitas' as const, normalBalance: 'Kredit' as const },
-  
-  // Pendapatan
   { code: '4-1100', name: 'Pendapatan Jasa', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
   { code: '4-1200', name: 'Pendapatan Donasi', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
   { code: '4-1300', name: 'Pendapatan Sponsor', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
@@ -172,8 +225,6 @@ export const initialAccounts = [
   { code: '4-1600', name: 'Pendapatan Hibah', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
   { code: '4-1700', name: 'Pendapatan dari Program/Acara', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
   { code: '4-8000', name: 'Pendapatan Lain-lain', category: 'Pendapatan' as const, normalBalance: 'Kredit' as const },
-
-  // Beban
   { code: '5-1100', name: 'Beban Gaji & Tunjangan', category: 'Beban' as const, normalBalance: 'Debit' as const },
   { code: '5-1200', name: 'Beban Sewa', category: 'Beban' as const, normalBalance: 'Debit' as const },
   { code: '5-1300', name: 'Beban Utilitas', category: 'Beban' as const, normalBalance: 'Debit' as const },
@@ -186,7 +237,6 @@ export const initialAccounts = [
   { code: '5-2100', name: 'Beban Penyusutan', category: 'Beban' as const, normalBalance: 'Debit' as const },
   { code: '5-8000', name: 'Beban Lain-lain', category: 'Beban' as const, normalBalance: 'Debit' as const },
 ];
-
 
 export const initialDocumentTypes = [
     { name: 'Surat Keputusan', code: 'SK' },
@@ -215,552 +265,9 @@ export const initialDocumentCategories = [
     { name: 'Keuangan & Aset' },
 ];
 
-export const initialPositions = [
-  'Dewan Pembina',
-  'Dewan Pengawas',
-  'Dewan Penasehat',
-  'Ketua Umum',
-  'Sekretaris Jenderal',
-  'Bendahara Umum',
-  'Ketua Bidang',
-  'Sekretaris Bidang',
-  'Anggota Bidang',
-  'Ketua DPD',
-  'Sekretaris DPD',
-  'Bendahara DPD',
-  'Ketua DPC',
-  'Sekretaris DPC',
-  'Bendahara DPC',
-  'Anggota',
-];
-
-
-// --- Booking & Eduwisata ---
-export interface Addon {
-    id: string;
-    name: string;
-    description?: string;
-    price: number;
-    stock: number; // Use -1 for unlimited stock
-}
-
-export interface EduwisataPackage {
-    id: string;
-    title: string;
-    description: string;
-    price: number;
-    minParticipants: number;
-    duration: string; // e.g., "3 Jam", "1 Hari"
-    imageUrl: string; // Aspect ratio 4:5
-    images?: string[]; // Gallery images
-    availableAddonIds: string[];
-    shortlinkId?: string;
-}
-
-export interface Booking {
-    id: string;
-    packageId: string;
-    packageName: string; // Denormalized for easy display
-    userId?: string; // Optional if booked by guest
-    customerName: string;
-    customerEmail: string;
-    customerPhone: string;
-    bookingDate: Timestamp;
-    participants: number;
-    selectedAddons: { addonId: string; addonName: string; quantity: number; price: number }[];
-    totalPrice: number;
-    uniqueCode: number;
-    status: 'pending' | 'paid' | 'confirmed' | 'cancelled' | 'completed';
-    createdAt: Timestamp;
-    
-    // For manual bank transfer
-    paymentSenderName?: string;
-    paymentSenderBank?: string;
-    paymentProofUrl?: string; // URL to uploaded payment proof
-
-    // For meeting booking
-    meetingTopic?: string;
-    meetingDuration?: '30min' | '60min' | 'custom';
-    meetingCustomDuration?: number; // in hours
-}
-
-
-// --- Finance ---
-export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'void';
-
-export interface InvoiceItem {
-  description: string;
-  quantity: number;
-  unitPrice: number;
-  total: number;
-}
-
-export interface Invoice {
-  id?: string;
-  invoiceNumber: string;
-  contactId: string;
-  contactName: string;
-  date: Timestamp;
-  dueDate: Timestamp;
-  items: InvoiceItem[];
-  subtotal: number;
-  tax: number;
-  total: number;
-  status: InvoiceStatus;
-  createdAt: Timestamp;
-  createdBy: string;
-}
-
-export type AccountCategory = 'Aset' | 'Liabilitas' | 'Ekuitas' | 'Pendapatan' | 'Beban';
-export type AccountNormalBalance = 'Debit' | 'Kredit';
-
-export interface Account {
-    id?: string;
-    code: string;
-    name: string;
-    category: AccountCategory;
-    normalBalance: AccountNormalBalance;
-    balance: number;
-    createdAt: Timestamp;
-}
-
-export interface JournalEntry {
-    id?: string;
-    date: Timestamp;
-    description: string;
-    transactions: JournalTransaction[];
-    createdBy: string; // userId
-    createdAt: Timestamp;
-    relatedInvoiceId?: string;
-}
-
-export interface JournalTransaction {
-  accountId: string;
-  debit: number;
-  credit: number;
-}
-
-export interface FinancialReportData {
-    incomeStatement: {
-        revenues: { name: string; total: number; budget?: number }[];
-        expenses: { name: string; total: number; budget?: number }[];
-        netIncome: number;
-        revenueTrend: { date: string; Pendapatan: number }[];
-        expenseTrend: { date: string; Beban: number }[];
-        expenseComposition: { name: string; value: number }[];
-    };
-    balanceSheet: {
-        assets: { name: string; balance: number }[];
-        liabilities: { name: string; balance: number }[];
-        equity: { name: string; balance: number }[];
-        totalAssets: number;
-        totalLiabilitiesAndEquity: number;
-    };
-    cashPosition: number;
-}
-
-export interface FixedAsset {
-  id?: string;
-  name: string;
-  description?: string;
-  acquisitionDate: Timestamp;
-  acquisitionCost: number;
-  depreciationMethod: 'straight-line';
-  usefulLife: number; // in years
-  salvageValue: number;
-  status: 'active' | 'disposed';
-  lastDepreciationDate?: Timestamp;
-  createdAt: Timestamp;
-}
-
-export interface Budget {
-    id?: string;
-    accountId: string;
-    accountName: string;
-    period: string; // YYYY-MM
-    amount: number;
-    createdAt: Timestamp;
-}
-
-export interface Contact {
-  id?: string;
-  name: string;
-  type: 'customer' | 'vendor' | 'other';
-  email?: string;
-  phoneNumber?: string;
-  address?: string;
-  createdAt: Timestamp;
-}
-
-export interface Position {
-  id?: string;
-  name: string;
-  permissions: PermissionId[];
-}
-
-export type IdeaStatus = 'diajukan' | 'ditinjau' | 'disetujui' | 'diterapkan' | 'ditolak';
-export type IdeaType = 'INNOVATIVE' | 'SOLUTION';
-
-export const ideaStatusMap: Record<IdeaStatus, { label: string; color: string }> = {
-    diajukan: { label: 'Diajukan', color: 'bg-gray-500' },
-    ditinjau: { label: 'Ditinjau', color: 'bg-blue-500' },
-    disetujui: { label: 'Disetujui', color: 'bg-green-500' },
-    diterapkan: { label: 'Diterapkan', color: 'bg-purple-500' },
-    ditolak: { label: 'Ditolak', color: 'bg-red-500' },
-};
-
-export type LetterStatus = 'Draft' | 'Menunggu Persetujuan' | 'Disetujui' | 'Ditolak';
-
-// --- Reports ---
-export type ReportType = 'user' | 'post';
-export type ReportStatus = 'baru' | 'ditinjau' | 'selesai';
-export type ReportReason = 'spam' | 'scam' | 'ujaran_kebencian' | 'pelecehan' | 'konten_ilegal' | 'lainnya' | 'csae';
-
-export interface Report {
-    id?: string;
-    reporterId: string;
-    reporterName: string;
-    reportedItemId: string; // User ID or Post ID
-    reportedItemContent?: string; // e.g., username, post caption
-    reason: ReportReason;
-    details?: string;
-    status: ReportStatus;
-    createdAt: Timestamp;
-}
-
-// --- Achievements ---
-export interface Achievement {
-  id?: string;
-  userId: string;
-  userName: string;
-  userAvatar: string;
-  title: string;
-  description: string;
-  date: string; // ISO string
-  imageUrl?: string;
-}
-
-// --- Analytics ---
-export interface ErrorLog {
-    id: string;
-    message: string;
-    stack?: string;
-    context: string;
-    userId?: string;
-    timestamp: string; // ISO String for client
-    resolved: boolean;
-}
-
-// --- Announcements ---
-export interface Announcement {
-  id?: string;
-  title: string;
-  content: string;
-  createdAt: string; // ISO string
-  attachmentUrl?: string;
-  attachmentName?: string;
-}
-
-// --- App Tester ---
-export interface AppTester {
-    id?: string;
-    name: string;
-    email: string;
-    waNumber: string;
-    reason: string;
-    status: 'pending' | 'approved' | 'rejected';
-    appId: string;
-    appName: string;
-    submittedAt: string; // ISO string
-    processedAt?: string; // ISO string
-}
-
-export interface AppTesterApp {
-    id?: string;
-    name: string;
-    testingLink: string; // e.g., Play Store testing link
-    shortlinkSlug: string;
-    createdAt: Timestamp;
-}
-
-
-// --- Berita ---
-export interface BeritaCategory {
-    id?: string;
-    name: string;
-}
-
-export interface BeritaPost {
-  id?: string;
-  type: 'artikel' | 'video';
-  title: string;
-  slug: string;
-  content: string;
-  author: string;
-  date: string; // ISO string
-  imageUrl: string;
-  imageHint: string;
-  excerpt: string;
-  category: string;
-  youtubeId?: string;
-  isFeatured?: boolean;
-  seoScore?: number;
-  status?: 'published' | 'draft' | 'hidden_by_moderator';
-  indexingStatus?: IndexingStatus | null;
-}
-
-export interface IndexingLog {
-    id?: string;
-    url: string;
-    type: 'URL_UPDATED' | 'URL_DELETED';
-    requestTimestamp: Timestamp;
-    responseStatus: number;
-    responseBody: any;
-    error?: string;
-}
-
-export interface IndexingStatus {
-    latestUpdate?: {
-        type: string;
-        notifyTime: string;
-    };
-    latestRemove?: {
-        type: string;
-        notifyTime: string;
-    };
-}
-
-
-// --- Data Bank ---
-export interface DataBankEntry {
-  id?: string;
-  title: string;
-  summary: string;
-  content: string;
-  category: 'Kebijakan' | 'Data Sektoral' | 'Riset' | 'Lainnya';
-  source: string;
-  publishedDate: Timestamp;
-  createdAt: Timestamp;
-}
-
-// --- Documents ---
-export type SignatoryRole = 'Ketua Umum' | 'Sekretaris' | 'Bendahara Umum';
-
-export interface DigitalSigner {
-    name: string;
-    role: SignatoryRole;
-    signedAt: string;
-}
-
-export interface ImportantDocument {
-  id?: string;
-  title: string; // Perihal
-  description?: string; // Tujuan (penerima)
-  documentNumber: string;
-  category: string;
-  type: string; // Jenis Dokumen
-  attachments: string; // Jumlah Lampiran
-  canvaUrl?: string; // Link edit Canva
-  createdAt: string; // ISO string
-  fileUrl: string;
-  fileName: string;
-  filePath: string;
-  authorId: string;
-  authorName: string; // denormalized
-  status: LetterStatus;
-  approverId?: string; // UID of the user who needs to approve
-  signers?: DigitalSigner[];
-  originalFileUrl?: string;
-  approvedById?: string; // UID of the user who approved
-  approvedByName?: string; // denormalized
-  approvedByPosition?: string; // denormalized
-  approvedAt?: string; // ISO string
-  rejectionReason?: string;
-  rejectedById?: string;
-  rejectedByName?: string;
-  originalContent?: string; // The extracted text from original PDF before stamping
-}
-
-export interface DocumentCategory {
-    id?: string;
-    name: string;
-}
-
-export interface DocumentType {
-    id?: string;
-    name: string;
-    code: string;
-}
-
-
-// --- Events ---
-export interface Event {
-  id: string;
-  title: string;
-  slug: string;
-  description: string;
-  startDate: Date;
-  endDate?: Date;
-  location: string;
-  visibility: 'public' | 'member';
-  submissionType: 'internal' | 'external';
-  applicationUrl?: string;
-  formId?: string;
-  imageUrl: string;
-  imageHint?: string;
-  attachmentUrl?: string;
-  attachmentName?: string;
-  attendeeIds?: { userId: string, userName: string, timestamp: Timestamp }[];
-  guestAttendees?: { name: string, email: string, phone?: string, timestamp: Timestamp }[];
-  createdAt: Timestamp;
-}
-
-
-// --- Forms ---
-export type FormFieldType = 'text' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'file';
-
-export interface FormFieldOption {
-  id: string;
-  value: string;
-  label: string;
-}
-
-export interface FormField {
-  id: string;
-  type: FormFieldType;
-  label: string;
-  placeholder?: string;
-  required: boolean;
-  options?: FormFieldOption[];
-}
-
-export interface ProgramForm {
-  id?: string;
-  title: string;
-  description: string;
-  fields: FormField[];
-}
-
-// --- Green Points & Missions ---
-export interface RedeemableItem {
-  id?: string;
-  name: string;
-  description: string;
-  pointsRequired: number;
-  stock: number;
-  imageUrl?: string;
-}
-
-export interface Mission {
-  id?: string;
-  name: string;
-  description: string;
-  points?: number;
-  pointsPerLevel?: number[];
-  type: 'referral' | 'auto';
-  criteria?: {
-    metric: BadgeMetric;
-    value: number;
-  };
-}
-
-
-export interface RedemptionLog {
-  id: string;
-  userId: string;
-  userName: string;
-  itemId: string;
-  itemName: string;
-  pointsSpent: number;
-  redeemedAt: string; // ISO String
-}
-
-export interface PointLog {
-    id?: string;
-    points: number;
-    description: string;
-    createdAt: string; // ISO string
-}
-
-
-// --- Ideas & Challenges ---
-export type VoteType = 'up' | 'down';
-
 export type MemberType = 'pusat' | 'daerah' | 'cabang' | 'pembina' | 'pengawas' | 'penasehat' | 'official';
-
-export interface Idea {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  authorId: string;
-  createdAt: Timestamp;
-  status: IdeaStatus;
-  upvotes: string[];
-  downvotes: string[];
-  voteScore: number;
-  commentCount: number;
-  type: IdeaType;
-  challengeId?: string; // Link to a challenge
-  challengeTitle?: string; // Denormalized for display
-}
-
-export interface IdeaAuthor {
-  id: string;
-  name: string;
-  username: string;
-  avatarUrl: string;
-  type?: MemberType;
-}
-
-export interface IdeaWithAuthor extends Omit<Idea, 'authorId' | 'upvotes' | 'downvotes' | 'createdAt'> {
-  author: IdeaAuthor;
-  userVote?: VoteType;
-  createdAt: string; 
-}
-
-export interface Challenge {
-    id: string;
-    title: string;
-    description: string;
-    criteria: string; // What's expected from a solution
-    deadline: Timestamp;
-    reward?: string; // Prize or incentive
-    authorId: string; // The admin/partner who created it
-    createdAt: Timestamp;
-}
-
-export interface IdeaCategory {
-  id?: string;
-  name: string;
-}
-
-// --- Map Data ---
-export type MapDataCategory = 'potensi' | 'permasalahan' | 'program' | 'kegiatan' | 'dana';
-
-export interface MapData {
-  id?: string;
-  title: string;
-  description: string;
-  category: MapDataCategory;
-  latitude: number;
-  longitude: number;
-  createdAt: Timestamp;
-  budget?: number;
-  disbursed?: number;
-}
-
-export interface MapDataset {
-  id?: string;
-  name: string;
-  url: string; // URL to the GeoJSON file
-  isVisible: boolean;
-  createdAt: Timestamp;
-}
-
-// --- Members ---
-export type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected' | 'manual';
 export type UserLevel = 'bronze' | 'silver' | 'gold' | 'platinum';
+export type VerificationStatus = 'unverified' | 'temporary' | 'permanent' | 'rejected' | 'manual';
 
 export interface Member {
   id: string;
@@ -803,79 +310,323 @@ export interface MemberWithStatus extends Member {
     deletionRequestedAt?: Timestamp;
 }
 
-export const memberTypes: { value: MemberType, label: string }[] = [
-  { value: 'pusat', label: 'DPP' },
-  { value: 'daerah', label: 'DPD' },
-  { value: 'cabang', label: 'DPC' },
-  { value: 'pembina', label: 'Dewan Pembina' },
-  { value: 'pengawas', label: 'Dewan Pengawas' },
-  { value: 'penasehat', label: 'Dewan Penasehat' },
-];
+export interface Achievement {
+  id?: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  title: string;
+  description: string;
+  date: string; // ISO string
+  imageUrl?: string;
+}
 
-export const verificationStatuses: { value: VerificationStatus, label: string }[] = [
-    { value: 'unverified', label: 'Belum Terverifikasi'},
-    { value: 'temporary', label: 'Menunggu Persetujuan'},
-    { value: 'permanent', label: 'Permanen'},
-    { value: 'rejected', label: 'Ditolak'},
-    { value: 'manual', label: 'Manual' },
-];
+export interface ErrorLog {
+    id: string;
+    message: string;
+    stack?: string;
+    context: string;
+    userId?: string;
+    timestamp: string; // ISO String for client
+    resolved: boolean;
+}
 
-// --- Badges ---
-export type BadgeType = 'manual' | 'auto';
-export type BadgeMetric = 'post_count' | 'idea_count' | 'comment_count' | 'upvote_count' | 'project_completed' | 'achievement_added' | 'vote_casted';
+export interface Announcement {
+  id?: string;
+  title: string;
+  content: string;
+  createdAt: string; // ISO string
+  attachmentUrl?: string;
+  attachmentName?: string;
+}
 
-export const BADGE_METRICS: { value: BadgeMetric; label: string }[] = [
-    { value: 'post_count', label: 'Jumlah Postingan' },
-    { value: 'idea_count', label: 'Jumlah Ide Diajukan' },
-    { value: 'achievement_added', label: 'Jumlah Prestasi Dicatat' },
-    { value: 'vote_casted', label: 'Jumlah Suara E-Voting' },
-    { value: 'comment_count', label: 'Jumlah Komentar' },
-    { value: 'upvote_count', label: 'Jumlah Upvote Diterima' },
-    { value: 'project_completed', label: 'Proyek Diselesaikan' },
-];
+export interface AppTester {
+    id?: string;
+    name: string;
+    email: string;
+    waNumber: string;
+    reason: string;
+    status: 'pending' | 'approved' | 'rejected';
+    appId: string;
+    appName: string;
+    submittedAt: string; // ISO string
+    processedAt?: string; // ISO string
+}
 
+export interface AppTesterApp {
+    id?: string;
+    name: string;
+    testingLink: string;
+    shortlinkSlug: string;
+    createdAt: Timestamp;
+}
 
-export interface Badge {
+export interface BeritaPost {
+  id?: string;
+  type: 'artikel' | 'video';
+  title: string;
+  slug: string;
+  content: string;
+  author: string;
+  date: string; // ISO string
+  imageUrl: string;
+  imageHint: string;
+  excerpt: string;
+  category: string;
+  youtubeId?: string;
+  isFeatured?: boolean;
+  seoScore?: number;
+  status?: 'published' | 'draft' | 'hidden_by_moderator';
+  indexingStatus?: IndexingStatus | null;
+}
+
+export interface IndexingStatus {
+    latestUpdate?: {
+        type: string;
+        notifyTime: string;
+    };
+    latestRemove?: {
+        type: string;
+        notifyTime: string;
+    };
+}
+
+export interface DataBankEntry {
+  id?: string;
+  title: string;
+  summary: string;
+  content: string;
+  category: 'Kebijakan' | 'Data Sektoral' | 'Riset' | 'Lainnya';
+  source: string;
+  publishedDate: Timestamp;
+  createdAt: Timestamp;
+}
+
+export interface ImportantDocument {
+  id?: string;
+  title: string;
+  description?: string;
+  documentNumber: string;
+  category: string;
+  type: string;
+  attachments: string;
+  canvaUrl?: string;
+  createdAt: string; // ISO string
+  fileUrl: string;
+  fileName: string;
+  filePath: string;
+  authorId: string;
+  authorName: string;
+  status: LetterStatus;
+  approverId?: string;
+  signers?: DigitalSigner[];
+  originalFileUrl?: string;
+  approvedById?: string;
+  approvedByName?: string;
+  approvedByPosition?: string;
+  approvedAt?: string; // ISO string
+  rejectionReason?: string;
+  rejectedById?: string;
+  rejectedByName?: string;
+  originalContent?: string;
+}
+
+export interface DigitalSigner {
+    name: string;
+    role: SignatoryRole;
+    signedAt: string;
+}
+
+export type SignatoryRole = 'Ketua Umum' | 'Sekretaris' | 'Bendahara Umum';
+
+export interface DocumentCategory {
+    id?: string;
+    name: string;
+}
+
+export interface DocumentType {
+    id?: string;
+    name: string;
+    code: string;
+}
+
+export interface Event {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  startDate: Date;
+  endDate?: Date;
+  location: string;
+  visibility: 'public' | 'member';
+  submissionType: 'internal' | 'external';
+  applicationUrl?: string;
+  formId?: string;
+  imageUrl: string;
+  imageHint?: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
+  attendeeIds?: { userId: string, userName: string, timestamp: Timestamp }[];
+  guestAttendees?: { name: string, email: string, phone?: string, timestamp: Timestamp }[];
+  createdAt: Timestamp;
+}
+
+export interface FormField {
+  id: string;
+  type: 'text' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'file';
+  label: string;
+  placeholder?: string;
+  required: boolean;
+  options?: { id: string; value: string; label: string }[];
+}
+
+export interface ProgramForm {
+  id?: string;
+  title: string;
+  description: string;
+  fields: FormField[];
+}
+
+export interface RedeemableItem {
   id?: string;
   name: string;
   description: string;
-  icon: string; // Lucide icon name
-  createdAt?: Timestamp;
-  type: BadgeType;
+  pointsRequired: number;
+  stock: number;
+  imageUrl?: string;
+}
+
+export interface Mission {
+  id?: string;
+  name: string;
+  description: string;
+  points?: number;
+  pointsPerLevel?: number[];
+  type: 'referral' | 'auto';
   criteria?: {
     metric: BadgeMetric;
     value: number;
   };
 }
 
+export type BadgeMetric = 'post_count' | 'idea_count' | 'comment_count' | 'upvote_count' | 'project_completed' | 'achievement_added' | 'vote_casted';
 
-// --- Partners ---
-export type PartnerCategory = 'strategis' | 'media';
+export interface RedemptionLog {
+  id: string;
+  userId: string;
+  userName: string;
+  itemId: string;
+  itemName: string;
+  pointsSpent: number;
+  redeemedAt: string; // ISO String
+}
+
+export interface PointLog {
+    id?: string;
+    points: number;
+    description: string;
+    createdAt: string; // ISO string
+}
+
+export interface Idea {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  authorId: string;
+  createdAt: Timestamp;
+  status: IdeaStatus;
+  upvotes: string[];
+  downvotes: string[];
+  voteScore: number;
+  commentCount: number;
+  type: IdeaType;
+  challengeId?: string;
+  challengeTitle?: string;
+}
+
+export interface IdeaWithAuthor extends Omit<Idea, 'authorId' | 'upvotes' | 'downvotes' | 'createdAt'> {
+  author: {
+    id: string;
+    name: string;
+    username: string;
+    avatarUrl: string;
+    type?: MemberType;
+  };
+  userVote?: VoteType;
+  createdAt: string; 
+}
+
+export interface Challenge {
+    id: string;
+    title: string;
+    description: string;
+    criteria: string;
+    deadline: Timestamp;
+    reward?: string;
+    authorId: string;
+    createdAt: Timestamp;
+}
+
+export interface IdeaCategory {
+  id?: string;
+  name: string;
+}
+
+export interface MapData {
+  id?: string;
+  title: string;
+  description: string;
+  category: 'potensi' | 'permasalahan' | 'program' | 'kegiatan' | 'dana';
+  latitude: number;
+  longitude: number;
+  createdAt: Timestamp;
+  budget?: number;
+  disbursed?: number;
+}
+
+export interface MapDataset {
+  id?: string;
+  name: string;
+  url: string;
+  isVisible: boolean;
+  createdAt: Timestamp;
+}
+
+export interface Badge {
+  id?: string;
+  name: string;
+  description: string;
+  icon: string;
+  createdAt?: Timestamp;
+  type: 'manual' | 'auto';
+  criteria?: {
+    metric: BadgeMetric;
+    value: number;
+  };
+}
 
 export interface Partner {
   id?: string;
   name: string;
-  category: PartnerCategory;
+  category: 'strategis' | 'media';
   websiteUrl: string;
   logoUrl: string;
   isFeatured: boolean;
 }
 
-// --- Posts (Feed) ---
-export type MediaType = 'image' | 'video';
+export interface MediaItem {
+    url: string;
+    type: 'image' | 'video';
+    hint: string;
+    mentions?: Mention[];
+}
 
 export interface Mention {
     userId: string;
     username: string;
     x: number;
     y: number;
-}
-
-export interface MediaItem {
-    url: string;
-    type: MediaType;
-    hint: string;
-    mentions?: Mention[];
 }
 
 export interface Post {
@@ -890,18 +641,16 @@ export interface Post {
   mentionedUserIds: string[];
 }
 
-export interface Author {
-  id: string;
-  name: string;
-  username: string;
-  avatarUrl: string;
-  type?: MemberType;
-  level?: UserLevel;
-}
-
 export interface PostWithAuthor {
   id: string;
-  author: Author;
+  author: {
+    id: string;
+    name: string;
+    username: string;
+    avatarUrl: string;
+    type?: MemberType;
+    level?: UserLevel;
+  };
   media: MediaItem[];
   caption: string;
   likesCount: number;
@@ -918,38 +667,22 @@ export interface Comment {
     createdAt: Timestamp;
 }
 
-export interface CommentWithAuthor {
-    id: string;
-    author: {
-        name: string;
-        username: string;
-        avatarUrl: string;
-    };
-    text: string;
-    timestamp: string;
-}
-
-// --- Programs ---
-export type ProgramSource = 'garda_lestari' | 'mitra';
-export type SubmissionType = 'internal' | 'external';
-export type ProgramType = 'aktif' | 'pasif';
-
 export interface Program {
   id: string;
   title: string;
   description: string;
   category: 'flagship' | 'ongoing';
-  programType: ProgramType;
+  programType: 'aktif' | 'pasif';
   imageUrl: string;
   imageHint: string;
   tags: string[];
   startDate: Date;
   endDate?: Date;
-  source: ProgramSource;
+  source: 'garda_lestari' | 'mitra';
   partnerId?: string; 
   benefits: string;
   requiredDocuments: string;
-  submissionType: SubmissionType;
+  submissionType: 'internal' | 'external';
   applicationUrl?: string; 
   formId?: string;
   requiresRecommendation: boolean;
@@ -957,35 +690,11 @@ export interface Program {
   attachmentName?: string;
 }
 
-export interface ProgramFormData {
-  title: string;
-  description: string;
-  category: 'flagship' | 'ongoing';
-  programType: ProgramType;
-  imageSource: 'ai' | 'url' | 'upload';
-  imageUrl?: string;
-  imageHint?: string;
-  imageFile?: FileList;
-  tags: string[];
-  dateRange: { from: Date; to?: Date };
-  isUnlimited: boolean;
-  source: ProgramSource;
-  partnerId?: string;
-  benefits: string;
-  requiredDocuments: string;
-  submissionType: SubmissionType;
-  applicationUrl?: string;
-  formId?: string;
-  requiresRecommendation: boolean;
-  attachment?: FileList;
-}
-
 export interface ProgramTag {
     id?: string;
     name: string;
 }
 
-// --- Projects ---
 export interface Project {
     id: string;
     title: string;
@@ -1020,32 +729,20 @@ export interface ProjectTask {
     checklist?: ChecklistItem[];
 }
 
-export interface ProjectComment {
-    id: string;
-    authorId: string;
-    text: string;
-    createdAt: Timestamp;
-}
-
-
-// --- Recruitments ---
-export type RecruitmentType = 'internal' | 'external';
-
 export interface Recruitment {
   id?: string;
   title: string;
-  type: RecruitmentType;
+  type: 'internal' | 'external';
   partnerId?: string;
   partnerName?: string;
   partnerLogoUrl?: string;
   applicationUrl: string;
-  deadline: Timestamp; // Changed to Timestamp
-  createdAt: Timestamp; // Changed to Timestamp
+  deadline: Timestamp;
+  createdAt: Timestamp;
   description: string;
   requirements: string;
 }
 
-// --- Settings ---
 export interface AppSettings {
   linkedin: string;
   instagram: string;
@@ -1069,6 +766,14 @@ export interface AppSettings {
   isEvotingEnabled: boolean;
 }
 
+export interface WhatsAppTemplate {
+  id: NotificationType;
+  label: string;
+  message: string;
+  isActive: boolean;
+  placeholders: string[];
+}
+
 export type NotificationType =
   | 'document_submission'
   | 'document_approved'
@@ -1083,25 +788,6 @@ export type NotificationType =
   | 'app_tester_approved'
   | 'booking_payment_confirmed';
 
-export interface WhatsAppTemplate {
-  id: NotificationType;
-  label: string;
-  message: string;
-  isActive: boolean;
-  placeholders: string[];
-}
-
-export interface Notification {
-    id?: string;
-    userId: string;
-    title: string;
-    body: string;
-    link?: string;
-    read: boolean;
-    createdAt: Timestamp | string;
-}
-
-// --- Shortlinks ---
 export interface ShortLink {
     id?: string;
     title: string;
@@ -1113,35 +799,26 @@ export interface ShortLink {
     createdAt: string; // ISO string
 }
 
+export interface AssistantInput {
+  query: string;
+  userId: string;
+  history?: { role: 'user' | 'assistant', content: any }[];
+  image?: string;
+}
 
-// --- Assistant ---
-export const AssistantInputSchema = z.object({
-  query: z.string().describe("The user's question or request."),
-  userId: z.string().describe('The ID of the user asking the question.'),
-  history: z.array(z.object({
-      role: z.enum(['user', 'assistant']),
-      content: z.any(),
-  })).optional().describe('The previous conversation history.'),
-  image: z.string().optional().describe('An optional image provided by the user as a data URI.'),
-});
-export type AssistantInput = z.infer<typeof AssistantInputSchema>;
+export interface AssistantOutput {
+  responseText: string;
+  citations: Citation[];
+}
 
-export const CitationSchema = z.object({
-  sourceId: z.string().describe('The unique ID of the source document or idea.'),
-  type: z.enum(['data', 'idea', 'program', 'event', 'achievement']).describe('The type of the source.'),
-  title: z.string().describe('The title of the source.'),
-  summary: z.string().describe('A brief summary of the source content.'),
-  url: z.string().describe('The URL to view the full source.'),
-});
-export type Citation = z.infer<typeof CitationSchema>;
+export interface Citation {
+  sourceId: string;
+  type: 'data' | 'idea' | 'program' | 'event' | 'achievement';
+  title: string;
+  summary: string;
+  url: string;
+}
 
-export const AssistantOutputSchema = z.object({
-  responseText: z.string().describe('The main text of the AI\'s answer, formatted in Markdown. This text MUST include citation markers like [Sumber 1], [Ide 2], etc., corresponding to the `citations` array.'),
-  citations: z.array(CitationSchema).optional().describe('An array of sources cited in the `responseText`.'),
-});
-export type AssistantOutput = z.infer<typeof AssistantOutputSchema>;
-
-// --- Analytics ---
 export interface AnalyticsReport {
     dimensionHeaders: { name: string }[];
     metricHeaders: { name: string; type: string }[];
@@ -1167,42 +844,6 @@ export interface PageSpeedReport {
             seo: { score: number };
         };
     };
-}
-// --- Voting ---
-export interface VotingOption {
-    id: string;
-    name: string;
-    voteCount: number;
-    imageUrl?: string;
-}
-
-export interface VotingTopic {
-    id: string;
-    title: string;
-    description: string;
-    options: VotingOption[];
-    voterIds: string[];
-    totalVotes: number;
-    startDate: Timestamp;
-    endDate: Timestamp;
-    createdAt: Timestamp;
-    coverImageUrl?: string;
-}
-
-export interface VotingTopicDTO extends Omit<VotingTopic, 'startDate' | 'endDate' | 'createdAt'> {
-    startDate: string;
-    endDate: string;
-    createdAt: string;
-}
-
-
-export interface UpdateVotingTopicPayload {
-    title: string;
-    description: string;
-    startDate: Date;
-    endDate: Date;
-    options: VotingOption[];
-    coverImageUrl?: string;
 }
 
 export interface PublicUser {

@@ -20,7 +20,7 @@ import {
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 export type { Idea, IdeaWithAuthor, IdeaAuthor, IdeaCategory, VoteType, IdeaStatus, IdeaType, Challenge } from '@/lib/definitions';
-import type { Idea, IdeaWithAuthor, IdeaAuthor, IdeaCategory, VoteType, IdeaStatus, IdeaType, Challenge, Comment } from '@/lib/definitions';
+import type { Idea, IdeaWithAuthor, IdeaAuthor, IdeaCategory, VoteType, IdeaStatus, IdeaType, Challenge, Comment, CommentWithAuthor } from '@/lib/definitions';
 import { checkAndAwardBadges } from '@/app/actions/badges';
 
 const ideasCollection = collection(db, 'ideas');
@@ -303,22 +303,24 @@ export async function addIdeaComment(ideaId: string, userId: string, text: strin
 }
 
 // Get comments for an idea
-export async function getIdeaComments(ideaId: string): Promise<any[]> {
+export async function getIdeaComments(ideaId: string): Promise<CommentWithAuthor[]> {
     try {
         const commentsCollection = collection(db, 'ideas', ideaId, 'comments');
         const q = query(commentsCollection, orderBy('createdAt', 'desc'));
 
         const commentsSnapshot = await getDocs(q);
-        const comments = [];
+        const comments: CommentWithAuthor[] = [];
 
         for (const commentDoc of commentsSnapshot.docs) {
-            const commentData = { id: commentDoc.id, ...commentDoc.data() } as unknown as Comment;
+            const commentData = { id: commentDoc.id, ...commentDoc.data() } as any;
             const authorDoc = await getDoc(doc(usersCollection, commentData.authorId));
             if (authorDoc.exists()) {
                 const authorData = authorDoc.data();
                 comments.push({
-                    ...commentData,
+                    id: commentData.id,
+                    text: commentData.text,
                     author: {
+                        id: commentData.authorId,
                         name: authorData.fullName || 'User',
                         username: authorData.username || 'user',
                         avatarUrl: authorData.avatarUrl || ''
