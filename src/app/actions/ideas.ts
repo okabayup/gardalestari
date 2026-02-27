@@ -312,7 +312,7 @@ export async function getIdeaComments(ideaId: string): Promise<any[]> {
         const comments = [];
 
         for (const commentDoc of commentsSnapshot.docs) {
-            const commentData = { id: commentDoc.id, ...commentDoc.data() };
+            const commentData = { id: commentDoc.id, ...commentDoc.data() } as any;
             const authorDoc = await getDoc(doc(usersCollection, commentData.authorId));
             if (authorDoc.exists()) {
                 const authorData = authorDoc.data();
