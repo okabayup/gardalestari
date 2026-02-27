@@ -1,16 +1,14 @@
-
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutGrid, Users, Sprout, FolderKanban, Sparkles, Dot } from 'lucide-react';
+import { LayoutGrid, Users, Sprout, FolderKanban, Sparkles } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { Separator } from '../ui/separator';
 import { useAuth } from '@/hooks/use-auth';
-import { directoryItems, panelDirectoryItems, PermissionId, AppSettings } from '@/lib/definitions';
+import { directoryItems, AppSettings } from '@/lib/definitions';
 import { ScrollArea } from '../ui/scroll-area';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { getAppSettings } from '@/app/actions/settings';
 import { useState, useEffect } from 'react';
 
@@ -22,8 +20,6 @@ const mainNavItems = [
 ];
 
 const DirectorySheet = ({ settings }: { settings: AppSettings | null }) => {
-    const { hasPermission } = useAuth();
-    
     // Filter out disabled features
     const accessibleDirectoryItems = directoryItems.filter(item => {
         if (item.href === '/ideas' && !settings?.isIdeasEnabled) return false;
@@ -33,17 +29,12 @@ const DirectorySheet = ({ settings }: { settings: AppSettings | null }) => {
         return true;
     });
 
-    const accessiblePanelGroups = panelDirectoryItems.map(group => ({
-        ...group,
-        items: group.items.filter(item => !item.permission || hasPermission(item.permission as PermissionId))
-    })).filter(group => group.items.length > 0);
-
     return (
         <Sheet>
             <SheetTrigger asChild>
                  <div
                     className={cn(
-                        'relative flex h-full flex-col items-center justify-center gap-1 text-sm transition-colors hover:text-primary',
+                        'relative flex h-full flex-col items-center justify-center gap-1 text-sm transition-colors hover:text-primary cursor-pointer',
                         'text-muted-foreground'
                     )}
                     >
@@ -81,13 +72,15 @@ const DirectorySheet = ({ settings }: { settings: AppSettings | null }) => {
 export default function BottomNav() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const [mounted, setMounted] = useState(false);
   const [settings, setSettings] = useState<AppSettings | null>(null);
   
   useEffect(() => {
+    setMounted(true);
     getAppSettings().then(setSettings);
   }, []);
 
-  if (user?.verificationStatus === 'unverified') {
+  if (!mounted || user?.verificationStatus === 'unverified') {
     return null;
   }
 

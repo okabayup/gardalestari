@@ -1,6 +1,6 @@
-
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRequireAuth } from '@/hooks/use-require-auth';
 import Header from './Header';
 import BottomNav from './BottomNav';
@@ -14,9 +14,15 @@ import WhatsAppVerificationDialog from '@/components/whatsapp/WhatsAppVerificati
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useRequireAuth();
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useFcm(); // Initialize FCM and request permission
 
-  if (loading || !user) {
+  if (loading || !user || !mounted) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />

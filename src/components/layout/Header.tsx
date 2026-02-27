@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -20,10 +19,11 @@ import { useRouter } from 'next/navigation';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
-import { getNotificationsForUser, markNotificationsAsRead, Notification, getUnreadNotificationsCount } from '@/app/actions/notifications';
+import { getNotificationsForUser, markNotificationsAsRead, getUnreadNotificationsCount } from '@/app/actions/notifications';
 import { getAppSettings, AppSettings } from '@/app/actions/settings';
 import { formatDistanceToNow } from 'date-fns';
 import { GlobalSearch } from '../search/GlobalSearch';
+import { Notification } from '@/lib/definitions';
 
 const NotificationItem = ({ title, body, time, read, link }: { title: string, body: string, time: string, read: boolean, link?: string }) => (
     <Link href={link || '#'} className="block p-3 hover:bg-muted/50 rounded-lg">
@@ -41,6 +41,7 @@ const NotificationItem = ({ title, body, time, read, link }: { title: string, bo
 export default function Header() {
   const { user, signOut, hasPermission } = useAuth();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
@@ -49,21 +50,26 @@ export default function Header() {
   const isAdmin = user?.permissions && user.permissions.length > 0;
   
   useEffect(() => {
+    setMounted(true);
     getAppSettings().then(setSettings);
   }, []);
   
   useEffect(() => {
-    if (user) {
+    if (user && mounted) {
       const fetchCount = async () => {
-        const count = await getUnreadNotificationsCount(user.uid);
-        setUnreadCount(count);
+        try {
+            const count = await getUnreadNotificationsCount(user.uid);
+            setUnreadCount(count);
+        } catch (e) {
+            console.error(e);
+        }
       };
       fetchCount();
       
       const interval = setInterval(fetchCount, 60000); // Poll every minute
       return () => clearInterval(interval);
     }
-  }, [user]);
+  }, [user, mounted]);
 
   const handleOpenSheet = async () => {
     setIsSheetOpen(true);
@@ -77,7 +83,7 @@ export default function Header() {
         
         const unreadIds = fetchedNotifications.filter(n => !n.read).map(n => n.id);
         if (unreadIds.length > 0) {
-            await markNotificationsAsRead(user.uid, unreadIds);
+            await markNotificationsAsRead(user.uid, unreadIds.filter((id): id is string => !!id));
         }
     } catch (error) {
         console.error("Failed to fetch notifications", error);
@@ -98,6 +104,19 @@ export default function Header() {
     await signOut();
     router.push('/login');
   };
+
+  // Hydration safety
+  if (!mounted) {
+    return (
+      <header className="sticky top-0 z-40 w-full border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex h-14 items-center">
+          <Link href="/feed" className="flex items-center">
+            <Image src="/logo.png" alt="Garda Lestari Logo" width={120} height={32} className="h-8 w-auto" />
+          </Link>
+        </div>
+      </header>
+    );
+  }
   
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -206,8 +225,9 @@ function NotificationItemWrapper({ notification }: { notification: Notification 
 
     useEffect(() => {
         const formatTime = async () => {
-            const { id } = await import('date-fns/locale/id');
-            setTimeAgo(formatDistanceToNow(notification.createdAt.toDate(), { addSuffix: true, locale: id }));
+            const { id: localeId } = await import('date-fns/locale/id');
+            const date = typeof notification.createdAt === 'string' ? new Date(notification.createdAt) : notification.createdAt.toDate();
+            setTimeAgo(formatDistanceToNow(date, { addSuffix: true, locale: localeId }));
         };
         formatTime();
     }, [notification.createdAt]);

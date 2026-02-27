@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -22,16 +20,35 @@ const navItems = [
 
 export default function LandingHeader() {
   const { user, loading } = useAuth();
+  const [mounted, setMounted] = useState(false);
   const [isRegistrationOpen, setRegistrationOpen] = useState(true);
 
   useEffect(() => {
+    setMounted(true);
     async function fetchSettings() {
-        const settings = await getAppSettings();
-        setRegistrationOpen(settings.isRegistrationOpen);
+        try {
+            const settings = await getAppSettings();
+            setRegistrationOpen(settings.isRegistrationOpen);
+        } catch (error) {
+            console.error("Failed to fetch settings", error);
+        }
     }
     fetchSettings();
   }, []);
   
+  // Hydration safety: Return a stable skeleton until mounted on client
+  if (!mounted) {
+    return (
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center">
+          <Link href="/" className="flex items-center">
+            <Image src="/logo.png" alt="Garda Lestari Logo" width={120} height={32} className="h-8 w-auto" />
+          </Link>
+        </div>
+      </header>
+    );
+  }
+
   // If user is logged in but has not completed KTP verification, show the flow.
   if (user && user.verificationStatus === 'unverified') {
     return <VerificationFlow />;

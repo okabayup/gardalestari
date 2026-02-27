@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,31 +10,39 @@ import { getAppSettings } from '@/app/actions/settings';
 const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=org.gardalestari.twa';
 
 export default function InstallGate() {
+  const [mounted, setMounted] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const checkConditions = async () => {
-      const settings = await getAppSettings();
-      
-      if (!settings.isInstallForced) {
-        return;
-      }
+      try {
+        const settings = await getAppSettings();
+        
+        if (!settings.isInstallForced) {
+          return;
+        }
 
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const isTwa = document.referrer.includes('android-app://');
-      const hasSeenDialog = sessionStorage.getItem('hasSeenInstallGate');
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isTwa = typeof document !== 'undefined' && document.referrer.includes('android-app://');
+        const hasSeenDialog = sessionStorage.getItem('hasSeenInstallGate');
 
-      if (isMobile && !isTwa && !hasSeenDialog) {
-        setShowDialog(true);
-        sessionStorage.setItem('hasSeenInstallGate', 'true');
+        if (isMobile && !isTwa && !hasSeenDialog) {
+          setShowDialog(true);
+          sessionStorage.setItem('hasSeenInstallGate', 'true');
+        }
+      } catch (error) {
+        console.error("Failed to check install conditions", error);
       }
     };
     
     checkConditions();
   }, []);
 
+  if (!mounted) return null;
+
   return (
-    <Dialog open={showDialog}>
+    <Dialog open={showDialog} onOpenChange={setShowDialog}>
       <DialogContent hideClose={true} onInteractOutside={(e) => e.preventDefault()} className="max-w-sm">
         <DialogHeader className="items-center text-center">
             <Image src="/logo.png" alt="Garda Lestari" width={120} height={32} className="mb-4" />
