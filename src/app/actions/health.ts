@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -6,7 +7,7 @@
 
 import { logError } from './errors';
 
-const ROUTES_TO_SCAN = [
+export const ROUTES_TO_SCAN = [
   '/',
   '/berita',
   '/video',

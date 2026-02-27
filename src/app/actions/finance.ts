@@ -1,5 +1,5 @@
 
-'use server';
+'use client';
 
 import { db } from '@/lib/firebase';
 import {
@@ -31,10 +31,8 @@ const budgetsCollection = collection(db, 'budgets');
 const contactsCollection = collection(db, 'contacts');
 const invoicesCollection = collection(db, 'invoices');
 
-
 /**
  * Generates a comprehensive financial report for a given date range.
- * This is used for the Finance Dashboard and Reports page.
  */
 export async function getFinancialReports(startDate: Date, endDate: Date): Promise<FinancialReportData> {
   try {
@@ -58,11 +56,9 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
         } as unknown as JournalEntry;
     });
 
-    // Initialize Income Statement data
     const revenues: Record<string, { name: string; total: number; budget?: number }> = {};
     const expenses: Record<string, { name: string; total: number; budget?: number }> = {};
     
-    // Process entries for Income Statement (Revenue & Expenses in period)
     entries.forEach(entry => {
       entry.transactions.forEach(trans => {
         const account = accounts.find(a => a.id === trans.accountId);
@@ -87,7 +83,6 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
     const totalExpense = expenseList.reduce((sum, e) => sum + e.total, 0);
     const netIncome = totalRevenue - totalExpense;
 
-    // Calculate trends for charts
     const revenueTrend: Record<string, number> = {};
     const expenseTrend: Record<string, number> = {};
     
@@ -104,14 +99,11 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
       });
     });
 
-    // Balance Sheet data (Current position from account balances)
     const assets = accounts.filter(a => a.category === 'Aset').map(a => ({ name: a.name, balance: a.balance }));
     const liabilities = accounts.filter(a => a.category === 'Liabilitas').map(a => ({ name: a.name, balance: a.balance }));
     const equity = accounts.filter(a => a.category === 'Ekuitas').map(a => ({ name: a.name, balance: a.balance }));
     
     const totalAssets = assets.reduce((sum, a) => sum + a.balance, 0);
-    
-    // Virtual account for current net income in Balance Sheet
     equity.push({ name: 'Laba (Rugi) Bersih Berjalan', balance: netIncome });
 
     return {
@@ -137,9 +129,6 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
     throw new Error("Gagal menghasilkan laporan keuangan.");
   }
 }
-
-
-// --- Invoicing (AR) Management ---
 
 export async function getInvoices(): Promise<Invoice[]> {
     try {
@@ -204,8 +193,6 @@ export async function createInvoice(data: Omit<Invoice, 'id' | 'createdAt' | 'in
     }
 }
 
-
-// --- Contact Management ---
 export async function getContacts(): Promise<Contact[]> {
     const q = query(contactsCollection, orderBy('name', 'asc'));
     const snapshot = await getDocs(q);
@@ -229,8 +216,6 @@ export async function deleteContact(id: string) {
     revalidatePath('/panel/finance/contacts');
 }
 
-
-// --- Budget Management ---
 export async function getBudgetsForPeriod(period: string): Promise<Budget[]> {
     try {
         const q = query(budgetsCollection, where('period', '==', period));
@@ -268,8 +253,6 @@ export async function saveBudgets(period: string, budgets: { accountId: string, 
     }
 }
 
-
-// --- Chart of Accounts (CoA) Management ---
 export async function getAccountDetails(accountId: string): Promise<Account | null> {
   try {
     const docRef = doc(db, 'accounts', accountId);
@@ -332,7 +315,6 @@ export async function deleteAccount(id: string) {
   }
 }
 
-// --- Simplified Transaction Entry ---
 export async function createSimpleTransaction(
     type: 'income' | 'expense',
     date: Timestamp,
@@ -365,8 +347,6 @@ export async function createSimpleTransaction(
     await createJournalEntry(entry);
 }
 
-
-// --- General Journal Management ---
 async function createJournalEntryWithTransaction(transaction: any, data: Omit<JournalEntry, 'id' | 'createdAt'>) {
   const newEntryRef = doc(journalEntriesCollection);
   transaction.set(newEntryRef, { ...data, createdAt: serverTimestamp() });
