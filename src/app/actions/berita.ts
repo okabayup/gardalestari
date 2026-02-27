@@ -172,7 +172,12 @@ export async function getBeritaPosts(type?: 'artikel' | 'video', includeDrafts =
     
     const posts: BeritaPost[] = [];
     for (const doc of snapshot.docs) {
-      const postData = { id: doc.id, ...doc.data() } as BeritaPost;
+      const data = doc.data();
+      const postData: BeritaPost = { 
+          id: doc.id, 
+          ...data,
+          date: data.date instanceof Timestamp ? data.date.toDate().toISOString() : data.date
+      } as BeritaPost;
       posts.push(postData);
     }
 
@@ -197,7 +202,12 @@ export async function getBeritaPost(slug: string) {
     }
     
     const doc = snapshot.docs[0];
-    return { id: doc.id, ...doc.data() } as BeritaPost;
+    const data = doc.data();
+    return { 
+        id: doc.id, 
+        ...data,
+        date: data.date instanceof Timestamp ? data.date.toDate().toISOString() : data.date
+    } as BeritaPost;
   } catch (error) {
     console.error(`[getBeritaPost Error] Failed to get post with slug ${slug}:`, error);
     throw new Error("Gagal mengambil detail konten.");
@@ -386,12 +396,12 @@ export async function getNotificationStatus(slug: string): Promise<IndexingStatu
         if (response.status === 200 && response.data) {
             return {
                 latestUpdate: response.data.latestUpdate ? {
-                    type: response.data.latestUpdate.type || '',
-                    notifyTime: response.data.latestUpdate.notifyTime || '',
+                    type: response.data.latestUpdate.type as string,
+                    notifyTime: response.data.latestUpdate.notifyTime as string,
                 } : undefined,
                 latestRemove: response.data.latestRemove ? {
-                    type: response.data.latestRemove.type || '',
-                    notifyTime: response.data.latestRemove.notifyTime || '',
+                    type: response.data.latestRemove.type as string,
+                    notifyTime: response.data.latestRemove.notifyTime as string,
                 } : undefined,
             };
         }

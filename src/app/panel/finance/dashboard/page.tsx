@@ -1,9 +1,9 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { getFinancialReports, FinancialReportData } from '@/app/actions/finance';
+import { getFinancialReports } from '@/app/actions/finance';
+import type { FinancialReportData } from '@/lib/definitions';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Loader2, TrendingUp, TrendingDown, Wallet, Scale, PlusCircle } from 'lucide-react';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
@@ -68,7 +68,6 @@ export default function FinanceDashboardPage() {
   const incomeStatement = reportData?.incomeStatement;
   const totalRevenue = incomeStatement?.revenues.reduce((sum, item) => sum + item.total, 0) || 0;
   const totalExpense = incomeStatement?.expenses.reduce((sum, item) => sum + item.total, 0) || 0;
-  const totalBudget = incomeStatement?.expenses.reduce((sum, item) => sum + (item.budget || 0), 0) || 0;
   
   const combinedTrend = incomeStatement?.revenueTrend.map((rev, index) => ({
       date: rev.date,

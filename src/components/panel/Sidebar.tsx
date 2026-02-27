@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import {
   Home,
-  ChevronLeft
+  ChevronLeft,
+  RefreshCw
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
