@@ -1,10 +1,9 @@
 
-
 'use server';
 
 import { db } from '@/lib/firebase';
 import { getMessaging } from 'firebase-admin/messaging';
-import { collection, addDoc, query, where, getDocs, serverTimestamp, updateDoc, doc, FieldPath, orderBy, limit, writeBatch, getCountFromServer } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, serverTimestamp, updateDoc, doc, FieldPath, orderBy, limit, writeBatch, getCountFromServer, Timestamp } from 'firebase/firestore';
 import type { MemberType, Notification } from '@/lib/definitions';
 import admin from 'firebase-admin';
 
@@ -159,7 +158,7 @@ export async function sendNotification(payload: NotificationPayload, target: Not
 }
 
 // Get notifications for a specific user
-export async function getNotificationsForUser(userId: string): Promise<Notification[]> {
+export async function getNotificationsForUser(userId: string): Promise<any[]> {
     try {
         const q = query(
             notificationsCollection, 
@@ -168,9 +167,15 @@ export async function getNotificationsForUser(userId: string): Promise<Notificat
             limit(20)
         );
         const snapshot = await getDocs(q);
-        const notifications: Notification[] = [];
+        const notifications: any[] = [];
         snapshot.forEach(doc => {
-            notifications.push({ id: doc.id, ...doc.data() } as Notification);
+            const data = doc.data();
+            notifications.push({ 
+                id: doc.id, 
+                ...data,
+                // Convert Timestamp to ISO string for client serialization
+                createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt
+            });
         });
         return notifications;
     } catch (error) {

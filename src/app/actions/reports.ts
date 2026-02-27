@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -62,7 +61,7 @@ export async function createReport(
 }
 
 
-export async function getReports(): Promise<Report[]> {
+export async function getReports(): Promise<any[]> {
   try {
     const q = query(reportsCollection, orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(q);
@@ -71,8 +70,8 @@ export async function getReports(): Promise<Report[]> {
         return {
              id: doc.id, 
              ...data,
-             createdAt: data.createdAt as Timestamp,
-        } as Report
+             createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
+        };
     });
   } catch (error) {
     console.error("Error getting reports:", error);
@@ -115,6 +114,3 @@ export async function takeModerationAction(action: 'suspend_user' | 'hide_post',
     throw new Error(`Gagal mengambil tindakan moderasi: ${(error as Error).message}`);
   }
 }
-
-
-

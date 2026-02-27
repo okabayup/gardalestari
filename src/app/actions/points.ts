@@ -204,7 +204,6 @@ export async function getPointHistory(userId: string): Promise<PointLog[]> {
 export async function awardPointsForAction(actionType: Mission['type'] | BadgeMetric, userId: string, description: string, level: number = 1) {
     const userRef = doc(usersCollection, userId);
 
-    // FIX: Perform the query outside the transaction to avoid runtime errors
     const filterField = actionType === 'referral' ? 'type' : 'criteria.metric';
     const missionsQuery = query(missionsCollection, where(filterField, '==', actionType), limit(1));
     const missionsSnapshot = await getDocs(missionsQuery);
