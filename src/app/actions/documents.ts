@@ -31,13 +31,33 @@ const SIGNATORY_NAMES: Record<SignatoryRole, string> = {
     'Bendahara Umum': 'Hj. Siti Rohmah'
 };
 
+/**
+ * Safely converts a Firestore value to an ISO string date.
+ * Handles Timestamps, Strings, and Dates.
+ */
+const safeDateToIso = (val: any): string | undefined => {
+    if (!val) return undefined;
+    try {
+        if (typeof val.toDate === 'function') return val.toDate().toISOString();
+        if (val instanceof Timestamp) return val.toDate().toISOString();
+        if (val instanceof Date) return val.toISOString();
+        if (typeof val === 'string') {
+            const parsed = new Date(val);
+            return isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+        }
+    } catch (e) {
+        console.error("[safeDateToIso Error]", e);
+    }
+    return undefined;
+};
+
 const toImportantDocument = (doc: any): ImportantDocument => {
     const data = doc.data();
     return {
-        id: doc.id,
         ...data,
-        createdAt: data.createdAt ? (data.createdAt as Timestamp).toDate().toISOString() : new Date().toISOString(),
-        approvedAt: data.approvedAt ? (data.approvedAt as Timestamp).toDate().toISOString() : undefined,
+        id: doc.id,
+        createdAt: safeDateToIso(data.createdAt) || new Date().toISOString(),
+        approvedAt: safeDateToIso(data.approvedAt),
     } as ImportantDocument;
 }
 
@@ -50,7 +70,11 @@ export async function getDocuments(): Promise<ImportantDocument[]> {
     const snapshot = await getDocs(q);
     const documents: ImportantDocument[] = [];
     snapshot.forEach(doc => {
-      documents.push(toImportantDocument(doc));
+      try {
+        documents.push(toImportantDocument(doc));
+      } catch (err) {
+        console.error(`[getDocuments] Error processing doc ${doc.id}:`, err);
+      }
     });
     return documents;
   } catch(error) {
@@ -118,7 +142,10 @@ export async function createDocument(
 export async function updateDocument(id: string, data: Partial<Omit<ImportantDocument, 'id'>>, newFile?: File) {
   try {
     const docRef = doc(db, 'importantDocuments', id);
-    const dataToUpdate: { [key: string]: any } = { ...data };
+    
+    // Explicitly filter out fields that should not be overwritten by string values from the client
+    const { createdAt, authorId, id: _id, documentNumber, ...updatableData } = data as any;
+    const dataToUpdate: { [key: string]: any } = { ...updatableData };
 
     if (newFile) {
         if (newFile.type !== 'application/pdf') {
@@ -278,6 +305,8 @@ export async function approveDocument(documentId: string, approverId: string, ro
     const blockWidth = Math.min(160, availableWidth / sigCount);
     const boxHeight = 85;
     const startY = 40;
+    
+    // Adjust size based on number of signers
     const fontSize = sigCount > 2 ? 7 : 8;
     const qrSize = sigCount > 2 ? 35 : 45;
 

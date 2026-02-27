@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -22,7 +23,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getDocuments, deleteDocument, ImportantDocument, submitForApproval, approveDocument, rejectDocument } from '@/app/actions/documents';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -68,24 +69,22 @@ export default function DocumentsPage() {
   const [rejectDialogItem, setRejectDialogItem] = useState<ImportantDocument | null>(null);
   const [previewDialogItem, setPreviewDialogItem] = useState<ImportantDocument | null>(null);
 
-  const canManageDocuments = hasPermission('manage_documents');
-
-  useEffect(() => {
-    fetchDocuments();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     setLoading(true);
     try {
         const data = await getDocuments();
         setDocuments(data);
     } catch(e) {
+        console.error("[fetchDocuments Error]", e);
         toast({ variant: 'destructive', title: 'Gagal memuat dokumen.'});
     } finally {
         setLoading(false);
     }
-  }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchDocuments();
+  }, [fetchDocuments]);
 
   const handleDeleteClick = (doc: ImportantDocument) => {
     setItemToDelete(doc);
