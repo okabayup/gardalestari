@@ -392,9 +392,10 @@ export interface Contact {
   createdAt: Timestamp;
 }
 
-
-export interface IdeaStatus {
-  // ... (previous definitions)
+export interface Position {
+  id?: string;
+  name: string;
+  permissions: PermissionId[];
 }
 
 export type IdeaStatus = 'diajukan' | 'ditinjau' | 'disetujui' | 'diterapkan' | 'ditolak';
