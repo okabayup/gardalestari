@@ -25,7 +25,7 @@ import { revalidatePath } from 'next/cache';
 import type { Account, JournalEntry, JournalTransaction, FinancialReportData, Budget, Contact, Invoice } from '@/lib/definitions';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 
-// Internal constants (not exported to comply with Server Actions rules)
+// Internal constants
 const accountsCollection = collection(db, 'accounts');
 const journalEntriesCollection = collection(db, 'journalEntries');
 const budgetsCollection = collection(db, 'budgets');
@@ -40,10 +40,9 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
     const startTimestamp = Timestamp.fromDate(startDate);
     const endTimestamp = Timestamp.fromDate(endDate);
 
-    const [accountsSnapshot, entriesSnapshot, budgets] = await Promise.all([
+    const [accountsSnapshot, entriesSnapshot] = await Promise.all([
       getDocs(query(accountsCollection, orderBy('code', 'asc'))),
-      getDocs(query(journalEntriesCollection, where('date', '>=', startTimestamp), where('date', '<=', endTimestamp), orderBy('date', 'asc'))),
-      getBudgetsForPeriod(format(startDate, 'yyyy-MM'))
+      getDocs(query(journalEntriesCollection, where('date', '>=', startTimestamp), where('date', '<=', endTimestamp), orderBy('date', 'asc')))
     ]);
 
     const accounts = accountsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Account));
@@ -57,8 +56,8 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
         } as unknown as JournalEntry;
     });
 
-    const revenues: Record<string, { name: string; total: number; budget?: number }> = {};
-    const expenses: Record<string, { name: string; total: number; budget?: number }> = {};
+    const revenues: Record<string, { name: string; total: number }> = {};
+    const expenses: Record<string, { name: string; total: number }> = {};
     
     entries.forEach(entry => {
       entry.transactions.forEach(trans => {
@@ -69,10 +68,7 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
           if (!revenues[account.id!]) revenues[account.id!] = { name: account.name, total: 0 };
           revenues[account.id!].total += (trans.credit - trans.debit);
         } else if (account.category === 'Beban') {
-          if (!expenses[account.id!]) {
-              const budgetAmount = budgets.find(b => b.accountId === account.id)?.amount || 0;
-              expenses[account.id!] = { name: account.name, total: 0, budget: budgetAmount };
-          }
+          if (!expenses[account.id!]) expenses[account.id!] = { name: account.name, total: 0 };
           expenses[account.id!].total += (trans.debit - trans.credit);
         }
       });
@@ -105,7 +101,6 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
     const equity = accounts.filter(a => a.category === 'Ekuitas').map(a => ({ name: a.name, balance: a.balance }));
     
     const totalAssets = assets.reduce((sum, a) => sum + a.balance, 0);
-    equity.push({ name: 'Laba (Rugi) Bersih Berjalan', balance: netIncome });
 
     return {
       incomeStatement: {

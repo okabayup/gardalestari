@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,7 +14,7 @@ import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Link from 'next/link';
 
-// Daftar rute lokal untuk menghindari masalah impor modul eksternal sebagai array
+// Local list of routes to avoid import issues with 'use server' files
 const LOCAL_ROUTES_TO_SCAN = [
   '/',
   '/berita',
@@ -98,7 +99,7 @@ export default function SiteHealthCheckPage() {
                 setCurrentRouteIndex(-1);
                 toast({ title: 'Deep Scan Selesai', description: 'Semua halaman telah dikunjungi. Periksa Log Error untuk detail kesalahan yang terekam.' });
             }
-        }, 6000);
+        }, 6000); // Wait 6 seconds per page to allow scripts to load and errors to trigger
 
         return () => clearTimeout(timer);
     }
