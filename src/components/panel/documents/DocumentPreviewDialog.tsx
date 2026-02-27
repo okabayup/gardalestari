@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -25,10 +26,13 @@ export default function DocumentPreviewDialog({ document, isOpen, onClose, onApp
   const [isFinalSignature, setIsFinalSignature] = useState(false);
 
   useEffect(() => {
-    if (document) {
-      setFileUrlToRender(`${document.fileUrl}?t=${new Date().getTime()}`);
+    if (document && document.fileUrl) {
+      // Tambahkan timestamp untuk mematikan cache browser agar file baru langsung terlihat
+      setFileUrlToRender(`${document.fileUrl}${document.fileUrl.includes('?') ? '&' : '?'}t=${Date.now()}`);
+    } else {
+      setFileUrlToRender('');
     }
-  }, [document]);
+  }, [document, isOpen]);
 
   if (!document) return null;
 
@@ -51,7 +55,13 @@ export default function DocumentPreviewDialog({ document, isOpen, onClose, onApp
         </DialogHeader>
         
         <div className="flex-1 border-t border-b overflow-hidden relative">
-             <PdfViewer file={fileUrlToRender} />
+             {fileUrlToRender ? (
+                <PdfViewer file={fileUrlToRender} />
+             ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                    Memuat file...
+                </div>
+             )}
         </div>
 
         <div className="p-4 bg-muted/30 border-b flex flex-col sm:flex-row gap-4 items-end">

@@ -1,7 +1,8 @@
+
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, runTransaction, where, getCountFromServer, setDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, runTransaction, where, getCountFromServer, setDoc, deleteField } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import { sendNotification } from '@/app/actions/notifications';
@@ -124,6 +125,8 @@ export async function updateDocument(id: string, data: Partial<Omit<ImportantDoc
             throw new Error("File baru harus dalam format PDF.");
         }
         const currentDoc = await getDocument(id);
+        
+        // Hapus file lama dari storage
         if (currentDoc?.filePath) {
             try {
                 await deleteObject(ref(storage, currentDoc.filePath));
@@ -133,19 +136,34 @@ export async function updateDocument(id: string, data: Partial<Omit<ImportantDoc
                 }
             }
         }
+
+        // Upload file baru
         const filePath = `documents/${Date.now()}_${newFile.name}`;
         const fileRef = ref(storage, filePath);
         await uploadBytes(fileRef, newFile);
-        dataToUpdate.fileUrl = await getDownloadURL(fileRef);
-        dataToUpdate.originalFileUrl = dataToUpdate.fileUrl;
+        const fileUrl = await getDownloadURL(fileRef);
+
+        // Reset metadata karena file berubah
+        dataToUpdate.fileUrl = fileUrl;
+        dataToUpdate.originalFileUrl = fileUrl;
         dataToUpdate.filePath = filePath;
         dataToUpdate.fileName = newFile.name;
+        dataToUpdate.status = 'Draft'; // Reset ke draf
         dataToUpdate.signers = []; 
+        dataToUpdate.originalContent = deleteField(); // Hapus cache OCR lama
+        dataToUpdate.approvedAt = deleteField();
+        dataToUpdate.approvedById = deleteField();
+        dataToUpdate.approvedByName = deleteField();
+        dataToUpdate.approvedByPosition = deleteField();
+        dataToUpdate.rejectionReason = deleteField();
+        dataToUpdate.rejectedById = deleteField();
+        dataToUpdate.rejectedByName = deleteField();
     }
 
     await updateDoc(docRef, dataToUpdate);
     revalidatePath('/panel/documents');
     revalidatePath(`/panel/documents/edit/${id}`);
+    revalidatePath('/documents');
   } catch (error) {
     console.error("[updateDocument Error]", error);
     throw new Error(`Gagal memperbarui dokumen: ${(error as Error).message}`);
