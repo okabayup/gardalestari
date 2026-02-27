@@ -25,7 +25,6 @@ import { revalidatePath } from 'next/cache';
 import type { Account, JournalEntry, JournalTransaction, FinancialReportData, Budget, Contact, Invoice } from '@/lib/definitions';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 
-// Internal constants
 const accountsCollection = collection(db, 'accounts');
 const journalEntriesCollection = collection(db, 'journalEntries');
 const budgetsCollection = collection(db, 'budgets');
@@ -40,27 +39,21 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
     const startTimestamp = Timestamp.fromDate(startDate);
     const endTimestamp = Timestamp.fromDate(endDate);
 
-    const [accountsSnapshot, entriesSnapshot] = await Promise.all([
+    const [accountsSnapshot, entriesSnapshot, budgetsSnapshot] = await Promise.all([
       getDocs(query(accountsCollection, orderBy('code', 'asc'))),
-      getDocs(query(journalEntriesCollection, where('date', '>=', startTimestamp), where('date', '<=', endTimestamp), orderBy('date', 'asc')))
+      getDocs(query(journalEntriesCollection, where('date', '>=', startTimestamp), where('date', '<=', endTimestamp), orderBy('date', 'asc'))),
+      getDocs(query(budgetsCollection, where('period', '==', format(startDate, 'yyyy-MM'))))
     ]);
 
     const accounts = accountsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Account));
-    const entries = entriesSnapshot.docs.map(doc => {
-        const data = doc.data();
-        return { 
-            id: doc.id, 
-            ...data,
-            date: data.date,
-            createdAt: data.createdAt
-        } as unknown as JournalEntry;
-    });
+    const entries = entriesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+    const budgets = budgetsSnapshot.docs.map(doc => doc.data() as Budget);
 
     const revenues: Record<string, { name: string; total: number }> = {};
-    const expenses: Record<string, { name: string; total: number }> = {};
+    const expenses: Record<string, { name: string; total: number; budget: number }> = {};
     
     entries.forEach(entry => {
-      entry.transactions.forEach(trans => {
+      entry.transactions.forEach((trans: any) => {
         const account = accounts.find(a => a.id === trans.accountId);
         if (!account) return;
 
@@ -68,7 +61,10 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
           if (!revenues[account.id!]) revenues[account.id!] = { name: account.name, total: 0 };
           revenues[account.id!].total += (trans.credit - trans.debit);
         } else if (account.category === 'Beban') {
-          if (!expenses[account.id!]) expenses[account.id!] = { name: account.name, total: 0 };
+          if (!expenses[account.id!]) {
+              const budget = budgets.find(b => b.accountId === account.id)?.amount || 0;
+              expenses[account.id!] = { name: account.name, total: 0, budget };
+          }
           expenses[account.id!].total += (trans.debit - trans.credit);
         }
       });
@@ -84,8 +80,8 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
     const expenseTrend: Record<string, number> = {};
     
     entries.forEach(entry => {
-      const dateKey = format((entry.date as any).toDate(), 'yyyy-MM-dd');
-      entry.transactions.forEach(trans => {
+      const dateKey = format(entry.date.toDate(), 'yyyy-MM-dd');
+      entry.transactions.forEach((trans: any) => {
         const account = accounts.find(a => a.id === trans.accountId);
         if (!account) return;
         if (account.category === 'Pendapatan') {
@@ -130,14 +126,11 @@ export async function getInvoices(): Promise<Invoice[]> {
     try {
         const q = query(invoicesCollection, orderBy('createdAt', 'desc'));
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => {
-            const data = doc.data();
+        return snapshot.docs.map(docSnap => {
+            const data = docSnap.data();
             return {
-                id: doc.id,
+                id: docSnap.id,
                 ...data,
-                date: data.date,
-                dueDate: data.dueDate,
-                createdAt: data.createdAt,
             } as unknown as Invoice;
         });
     } catch (error) {
@@ -386,15 +379,10 @@ export async function getJournalEntries(): Promise<any[]> {
     try {
         const q = query(journalEntriesCollection, orderBy('date', 'desc'));
         const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                ...data,
-                date: data.date,
-                createdAt: data.createdAt,
-            };
-        });
+        return snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+        }));
     } catch(error) {
         console.error("[getJournalEntries Error]", error);
         throw new Error("Gagal mengambil data Buku Jurnal.");
@@ -407,17 +395,13 @@ export async function getJournalEntriesForAccount(accountId: string): Promise<an
         const snapshot = await getDocs(q);
         
         const filteredEntries = snapshot.docs
-            .map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    ...data,
-                    date: data.date,
-                };
-            })
-            .filter(entry => entry.transactions.some((t: any) => t.accountId === accountId));
+            .map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            }))
+            .filter((entry: any) => entry.transactions.some((t: any) => t.accountId === accountId));
 
-        return filteredEntries.sort((a,b) => (a.date as any).toDate().getTime() - (b.date as any).toDate().getTime());
+        return filteredEntries.sort((a: any, b: any) => a.date.toDate().getTime() - b.date.toDate().getTime());
     } catch (error) {
         console.error("[getJournalEntriesForAccount Error]", error);
         throw new Error("Gagal mengambil data buku besar.");

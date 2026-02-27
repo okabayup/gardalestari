@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -191,7 +192,7 @@ export async function updateEvent(id: string, formData: FormData) {
         const currentEvent = await getEvent(id);
         if (currentEvent?.attachmentUrl) {
             try {
-                const oldAttachmentRef = ref(storage, currentProgram.attachmentUrl);
+                const oldAttachmentRef = ref(storage, currentEvent.attachmentUrl);
                 await deleteObject(oldAttachmentRef);
             } catch (storageError: any) {
                 if (storageError.code !== 'storage/object-not-found') {

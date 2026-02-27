@@ -7,7 +7,8 @@
 
 import { logError } from './errors';
 
-// Do not export constants in a 'use server' file to prevent hydration/build errors
+// Internal list of routes to scan. 
+// Do not export this array directly from a 'use server' file to comply with Next.js rules.
 const ROUTES_TO_SCAN = [
   '/',
   '/berita',
@@ -63,10 +64,10 @@ export async function scanAllRoutes(): Promise<ScanResult[]> {
       if (!response.ok) {
         result.error = `HTTP ${response.status}: ${response.statusText}`;
         await logError({
-          context: 'site-health-scan',
+          context: 'site-health-http-fail',
           message: `Route ${route} returned error status ${response.status}`,
           path: route,
-        }, false); // Don't send WhatsApp alert for automated scan failures
+        }, false);
       }
 
       results.push(result);
@@ -79,7 +80,7 @@ export async function scanAllRoutes(): Promise<ScanResult[]> {
         error: errorMessage,
       });
       await logError({
-        context: 'site-health-scan',
+        context: 'site-health-scan-error',
         message: `Failed to fetch route ${route}: ${errorMessage}`,
         path: route,
       }, false);

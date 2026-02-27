@@ -14,7 +14,7 @@ import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Link from 'next/link';
 
-// Local list of routes to avoid import issues with 'use server' files
+// Local list of routes to scan to avoid module import issues with Server Actions
 const LOCAL_ROUTES_TO_SCAN = [
   '/',
   '/berita',
