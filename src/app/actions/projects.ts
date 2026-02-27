@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -27,6 +26,7 @@ import type { Project, ProjectColumn, ProjectTask, CommentWithAuthor, IdeaAuthor
 import { sendNotification } from './notifications';
 import { sendEmail } from '@/services/email';
 
+// Internal collection references (not exported)
 const projectsCollection = collection(db, 'projects');
 const usersCollection = collection(db, 'users');
 

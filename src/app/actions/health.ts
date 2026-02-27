@@ -7,7 +7,8 @@
 
 import { logError } from './errors';
 
-export const ROUTES_TO_SCAN = [
+// Do not export constants in a 'use server' file to prevent hydration/build errors
+const ROUTES_TO_SCAN = [
   '/',
   '/berita',
   '/video',

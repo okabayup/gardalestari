@@ -24,6 +24,7 @@ import { revalidatePath } from 'next/cache';
 import type { RedeemableItem, Mission, RedemptionLog, PointLog, BadgeMetric } from '@/lib/definitions';
 import { getUserByUid } from '@/app/actions/user';
 
+// Local constants (not exported)
 const redeemableItemsCollection = collection(db, 'redeemableItems');
 const missionsCollection = collection(db, 'missions');
 const redemptionLogsCollection = collection(db, 'redemptionLogs');

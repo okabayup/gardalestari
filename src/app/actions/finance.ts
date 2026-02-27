@@ -1,5 +1,5 @@
 
-'use client';
+'use server';
 
 import { db } from '@/lib/firebase';
 import {
@@ -25,6 +25,7 @@ import { revalidatePath } from 'next/cache';
 import type { Account, JournalEntry, JournalTransaction, FinancialReportData, Budget, Contact, Invoice } from '@/lib/definitions';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 
+// Internal constants (not exported to comply with Server Actions rules)
 const accountsCollection = collection(db, 'accounts');
 const journalEntriesCollection = collection(db, 'journalEntries');
 const budgetsCollection = collection(db, 'budgets');
