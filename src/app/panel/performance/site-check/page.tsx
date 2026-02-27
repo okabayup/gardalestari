@@ -1,22 +1,43 @@
-
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Play, CheckCircle, XCircle, Search, Terminal, ArrowRight, Eye } from 'lucide-react';
-import { scanAllRoutes, ScanResult, ROUTES_TO_SCAN } from '@/app/actions/health';
+import { Loader2, CheckCircle, Search, Terminal, Eye } from 'lucide-react';
+import { scanAllRoutes, ScanResult } from '@/app/actions/health';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import Link from 'next/link';
+
+// Daftar rute lokal untuk menghindari masalah impor modul eksternal sebagai array
+const LOCAL_ROUTES_TO_SCAN = [
+  '/',
+  '/berita',
+  '/video',
+  '/tentang',
+  '/programs',
+  '/events',
+  '/recruitments',
+  '/documents',
+  '/announcements',
+  '/points',
+  '/ideas',
+  '/evoting',
+  '/panel/dashboard',
+  '/panel/members',
+  '/panel/finance/dashboard',
+  '/panel/settings',
+  '/profile/me',
+];
 
 export default function SiteHealthCheckPage() {
   const { toast } = useToast();
   const [results, setResults] = useState<ScanResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [lastScan, setLastScan] = useState<Date | null>(null);
 
   // Console Scanner State
   const [isConsoleScanning, setIsConsoleScanning] = useState(false);
@@ -29,7 +50,6 @@ export default function SiteHealthCheckPage() {
     try {
       const scanResults = await scanAllRoutes();
       setResults(scanResults);
-      setLastScan(new Date());
       
       const failedCount = scanResults.filter(r => !r.ok).length;
       if (failedCount > 0) {
@@ -59,20 +79,19 @@ export default function SiteHealthCheckPage() {
     setIsConsoleScanning(true);
     setCurrentRouteIndex(0);
     const initialResults: Record<string, 'pending'> = {};
-    ROUTES_TO_SCAN.forEach(r => initialResults[r] = 'pending');
+    LOCAL_ROUTES_TO_SCAN.forEach(r => initialResults[r] = 'pending');
     setConsoleScanResults(initialResults);
     toast({ title: 'Deep Scan Dimulai', description: 'Sistem akan membuka halaman satu per satu di jendela tersembunyi.' });
   };
 
   useEffect(() => {
-    if (isConsoleScanning && currentRouteIndex >= 0 && currentRouteIndex < ROUTES_TO_SCAN.length) {
-        const route = ROUTES_TO_SCAN[currentRouteIndex];
+    if (isConsoleScanning && currentRouteIndex >= 0 && currentRouteIndex < LOCAL_ROUTES_TO_SCAN.length) {
+        const route = LOCAL_ROUTES_TO_SCAN[currentRouteIndex];
         setConsoleScanResults(prev => ({ ...prev, [route]: 'checking' }));
 
-        // Wait for 6 seconds per page to allow JS execution and error catching
         const timer = setTimeout(() => {
             setConsoleScanResults(prev => ({ ...prev, [route]: 'success' }));
-            if (currentRouteIndex < ROUTES_TO_SCAN.length - 1) {
+            if (currentRouteIndex < LOCAL_ROUTES_TO_SCAN.length - 1) {
                 setCurrentRouteIndex(prev => prev + 1);
             } else {
                 setIsConsoleScanning(false);
@@ -85,8 +104,7 @@ export default function SiteHealthCheckPage() {
     }
   }, [isConsoleScanning, currentRouteIndex, toast]);
 
-  const errorCount = results.filter(r => !r.ok).length;
-  const consoleProgress = isConsoleScanning ? ((currentRouteIndex + 1) / ROUTES_TO_SCAN.length) * 100 : 0;
+  const consoleProgress = isConsoleScanning ? ((currentRouteIndex + 1) / LOCAL_ROUTES_TO_SCAN.length) * 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -113,18 +131,17 @@ export default function SiteHealthCheckPage() {
                   <div className="flex justify-between items-center">
                     <CardTitle className="text-sm font-bold flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Sedang Memindai Konsol: {ROUTES_TO_SCAN[currentRouteIndex]}
+                        Sedang Memindai Konsol: {LOCAL_ROUTES_TO_SCAN[currentRouteIndex]}
                     </CardTitle>
-                    <span className="text-xs font-mono">{currentRouteIndex + 1} / {ROUTES_TO_SCAN.length}</span>
+                    <span className="text-xs font-mono">{currentRouteIndex + 1} / {LOCAL_ROUTES_TO_SCAN.length}</span>
                   </div>
               </CardHeader>
               <CardContent className="space-y-4">
                   <Progress value={consoleProgress} className="h-2" />
                   <div className="rounded-md border bg-black p-2 h-32 overflow-hidden relative">
-                      {/* Deep Scanner Window (Iframe) */}
                       <iframe 
-                        key={ROUTES_TO_SCAN[currentRouteIndex]}
-                        src={`${ROUTES_TO_SCAN[currentRouteIndex]}?is_scan=true`} 
+                        key={LOCAL_ROUTES_TO_SCAN[currentRouteIndex]}
+                        src={`${LOCAL_ROUTES_TO_SCAN[currentRouteIndex]}?is_scan=true`} 
                         className="w-[1024px] h-[768px] origin-top-left scale-[0.3] pointer-events-none grayscale"
                         title="Deep Scanner"
                       />
@@ -187,7 +204,7 @@ export default function SiteHealthCheckPage() {
             <CardContent>
                 <ScrollArea className="h-[400px]">
                     <div className="space-y-2">
-                        {ROUTES_TO_SCAN.map(route => (
+                        {LOCAL_ROUTES_TO_SCAN.map(route => (
                             <div key={route} className="flex items-center justify-between p-2 rounded-md border text-xs">
                                 <span className="font-mono truncate flex-1">{route}</span>
                                 <div className="flex items-center gap-2">
@@ -221,5 +238,3 @@ export default function SiteHealthCheckPage() {
     </div>
   );
 }
-
-import { ScrollArea } from '@/components/ui/scroll-area';

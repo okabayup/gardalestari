@@ -396,12 +396,12 @@ export async function getNotificationStatus(slug: string): Promise<IndexingStatu
         if (response.status === 200 && response.data) {
             return {
                 latestUpdate: response.data.latestUpdate ? {
-                    type: response.data.latestUpdate.type as string,
-                    notifyTime: response.data.latestUpdate.notifyTime as string,
+                    type: String(response.data.latestUpdate.type || ''),
+                    notifyTime: String(response.data.latestUpdate.notifyTime || ''),
                 } : undefined,
                 latestRemove: response.data.latestRemove ? {
-                    type: response.data.latestRemove.type as string,
-                    notifyTime: response.data.latestRemove.notifyTime as string,
+                    type: String(response.data.latestRemove.type || ''),
+                    notifyTime: String(response.data.latestRemove.notifyTime || ''),
                 } : undefined,
             };
         }
