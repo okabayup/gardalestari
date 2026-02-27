@@ -1,5 +1,5 @@
 
-'use server';
+'use client';
 
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp, getDocs, query, orderBy, limit, Timestamp } from 'firebase/firestore';
@@ -37,7 +37,7 @@ export async function logError(
     
     // Conditionally send alerts
     if (sendAlert) {
-      const alertMessage = `🚨 *Garda App Error* 🚨\n\n*Context:* ${errorData.context}\n*User:* ${errorData.userName || 'N/A'} (${errorData.userPhone || errorData.userId || 'N/A'})\n*Path:* ${errorData.path || 'N/A'}\n*Error:* ${errorData.message}\n\n*Stack:* ${errorData.stack || 'No stack'}`;
+      const alertMessage = `🚨 *Garda App Error* 🚨\n\n*Context:* ${errorData.context}\n*User:* ${errorData.userName || 'N/A'} (${errorData.userPhone || errorData.userId || 'N/A'})\n*Path:* ${errorData.path || 'N/A'}\n*Error:* ${errorData.message}\n\n*Stack:* ${errorData.stack?.substring(0, 500) || 'No stack'}`;
       
       // Send WhatsApp Alert (fire-and-forget)
       sendDevAlert(alertMessage);
@@ -69,14 +69,12 @@ export async function getErrorLogs(): Promise<ErrorLog[]> {
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => {
             const data = doc.data();
-            // Ensure timestamp is serializable. Convert if it's a Firestore Timestamp.
-            const timestamp = data.timestamp instanceof Timestamp 
-                ? data.timestamp.toDate().toISOString() 
-                : new Date().toISOString();
             return {
                 id: doc.id,
                 ...data,
-                timestamp: timestamp
+                timestamp: data.timestamp instanceof Timestamp 
+                    ? data.timestamp.toDate().toISOString() 
+                    : new Date().toISOString()
             } as unknown as ErrorLog;
         });
     } catch (error) {

@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -22,7 +23,7 @@ import {
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { Account, JournalEntry, JournalTransaction, FinancialReportData, Budget, Contact, Invoice } from '@/lib/definitions';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth } from 'date-fns';
 
 const accountsCollection = collection(db, 'accounts');
 const journalEntriesCollection = collection(db, 'journalEntries');
@@ -30,8 +31,6 @@ const budgetsCollection = collection(db, 'budgets');
 const contactsCollection = collection(db, 'contacts');
 const invoicesCollection = collection(db, 'invoices');
 
-
-// --- Reporting Logic ---
 
 /**
  * Generates a comprehensive financial report for a given date range.
@@ -42,12 +41,13 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
     const startTimestamp = Timestamp.fromDate(startDate);
     const endTimestamp = Timestamp.fromDate(endDate);
 
-    const [accounts, entriesSnapshot, budgets] = await Promise.all([
-      getAccounts(),
+    const [accountsSnapshot, entriesSnapshot, budgets] = await Promise.all([
+      getDocs(query(accountsCollection, orderBy('code', 'asc'))),
       getDocs(query(journalEntriesCollection, where('date', '>=', startTimestamp), where('date', '<=', endTimestamp), orderBy('date', 'asc'))),
       getBudgetsForPeriod(format(startDate, 'yyyy-MM'))
     ]);
 
+    const accounts = accountsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Account));
     const entries = entriesSnapshot.docs.map(doc => {
         const data = doc.data();
         return { 

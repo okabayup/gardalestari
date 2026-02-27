@@ -1,67 +1,57 @@
 
+'use client';
+
+import { useEffect, Suspense } from 'react';
 import type { Metadata, Viewport } from 'next';
-import { AuthProvider } from '@/hooks/use-auth';
+import { AuthProvider, useAuth } from '@/hooks/use-auth';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import FirebaseAnalytics from '@/components/FirebaseAnalytics';
-import { Suspense } from 'react';
 import { getAppSettings } from './actions/settings';
-import dotenv from 'dotenv';
+import { logError } from './actions/errors';
+import { usePathname } from 'next/navigation';
 
-dotenv.config();
+function ErrorWatcher() {
+  const { user } = useAuth();
+  const pathname = usePathname();
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://gardalestari.org';
+  useEffect(() => {
+    const handleGlobalError = (event: ErrorEvent) => {
+      // Don't log expected errors or errors during development that are already handled
+      if (event.message.includes('Script error')) return;
 
-export async function generateMetadata(): Promise<Metadata> {
-  const settings = await getAppSettings();
-  
-  return {
-    metadataBase: new URL(BASE_URL),
-    title: {
-      default: 'Tumbuh Bersama Bumi',
-      template: '%s | Garda Lestari',
-    },
-    description: 'Garda Lestari adalah organisasi kepemudaan yang berfokus pada inovasi di sektor agro-maritim dan kehutanan untuk pembangunan berkelanjutan di Indonesia.',
-    manifest: '/manifest.json',
-    icons: {
-      icon: '/icon-bg-putih.png',
-      shortcut: '/icon-bg-putih.png',
-      apple: '/logo-bg-hijau.png',
-    },
-    openGraph: {
-      title: 'Tumbuh Bersama Bumi',
-      description: 'Inovasi pemuda untuk kelestarian agro-maritim dan kehutanan Indonesia.',
-      url: BASE_URL,
-      siteName: 'Garda Lestari',
-      images: [
-        {
-          url: settings.heroImageUrl || '/og-image.png',
-          width: 1200,
-          height: 630,
-          alt: 'Lanskap Pertanian Indonesia',
-        },
-      ],
-      locale: 'id_ID',
-      type: 'website',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: 'Tumbuh Bersama Bumi',
-      description: 'Inovasi pemuda untuk kelestarian agro-maritim dan kehutanan Indonesia.',
-      images: [settings.heroImageUrl || '/og-image.png'],
-    },
-    appleWebApp: {
-      capable: true,
-      statusBarStyle: 'default',
-      title: 'Garda Lestari',
-    },
-  }
+      logError({
+        context: 'client-runtime-error',
+        message: event.message,
+        stack: event.error?.stack,
+        path: pathname,
+        userId: user?.uid,
+        userName: user?.displayName || undefined,
+      }, !pathname.startsWith('/panel')); // Only alert dev if error is outside admin panel
+    };
+
+    const handlePromiseRejection = (event: PromiseRejectionEvent) => {
+      logError({
+        context: 'client-promise-rejection',
+        message: event.reason?.message || String(event.reason),
+        stack: event.reason?.stack,
+        path: pathname,
+        userId: user?.uid,
+        userName: user?.displayName || undefined,
+      }, !pathname.startsWith('/panel'));
+    };
+
+    window.addEventListener('error', handleGlobalError);
+    window.addEventListener('unhandledrejection', handlePromiseRejection);
+
+    return () => {
+      window.removeEventListener('error', handleGlobalError);
+      window.removeEventListener('unhandledrejection', handlePromiseRejection);
+    };
+  }, [user, pathname]);
+
+  return null;
 }
-
-export const viewport: Viewport = {
-  themeColor: '#E8F0E5',
-}
-
 
 export default function RootLayout({
   children,
@@ -81,6 +71,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <AuthProvider>
+          <ErrorWatcher />
           {children}
           <Toaster />
           <Suspense fallback={null}>
