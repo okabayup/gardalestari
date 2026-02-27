@@ -1,10 +1,9 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, MoreHorizontal, Loader2, Trash2, Tags, Send, Check, Eye, X } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, Loader2, Trash2, Tags, Send, Check, Eye, X, Download } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -230,6 +229,11 @@ export default function DocumentsPage() {
                           <DropdownMenuContent align="end">
                              <DropdownMenuItem onClick={() => setPreviewDialogItem(item)}>
                                 <Eye className="mr-2 h-4 w-4" /> Tinjau Dokumen
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <a href={item.fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center w-full">
+                                    <Download className="mr-2 h-4 w-4" /> Unduh Dokumen
+                                </a>
                             </DropdownMenuItem>
                             {(item.status === 'Draft' || item.status === 'Ditolak') && item.authorId === user?.uid && (
                                 <DropdownMenuItem onClick={() => handleApprovalSubmit(item)}>
