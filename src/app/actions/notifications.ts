@@ -172,9 +172,12 @@ export async function getNotificationsForUser(userId: string): Promise<any[]> {
             const data = doc.data();
             notifications.push({ 
                 id: doc.id, 
-                ...data,
-                // Convert Timestamp to ISO string for client serialization
-                createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt
+                title: data.title || '',
+                body: data.body || '',
+                link: data.link || '',
+                read: data.read || false,
+                // Ensure createdAt is serializable ISO string
+                createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : new Date().toISOString()
             });
         });
         return notifications;

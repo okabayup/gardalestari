@@ -33,7 +33,7 @@ const SIGNATORY_NAMES: Record<SignatoryRole, string> = {
 
 /**
  * Safely converts a Firestore value to an ISO string date.
- * Handles Timestamps, Strings, and Dates.
+ * Handles Timestamps (Client & Admin SDK), Strings, and Dates.
  */
 const safeDateToIso = (val: any): string | undefined => {
     if (!val) return undefined;
@@ -41,6 +41,9 @@ const safeDateToIso = (val: any): string | undefined => {
         if (typeof val.toDate === 'function') return val.toDate().toISOString();
         if (val instanceof Timestamp) return val.toDate().toISOString();
         if (val instanceof Date) return val.toISOString();
+        if (typeof val === 'object' && 'seconds' in val) {
+            return new Date(val.seconds * 1000).toISOString();
+        }
         if (typeof val === 'string') {
             const parsed = new Date(val);
             return isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
@@ -51,14 +54,40 @@ const safeDateToIso = (val: any): string | undefined => {
     return undefined;
 };
 
-const toImportantDocument = (doc: any): ImportantDocument => {
-    const data = doc.data();
+/**
+ * Maps a Firestore document to a plain serializable ImportantDocument object.
+ * This avoids "Only plain objects can be passed to Client Components" error.
+ */
+const toImportantDocument = (docSnap: any): ImportantDocument => {
+    const data = docSnap.data();
     return {
-        ...data,
-        id: doc.id,
+        id: docSnap.id,
+        title: data.title || '',
+        description: data.description || '',
+        documentNumber: data.documentNumber || '',
+        category: data.category || '',
+        type: data.type || '',
+        attachments: data.attachments || '',
+        canvaUrl: data.canvaUrl || '',
         createdAt: safeDateToIso(data.createdAt) || new Date().toISOString(),
+        fileUrl: data.fileUrl || '',
+        fileName: data.fileName || '',
+        filePath: data.filePath || '',
+        authorId: data.authorId || '',
+        authorName: data.authorName || '',
+        status: data.status || 'Draft',
+        approverId: data.approverId || '',
+        signers: data.signers || [],
+        originalFileUrl: data.originalFileUrl || '',
+        approvedById: data.approvedById || '',
+        approvedByName: data.approvedByName || '',
+        approvedByPosition: data.approvedByPosition || '',
         approvedAt: safeDateToIso(data.approvedAt),
-    } as ImportantDocument;
+        rejectionReason: data.rejectionReason || '',
+        rejectedById: data.rejectedById || '',
+        rejectedByName: data.rejectedByName || '',
+        originalContent: data.originalContent || '',
+    };
 }
 
 
@@ -144,7 +173,7 @@ export async function updateDocument(id: string, data: Partial<Omit<ImportantDoc
     const docRef = doc(db, 'importantDocuments', id);
     
     // Explicitly filter out fields that should not be overwritten by string values from the client
-    const { createdAt, authorId, id: _id, documentNumber, ...updatableData } = data as any;
+    const { createdAt, authorId, id: _id, documentNumber, signers, ...updatableData } = data as any;
     const dataToUpdate: { [key: string]: any } = { ...updatableData };
 
     if (newFile) {
