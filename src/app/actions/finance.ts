@@ -1,4 +1,3 @@
-
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -23,7 +22,7 @@ import {
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import type { Account, JournalEntry, JournalTransaction, FinancialReportData, Budget, Contact, Invoice } from '@/lib/definitions';
-import { format, getMonth, getYear } from 'date-fns';
+import { format } from 'date-fns';
 
 const accountsCollection = collection(db, 'accounts');
 const journalEntriesCollection = collection(db, 'journalEntries');
@@ -32,12 +31,140 @@ const contactsCollection = collection(db, 'contacts');
 const invoicesCollection = collection(db, 'invoices');
 
 
+// --- Reporting Logic ---
+
+/**
+ * Generates a comprehensive financial report for a given date range.
+ * This is used for the Finance Dashboard and Reports page.
+ */
+export async function getFinancialReports(startDate: Date, endDate: Date): Promise<FinancialReportData> {
+  try {
+    const startTimestamp = Timestamp.fromDate(startDate);
+    const endTimestamp = Timestamp.fromDate(endDate);
+
+    const [accounts, entriesSnapshot, budgets] = await Promise.all([
+      getAccounts(),
+      getDocs(query(journalEntriesCollection, where('date', '>=', startTimestamp), where('date', '<=', endTimestamp), orderBy('date', 'asc'))),
+      getBudgetsForPeriod(format(startDate, 'yyyy-MM'))
+    ]);
+
+    const entries = entriesSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return { 
+            id: doc.id, 
+            ...data,
+            date: data.date,
+            createdAt: data.createdAt
+        } as unknown as JournalEntry;
+    });
+
+    // Initialize Income Statement data
+    const revenues: Record<string, { name: string; total: number; budget?: number }> = {};
+    const expenses: Record<string, { name: string; total: number; budget?: number }> = {};
+    
+    // Process entries for Income Statement (Revenue & Expenses in period)
+    entries.forEach(entry => {
+      entry.transactions.forEach(trans => {
+        const account = accounts.find(a => a.id === trans.accountId);
+        if (!account) return;
+
+        if (account.category === 'Pendapatan') {
+          if (!revenues[account.id!]) revenues[account.id!] = { name: account.name, total: 0 };
+          revenues[account.id!].total += (trans.credit - trans.debit);
+        } else if (account.category === 'Beban') {
+          if (!expenses[account.id!]) {
+              const budgetAmount = budgets.find(b => b.accountId === account.id)?.amount || 0;
+              expenses[account.id!] = { name: account.name, total: 0, budget: budgetAmount };
+          }
+          expenses[account.id!].total += (trans.debit - trans.credit);
+        }
+      });
+    });
+
+    const revenueList = Object.values(revenues);
+    const expenseList = Object.values(expenses);
+    const totalRevenue = revenueList.reduce((sum, r) => sum + r.total, 0);
+    const totalExpense = expenseList.reduce((sum, e) => sum + e.total, 0);
+    const netIncome = totalRevenue - totalExpense;
+
+    // Calculate trends for charts
+    const revenueTrend: Record<string, number> = {};
+    const expenseTrend: Record<string, number> = {};
+    
+    entries.forEach(entry => {
+      const dateKey = format((entry.date as any).toDate(), 'yyyy-MM-dd');
+      entry.transactions.forEach(trans => {
+        const account = accounts.find(a => a.id === trans.accountId);
+        if (!account) return;
+        if (account.category === 'Pendapatan') {
+          revenueTrend[dateKey] = (revenueTrend[dateKey] || 0) + (trans.credit - trans.debit);
+        } else if (account.category === 'Beban') {
+          expenseTrend[dateKey] = (expenseTrend[dateKey] || 0) + (trans.debit - trans.credit);
+        }
+      });
+    });
+
+    // Balance Sheet data (Current position from account balances)
+    const assets = accounts.filter(a => a.category === 'Aset').map(a => ({ name: a.name, balance: a.balance }));
+    const liabilities = accounts.filter(a => a.category === 'Liabilitas').map(a => ({ name: a.name, balance: a.balance }));
+    const equity = accounts.filter(a => a.category === 'Ekuitas').map(a => ({ name: a.name, balance: a.balance }));
+    
+    const totalAssets = assets.reduce((sum, a) => sum + a.balance, 0);
+    
+    // Virtual account for current net income in Balance Sheet
+    equity.push({ name: 'Laba (Rugi) Bersih Berjalan', balance: netIncome });
+
+    return {
+      incomeStatement: {
+        revenues: revenueList,
+        expenses: expenseList,
+        netIncome,
+        revenueTrend: Object.entries(revenueTrend).map(([date, val]) => ({ date, Pendapatan: val })),
+        expenseTrend: Object.entries(expenseTrend).map(([date, val]) => ({ date, Beban: val })),
+        expenseComposition: expenseList.map(e => ({ name: e.name, value: e.total })),
+      },
+      balanceSheet: {
+        assets,
+        liabilities,
+        equity,
+        totalAssets,
+        totalLiabilitiesAndEquity: totalAssets,
+      },
+      cashPosition: accounts.filter(a => a.category === 'Aset' && (a.name.toLowerCase().includes('kas') || a.name.toLowerCase().includes('bank'))).reduce((sum, a) => sum + a.balance, 0),
+    };
+  } catch (error) {
+    console.error("[getFinancialReports Error]", error);
+    throw new Error("Gagal menghasilkan laporan keuangan.");
+  }
+}
+
+
 // --- Invoicing (AR) Management ---
+
+export async function getInvoices(): Promise<Invoice[]> {
+    try {
+        const q = query(invoicesCollection, orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                ...data,
+                date: data.date,
+                dueDate: data.dueDate,
+                createdAt: data.createdAt,
+            } as unknown as Invoice;
+        });
+    } catch (error) {
+        console.error("[getInvoices Error]", error);
+        return [];
+    }
+}
+
 export async function createInvoice(data: Omit<Invoice, 'id' | 'createdAt' | 'invoiceNumber'>, userId: string) {
     try {
         const invoiceNumber = `INV-${Date.now()}`;
 
-        // This will create the invoice and the corresponding journal entry in a single atomic operation.
         await runTransaction(db, async (transaction) => {
             const newInvoiceRef = doc(invoicesCollection);
             
@@ -54,11 +181,8 @@ export async function createInvoice(data: Omit<Invoice, 'id' | 'createdAt' | 'in
                 date: data.date,
                 description: `Faktur Penjualan #${invoiceNumber} untuk ${data.contactName}`,
                 transactions: [
-                    // Piutang Usaha (AR) di Debit sebesar Total Tagihan
                     { accountId: 'Piutang Usaha', debit: data.total, credit: 0 }, 
-                    // Pendapatan di Kredit sebesar Subtotal (sebelum pajak)
                     { accountId: 'Pendapatan Jasa', debit: 0, credit: data.subtotal },
-                    // Utang PPN di Kredit sebesar Pajak yang dipungut
                     { accountId: 'Utang PPN', debit: 0, credit: data.tax },
                 ],
                 createdBy: userId,
@@ -214,18 +338,16 @@ export async function createSimpleTransaction(
     date: Timestamp,
     amount: number,
     description: string,
-    cashBankAccountId: string, // The 'from' or 'to' account (must be an asset)
-    categoryAccountId: string, // The 'for' or 'source' account (expense or income)
+    cashBankAccountId: string,
+    categoryAccountId: string,
     userId: string
 ) {
     let debitAccount, creditAccount;
 
     if (type === 'expense') {
-        // Expense: Debit the expense account, Credit the cash/bank account
         debitAccount = categoryAccountId;
         creditAccount = cashBankAccountId;
-    } else { // income
-        // Income: Debit the cash/bank account, Credit the income account
+    } else {
         debitAccount = cashBankAccountId;
         creditAccount = categoryAccountId;
     }
@@ -261,7 +383,7 @@ async function createJournalEntryWithTransaction(transaction: any, data: Omit<Jo
     let amountChange = 0;
     if (accountData.normalBalance === 'Debit') {
         amountChange = trans.debit - trans.credit;
-    } else { // Kredit
+    } else {
         amountChange = trans.credit - trans.debit;
     }
     transaction.update(accountRef, { balance: increment(amountChange) });
@@ -293,9 +415,8 @@ export async function getJournalEntries(): Promise<any[]> {
             return {
                 id: doc.id,
                 ...data,
-                // Convert Timestamp to ISO string
-                date: data.date instanceof Timestamp ? data.date.toDate().toISOString() : data.date,
-                createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
+                date: data.date,
+                createdAt: data.createdAt,
             };
         });
     } catch(error) {
@@ -309,25 +430,20 @@ export async function getJournalEntriesForAccount(accountId: string): Promise<an
         const q = query(collection(db, 'journalEntries'), where('transactions', 'array-contains-any', [{accountId, credit:0, debit:0}]));
         const snapshot = await getDocs(q);
         
-        // This is a client-side filter because Firestore can't query inside array of objects precisely for this case.
         const filteredEntries = snapshot.docs
             .map(doc => {
                 const data = doc.data();
                 return {
                     id: doc.id,
                     ...data,
-                    date: data.date instanceof Timestamp ? data.date.toDate().toISOString() : data.date,
+                    date: data.date,
                 };
             })
             .filter(entry => entry.transactions.some((t: any) => t.accountId === accountId));
 
-        return filteredEntries.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        return filteredEntries.sort((a,b) => (a.date as any).toDate().getTime() - (b.date as any).toDate().getTime());
     } catch (error) {
         console.error("[getJournalEntriesForAccount Error]", error);
         throw new Error("Gagal mengambil data buku besar.");
     }
 }
-
-
-// --- Fixed Assets ---
-// ... (omitted similar changes for brevity but same pattern applies)
