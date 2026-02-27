@@ -158,7 +158,6 @@ export async function getGenerationJobs(): Promise<GenerationJob[]> {
 // Get all berita posts (articles and videos)
 export async function getBeritaPosts(type?: 'artikel' | 'video', includeDrafts = false): Promise<BeritaPost[]> {
   try {
-    let q;
     const constraints = [];
     if (type) {
         constraints.push(where('type', '==', type));
@@ -168,16 +167,12 @@ export async function getBeritaPosts(type?: 'artikel' | 'video', includeDrafts =
     }
     constraints.push(orderBy('date', 'desc'));
     
-    q = query(beritaPostsCollection, ...constraints);
-    
+    const q = query(beritaPostsCollection, ...constraints);
     const snapshot = await getDocs(q);
     
-    let posts: BeritaPost[] = [];
+    const posts: BeritaPost[] = [];
     for (const doc of snapshot.docs) {
       const postData = { id: doc.id, ...doc.data() } as BeritaPost;
-      if (postData.status === 'published' && postData.slug) {
-        postData.indexingStatus = await getNotificationStatus(postData.slug);
-      }
       posts.push(postData);
     }
 
@@ -248,7 +243,7 @@ export async function updateBeritaPost(id: string, post: Partial<BeritaPost>) {
     const oldData = oldPostSnap.data();
     if (!oldData) throw new Error("Konten tidak ditemukan.");
 
-    const oldStatus = oldData.status as string | undefined;
+    const oldStatus = oldData.status as BeritaPost['status'];
     const oldType = oldData.type as 'artikel' | 'video' | undefined;
     const oldSlug = oldData.slug as string | undefined;
 
@@ -390,8 +385,14 @@ export async function getNotificationStatus(slug: string): Promise<IndexingStatu
 
         if (response.status === 200 && response.data) {
             return {
-                latestUpdate: response.data.latestUpdate,
-                latestRemove: response.data.latestRemove,
+                latestUpdate: response.data.latestUpdate ? {
+                    type: response.data.latestUpdate.type || '',
+                    notifyTime: response.data.latestUpdate.notifyTime || '',
+                } : undefined,
+                latestRemove: response.data.latestRemove ? {
+                    type: response.data.latestRemove.type || '',
+                    notifyTime: response.data.latestRemove.notifyTime || '',
+                } : undefined,
             };
         }
         return null;
