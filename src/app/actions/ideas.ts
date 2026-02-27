@@ -20,7 +20,7 @@ import {
 } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 export type { Idea, IdeaWithAuthor, IdeaAuthor, IdeaCategory, VoteType, IdeaStatus, IdeaType, Challenge } from '@/lib/definitions';
-import type { Idea, IdeaWithAuthor, IdeaAuthor, IdeaCategory, VoteType, IdeaStatus, IdeaType, Challenge } from '@/lib/definitions';
+import type { Idea, IdeaWithAuthor, IdeaAuthor, IdeaCategory, VoteType, IdeaStatus, IdeaType, Challenge, Comment } from '@/lib/definitions';
 import { checkAndAwardBadges } from '@/app/actions/badges';
 
 const ideasCollection = collection(db, 'ideas');
@@ -312,7 +312,7 @@ export async function getIdeaComments(ideaId: string): Promise<any[]> {
         const comments = [];
 
         for (const commentDoc of commentsSnapshot.docs) {
-            const commentData = { id: commentDoc.id, ...commentDoc.data() } as any;
+            const commentData = { id: commentDoc.id, ...commentDoc.data() } as unknown as Comment;
             const authorDoc = await getDoc(doc(usersCollection, commentData.authorId));
             if (authorDoc.exists()) {
                 const authorData = authorDoc.data();
@@ -323,7 +323,7 @@ export async function getIdeaComments(ideaId: string): Promise<any[]> {
                         username: authorData.username || 'user',
                         avatarUrl: authorData.avatarUrl || ''
                     },
-                    timestamp: formatTimestamp(commentData.createdAt)
+                    timestamp: formatTimestamp(commentData.createdAt as Timestamp)
                 });
             }
         }

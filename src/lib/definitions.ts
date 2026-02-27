@@ -1090,6 +1090,16 @@ export interface WhatsAppTemplate {
   placeholders: string[];
 }
 
+export interface Notification {
+    id?: string;
+    userId: string;
+    title: string;
+    body: string;
+    link?: string;
+    read: boolean;
+    createdAt: Timestamp | string;
+}
+
 // --- Shortlinks ---
 export interface ShortLink {
     id?: string;
