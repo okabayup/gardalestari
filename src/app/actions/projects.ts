@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -372,10 +373,10 @@ export async function getTaskComments(projectId: string, taskId: string): Promis
                 comments.push({
                     id: commentDoc.id,
                     text: commentData.text,
-                    createdAt: (commentData.createdAt as Timestamp).toDate().toISOString(),
+                    timestamp: (commentData.createdAt as Timestamp).toDate().toISOString(),
                     author: {
                         id: commentData.authorId,
-                        name: authorData.fullName || 'User',
+                        name: authorData.fullName || authorData.displayName || 'User',
                         username: authorData.username || 'user',
                         avatarUrl: authorData.avatarUrl || '',
                     },

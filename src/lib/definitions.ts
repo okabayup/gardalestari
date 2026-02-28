@@ -1,5 +1,5 @@
 import { Timestamp } from "firebase/firestore";
-import {z} from 'zod';
+import { z } from 'zod';
 import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact, LayoutDashboard, Package, Landmark, Plane, Bell, Link, Mail } from 'lucide-react';
 
 export const SHORTLINK_DOMAIN = 'https://gamules.io';
@@ -39,6 +39,36 @@ export const ALL_PERMISSIONS = [
 ] as const;
 
 export type PermissionId = typeof ALL_PERMISSIONS[number]['id'];
+
+export const BADGE_METRICS = [
+  { value: 'post_count', label: 'Jumlah Postingan' },
+  { value: 'idea_count', label: 'Jumlah Ide' },
+  { value: 'achievement_added', label: 'Prestasi Ditambahkan' },
+  { value: 'vote_casted', label: 'Suara Dikirim' },
+  { value: 'comment_count', label: 'Jumlah Komentar' },
+  { value: 'upvote_count', label: 'Jumlah Upvote Diterima' },
+  { value: 'project_completed', label: 'Proyek Selesai' },
+] as const;
+
+export type BadgeMetric = typeof BADGE_METRICS[number]['value'];
+
+export const memberTypes: { value: MemberType, label: string }[] = [
+  { value: 'pusat', label: 'DPP' },
+  { value: 'daerah', label: 'DPD' },
+  { value: 'cabang', label: 'DPC' },
+  { value: 'pembina', label: 'Dewan Pembina' },
+  { value: 'pengawas', label: 'Dewan Pengawas' },
+  { value: 'penasehat', label: 'Dewan Penasehat' },
+  { value: 'official', label: 'Akun Resmi' },
+];
+
+export const verificationStatuses: { value: VerificationStatus, label: string }[] = [
+  { value: 'unverified', label: 'Belum Terverifikasi' },
+  { value: 'temporary', label: 'Menunggu Persetujuan' },
+  { value: 'permanent', label: 'Permanen' },
+  { value: 'rejected', label: 'Ditolak' },
+  { value: 'manual', label: 'Manual' },
+];
 
 export const directoryItems = [
     { href: '/ideas', label: 'Lab Ide & Aksi', icon: Lightbulb },
@@ -509,8 +539,6 @@ export interface Mission {
   };
 }
 
-export type BadgeMetric = 'post_count' | 'idea_count' | 'comment_count' | 'upvote_count' | 'project_completed' | 'achievement_added' | 'vote_casted';
-
 export interface RedemptionLog {
   id: string;
   userId: string;
@@ -867,3 +895,24 @@ export interface PublicProfile extends PublicUser {
   skills?: string[];
   interests?: string[];
 }
+
+export const AssistantInputSchema = z.object({
+  query: z.string(),
+  userId: z.string(),
+  history: z.array(z.object({
+    role: z.enum(['user', 'assistant']),
+    content: z.any()
+  })).optional(),
+  image: z.string().optional()
+});
+
+export const AssistantOutputSchema = z.object({
+  responseText: z.string(),
+  citations: z.array(z.object({
+    sourceId: z.string(),
+    type: z.enum(['data', 'idea', 'program', 'event', 'achievement']),
+    title: z.string(),
+    summary: z.string(),
+    url: z.string()
+  }))
+});
