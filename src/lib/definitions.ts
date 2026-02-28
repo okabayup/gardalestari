@@ -1,3 +1,4 @@
+
 import { Timestamp } from "firebase/firestore";
 import { z } from 'zod';
 import { Briefcase, Calendar, Award, Newspaper, Video, Handshake, Megaphone, FileText, Map, Vote, Lightbulb, LucideIcon, FilePlus, Coins, Flag, TestTube2, Shield, Users, Home, Presentation, MessageCircle, KanbanSquare, Building2, UserCheck, Layers, Database, Target, Gift, BookCopy, TrendingUp, Bug, Settings, Wallet, AreaChart, BookOpen, Notebook, PiggyBank, Contact, LayoutDashboard, Package, Landmark, Plane, Bell, Link, Mail } from 'lucide-react';
@@ -177,7 +178,7 @@ export interface Position {
   permissions: PermissionId[];
 }
 
-export interface Notification {
+export interface AppNotification {
     id?: string;
     userId: string;
     title: string;
@@ -896,6 +897,96 @@ export interface PublicProfile extends PublicUser {
   interests?: string[];
 }
 
+export interface FinancialReportData {
+  incomeStatement: {
+    revenues: { name: string; total: number }[];
+    expenses: { name: string; total: number; budget: number }[];
+    netIncome: number;
+    revenueTrend: { date: string; Pendapatan: number }[];
+    expenseTrend: { date: string; Beban: number }[];
+    expenseComposition: { name: string; value: number }[];
+  };
+  balanceSheet: {
+    assets: { name: string; balance: number }[];
+    liabilities: { name: string; balance: number }[];
+    equity: { name: string; balance: number }[];
+    totalAssets: number;
+    totalLiabilitiesAndEquity: number;
+  };
+  cashPosition: number;
+}
+
+export interface Budget {
+    id?: string;
+    period: string;
+    accountId: string;
+    accountName: string;
+    amount: number;
+    createdAt: any;
+}
+
+export interface Contact {
+    id?: string;
+    name: string;
+    type: 'customer' | 'vendor' | 'other';
+    email?: string;
+    phoneNumber?: string;
+    address?: string;
+    createdAt: any;
+}
+
+export interface Invoice {
+    id?: string;
+    invoiceNumber: string;
+    contactId: string;
+    contactName: string;
+    date: Timestamp;
+    dueDate: Timestamp;
+    items: InvoiceItem[];
+    subtotal: number;
+    tax: number;
+    total: number;
+    status: 'draft' | 'sent' | 'paid' | 'void';
+    createdBy: string;
+    createdAt: any;
+}
+
+export interface InvoiceItem {
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    total: number;
+}
+
+export interface Account {
+    id?: string;
+    code: string;
+    name: string;
+    category: AccountCategory;
+    normalBalance: AccountNormalBalance;
+    balance: number;
+    createdAt: any;
+}
+
+export type AccountCategory = 'Aset' | 'Liabilitas' | 'Ekuitas' | 'Pendapatan' | 'Beban';
+export type AccountNormalBalance = 'Debit' | 'Kredit';
+
+export interface JournalEntry {
+    id?: string;
+    date: Timestamp;
+    description: string;
+    transactions: JournalTransaction[];
+    createdBy: string;
+    createdAt: any;
+    relatedInvoiceId?: string;
+}
+
+export interface JournalTransaction {
+    accountId: string;
+    debit: number;
+    credit: number;
+}
+
 export const AssistantInputSchema = z.object({
   query: z.string(),
   userId: z.string(),
@@ -916,3 +1007,6 @@ export const AssistantOutputSchema = z.object({
     url: z.string()
   }))
 });
+
+export type AssistantInput = z.infer<typeof AssistantInputSchema>;
+export type AssistantOutput = z.infer<typeof AssistantOutputSchema>;

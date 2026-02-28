@@ -29,13 +29,11 @@ const nextConfig = {
     ],
   },
   // Bypassing non-fatal errors during build to allow deployment
-  // Build errors will still be visible in the logs for summarization.
   typescript: {
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  // Fix for Next.js 16 build conflict with webpack-based plugins like next-pwa
+  turbopack: {},
   webpack: (config) => {
     config.resolve.alias.canvas = false;
     return config;
