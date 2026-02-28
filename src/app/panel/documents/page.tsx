@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -104,12 +105,12 @@ export default function DocumentsPage() {
     }
   }
 
-  const handleApproveConfirm = async (role: SignatoryRole, isFinal: boolean) => {
+  const handleApproveConfirm = async (role: SignatoryRole, isFinal: boolean, customDate?: string) => {
     if (!previewDialogItem?.id || !user?.uid) return;
     const docToApprove = previewDialogItem;
     setPreviewDialogItem(null); 
     handleAction(
-      () => approveDocument(docToApprove.id!, user.uid, role, isFinal),
+      () => approveDocument(docToApprove.id!, user.uid, role, isFinal, customDate),
       docToApprove.id!,
       isFinal ? 'Dokumen disahkan!' : 'Tanda tangan dibubuhkan.',
       'Gagal Mengesahkan'

@@ -291,7 +291,7 @@ export async function submitForApproval(documentId: string, authorId: string) {
   }
 }
 
-export async function approveDocument(documentId: string, approverId: string, role: SignatoryRole, isFinal: boolean) {
+export async function approveDocument(documentId: string, approverId: string, role: SignatoryRole, isFinal: boolean, customDate?: string) {
   try {
     const docRef = doc(db, 'importantDocuments', documentId);
     const docSnap = await getDoc(docRef);
@@ -304,7 +304,7 @@ export async function approveDocument(documentId: string, approverId: string, ro
     }
     
     const signerName = SIGNATORY_NAMES[role];
-    const now = new Date();
+    const now = customDate ? new Date(customDate) : new Date();
     
     const newSigner: DigitalSigner = {
         name: signerName,
