@@ -4,7 +4,7 @@
 import { db } from '@/lib/firebase';
 import { getMessaging } from 'firebase-admin/messaging';
 import { collection, addDoc, query, where, getDocs, serverTimestamp, updateDoc, doc, FieldPath, orderBy, limit, writeBatch, getCountFromServer, Timestamp } from 'firebase/firestore';
-import type { MemberType, Notification } from '@/lib/definitions';
+import type { MemberType, AppNotification } from '@/lib/definitions';
 import admin from 'firebase-admin';
 
 if (admin.apps.length === 0) {

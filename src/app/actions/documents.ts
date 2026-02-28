@@ -2,7 +2,7 @@
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, runTransaction, where, getCountFromServer, setDoc, deleteField } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, runTransaction, where, getCountFromServer, setDoc, deleteField, limit } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import { sendNotification } from '@/app/actions/notifications';
@@ -142,12 +142,13 @@ export async function createDocument(
     }
     const docTypeCode = docTypeSnapshot.docs[0].data().code;
     
-    const documentNumber = await generateDocumentNumber(docTypeCode);
-    
     const filePath = `documents/${Date.now()}_${file.name}`;
     const fileRef = ref(storage, filePath);
     await uploadBytes(fileRef, file);
     const fileUrl = await getDownloadURL(fileRef);
+
+    // Generate number AFTER upload to minimize race condition window
+    const documentNumber = await generateDocumentNumber(docTypeCode);
 
     const docData = {
         ...data,
@@ -550,15 +551,32 @@ export async function generateDocumentNumber(typeCode: string): Promise<string> 
       const startOfYear = new Date(year, 0, 1);
       const endOfYear = new Date(year, 11, 31, 23, 59, 59, 999);
 
+      // Query for the most recent document of the year to find the highest sequence
       const q = query(
         documentsCollection, 
         where('createdAt', '>=', Timestamp.fromDate(startOfYear)), 
-        where('createdAt', '<=', Timestamp.fromDate(endOfYear))
+        where('createdAt', '<=', Timestamp.fromDate(endOfYear)),
+        orderBy('createdAt', 'desc'),
+        limit(1)
       );
 
-      const countSnapshot = await getCountFromServer(q);
-      const nextNumber = (countSnapshot.data().count + 1).toString().padStart(3, '0');
+      const querySnapshot = await getDocs(q);
+      let nextNumberInt = 1;
+
+      if (!querySnapshot.empty) {
+          const lastDocData = querySnapshot.docs[0].data();
+          const lastNumber = lastDocData.documentNumber;
+          if (lastNumber) {
+              // Standard Format is: [Seq]/[Code]/GL/DPP/[Month]/[Year]
+              const parts = lastNumber.split('/');
+              const lastSeq = parseInt(parts[0], 10);
+              if (!isNaN(lastSeq)) {
+                  nextNumberInt = lastSeq + 1;
+              }
+          }
+      }
       
+      const nextNumber = nextNumberInt.toString().padStart(3, '0');
       return `${nextNumber}/${typeCode}/GL/DPP/${romanMonth}/${year}`;
   } catch (error) {
       console.error("[generateDocumentNumber Error]", error);
