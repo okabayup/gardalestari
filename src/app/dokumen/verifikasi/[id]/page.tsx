@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useRef, ChangeEvent } from 'react';
@@ -8,13 +7,20 @@ import { getDocument, ImportantDocument } from '@/app/actions/documents';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Loader2, Download, CheckCircle, XCircle, FileQuestion, UploadCloud, ShieldAlert } from 'lucide-react';
+import { Loader2, Download, CheckCircle, XCircle, FileQuestion, UploadCloud, ShieldAlert, UserCheck } from 'lucide-react';
 import { format } from 'date-fns';
+import { id as idLocale } from 'date-fns/locale/id';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { readDocumentText } from '@/ai/flows/ocr-pdf-flow';
 import PdfViewer from '@/components/utils/PdfViewer';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 const VerificationStatus = ({
   icon: Icon,
@@ -34,7 +40,7 @@ const VerificationStatus = ({
     <div className={`p-6 rounded-lg text-center ${bgColor} ${color}`}>
       <Icon className="h-12 w-12 mx-auto mb-4" />
       <h2 className="text-xl font-bold">{title}</h2>
-      <p>{description}</p>
+      <p className="text-sm">{description}</p>
     </div>
   );
 };
@@ -91,7 +97,6 @@ export default function DocumentVerificationPage() {
   const docId = params.id as string;
   const { toast } = useToast();
   const [document, setDocument] = useState<ImportantDocument | null>(null);
-  const [formattedDate, setFormattedDate] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -105,12 +110,8 @@ export default function DocumentVerificationPage() {
     if (docId) {
       getDocument(docId)
         .then(async (doc) => {
-          if (doc && doc.status === 'Disetujui' && doc.approvedAt) {
+          if (doc && doc.status === 'Disetujui') {
             setDocument(doc);
-            const { id } = await import('date-fns/locale/id');
-            // The approvedAt is now an ISO string, convert to Date object
-            const approvedAtDate = new Date(doc.approvedAt);
-            setFormattedDate(format(approvedAtDate, 'dd MMMM yyyy, HH:mm', { locale: id }));
           } else if (doc) {
              setError('Dokumen ini belum disahkan atau statusnya tidak valid.');
           }
@@ -199,33 +200,62 @@ export default function DocumentVerificationPage() {
                 ) : error ? (
                     <VerificationStatus icon={XCircle} title="Verifikasi Gagal" description={error} variant="error" />
                 ) : document ? (
-                    <div className="space-y-4">
-                        <VerificationStatus icon={CheckCircle} title="Dokumen Terverifikasi" description="Dokumen ini adalah asli dan tercatat dalam sistem kami." variant="success" />
+                    <div className="space-y-6">
+                        <VerificationStatus icon={CheckCircle} title="Dokumen Terverifikasi" description="Dokumen ini adalah asli dan tercatat dalam sistem resmi Garda Lestari." variant="success" />
                         
-                        <div className="aspect-[4/5] w-full bg-gray-200 rounded-lg overflow-hidden border">
+                        <div className="aspect-[4/5] w-full bg-gray-200 rounded-lg overflow-hidden border shadow-inner">
                            <PdfViewer file={document.fileUrl} />
                         </div>
                         
-                        <Card className="bg-background">
-                            <CardContent className="p-4 space-y-3">
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Judul Dokumen</p>
-                                    <p className="font-semibold">{document.title}</p>
-                                </div>
-                                {document.documentNumber && (
-                                     <div>
-                                        <p className="text-sm text-muted-foreground">Nomor Surat</p>
-                                        <p className="font-mono">{document.documentNumber}</p>
+                        <Card className="bg-background border-primary/20">
+                            <CardContent className="p-6 space-y-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-b pb-4">
+                                    <div>
+                                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Perihal Dokumen</p>
+                                        <p className="font-semibold text-primary">{document.title}</p>
                                     </div>
-                                )}
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Disahkan oleh</p>
-                                    <p className="font-semibold">L. Andri Saputro</p>
-                                    <p className="text-xs text-muted-foreground">Ketua Umum</p>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Nomor Surat</p>
+                                        <p className="font-mono text-sm font-bold">{document.documentNumber || 'N/A'}</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Tanggal Pengesahan</p>
-                                    <p className="font-semibold">{formattedDate} WIB</p>
+
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <UserCheck className="h-4 w-4 text-primary" />
+                                        <p className="text-sm font-bold">Data Penandatangan Digital:</p>
+                                    </div>
+                                    {document.signers && document.signers.length > 0 ? (
+                                        <Accordion type="single" collapsible className="w-full">
+                                            {document.signers.map((signer, index) => (
+                                                <AccordionItem key={index} value={`item-${index}`} className="border rounded-md px-4 mb-2 bg-muted/20">
+                                                    <AccordionTrigger className="hover:no-underline py-3">
+                                                        <div className="flex flex-col items-start text-left">
+                                                            <span className="font-semibold text-sm">{signer.name}</span>
+                                                            <span className="text-xs text-muted-foreground">{signer.role}</span>
+                                                        </div>
+                                                    </AccordionTrigger>
+                                                    <AccordionContent className="pb-3 text-xs space-y-2 border-t pt-2">
+                                                        <div className="flex justify-between items-center">
+                                                            <span className="text-muted-foreground">Status Verifikasi:</span>
+                                                            <Badge className="bg-green-600 text-white text-[10px] h-5">TERVERIFIKASI</Badge>
+                                                        </div>
+                                                        <div className="flex justify-between items-center">
+                                                            <span className="text-muted-foreground">Waktu Tanda Tangan:</span>
+                                                            <span className="font-mono">{format(new Date(signer.signedAt), 'dd MMM yyyy, HH:mm', { locale: idLocale })} WIB</span>
+                                                        </div>
+                                                        <p className="text-[10px] text-muted-foreground mt-2 italic leading-tight">
+                                                            * Penandatanganan ini menggunakan infrastruktur kunci publik Garda Lestari dan memiliki kekuatan hukum internal yang sah.
+                                                        </p>
+                                                    </AccordionContent>
+                                                </AccordionItem>
+                                            ))}
+                                        </Accordion>
+                                    ) : (
+                                        <div className="p-4 rounded-md border border-dashed text-center text-sm text-muted-foreground">
+                                            Data penandatangan tidak ditemukan.
+                                        </div>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
@@ -233,7 +263,7 @@ export default function DocumentVerificationPage() {
                             <Button asChild size="lg" className="w-full">
                                 <Link href={document.fileUrl} target="_blank">
                                     <Download className="mr-2 h-4 w-4" />
-                                    Unduh
+                                    Unduh PDF
                                 </Link>
                             </Button>
                             <Button size="lg" className="w-full" variant="outline" onClick={() => fileInputRef.current?.click()}>
@@ -248,8 +278,8 @@ export default function DocumentVerificationPage() {
                 )}
             </CardContent>
         </Card>
-         <div className="text-center text-xs text-muted-foreground pt-2">
-            &copy; {new Date().getFullYear()} Garda Muda Lestari.
+         <div className="text-center text-[10px] text-muted-foreground pt-4 opacity-60">
+            &copy; {new Date().getFullYear()} Garda Muda Lestari. Verifikasi Dokumen Kriptografis v2.0
          </div>
        </div>
     </div>
@@ -266,5 +296,3 @@ export default function DocumentVerificationPage() {
     </>
   );
 }
-
-    

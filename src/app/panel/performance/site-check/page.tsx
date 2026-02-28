@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -14,7 +15,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import Link from 'next/link';
 
 // Define the routes locally to avoid importing non-functions from 'use server' files
-const ROUTES_TO_SCAN = [
+const LOCAL_ROUTES_TO_SCAN = [
   '/',
   '/berita',
   '/video',
@@ -79,19 +80,19 @@ export default function SiteHealthCheckPage() {
     setIsConsoleScanning(true);
     setCurrentRouteIndex(0);
     const initialResults: Record<string, 'pending'> = {};
-    ROUTES_TO_SCAN.forEach(r => initialResults[r] = 'pending');
+    LOCAL_ROUTES_TO_SCAN.forEach(r => initialResults[r] = 'pending');
     setConsoleScanResults(initialResults);
     toast({ title: 'Deep Scan Dimulai', description: 'Sistem akan membuka halaman satu per satu di jendela tersembunyi.' });
   };
 
   useEffect(() => {
-    if (isConsoleScanning && currentRouteIndex >= 0 && currentRouteIndex < ROUTES_TO_SCAN.length) {
-        const route = ROUTES_TO_SCAN[currentRouteIndex];
+    if (isConsoleScanning && currentRouteIndex >= 0 && currentRouteIndex < LOCAL_ROUTES_TO_SCAN.length) {
+        const route = LOCAL_ROUTES_TO_SCAN[currentRouteIndex];
         setConsoleScanResults(prev => ({ ...prev, [route]: 'checking' }));
 
         const timer = setTimeout(() => {
             setConsoleScanResults(prev => ({ ...prev, [route]: 'success' }));
-            if (currentRouteIndex < ROUTES_TO_SCAN.length - 1) {
+            if (currentRouteIndex < LOCAL_ROUTES_TO_SCAN.length - 1) {
                 setCurrentRouteIndex(prev => prev + 1);
             } else {
                 setIsConsoleScanning(false);
@@ -104,7 +105,7 @@ export default function SiteHealthCheckPage() {
     }
   }, [isConsoleScanning, currentRouteIndex, toast]);
 
-  const consoleProgress = isConsoleScanning ? ((currentRouteIndex + 1) / ROUTES_TO_SCAN.length) * 100 : 0;
+  const consoleProgress = isConsoleScanning ? ((currentRouteIndex + 1) / LOCAL_ROUTES_TO_SCAN.length) * 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -131,17 +132,17 @@ export default function SiteHealthCheckPage() {
                   <div className="flex justify-between items-center">
                     <CardTitle className="text-sm font-bold flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Sedang Memindai Konsol: {ROUTES_TO_SCAN[currentRouteIndex]}
+                        Sedang Memindai Konsol: {LOCAL_ROUTES_TO_SCAN[currentRouteIndex]}
                     </CardTitle>
-                    <span className="text-xs font-mono">{currentRouteIndex + 1} / {ROUTES_TO_SCAN.length}</span>
+                    <span className="text-xs font-mono">{currentRouteIndex + 1} / {LOCAL_ROUTES_TO_SCAN.length}</span>
                   </div>
               </CardHeader>
               <CardContent className="space-y-4">
                   <Progress value={consoleProgress} className="h-2" />
                   <div className="rounded-md border bg-black p-2 h-32 overflow-hidden relative">
                       <iframe 
-                        key={ROUTES_TO_SCAN[currentRouteIndex]}
-                        src={`${ROUTES_TO_SCAN[currentRouteIndex]}?is_scan=true`} 
+                        key={LOCAL_ROUTES_TO_SCAN[currentRouteIndex]}
+                        src={`${LOCAL_ROUTES_TO_SCAN[currentRouteIndex]}?is_scan=true`} 
                         className="w-[1024px] h-[768px] origin-top-left scale-[0.3] pointer-events-none grayscale"
                         title="Deep Scanner"
                       />
@@ -204,7 +205,7 @@ export default function SiteHealthCheckPage() {
             <CardContent>
                 <ScrollArea className="h-[400px]">
                     <div className="space-y-2">
-                        {ROUTES_TO_SCAN.map(route => (
+                        {LOCAL_ROUTES_TO_SCAN.map(route => (
                             <div key={route} className="flex items-center justify-between p-2 rounded-md border text-xs">
                                 <span className="font-mono truncate flex-1">{route}</span>
                                 <div className="flex items-center gap-2">
