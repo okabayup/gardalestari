@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -15,20 +14,20 @@ body {
     --card-foreground: 145 57% 10%;
     --popover: 0 0% 100%;
     --popover-foreground: 145 57% 10%;
-    --primary: 82 100% 36%; /* Hijau Vibrant dari gambar */
+    --primary: 82 100% 36%; /* Vibrant Green #76B900 */
     --primary-foreground: 0 0% 100%;
     --secondary: 104 33% 96%;
     --secondary-foreground: 145 57% 20%;
     --muted: 104 10% 95%;
     --muted-foreground: 104 10% 40%;
-    --accent: 145 57% 15%; /* Hijau Gelap */
+    --accent: 145 57% 15%; /* Forest Green #1B3022 */
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 104 33% 90%;
     --input: 104 33% 90%;
     --ring: 82 100% 36%;
-    --radius: 1rem;
+    --radius: 2rem;
   }
 
   .dark {
@@ -69,4 +68,14 @@ body {
 .bg-nature-pattern {
   background-image: radial-gradient(circle at 2px 2px, rgba(0,0,0,0.05) 1px, transparent 0);
   background-size: 24px 24px;
+}
+
+/* Custom Utilities for the new UI */
+.curved-bottom {
+  border-bottom-left-radius: 4rem;
+  border-bottom-right-radius: 4rem;
+}
+
+.glass-pill {
+  @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl rounded-full;
 }

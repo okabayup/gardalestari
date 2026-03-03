@@ -1,0 +1,34 @@
+{
+  "hero_nature": {
+    "url": "https://picsum.photos/seed/nature-tree/800/800",
+    "hint": "nature tree"
+  },
+  "impact_warming": {
+    "url": "https://picsum.photos/seed/storm/400/600",
+    "hint": "lightning storm"
+  },
+  "impact_tree": {
+    "url": "https://picsum.photos/seed/green-forest/400/600",
+    "hint": "lush green tree"
+  },
+  "impact_animals": {
+    "url": "https://picsum.photos/seed/elephant/400/600",
+    "hint": "elephant nature"
+  },
+  "benefit_hand": {
+    "url": "https://picsum.photos/seed/hand-tree/800/800",
+    "hint": "hand holding small tree"
+  },
+  "volunteer_1": {
+    "url": "https://picsum.photos/seed/v1/400/400",
+    "hint": "young man smiling"
+  },
+  "volunteer_2": {
+    "url": "https://picsum.photos/seed/v2/400/400",
+    "hint": "young woman volunteer"
+  },
+  "volunteer_3": {
+    "url": "https://picsum.photos/seed/v3/400/400",
+    "hint": "group people outdoors"
+  }
+}
