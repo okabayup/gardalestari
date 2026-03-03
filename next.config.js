@@ -32,7 +32,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Fix for Next.js 16 build conflict with webpack-based plugins like next-pwa
+  // Support Turbopack in Next.js 16 with custom configurations
   turbopack: {},
   webpack: (config) => {
     config.resolve.alias.canvas = false;
