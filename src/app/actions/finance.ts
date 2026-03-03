@@ -1,4 +1,3 @@
-
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -93,7 +92,7 @@ export async function getFinancialReports(startDate: Date, endDate: Date): Promi
     });
 
     const assets = accounts.filter(a => a.category === 'Aset').map(a => ({ name: a.name, balance: a.balance }));
-     liabilities = accounts.filter(a => a.category === 'Liabilitas').map(a => ({ name: a.name, balance: a.balance }));
+    const liabilities = accounts.filter(a => a.category === 'Liabilitas').map(a => ({ name: a.name, balance: a.balance }));
     const equity = accounts.filter(a => a.category === 'Ekuitas').map(a => ({ name: a.name, balance: a.balance }));
     
     const totalAssets = assets.reduce((sum, a) => sum + a.balance, 0);

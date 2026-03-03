@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Leaf, Users, Sprout, Ship, TreePine, Handshake, Target, ArrowRight, Award, Zap, Globe, Recycle, Heart, CheckCircle } from 'lucide-react';
 import LandingHeader from '@/components/layout/LandingHeader';
 import Footer from '@/components/landing/Footer';

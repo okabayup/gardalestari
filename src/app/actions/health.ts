@@ -6,44 +6,36 @@
 
 import { logError } from './errors';
 
-// Internal list of routes to scan. 
-// Do not export this array directly from a 'use server' file to comply with Next.js rules.
-const ROUTES_TO_SCAN = [
-  '/',
-  '/berita',
-  '/video',
-  '/tentang',
-  '/programs',
-  '/events',
-  '/recruitments',
-  '/documents',
-  '/announcements',
-  '/points',
-  '/ideas',
-  '/evoting',
-  '/panel/dashboard',
-  '/panel/members',
-  '/panel/finance/dashboard',
-  '/panel/settings',
-  '/profile/me',
-];
-
-export interface ScanResult {
-  route: string;
-  status: number;
-  ok: boolean;
-  error?: string;
-}
-
 /**
  * Scans all defined routes by performing a HEAD request to each.
  * Records results and logs errors if any route returns a non-OK status.
  */
 export async function scanAllRoutes(): Promise<ScanResult[]> {
+  // Routes to scan are defined locally to avoid exporting non-async functions from 'use server' file
+  const routesToScan = [
+    '/',
+    '/berita',
+    '/video',
+    '/tentang',
+    '/programs',
+    '/events',
+    '/recruitments',
+    '/documents',
+    '/announcements',
+    '/points',
+    '/ideas',
+    '/evoting',
+    '/panel/dashboard',
+    '/panel/members',
+    '/panel/finance/dashboard',
+    '/panel/settings',
+    '/profile/me',
+  ];
+
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:9002';
   const results: ScanResult[] = [];
 
-  for (const route of ROUTES_TO_SCAN) {
+  for (const route of routesToScan) {
     try {
       const fullUrl = `${baseUrl}${route}`;
       const response = await fetch(fullUrl, { 
@@ -87,4 +79,11 @@ export async function scanAllRoutes(): Promise<ScanResult[]> {
   }
 
   return results;
+}
+
+export interface ScanResult {
+  route: string;
+  status: number;
+  ok: boolean;
+  error?: string;
 }
