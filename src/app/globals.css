@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,48 +9,48 @@ body {
 
 @layer base {
   :root {
-    --background: 104 33% 95%; /* #E8F0E5 desaturated */
-    --foreground: 145 57% 15%;
-    --card: 104 33% 100%;
-    --card-foreground: 145 57% 15%;
-    --popover: 104 33% 100%;
-    --popover-foreground: 145 57% 15%;
-    --primary: 145 57% 35%; /* #347C45 */
-    --primary-foreground: 145 57% 95%;
-    --secondary: 104 33% 90%;
-    --secondary-foreground: 145 57% 25%;
-    --muted: 104 33% 90%;
-    --muted-foreground: 104 10% 45%;
-    --accent: 82 22% 38%; /* #556B2F */
-    --accent-foreground: 82 22% 98%;
+    --background: 0 0% 100%;
+    --foreground: 145 57% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 145 57% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 145 57% 10%;
+    --primary: 82 100% 36%; /* Hijau Vibrant dari gambar */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 104 33% 96%;
+    --secondary-foreground: 145 57% 20%;
+    --muted: 104 10% 95%;
+    --muted-foreground: 104 10% 40%;
+    --accent: 145 57% 15%; /* Hijau Gelap */
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 104 33% 88%;
-    --input: 104 33% 88%;
-    --ring: 145 57% 35%;
-    --radius: 0.5rem;
+    --border: 104 33% 90%;
+    --input: 104 33% 90%;
+    --ring: 82 100% 36%;
+    --radius: 1rem;
   }
 
   .dark {
-    --background: 145 15% 8%;
+    --background: 145 15% 5%;
     --foreground: 104 33% 96%;
-    --card: 145 15% 12%;
+    --card: 145 15% 8%;
     --card-foreground: 104 33% 96%;
-    --popover: 145 15% 8%;
+    --popover: 145 15% 5%;
     --popover-foreground: 104 33% 96%;
-    --primary: 145 57% 45%;
-    --primary-foreground: 145 57% 98%;
-    --secondary: 145 15% 15%;
+    --primary: 82 100% 45%;
+    --primary-foreground: 145 57% 5%;
+    --secondary: 145 15% 12%;
     --secondary-foreground: 104 33% 96%;
-    --muted: 145 15% 15%;
+    --muted: 145 15% 12%;
     --muted-foreground: 104 10% 60%;
-    --accent: 82 22% 48%;
-    --accent-foreground: 82 22% 98%;
+    --accent: 82 100% 45%;
+    --accent-foreground: 145 57% 5%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 145 15% 20%;
-    --input: 145 15% 20%;
-    --ring: 145 57% 45%;
+    --border: 145 15% 15%;
+    --input: 145 15% 15%;
+    --ring: 82 100% 45%;
   }
 }
 
@@ -60,4 +61,12 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+  h1, h2, h3, h4 {
+    @apply font-bold tracking-tight;
+  }
+}
+
+.bg-nature-pattern {
+  background-image: radial-gradient(circle at 2px 2px, rgba(0,0,0,0.05) 1px, transparent 0);
+  background-size: 24px 24px;
 }

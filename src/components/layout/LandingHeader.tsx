@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -10,12 +11,13 @@ import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle,
 import { Separator } from '../ui/separator';
 import VerificationFlow from '../auth/VerificationFlow';
 import { getAppSettings } from '@/app/actions/settings';
-import InstallGate from './InstallGate';
 
 const navItems = [
-  { href: '/berita', label: 'Berita' },
-  { href: '/tentang', label: 'Tentang Kami' },
-  { href: '/programs', label: 'Program' },
+  { href: '/', label: 'Home' },
+  { href: '/tentang', label: 'About Us' },
+  { href: '/programs', label: 'Services' },
+  { href: '/events', label: 'Event' },
+  { href: '/berita', label: 'Blog' },
 ];
 
 export default function LandingHeader() {
@@ -36,94 +38,64 @@ export default function LandingHeader() {
     fetchSettings();
   }, []);
   
-  // Hydration safety: Return a stable skeleton until mounted on client
-  if (!mounted) {
-    return (
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center">
-          <Link href="/" className="flex items-center">
-            <Image src="/logo.png" alt="Garda Lestari Logo" width={120} height={32} className="h-8 w-auto" />
-          </Link>
-        </div>
-      </header>
-    );
-  }
+  if (!mounted) return null;
 
-  // If user is logged in but has not completed KTP verification, show the flow.
   if (user && user.verificationStatus === 'unverified') {
     return <VerificationFlow />;
   }
 
   return (
-    <>
-    <InstallGate />
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center">
-        <Link href="/" className="flex items-center">
-          <Image src="/logo.png" alt="Garda Lestari Logo" width={120} height={32} className="h-8 w-auto" />
+    <header className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-5xl px-4">
+      <div className="bg-white/80 backdrop-blur-md border rounded-full px-6 py-3 flex items-center justify-between shadow-lg">
+        <Link href="/" className="flex items-center shrink-0">
+          <Image src="/logo.png" alt="Garda Lestari Logo" width={100} height={30} className="h-8 w-auto" />
         </Link>
-        <nav className="ml-auto hidden items-center gap-6 md:flex">
+        
+        <nav className="hidden md:flex items-center gap-8">
             {navItems.map(item => (
-                 <Link key={item.href} href={item.href} className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">{item.label}</Link>
+                 <Link key={item.href} href={item.href} className="text-sm font-bold text-muted-foreground hover:text-primary transition-colors">{item.label}</Link>
             ))}
         </nav>
-        <div className="ml-auto flex items-center gap-2 md:ml-4">
+
+        <div className="flex items-center gap-2">
           {loading ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
           ) : user ? (
-            <Button asChild>
-              <Link href="/feed">Buka Aplikasi</Link>
+            <Button asChild className="rounded-full px-6">
+              <Link href="/feed">App</Link>
             </Button>
           ) : (
             <>
-              <Button variant="outline" className="hidden md:inline-flex" asChild>
-                <Link href="/login">Masuk</Link>
+              <Button variant="ghost" className="hidden md:inline-flex font-bold" asChild>
+                <Link href="/login">Login</Link>
               </Button>
               {isRegistrationOpen && (
-                <Button asChild className="hidden md:inline-flex">
-                  <Link href="/register">Daftar</Link>
+                <Button asChild className="rounded-full bg-primary hover:bg-primary/90 px-6 font-bold">
+                  <Link href="/register">Sign Up</Link>
                 </Button>
               )}
             </>
           )}
 
-            <Sheet>
-                <SheetTrigger asChild>
-                    <Button variant="outline" size="icon" className="md:hidden">
-                        <Menu className="h-5 w-5" />
-                        <span className="sr-only">Buka Menu</span>
-                    </Button>
-                </SheetTrigger>
-                <SheetContent side="left">
-                    <SheetHeader className="sr-only">
-                        <SheetTitle>Menu Utama</SheetTitle>
-                        <SheetDescription>Navigasi utama untuk halaman Garda Lestari.</SheetDescription>
-                    </SheetHeader>
-                   <div className="p-6">
-                        <Link href="/" className="flex items-center">
-                            <Image src="/logo.png" alt="Garda Lestari Logo" width={120} height={32} className="h-8 w-auto" />
-                        </Link>
-                    </div>
-                    <Separator />
-                    <nav className="p-6 space-y-4">
-                         {navItems.map(item => (
-                            <SheetClose asChild key={item.href}>
-                                <Link href={item.href} className="block text-lg font-medium text-foreground">{item.label}</Link>
-                            </SheetClose>
-                         ))}
-                    </nav>
-                    {!user && (
-                         <div className="absolute bottom-6 left-6 right-6 space-y-2">
-                             <Button asChild className="w-full"><Link href="/login">Masuk</Link></Button>
-                            {isRegistrationOpen && <Button asChild variant="secondary" className="w-full"><Link href="/register">Daftar</Link></Button>}
-                         </div>
-                    )}
-                </SheetContent>
-            </Sheet>
-
+          <Sheet>
+            <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="md:hidden rounded-full border-none bg-muted">
+                    <Menu className="h-5 w-5" />
+                </Button>
+            </SheetTrigger>
+            <SheetContent side="top" className="rounded-b-[2rem]">
+                <nav className="flex flex-col items-center gap-6 py-8">
+                     {navItems.map(item => (
+                        <SheetClose asChild key={item.href}>
+                            <Link href={item.href} className="text-xl font-bold">{item.label}</Link>
+                        </SheetClose>
+                     ))}
+                     {!user && <Button asChild className="w-full rounded-full"><Link href="/login">Login</Link></Button>}
+                </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>
-    </>
   );
 }
