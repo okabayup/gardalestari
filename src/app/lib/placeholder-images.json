@@ -1,34 +1,39 @@
+
 {
-  "hero_nature": {
-    "url": "https://picsum.photos/seed/nature-tree/800/800",
-    "hint": "nature tree"
+  "hero_bg": {
+    "url": "https://picsum.photos/seed/nature-landscape/1920/1080",
+    "hint": "nature landscape waterfall"
   },
-  "impact_warming": {
-    "url": "https://picsum.photos/seed/storm/400/600",
-    "hint": "lightning storm"
+  "hero_floating_1": {
+    "url": "https://picsum.photos/seed/coastal/400/400",
+    "hint": "ocean wave"
   },
-  "impact_tree": {
-    "url": "https://picsum.photos/seed/green-forest/400/600",
-    "hint": "lush green tree"
+  "hero_floating_2": {
+    "url": "https://picsum.photos/seed/forest-sun/400/400",
+    "hint": "forest sunlight"
   },
-  "impact_animals": {
-    "url": "https://picsum.photos/seed/elephant/400/600",
-    "hint": "elephant nature"
+  "hero_floating_3": {
+    "url": "https://picsum.photos/seed/mountains/400/400",
+    "hint": "misty mountains"
   },
-  "benefit_hand": {
-    "url": "https://picsum.photos/seed/hand-tree/800/800",
-    "hint": "hand holding small tree"
+  "leading_1": {
+    "url": "https://picsum.photos/seed/water/600/600",
+    "hint": "clean water"
   },
-  "volunteer_1": {
-    "url": "https://picsum.photos/seed/v1/400/400",
-    "hint": "young man smiling"
+  "leading_2": {
+    "url": "https://picsum.photos/seed/woods/600/600",
+    "hint": "green woods"
   },
-  "volunteer_2": {
-    "url": "https://picsum.photos/seed/v2/400/400",
-    "hint": "young woman volunteer"
-  },
-  "volunteer_3": {
-    "url": "https://picsum.photos/seed/v3/400/400",
-    "hint": "group people outdoors"
-  }
+  "impact_climate": { "url": "https://picsum.photos/seed/ic1/400/400", "hint": "climate change" },
+  "impact_ocean": { "url": "https://picsum.photos/seed/ic2/400/400", "hint": "coral reef" },
+  "impact_wildlife": { "url": "https://picsum.photos/seed/ic3/400/400", "hint": "wildlife animal" },
+  "impact_forest": { "url": "https://picsum.photos/seed/ic4/400/400", "hint": "dense forest" },
+  "impact_energy": { "url": "https://picsum.photos/seed/ic5/400/400", "hint": "wind turbine" },
+  "impact_waste": { "url": "https://picsum.photos/seed/ic6/400/400", "hint": "recycling" },
+  "rebuild_1": { "url": "https://picsum.photos/seed/rb1/800/600", "hint": "hand holding plant" },
+  "rebuild_2": { "url": "https://picsum.photos/seed/rb2/800/600", "hint": "underwater turtle" },
+  "prog_aren": { "url": "https://picsum.photos/seed/aren/600/400", "hint": "palm tree plantation" },
+  "prog_pohon": { "url": "https://picsum.photos/seed/pohon/600/400", "hint": "planting tree" },
+  "prog_vanili": { "url": "https://picsum.photos/seed/vanili/600/400", "hint": "vanilla beans" },
+  "prog_shark": { "url": "https://picsum.photos/seed/shark/600/400", "hint": "shark sea" }
 }
