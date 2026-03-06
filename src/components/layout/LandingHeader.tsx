@@ -61,12 +61,8 @@ export default function LandingHeader() {
             : "bg-white/50 backdrop-blur-sm border border-white/10 rounded-[2rem]"
         )}>
           <Link href="/" className="flex items-center shrink-0 group">
-            <div className="relative w-10 h-10 md:w-12 md:h-12 mr-3 transition-transform group-hover:rotate-12">
+            <div className="relative w-10 h-10 md:w-12 md:h-12 transition-transform group-hover:rotate-12">
               <Image src="/logo.png" alt="Garda Lestari Logo" fill className="object-contain" />
-            </div>
-            <div className="hidden sm:block leading-none">
-              <span className="text-xl font-black tracking-tighter text-accent uppercase block">Garda</span>
-              <span className="text-xs font-black tracking-widest text-primary uppercase">Lestari</span>
             </div>
           </Link>
           
