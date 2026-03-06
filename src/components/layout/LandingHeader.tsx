@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Loader2, Menu, X } from 'lucide-react';
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { getAppSettings } from '@/app/actions/settings';
 import { cn } from '@/lib/utils';
 

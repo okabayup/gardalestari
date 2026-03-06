@@ -23,7 +23,7 @@ import { getNotificationsForUser, markNotificationsAsRead, getUnreadNotification
 import { getAppSettings, AppSettings } from '@/app/actions/settings';
 import { formatDistanceToNow } from 'date-fns';
 import { GlobalSearch } from '../search/GlobalSearch';
-import { Notification } from '@/lib/definitions';
+import { AppNotification } from '@/lib/definitions';
 
 const NotificationItem = ({ title, body, time, read, link }: { title: string, body: string, time: string, read: boolean, link?: string }) => (
     <Link href={link || '#'} className="block p-3 hover:bg-muted/50 rounded-lg">
@@ -42,7 +42,7 @@ export default function Header() {
   const { user, signOut, hasPermission } = useAuth();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -220,7 +220,7 @@ export default function Header() {
   );
 }
 
-function NotificationItemWrapper({ notification }: { notification: Notification }) {
+function NotificationItemWrapper({ notification }: { notification: AppNotification }) {
     const [timeAgo, setTimeAgo] = useState('');
 
     useEffect(() => {
