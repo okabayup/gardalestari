@@ -26,6 +26,34 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'firebasestorage.googleapis.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'preditrix.ai',
+      },
+      {
+        protocol: 'https',
+        hostname: 'recogify.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'webapi-bpdlh.kemenkeu.go.id',
+      },
+      {
+        protocol: 'https',
+        hostname: 'sourceup-api-cdn-endpoint-prod.azureedge.net',
+      },
+      {
+        protocol: 'https',
+        hostname: 'upload.wikimedia.org',
+      },
+      {
+        protocol: 'https',
+        hostname: 'strapi.jala.tech',
+      },
+      {
+        protocol: 'https',
+        hostname: 'blogger.googleusercontent.com',
+      },
     ],
   },
   // Bypassing non-fatal errors during build to allow deployment
