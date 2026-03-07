@@ -1,4 +1,3 @@
-
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,8 @@ import {
   Target, 
   CheckCircle,
   Sparkles,
-  Search
+  Search,
+  Check
 } from 'lucide-react';
 import LandingHeader from '@/components/layout/LandingHeader';
 import Footer from '@/components/landing/Footer';
@@ -63,50 +63,49 @@ export default async function LandingPage() {
       <LandingHeader />
 
       <main className="flex-1">
-        {/* HERO SECTION */}
-        <section className="relative min-h-screen flex flex-col justify-center overflow-hidden pt-20">
-          <div 
-            className="absolute inset-0 -z-10 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: "url('/hero.png')" }}
-          >
-            <div className="absolute inset-0 bg-black/30" />
-          </div>
+        {/* HERO SECTION - Background fix with bg-right priority */}
+        <section 
+          className="relative min-h-[90vh] md:min-h-screen flex flex-col justify-center overflow-hidden pt-20 bg-no-repeat bg-cover bg-right md:bg-center"
+          style={{ backgroundImage: "url('/hero.png')" }}
+        >
+          {/* Overlay for text readability */}
+          <div className="absolute inset-0 bg-black/20" />
           
           <div className="container px-6 relative z-10">
             <div className="max-w-3xl space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-1000">
-              <h1 className="text-6xl md:text-8xl font-black text-white leading-[0.9] tracking-tighter">
+              <h1 className="text-6xl md:text-8xl font-black text-white leading-[0.9] tracking-tighter drop-shadow-lg">
                 Small Actions,<br />
                 <span className="text-primary">Big Impact</span>
               </h1>
-              <p className="text-xl text-white/90 max-w-xl leading-relaxed font-medium">
+              <p className="text-xl text-white/95 max-w-xl leading-relaxed font-medium drop-shadow-md">
                 Setiap langkah kecil yang Anda ambil hari ini menciptakan efek riak, mendorong perubahan demi masa depan alam Indonesia yang lebih baik.
               </p>
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-4 pt-4">
                 <Button size="lg" className="rounded-full bg-primary hover:bg-primary/90 px-10 h-14 text-lg font-bold shadow-xl shadow-primary/20">
                   Our approach
                 </Button>
-                <Button size="lg" variant="outline" className="rounded-full border-white/30 text-white hover:bg-white hover:text-black px-10 h-14 text-lg font-bold backdrop-blur-md">
+                <Button size="lg" variant="outline" className="rounded-full border-white/40 text-white hover:bg-white hover:text-black px-10 h-14 text-lg font-bold backdrop-blur-md">
                   Join Movement
                 </Button>
               </div>
             </div>
           </div>
 
-          {/* HIGHLIGHT CARDS */}
-          <div className="container px-6 mt-20 pb-12 relative z-10">
+          {/* HIGHLIGHT CARDS - Floating at bottom of hero */}
+          <div className="container px-6 mt-20 pb-12 relative z-10 hidden md:block">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
                 { title: 'Coastal Care', desc: 'Melindungi garis pantai dan ekosistem maritim nusantara.', img: images.highlight_1.url, hint: images.highlight_1.hint },
                 { title: 'Green Living', desc: 'Edukasi dan implementasi gaya hidup berkelanjutan sehari-hari.', img: images.highlight_2.url, hint: images.highlight_2.hint },
                 { title: 'Climate Action', desc: 'Inisiatif nyata dalam memitigasi dampak perubahan iklim global.', img: images.highlight_3.url, hint: images.highlight_3.hint }
               ].map((card, i) => (
-                <Card key={i} className="organic-card overflow-hidden hover:scale-105 transition-all duration-500">
+                <Card key={i} className="organic-card overflow-hidden hover:scale-105 transition-all duration-500 border-none shadow-2xl">
                   <CardContent className="p-0 flex flex-col items-center text-center">
                     <div className="relative w-full aspect-video">
                       <Image src={card.img} alt={card.title} data-ai-hint={card.hint} fill className="object-cover" />
                     </div>
-                    <div className="p-8 space-y-2">
-                      <h3 className="font-black text-xl">{card.title}</h3>
+                    <div className="p-8 space-y-2 bg-white/90 backdrop-blur-sm w-full">
+                      <h3 className="font-black text-xl text-accent">{card.title}</h3>
                       <p className="text-sm text-muted-foreground">{card.desc}</p>
                     </div>
                   </CardContent>
@@ -119,7 +118,7 @@ export default async function LandingPage() {
         {/* PARTNERS SECTION */}
         <section className="py-12 bg-muted/30 border-y">
           <div className="container px-6">
-            <p className="text-center text-xs font-bold uppercase tracking-widest text-muted-foreground mb-8">Didukung oleh Institusi & Teknologi Terdepan</p>
+            <p className="text-center text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-8">Didukung oleh Institusi & Teknologi Terdepan</p>
             <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12 opacity-60 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-500">
               {partners.map((partner, i) => (
                 <div key={i} className="relative h-10 w-24 md:h-12 md:w-32">
@@ -148,7 +147,7 @@ export default async function LandingPage() {
                     { title: 'Pemberdayaan Pemuda', desc: 'Melatih pemimpin masa depan untuk aksi nyata.' }
                   ].map((item, i) => (
                     <div key={i} className="flex gap-4 p-4 rounded-3xl border border-border/50 hover:bg-muted/30 transition-colors">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0"><CheckCircle size={20} /></div>
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0"><Check size={20} /></div>
                       <div>
                         <h4 className="font-bold text-sm">{item.title}</h4>
                         <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
@@ -161,7 +160,7 @@ export default async function LandingPage() {
                 </Button>
               </div>
               <div className="relative">
-                <div className="relative aspect-square rounded-[3rem] overflow-hidden shadow-2xl z-10 rotate-3">
+                <div className="relative aspect-square rounded-[3rem] overflow-hidden shadow-2xl z-10 rotate-3 border-8 border-white">
                   <Image src={images.lead_side.url} alt="Nature" data-ai-hint={images.lead_side.hint} fill className="object-cover" />
                 </div>
                 <div className="absolute -left-20 top-1/2 -translate-y-1/2 w-2/3 aspect-square rounded-[3rem] overflow-hidden shadow-xl -z-10 border-8 border-white -rotate-6">
@@ -232,7 +231,7 @@ export default async function LandingPage() {
                     <stat.icon size={24} />
                   </div>
                   <p className="text-4xl font-black tracking-tighter">{stat.value}</p>
-                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{stat.label}</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{stat.label}</p>
                 </div>
               ))}
             </div>
@@ -244,16 +243,16 @@ export default async function LandingPage() {
           <div className="container px-6 space-y-20">
             <div className="text-center max-w-2xl mx-auto space-y-4">
               <h2 className="text-4xl md:text-5xl font-black tracking-tighter leading-tight">Membangun Kembali Ekosistem, Memulihkan Keseimbangan</h2>
-              <p className="text-muted-foreground">Kami fokus pada upaya memulihkan keharmonisan antara inovasi pemuda dan pelestarian alam demi generasi mendatang.</p>
+              <p className="text-muted-foreground text-lg">Kami fokus pada upaya memulihkan keharmonisan antara inovasi pemuda dan pelestarian alam demi generasi mendatang.</p>
             </div>
             
             <div className="grid md:grid-cols-2 items-center gap-0">
-              <div className="relative aspect-[4/3] rounded-[3rem] overflow-hidden shadow-2xl z-0">
+              <div className="relative aspect-[4/3] rounded-[3rem] overflow-hidden shadow-2xl z-0 border-8 border-white">
                 <Image src={images.overlap_1.url} alt="Eco" data-ai-hint={images.overlap_1.hint} fill className="object-cover" />
               </div>
               <div className="bg-[#F4F9F1] p-12 md:p-20 rounded-[3rem] -ml-12 relative z-10 space-y-6 shadow-xl border-l-8 border-white">
                 <h3 className="text-4xl font-black tracking-tighter text-accent">Capai Lebih Banyak,<br />Bersama-sama</h3>
-                <p className="text-muted-foreground text-lg">Platform kami memudahkan siapa saja untuk bergabung dalam misi pemulihan alam dan pengembangan ekonomi yang inklusif melalui rujukan dan poin.</p>
+                <p className="text-muted-foreground text-lg leading-relaxed">Platform kami memudahkan siapa saja untuk bergabung dalam misi pemulihan alam dan pengembangan ekonomi yang inklusif melalui rujukan dan poin.</p>
                 <Button variant="link" className="text-primary font-black uppercase tracking-widest p-0 h-auto">Lihat detail <ArrowRight className="ml-2 h-4 w-4" /></Button>
               </div>
             </div>
@@ -276,7 +275,7 @@ export default async function LandingPage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-10 text-white space-y-2">
                     <h3 className="text-3xl font-bold leading-tight line-clamp-2">{post.title}</h3>
-                    <p className="text-xs opacity-70 font-bold uppercase tracking-widest">{new Date(post.date).toLocaleDateString('id-ID', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                    <p className="text-[10px] opacity-70 font-black uppercase tracking-widest">{new Date(post.date).toLocaleDateString('id-ID', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
                   </div>
                   <div className="absolute top-8 right-8 w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 transform group-hover:-translate-y-2">
                     <ArrowRight className="text-white -rotate-45" size={24} />
