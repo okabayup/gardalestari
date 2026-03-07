@@ -63,28 +63,25 @@ export default async function LandingPage() {
       <LandingHeader />
 
       <main className="flex-1">
-        {/* HERO SECTION - Background fix with bg-right priority */}
+        {/* HERO SECTION - Resized background at right-top with white space */}
         <section 
-          className="relative min-h-[90vh] md:min-h-screen flex flex-col justify-center overflow-hidden pt-20 bg-no-repeat bg-cover bg-right md:bg-center"
+          className="relative min-h-[90vh] md:min-h-screen flex flex-col justify-center overflow-hidden pt-20 bg-no-repeat bg-[size:70%] bg-right-top bg-white"
           style={{ backgroundImage: "url('/hero.png')" }}
         >
-          {/* Overlay for text readability */}
-          <div className="absolute inset-0 bg-black/20" />
-          
           <div className="container px-6 relative z-10">
-            <div className="max-w-3xl space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-1000">
-              <h1 className="text-6xl md:text-8xl font-black text-white leading-[0.9] tracking-tighter drop-shadow-lg">
+            <div className="max-w-2xl space-y-8 animate-in fade-in slide-in-from-left-10 duration-1000">
+              <h1 className="text-6xl md:text-8xl font-black text-accent leading-[0.9] tracking-tighter">
                 Small Actions,<br />
                 <span className="text-primary">Big Impact</span>
               </h1>
-              <p className="text-xl text-white/95 max-w-xl leading-relaxed font-medium drop-shadow-md">
+              <p className="text-xl text-muted-foreground max-w-xl leading-relaxed font-medium">
                 Setiap langkah kecil yang Anda ambil hari ini menciptakan efek riak, mendorong perubahan demi masa depan alam Indonesia yang lebih baik.
               </p>
               <div className="flex flex-wrap gap-4 pt-4">
                 <Button size="lg" className="rounded-full bg-primary hover:bg-primary/90 px-10 h-14 text-lg font-bold shadow-xl shadow-primary/20">
                   Our approach
                 </Button>
-                <Button size="lg" variant="outline" className="rounded-full border-white/40 text-white hover:bg-white hover:text-black px-10 h-14 text-lg font-bold backdrop-blur-md">
+                <Button size="lg" variant="outline" className="rounded-full border-accent/20 text-accent hover:bg-accent hover:text-white px-10 h-14 text-lg font-bold backdrop-blur-md">
                   Join Movement
                 </Button>
               </div>
