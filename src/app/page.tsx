@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, Globe, Leaf, Heart, Recycle, Zap, Cloud, Droplets, PawPrint, TreeDeciduous, Wind, Sprout, Users, Target } from 'lucide-react';
+import { ArrowRight, Globe, Leaf, Heart, Recycle, Zap, Cloud, Droplets, PawPrint, TreeDeciduous, Wind, Sprout, Users, Target, CheckCircle } from 'lucide-react';
 import LandingHeader from '@/components/layout/LandingHeader';
 import Footer from '@/components/landing/Footer';
 import { getBeritaPosts } from './actions/berita';
@@ -76,8 +76,8 @@ export default async function LandingPage() {
                 { title: 'Hutan Lestari', desc: 'Konservasi aktif dan pemberdayaan masyarakat.', img: images.hero_floating_2.url, hint: images.hero_floating_2.hint },
                 { title: 'Ketahanan Pangan', desc: 'Inovasi pertanian cerdas dan berkelanjutan.', img: images.hero_floating_3.url, hint: images.hero_floating_3.hint }
               ].map((card, i) => (
-                <Card key={i} className="glass-pill border-none overflow-hidden hover:scale-105 transition-all duration-500 rounded-[2.5rem]">
-                  <CardContent className="p-0 flex items-center p-5 gap-5">
+                <Card key={i} className="bg-white/80 backdrop-blur-md border-none overflow-hidden hover:scale-105 transition-all duration-500 rounded-[2.5rem] shadow-xl">
+                  <CardContent className="p-5 flex items-center gap-5">
                     <div className="relative w-20 h-20 rounded-3xl overflow-hidden shrink-0 shadow-lg">
                       <Image src={card.img} alt={card.title} data-ai-hint={card.hint} fill className="object-cover" />
                     </div>
@@ -181,8 +181,10 @@ export default async function LandingPage() {
                   <div className="absolute bottom-10 left-10 right-10 text-white space-y-4">
                     <Badge className="bg-primary/20 backdrop-blur-md border-none text-white px-4 py-1">{card.category}</Badge>
                     <h3 className="text-3xl font-bold leading-tight">{card.title}</h3>
-                    <Button variant="outline" className="rounded-full border-white/30 text-white hover:bg-white hover:text-black w-full justify-between px-6">
-                      Temukan Solusi <ArrowRight size={18} />
+                    <Button variant="outline" className="rounded-full border-white/30 text-white hover:bg-white hover:text-black w-full justify-between px-6" asChild>
+                      <Link href="/programs">
+                        Temukan Solusi <ArrowRight size={18} />
+                      </Link>
                     </Button>
                   </div>
                 </div>
