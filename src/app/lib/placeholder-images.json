@@ -35,5 +35,5 @@
   "prog_aren": { "url": "https://picsum.photos/seed/aren/600/400", "hint": "palm tree plantation" },
   "prog_pohon": { "url": "https://picsum.photos/seed/pohon/600/400", "hint": "planting tree" },
   "prog_vanili": { "url": "https://picsum.photos/seed/vanili/600/400", "hint": "vanilla beans" },
-  "prog_shark": { "url": "https://picsum.photos/seed/shark/600/400", "hint": "shark sea" }
+  "prog_enviproof": { "url": "https://picsum.photos/seed/verify/600/400", "hint": "digital verification" }
 }

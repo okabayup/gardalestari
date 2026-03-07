@@ -173,7 +173,7 @@ export default async function LandingPage() {
                 { title: 'Kampung Aren', desc: 'Inovasi pengolahan aren berkelanjutan untuk ekonomi desa.', img: images.prog_aren.url, category: 'Agrikultur' },
                 { title: 'Sedekahpohon.org', desc: 'Gerakan digital penanaman satu juta pohon nusantara.', img: images.prog_pohon.url, category: 'Konservasi' },
                 { title: 'Vanili Lestari', desc: 'Pemberdayaan petani vanili organik kualitas ekspor.', img: images.prog_vanili.url, category: 'Pemberdayaan' },
-                { title: 'Seeshark', desc: 'Sistem monitoring hiu berbasis teknologi untuk nelayan.', img: images.prog_shark.url, category: 'Maritim' }
+                { title: 'Enviproof', desc: 'Sistem verifikasi data lingkungan transparan berbasis blockchain.', img: images.prog_enviproof.url, category: 'Teknologi' }
               ].map((card, i) => (
                 <div key={i} className="group relative h-[450px] rounded-[3rem] overflow-hidden shadow-2xl border border-border/50">
                   <Image src={card.img} alt={card.title} fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
