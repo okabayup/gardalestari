@@ -1,8 +1,8 @@
 
 {
   "hero_bg": {
-    "url": "https://picsum.photos/seed/nature-landscape/1920/1080",
-    "hint": "nature landscape waterfall"
+    "url": "/hero.png",
+    "hint": "nature landscape"
   },
   "hero_floating_1": {
     "url": "https://picsum.photos/seed/coastal/400/400",
