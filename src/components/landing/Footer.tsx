@@ -1,4 +1,3 @@
-
 'use client'
 
 import Image from 'next/image';
@@ -25,7 +24,7 @@ export default function Footer() {
                         <h4 className="font-bold text-xl uppercase tracking-tighter">About</h4>
                         <nav className="flex flex-col gap-3 text-sm font-medium text-accent/60">
                             <Link href="/tentang" className="hover:text-primary transition-colors">Who We Are</Link>
-                            <Link href="/tentang#vision" className="hover:text-primary transition-colors">Our Story</Link>
+                            <Link href="/tentang" className="hover:text-primary transition-colors">Our Story</Link>
                             <Link href="/gallery" className="hover:text-primary transition-colors">Gallery</Link>
                         </nav>
                     </div>

@@ -1,39 +1,37 @@
-
 {
   "hero_bg": {
     "url": "/hero.png",
     "hint": "nature landscape"
   },
-  "hero_floating_1": {
-    "url": "https://picsum.photos/seed/coastal/400/400",
-    "hint": "ocean wave"
+  "highlight_1": {
+    "url": "https://picsum.photos/seed/highlight1/400/400",
+    "hint": "coastal nature"
   },
-  "hero_floating_2": {
-    "url": "https://picsum.photos/seed/forest-sun/400/400",
-    "hint": "forest sunlight"
+  "highlight_2": {
+    "url": "https://picsum.photos/seed/highlight2/400/400",
+    "hint": "green living"
   },
-  "hero_floating_3": {
-    "url": "https://picsum.photos/seed/mountains/400/400",
-    "hint": "misty mountains"
+  "highlight_3": {
+    "url": "https://picsum.photos/seed/highlight3/400/400",
+    "hint": "climate action"
   },
-  "leading_1": {
-    "url": "https://picsum.photos/seed/water/600/600",
-    "hint": "clean water"
+  "lead_side": {
+    "url": "https://picsum.photos/seed/lead/800/800",
+    "hint": "forest aerial"
   },
-  "leading_2": {
-    "url": "https://picsum.photos/seed/woods/600/600",
-    "hint": "green woods"
+  "lead_float": {
+    "url": "https://picsum.photos/seed/float/600/600",
+    "hint": "river waterfall"
   },
-  "impact_climate": { "url": "https://picsum.photos/seed/ic1/400/400", "hint": "climate change" },
-  "impact_ocean": { "url": "https://picsum.photos/seed/ic2/400/400", "hint": "coral reef" },
-  "impact_wildlife": { "url": "https://picsum.photos/seed/ic3/400/400", "hint": "wildlife animal" },
-  "impact_forest": { "url": "https://picsum.photos/seed/ic4/400/400", "hint": "dense forest" },
-  "impact_energy": { "url": "https://picsum.photos/seed/ic5/400/400", "hint": "wind turbine" },
-  "impact_waste": { "url": "https://picsum.photos/seed/ic6/400/400", "hint": "recycling" },
-  "rebuild_1": { "url": "https://picsum.photos/seed/rb1/800/600", "hint": "hand holding plant" },
-  "rebuild_2": { "url": "https://picsum.photos/seed/rb2/800/600", "hint": "underwater turtle" },
-  "prog_aren": { "url": "https://picsum.photos/seed/aren/600/400", "hint": "palm tree plantation" },
-  "prog_pohon": { "url": "https://picsum.photos/seed/pohon/600/400", "hint": "planting tree" },
-  "prog_vanili": { "url": "https://picsum.photos/seed/vanili/600/400", "hint": "vanilla beans" },
-  "prog_enviproof": { "url": "https://picsum.photos/seed/verify/600/400", "hint": "digital verification" }
+  "impact_climate": { "url": "https://picsum.photos/seed/impact1/400/400", "hint": "climate change" },
+  "impact_ocean": { "url": "https://picsum.photos/seed/impact2/400/400", "hint": "coral reef" },
+  "impact_wildlife": { "url": "https://picsum.photos/seed/impact3/400/400", "hint": "wildlife animal" },
+  "impact_forest": { "url": "https://picsum.photos/seed/impact4/400/400", "hint": "dense forest" },
+  "impact_energy": { "url": "https://picsum.photos/seed/impact5/400/400", "hint": "wind turbine" },
+  "impact_waste": { "url": "https://picsum.photos/seed/impact6/400/400", "hint": "recycling" },
+  "overlap_1": { "url": "https://picsum.photos/seed/ov1/800/600", "hint": "hand holding plant" },
+  "overlap_2": { "url": "https://picsum.photos/seed/ov2/800/600", "hint": "ocean turtle" },
+  "prog_aren": { "url": "https://picsum.photos/seed/aren/600/800", "hint": "palm tree" },
+  "prog_pohon": { "url": "https://picsum.photos/seed/pohon/600/800", "hint": "tree nursery" },
+  "prog_vanili": { "url": "https://picsum.photos/seed/vanili/600/800", "hint": "vanilla plant" }
 }
