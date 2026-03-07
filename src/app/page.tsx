@@ -63,47 +63,56 @@ export default async function LandingPage() {
       <LandingHeader />
 
       <main className="flex-1">
-        {/* HERO SECTION - Resized background at right-top with white space */}
+        {/* HERO SECTION - Improved responsiveness for all devices */}
         <section 
-          className="relative min-h-[90vh] md:min-h-screen flex flex-col justify-center overflow-hidden pt-20 bg-no-repeat bg-[size:70%] bg-right-top bg-white"
+          className={cn(
+            "relative min-h-[85vh] md:min-h-screen flex flex-col justify-center overflow-hidden pt-24 md:pt-40 bg-white",
+            "bg-no-repeat bg-[size:100%] md:bg-[size:70%] bg-top md:bg-right-top"
+          )}
           style={{ backgroundImage: "url('/hero.png')" }}
         >
+          {/* Subtle overlay for mobile only to ensure text contrast */}
+          <div className="absolute inset-0 bg-white/40 md:hidden pointer-events-none" />
+
           <div className="container px-6 relative z-10">
-            <div className="max-w-2xl space-y-8 animate-in fade-in slide-in-from-left-10 duration-1000">
-              <h1 className="text-6xl md:text-8xl font-black text-accent leading-[0.9] tracking-tighter">
+            <div className="max-w-2xl space-y-6 md:space-y-8 animate-in fade-in slide-in-from-left-10 duration-1000">
+              <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-accent leading-[1] md:leading-[0.9] tracking-tighter">
                 Small Actions,<br />
                 <span className="text-primary">Big Impact</span>
               </h1>
-              <p className="text-xl text-muted-foreground max-w-xl leading-relaxed font-medium">
+              <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-xl leading-relaxed font-medium">
                 Setiap langkah kecil yang Anda ambil hari ini menciptakan efek riak, mendorong perubahan demi masa depan alam Indonesia yang lebih baik.
               </p>
-              <div className="flex flex-wrap gap-4 pt-4">
-                <Button size="lg" className="rounded-full bg-primary hover:bg-primary/90 px-10 h-14 text-lg font-bold shadow-xl shadow-primary/20">
+              <div className="flex flex-wrap gap-3 md:gap-4 pt-2 md:pt-4">
+                <Button size="lg" className="rounded-full bg-primary hover:bg-primary/90 px-8 md:px-10 h-12 md:h-14 text-base md:text-lg font-bold shadow-xl shadow-primary/20">
                   Our approach
                 </Button>
-                <Button size="lg" variant="outline" className="rounded-full border-accent/20 text-accent hover:bg-accent hover:text-white px-10 h-14 text-lg font-bold backdrop-blur-md">
+                <Button size="lg" variant="outline" className="rounded-full border-accent/20 text-accent hover:bg-accent hover:text-white px-8 md:px-10 h-12 md:h-14 text-base md:text-lg font-bold backdrop-blur-md">
                   Join Movement
                 </Button>
               </div>
             </div>
           </div>
 
-          {/* HIGHLIGHT CARDS - Floating at bottom of hero */}
-          <div className="container px-6 mt-20 pb-12 relative z-10 hidden md:block">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* HIGHLIGHT CARDS - Only visible on Tablet and Desktop */}
+          <div className="container px-6 mt-16 md:mt-20 pb-12 relative z-10 hidden sm:block">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
               {[
-                { title: 'Coastal Care', desc: 'Melindungi garis pantai dan ekosistem maritim nusantara.', img: images.highlight_1.url, hint: images.highlight_1.hint },
-                { title: 'Green Living', desc: 'Edukasi dan implementasi gaya hidup berkelanjutan sehari-hari.', img: images.highlight_2.url, hint: images.highlight_2.hint },
-                { title: 'Climate Action', desc: 'Inisiatif nyata dalam memitigasi dampak perubahan iklim global.', img: images.highlight_3.url, hint: images.highlight_3.hint }
+                { title: 'Coastal Care', desc: 'Melindungi garis pantai dan ekosistem maritim.', img: images.highlight_1.url, hint: images.highlight_1.hint },
+                { title: 'Green Living', desc: 'Implementasi gaya hidup berkelanjutan.', img: images.highlight_2.url, hint: images.highlight_2.hint },
+                { title: 'Climate Action', desc: 'Inisiatif mitigasi dampak perubahan iklim.', img: images.highlight_3.url, hint: images.highlight_3.hint }
               ].map((card, i) => (
-                <Card key={i} className="organic-card overflow-hidden hover:scale-105 transition-all duration-500 border-none shadow-2xl">
+                <Card key={i} className={cn(
+                  "organic-card overflow-hidden hover:scale-105 transition-all duration-500 border-none shadow-2xl",
+                  i === 2 && "sm:col-span-2 md:col-span-1" // Layout adjustment for tablet
+                )}>
                   <CardContent className="p-0 flex flex-col items-center text-center">
                     <div className="relative w-full aspect-video">
                       <Image src={card.img} alt={card.title} data-ai-hint={card.hint} fill className="object-cover" />
                     </div>
-                    <div className="p-8 space-y-2 bg-white/90 backdrop-blur-sm w-full">
-                      <h3 className="font-black text-xl text-accent">{card.title}</h3>
-                      <p className="text-sm text-muted-foreground">{card.desc}</p>
+                    <div className="p-6 md:p-8 space-y-2 bg-white/90 backdrop-blur-sm w-full">
+                      <h3 className="font-black text-lg md:text-xl text-accent">{card.title}</h3>
+                      <p className="text-xs md:text-sm text-muted-foreground">{card.desc}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -112,13 +121,13 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        {/* PARTNERS SECTION */}
-        <section className="py-12 bg-muted/30 border-y">
+        {/* PARTNERS SECTION - Flexible scrolling logos */}
+        <section className="py-8 md:py-12 bg-muted/30 border-y">
           <div className="container px-6">
-            <p className="text-center text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-8">Didukung oleh Institusi & Teknologi Terdepan</p>
-            <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12 opacity-60 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-500">
+            <p className="text-center text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-6 md:mb-8">Didukung oleh Institusi & Teknologi Terdepan</p>
+            <div className="flex flex-wrap justify-center items-center gap-6 md:gap-12 opacity-60 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-500">
               {partners.map((partner, i) => (
-                <div key={i} className="relative h-10 w-24 md:h-12 md:w-32">
+                <div key={i} className="relative h-8 w-20 md:h-12 md:w-32">
                   <Image src={partner.url} alt={partner.name} fill className="object-contain" />
                 </div>
               ))}
@@ -127,18 +136,18 @@ export default async function LandingPage() {
         </section>
 
         {/* LEADING WAY SECTION */}
-        <section className="py-24 overflow-hidden">
+        <section className="py-16 md:py-24 overflow-hidden">
           <div className="container px-6">
-            <div className="grid md:grid-cols-2 gap-16 items-center">
-              <div className="space-y-8">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest">
+            <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
+              <div className="space-y-6 md:space-y-8 text-center md:text-left">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-[10px] md:text-xs font-bold uppercase tracking-widest">
                   <Sparkles size={14} /> Leading the innovation
                 </div>
-                <h2 className="text-4xl md:text-6xl font-black leading-[0.9] tracking-tighter">Memandu Arah<br /><span className="text-primary">Perubahan Ekologis</span></h2>
-                <p className="text-lg text-muted-foreground leading-relaxed">
+                <h2 className="text-3xl sm:text-4xl md:text-6xl font-black leading-[1.1] md:leading-[0.9] tracking-tighter">Memandu Arah<br /><span className="text-primary">Perubahan Ekologis</span></h2>
+                <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
                   Kami adalah wadah bagi inovator muda yang berkomitmen melindungi planet ini melalui teknologi cerdas di sektor agro-maritim dan kehutanan.
                 </p>
-                <div className="space-y-4">
+                <div className="space-y-4 text-left">
                   {[
                     { title: 'Inovasi Digital', desc: 'Memanfaatkan data dan AI untuk solusi lingkungan.' },
                     { title: 'Pemberdayaan Pemuda', desc: 'Melatih pemimpin masa depan untuk aksi nyata.' }
@@ -156,11 +165,11 @@ export default async function LandingPage() {
                   Pelajari lebih lanjut <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
               </div>
-              <div className="relative">
-                <div className="relative aspect-square rounded-[3rem] overflow-hidden shadow-2xl z-10 rotate-3 border-8 border-white">
+              <div className="relative px-10 md:px-0 mt-8 md:mt-0">
+                <div className="relative aspect-square rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-2xl z-10 rotate-3 border-4 md:border-8 border-white">
                   <Image src={images.lead_side.url} alt="Nature" data-ai-hint={images.lead_side.hint} fill className="object-cover" />
                 </div>
-                <div className="absolute -left-20 top-1/2 -translate-y-1/2 w-2/3 aspect-square rounded-[3rem] overflow-hidden shadow-xl -z-10 border-8 border-white -rotate-6">
+                <div className="absolute -left-4 md:-left-20 top-1/2 -translate-y-1/2 w-2/3 aspect-square rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-xl -z-10 border-4 md:border-8 border-white -rotate-6">
                   <Image src={images.lead_float.url} alt="Eco" data-ai-hint={images.lead_float.hint} fill className="object-cover" />
                 </div>
               </div>
@@ -169,32 +178,32 @@ export default async function LandingPage() {
         </section>
 
         {/* INITIATIVES SLIDER */}
-        <section className="py-24 bg-[#1B3022] text-white rounded-[4rem] mx-4 md:mx-10 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-20 opacity-10">
+        <section className="py-16 md:py-24 bg-[#1B3022] text-white rounded-[2.5rem] md:rounded-[4rem] mx-4 md:mx-10 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-20 opacity-10 hidden md:block">
             <TreeDeciduous size={400} />
           </div>
           
           <div className="container px-6 relative z-10">
-            <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
-              <div className="max-w-xl space-y-4 text-left">
+            <div className="flex flex-col md:flex-row justify-between items-center md:items-end mb-12 md:mb-16 gap-6 text-center md:text-left">
+              <div className="max-w-xl space-y-4">
                 <Badge className="bg-primary/20 text-primary border-none font-bold px-4 py-1">Our Programs</Badge>
-                <h2 className="text-4xl md:text-5xl font-black tracking-tighter leading-tight">Inisiatif Unggulan untuk<br />Masa Depan Hijau</h2>
+                <h2 className="text-3xl md:text-5xl font-black tracking-tighter leading-tight">Inisiatif Unggulan untuk<br />Masa Depan Hijau</h2>
               </div>
-              <Button variant="link" className="text-primary font-black uppercase tracking-widest p-0 h-auto">Lihat semua program <ArrowRight className="ml-2 h-4 w-4" /></Button>
+              <Button variant="link" className="text-primary font-black uppercase tracking-widest p-0 h-auto">Lihat semua <ArrowRight className="ml-2 h-4 w-4" /></Button>
             </div>
 
             <Carousel className="w-full">
               <CarouselContent className="-ml-4">
                 {initiatives.map((item, i) => (
-                  <CarouselItem key={i} className="pl-4 md:basis-1/2 lg:basis-1/3">
-                    <Card className="rounded-[2.5rem] border-none overflow-hidden group h-full bg-white/5 backdrop-blur-md">
+                  <CarouselItem key={i} className="pl-4 basis-full sm:basis-1/2 lg:basis-1/3">
+                    <Card className="rounded-[2rem] md:rounded-[2.5rem] border-none overflow-hidden group h-full bg-white/5 backdrop-blur-md">
                       <CardContent className="p-0 flex flex-col h-full">
                         <div className="relative aspect-[3/4] w-full">
                           <Image src={item.img} alt={item.title} fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                          <div className="absolute bottom-10 left-10 right-10 text-white space-y-4">
+                          <div className="absolute bottom-6 md:bottom-10 left-6 md:left-10 right-6 md:right-10 text-white space-y-3 md:space-y-4">
                             <Badge className="bg-primary/20 backdrop-blur-md border-none text-white px-4 py-1">{item.category}</Badge>
-                            <h3 className="text-3xl font-bold">{item.title}</h3>
+                            <h3 className="text-2xl md:text-3xl font-bold">{item.title}</h3>
                             <Button variant="outline" className="rounded-full border-white/30 text-white hover:bg-white hover:text-black w-full justify-between px-6">
                               Temukan Solusi <ArrowRight size={18} />
                             </Button>
@@ -205,7 +214,7 @@ export default async function LandingPage() {
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              <div className="hidden md:block">
+              <div className="hidden lg:block">
                 <CarouselPrevious className="absolute -left-12 bg-white/10 border-white/20 text-white hover:bg-primary" />
                 <CarouselNext className="absolute -right-12 bg-white/10 border-white/20 text-white hover:bg-primary" />
               </div>
@@ -214,68 +223,47 @@ export default async function LandingPage() {
         </section>
 
         {/* IMPACT STATISTICS */}
-        <section className="py-24">
+        <section className="py-16 md:py-24">
           <div className="container px-6">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
               {[
                 { label: 'Proyek Selesai', value: '150+', icon: Target },
                 { label: 'Pohon Ditanam', value: '50k+', icon: Sprout },
                 { label: 'Anggota Aktif', value: '12k+', icon: Users },
                 { label: 'Wilayah Dampak', value: '24', icon: Globe }
               ].map((stat, i) => (
-                <div key={i} className="text-center space-y-2 p-8 rounded-[2rem] bg-muted/30 hover:bg-primary/5 transition-colors">
-                  <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4">
-                    <stat.icon size={24} />
+                <div key={i} className="text-center space-y-2 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] bg-muted/30 hover:bg-primary/5 transition-colors">
+                  <div className="mx-auto w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-3 md:mb-4">
+                    <stat.icon size={20} className="md:size-24" />
                   </div>
-                  <p className="text-4xl font-black tracking-tighter">{stat.value}</p>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{stat.label}</p>
+                  <p className="text-2xl md:text-4xl font-black tracking-tighter">{stat.value}</p>
+                  <p className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground">{stat.label}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* REBUILDING SECTION */}
-        <section className="py-24">
-          <div className="container px-6 space-y-20">
-            <div className="text-center max-w-2xl mx-auto space-y-4">
-              <h2 className="text-4xl md:text-5xl font-black tracking-tighter leading-tight">Membangun Kembali Ekosistem, Memulihkan Keseimbangan</h2>
-              <p className="text-muted-foreground text-lg">Kami fokus pada upaya memulihkan keharmonisan antara inovasi pemuda dan pelestarian alam demi generasi mendatang.</p>
-            </div>
-            
-            <div className="grid md:grid-cols-2 items-center gap-0">
-              <div className="relative aspect-[4/3] rounded-[3rem] overflow-hidden shadow-2xl z-0 border-8 border-white">
-                <Image src={images.overlap_1.url} alt="Eco" data-ai-hint={images.overlap_1.hint} fill className="object-cover" />
-              </div>
-              <div className="bg-[#F4F9F1] p-12 md:p-20 rounded-[3rem] -ml-12 relative z-10 space-y-6 shadow-xl border-l-8 border-white">
-                <h3 className="text-4xl font-black tracking-tighter text-accent">Capai Lebih Banyak,<br />Bersama-sama</h3>
-                <p className="text-muted-foreground text-lg leading-relaxed">Platform kami memudahkan siapa saja untuk bergabung dalam misi pemulihan alam dan pengembangan ekonomi yang inklusif melalui rujukan dan poin.</p>
-                <Button variant="link" className="text-primary font-black uppercase tracking-widest p-0 h-auto">Lihat detail <ArrowRight className="ml-2 h-4 w-4" /></Button>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* SPOTLIGHT STORIES */}
-        <section className="py-24 bg-muted/20">
-          <div className="container px-6 space-y-12">
-            <div className="flex justify-between items-end">
-              <h2 className="text-4xl font-black tracking-tighter">Sorotan Cerita:<br />Aksi yang Berdampak</h2>
+        <section className="py-16 md:py-24 bg-muted/20">
+          <div className="container px-6 space-y-8 md:space-y-12">
+            <div className="flex flex-col md:flex-row justify-between items-center md:items-end gap-4 text-center md:text-left">
+              <h2 className="text-3xl md:text-4xl font-black tracking-tighter">Sorotan Cerita:<br />Aksi yang Berdampak</h2>
               <Button asChild variant="ghost" className="font-bold">
                 <Link href="/berita">Semua Berita <ArrowRight className="ml-2 h-4 w-4" /></Link>
               </Button>
             </div>
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid sm:grid-cols-2 gap-6 md:gap-8">
               {spotlightPosts.map((post, i) => (
-                <Link href={`/berita/${post.slug}`} key={i} className="group relative h-96 rounded-[2.5rem] overflow-hidden shadow-lg border-4 border-white">
+                <Link href={`/berita/${post.slug}`} key={i} className="group relative h-72 md:h-96 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-lg border-4 border-white">
                   <Image src={post.imageUrl} alt={post.title} fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-10 text-white space-y-2">
-                    <h3 className="text-3xl font-bold leading-tight line-clamp-2">{post.title}</h3>
-                    <p className="text-[10px] opacity-70 font-black uppercase tracking-widest">{new Date(post.date).toLocaleDateString('id-ID', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                  <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 text-white space-y-2">
+                    <h3 className="text-xl md:text-3xl font-bold leading-tight line-clamp-2">{post.title}</h3>
+                    <p className="text-[9px] md:text-[10px] opacity-70 font-black uppercase tracking-widest">{new Date(post.date).toLocaleDateString('id-ID', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
                   </div>
-                  <div className="absolute top-8 right-8 w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 transform group-hover:-translate-y-2">
-                    <ArrowRight className="text-white -rotate-45" size={24} />
+                  <div className="absolute top-6 md:top-8 right-6 md:right-8 w-10 h-10 md:w-12 md:h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 transform group-hover:-translate-y-2">
+                    <ArrowRight className="text-white -rotate-45" size={20} />
                   </div>
                 </Link>
               ))}
@@ -284,20 +272,20 @@ export default async function LandingPage() {
         </section>
 
         {/* DONATION BANNER */}
-        <section className="py-24 bg-nature-pattern">
-          <div className="container px-6 text-center space-y-12">
+        <section className="py-16 md:py-24 bg-nature-pattern">
+          <div className="container px-6 text-center space-y-8 md:space-y-12">
             <div className="max-w-2xl mx-auto space-y-4">
-              <h2 className="text-5xl font-black tracking-tighter">Fuel the Mission</h2>
-              <p className="text-muted-foreground text-xl leading-relaxed">Lindungi apa yang paling berharga bagi kita semua: udara, air, dan lanskap yang menopang kehidupan di Bumi Indonesia.</p>
+              <h2 className="text-3xl md:text-5xl font-black tracking-tighter">Fuel the Mission</h2>
+              <p className="text-muted-foreground text-base md:text-xl leading-relaxed">Lindungi apa yang paling berharga bagi kita semua: udara, air, dan lanskap yang menopang kehidupan di Bumi Indonesia.</p>
             </div>
-            <div className="flex flex-wrap justify-center gap-4">
+            <div className="flex flex-wrap justify-center gap-3 md:gap-4">
               {['Rp 50k', 'Rp 100k', 'Rp 250k', 'Rp 500k', 'Custom'].map(amount => (
-                <Button key={amount} variant="outline" className="rounded-full px-8 h-14 font-black hover:border-primary hover:text-primary transition-all text-lg">
+                <Button key={amount} variant="outline" className="rounded-full px-6 md:px-8 h-12 md:h-14 font-black hover:border-primary hover:text-primary transition-all text-base md:text-lg">
                   {amount}
                 </Button>
               ))}
             </div>
-            <Button size="lg" className="rounded-full bg-accent hover:bg-accent/90 px-16 h-16 text-xl font-black uppercase tracking-widest shadow-2xl">Donasi Sekarang</Button>
+            <Button size="lg" className="rounded-full bg-accent hover:bg-accent/90 px-12 md:px-16 h-14 md:h-16 text-lg md:text-xl font-black uppercase tracking-widest shadow-2xl">Donasi Sekarang</Button>
           </div>
         </section>
       </main>
