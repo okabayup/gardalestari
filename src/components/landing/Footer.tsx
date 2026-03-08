@@ -40,7 +40,7 @@ export default function Footer() {
                         <nav className="flex flex-col gap-3 text-sm font-medium text-accent/60">
                             <Link href="/tentang" className="hover:text-primary transition-colors">Siapa Kami</Link>
                             <Link href="/tentang" className="hover:text-primary transition-colors">Visi & Misi</Link>
-                            <Link href="/gallery" className="hover:text-primary transition-colors">Galeri Aksi</Link>
+                            <Link href="/berita" className="hover:text-primary transition-colors">Galeri Aksi</Link>
                         </nav>
                     </div>
 
@@ -60,15 +60,21 @@ export default function Footer() {
                         <ul className="space-y-4 text-sm font-medium text-accent/60">
                             <li className="flex items-start gap-3">
                                 <MapPin size={18} className="text-primary shrink-0" />
-                                <span>Jakarta, Indonesia</span>
+                                <Link 
+                                    href="https://maps.app.goo.gl/WuEw94Bhs6c657CM8" 
+                                    target="_blank" 
+                                    className="hover:text-primary transition-colors"
+                                >
+                                    Dusun Balak Lor RT 2 RW 2, Desa Balak, Songgon, Banyuwangi
+                                </Link>
                             </li>
                             <li className="flex items-center gap-3">
                                 <Phone size={18} className="text-primary shrink-0" />
-                                <span>+62 851 4490 4161</span>
+                                <Link href="https://wa.me/6285144904161" className="hover:text-primary transition-colors">+62 851 4490 4161</Link>
                             </li>
                             <li className="flex items-center gap-3">
                                 <Mail size={18} className="text-primary shrink-0" />
-                                <span>halo@gardalestari.org</span>
+                                <Link href="mailto:halo@gardalestari.org" className="hover:text-primary transition-colors">halo@gardalestari.org</Link>
                             </li>
                         </ul>
                     </div>

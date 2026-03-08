@@ -68,6 +68,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/logo.png" />
         <title>Garda Lestari - Inovasi Pemuda Agro-Maritim & Kehutanan</title>
         <meta name="description" content="Wadah inovasi pemuda Indonesia di sektor agro-maritim dan kehutanan nusantara untuk masa depan yang berkelanjutan." />
+        <meta name="keywords" content="agro-maritim, kehutanan, inovasi pemuda, pelestarian alam, garda lestari, indonesia hijau, banyuwangi" />
       </head>
       <body className="font-body antialiased">
         <AuthProvider>

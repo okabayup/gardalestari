@@ -25,7 +25,7 @@ import path from 'path';
 export const metadata = {
   title: 'Garda Lestari | Inovasi Pemuda Agro-Maritim & Kehutanan',
   description: 'Garda Lestari adalah organisasi pemuda garda terdepan untuk pelestarian alam, inovasi sektor agro-maritim, dan kehutanan nusantara melalui teknologi dan pemberdayaan komunitas.',
-  keywords: 'agro-maritim, kehutanan, inovasi pemuda, pelestarian alam, garda lestari, indonesia hijau',
+  keywords: 'agro-maritim, kehutanan, inovasi pemuda, pelestarian alam, garda lestari, indonesia hijau, banyuwangi',
   openGraph: {
     title: 'Garda Lestari | Inovasi Pemuda Agro-Maritim & Kehutanan',
     description: 'Bergabunglah dengan gerakan pemuda pelestari alam Indonesia.',
@@ -33,10 +33,10 @@ export const metadata = {
     siteName: 'Garda Lestari',
     images: [
       {
-        url: '/hero.png',
+        url: '/logo.png',
         width: 1200,
         height: 630,
-        alt: 'Garda Lestari Hero',
+        alt: 'Garda Lestari Logo',
       },
     ],
     locale: 'id_ID',
@@ -114,6 +114,14 @@ export default async function LandingPage() {
       'telephone': '+62-851-4490-4161',
       'contactType': 'customer service',
       'email': 'halo@gardalestari.org'
+    },
+    'address': {
+      '@type': 'PostalAddress',
+      'streetAddress': 'Dusun Balak Lor RT 2 RW 2, Desa Balak, Kecamatan Songgon',
+      'addressLocality': 'Banyuwangi',
+      'addressRegion': 'Jawa Timur',
+      'postalCode': '68463',
+      'addressCountry': 'ID'
     },
     'sameAs': [
       'https://instagram.com/garda.lestari',
