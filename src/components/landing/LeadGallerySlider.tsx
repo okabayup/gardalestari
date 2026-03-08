@@ -12,7 +12,12 @@ import {
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function LeadGallerySlider({ images }: { images: { url: string, hint: string }[] }) {
+interface GalleryImage {
+  url: string;
+  description: string;
+}
+
+export default function LeadGallerySlider({ images }: { images: GalleryImage[] }) {
   const [api, setApi] = React.useState<CarouselApi>();
   const [current, setCurrent] = React.useState(0);
 
@@ -31,14 +36,19 @@ export default function LeadGallerySlider({ images }: { images: { url: string, h
         <CarouselContent>
           {images.map((image, i) => (
             <CarouselItem key={i}>
-              <div className="relative aspect-square rounded-[2.5rem] md:rounded-[3.5rem] overflow-hidden shadow-2xl border-4 md:border-8 border-white bg-muted">
+              <div className="relative aspect-square rounded-[2.5rem] md:rounded-[3.5rem] overflow-hidden shadow-2xl border-4 md:border-8 border-white bg-muted group">
                 <Image 
                   src={image.url} 
-                  alt={image.hint} 
-                  data-ai-hint={image.hint} 
+                  alt={image.description} 
                   fill 
                   className="object-cover" 
                 />
+                {/* Description Overlay */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
+                    <p className="text-white font-black text-sm md:text-lg uppercase tracking-wider animate-in fade-in slide-in-from-bottom-2 duration-700">
+                        {image.description}
+                    </p>
+                </div>
               </div>
             </CarouselItem>
           ))}

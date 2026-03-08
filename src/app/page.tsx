@@ -37,10 +37,39 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import LeadGallerySlider from '@/components/landing/LeadGallerySlider';
+import fs from 'fs';
+import path from 'path';
 
 export default async function LandingPage() {
   const allPosts = await getBeritaPosts('artikel', false);
   const spotlightPosts = allPosts.slice(0, 4);
+
+  // Dynamic Gallery Logic
+  const galeriDir = path.join(process.cwd(), 'public/galeri');
+  let galeriImages: { url: string; description: string }[] = [];
+  
+  try {
+    if (fs.existsSync(galeriDir)) {
+      const files = fs.readdirSync(galeriDir);
+      galeriImages = files
+        .filter(file => /\.(jpg|jpeg|png|webp|avif|gif)$/i.test(file))
+        .map(file => ({
+          url: `/galeri/${file}`,
+          description: file.replace(/\.[^/.]+$/, "").replace(/[-_]/g, ' ')
+        }));
+    }
+  } catch (error) {
+    console.error("Error reading galeri folder:", error);
+  }
+
+  // Fallback if folder is empty or doesn't exist
+  if (galeriImages.length === 0) {
+    galeriImages = [
+      { url: images.overlap_1.url, description: 'Nature Conservation' },
+      { url: images.overlap_2.url, description: 'Marine Life Protection' },
+      { url: images.lead_side.url, description: 'Youth Empowerment' },
+    ];
+  }
 
   const initiatives = [
     { title: 'Kampung Aren', desc: 'Inovasi pengolahan aren desa untuk ekonomi lokal.', img: images.prog_aren.url, category: 'Community' },
@@ -182,12 +211,7 @@ export default async function LandingPage() {
               </div>
               <div className="relative px-6 md:px-0 mt-8 md:mt-0">
                 <LeadGallerySlider 
-                  images={[
-                    { url: '/galeri/konservasi-mangrove.jpg', hint: 'konservasi-mangrove' },
-                    { url: '/galeri/pemberdayaan-pemuda.jpg', hint: 'pemberdayaan-pemuda' },
-                    { url: '/galeri/pertanian-berkelanjutan.jpg', hint: 'pertanian-berkelanjutan' },
-                    { url: '/galeri/hutan-indonesia.jpg', hint: 'hutan-indonesia' },
-                  ]} 
+                  images={galeriImages} 
                 />
               </div>
             </div>
