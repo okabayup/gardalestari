@@ -36,6 +36,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import LeadGallerySlider from '@/components/landing/LeadGallerySlider';
 
 export default async function LandingPage() {
   const allPosts = await getBeritaPosts('artikel', false);
@@ -179,13 +180,15 @@ export default async function LandingPage() {
                   Pelajari lebih lanjut <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
               </div>
-              <div className="relative px-10 md:px-0 mt-8 md:mt-0">
-                <div className="relative aspect-square rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-2xl z-10 rotate-3 border-4 md:border-8 border-white">
-                  <Image src={images.lead_side.url} alt="Nature" data-ai-hint={images.lead_side.hint} fill className="object-cover" />
-                </div>
-                <div className="absolute -left-4 md:-left-20 top-1/2 -translate-y-1/2 w-2/3 aspect-square rounded-[2rem] md:rounded-[3rem] overflow-hidden shadow-xl -z-10 border-4 md:border-8 border-white -rotate-6">
-                  <Image src={images.lead_float.url} alt="Eco" data-ai-hint={images.lead_float.hint} fill className="object-cover" />
-                </div>
+              <div className="relative px-6 md:px-0 mt-8 md:mt-0">
+                <LeadGallerySlider 
+                  images={[
+                    { url: images.lead_side.url, hint: images.lead_side.hint },
+                    { url: images.lead_float.url, hint: images.lead_float.hint },
+                    { url: images.overlap_1.url, hint: images.overlap_1.hint },
+                    { url: images.overlap_2.url, hint: images.overlap_2.hint },
+                  ]} 
+                />
               </div>
             </div>
           </div>
@@ -215,7 +218,7 @@ export default async function LandingPage() {
                         <div className="relative aspect-[3/4] w-full">
                           <Image src={item.img} alt={item.title} fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                          <div className="absolute bottom-6 md:bottom-10 left-6 md:left-10 right-6 md:right-10 text-white space-y-3 md:space-y-4">
+                          <div className="absolute bottom-6 md:bottom-10 left-6 md:left-10 right-6 md:left-10 text-white space-y-3 md:space-y-4">
                             <Badge className="bg-primary/20 backdrop-blur-md border-none text-white px-4 py-1">{item.category}</Badge>
                             <h3 className="text-2xl md:text-3xl font-bold">{item.title}</h3>
                             <Button variant="outline" className="rounded-full border-white/30 text-white hover:bg-white hover:text-black w-full justify-between px-6">
