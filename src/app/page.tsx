@@ -1,4 +1,3 @@
-
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -7,36 +6,20 @@ import { Card, CardContent } from '@/components/ui/card';
 import { 
   ArrowRight, 
   Globe, 
-  Leaf, 
-  Heart, 
-  Recycle, 
-  Zap, 
-  Cloud, 
-  Droplets, 
-  PawPrint, 
   TreeDeciduous, 
-  Wind, 
   Sprout, 
   Users, 
   Target, 
   CheckCircle,
-  Sparkles,
-  Search,
-  Check
+  Sparkles
 } from 'lucide-react';
 import LandingHeader from '@/components/layout/LandingHeader';
 import Footer from '@/components/landing/Footer';
 import { getBeritaPosts } from './actions/berita';
 import { cn } from '@/lib/utils';
 import images from './lib/placeholder-images.json';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 import LeadGallerySlider from '@/components/landing/LeadGallerySlider';
+import InitiativesCarousel from '@/components/landing/InitiativesCarousel';
 import fs from 'fs';
 import path from 'path';
 
@@ -230,36 +213,10 @@ export default async function LandingPage() {
                 <Badge className="bg-primary/20 text-primary border-none font-bold px-4 py-1">Our Programs</Badge>
                 <h2 className="text-3xl md:text-5xl font-black tracking-tighter leading-tight">Inisiatif Unggulan untuk<br />Masa Depan Hijau</h2>
               </div>
-              <Button variant="link" className="text-primary font-black uppercase tracking-widest p-0 h-auto">Lihat semua <ArrowRight className="ml-2 h-4 w-4" /></Button>
+              <Button variant="link" className="text-white font-black uppercase tracking-widest p-0 h-auto hover:text-primary transition-colors">Lihat semua <ArrowRight className="ml-2 h-4 w-4" /></Button>
             </div>
 
-            <Carousel className="w-full">
-              <CarouselContent className="-ml-4">
-                {initiatives.map((item, i) => (
-                  <CarouselItem key={i} className="pl-4 basis-full sm:basis-1/2 lg:basis-1/3">
-                    <Card className="rounded-[2rem] md:rounded-[2.5rem] border-none overflow-hidden group h-full bg-white/5 backdrop-blur-md">
-                      <CardContent className="p-0 flex flex-col h-full">
-                        <div className="relative aspect-[3/4] w-full">
-                          <Image src={item.img} alt={item.title} fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                          <div className="absolute bottom-6 md:bottom-10 left-6 md:left-10 right-6 md:left-10 text-white space-y-3 md:space-y-4">
-                            <Badge className="bg-primary/20 backdrop-blur-md border-none text-white px-4 py-1">{item.category}</Badge>
-                            <h3 className="text-2xl md:text-3xl font-bold">{item.title}</h3>
-                            <Button variant="outline" className="rounded-full border-white/30 text-white hover:bg-white hover:text-black w-full justify-between px-6">
-                              Temukan Solusi <ArrowRight size={18} />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <div className="hidden lg:block">
-                <CarouselPrevious className="absolute -left-12 bg-white/10 border-white/20 text-white hover:bg-primary" />
-                <CarouselNext className="absolute -right-12 bg-white/10 border-white/20 text-white hover:bg-primary" />
-              </div>
-            </Carousel>
+            <InitiativesCarousel initiatives={initiatives} />
           </div>
         </section>
 
