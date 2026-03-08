@@ -57,7 +57,17 @@ export default async function LandingPage() {
     { name: 'BRIN', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Main_Logo_of_National_Research_and_Innovation_Agency_of_Indonesia.svg/500px-Main_Logo_of_National_Research_and_Innovation_Agency_of_Indonesia.svg.png' },
     { name: 'Kemenhut', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Logo_Kementerian_Kehutanan.svg/1280px-Logo_Kementerian_Kehutanan.svg.png' },
     { name: 'JALA', url: 'https://strapi.jala.tech/uploads/jala_logo_6298181eb0.png' },
-    { name: 'KKP', url: 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Emblem_of_Indonesia_and_Logo_of_the_Ministry_of_Maritime_Affairs_and_Fisheries_of_the_Republic_of_Indonesia_%28Indonesian_version_2021%29.svg' }
+    { name: 'KKP', url: 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Emblem_of_Indonesia_and_Logo_of_the_Ministry_of_Maritime_Affairs_and_Fisheries_of_the_Republic_of_Indonesia_%28Indonesian_version_2021%29.svg' },
+    { name: 'Perhutani', url: 'https://www.perhutani.co.id/wp-content/uploads/2020/02/PHT-new-color-1-1024x737.png' },
+    { name: 'PLN', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Logo_PLN.png/960px-Logo_PLN.png' },
+    { name: 'Kalibrr', url: 'https://rec-data.kalibrr.com/www.kalibrr.com/logos/KBM8JQKYV99H9FUHDMM32UE3X2F3QVETLNLW852C-5fbe2353.png' },
+    { name: 'Astra International', url: 'https://upload.wikimedia.org/wikipedia/commons/a/a8/Logo_of_PT_Astra_International_Tbk_terbaru_2025.png' },
+    { name: 'Tempo', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Tempo_Magazine.svg/3840px-Tempo_Magazine.svg.png' },
+    { name: 'Kompas', url: 'https://upload.wikimedia.org/wikipedia/commons/d/d7/Logo_Kompasdotcom.png' },
+    { name: 'Adore Spices', url: 'https://adorespices.com/wp-content/uploads/2023/06/Adore-logo.png' },
+    { name: 'TechSoup', url: 'https://data.opendevelopmentcambodia.net/uploads/group/2020-02-25-051508.476440TechSoupAsia-PacificLogo.png' },
+    { name: 'Google Nonprofits', url: 'https://lh3.googleusercontent.com/OeG4W5OPZB6S1m9LBzWHY5RcfidqPTRcQNffWJfGVxvZyo97Ia6MpCxi1PPxZDWhAbB2VfysWP_amEy3jYeTFeld5JSrEuV0jfzRdA=w600-h314-rj' },
+    { name: 'Microsoft Nonprofits', url: 'https://www.vissensa.com/wp-content/uploads/2025/05/Microsoft-Nonprofits.jpg' }
   ];
 
   return (
@@ -65,7 +75,7 @@ export default async function LandingPage() {
       <LandingHeader />
 
       <main className="flex-1">
-        {/* HERO SECTION - Reduced Spacing by 50% */}
+        {/* HERO SECTION */}
         <section 
           className={cn(
             "relative min-h-[60vh] md:min-h-[75vh] flex flex-col justify-center overflow-hidden pt-12 md:pt-20 bg-white",
@@ -73,7 +83,6 @@ export default async function LandingPage() {
           )}
           style={{ backgroundImage: "url('/hero.png')" }}
         >
-          {/* Subtle overlay for mobile only to ensure text contrast */}
           <div className="absolute inset-0 bg-white/40 md:hidden pointer-events-none" />
 
           <div className="container px-6 relative z-10">
@@ -96,7 +105,6 @@ export default async function LandingPage() {
             </div>
           </div>
 
-          {/* HIGHLIGHT CARDS - Preserved layout */}
           <div className="container px-6 mt-12 md:mt-16 pb-8 relative z-10 hidden sm:block">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
               {[
@@ -123,7 +131,7 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        {/* PARTNERS SECTION - Updated with data from okabayup.com */}
+        {/* PARTNERS SECTION */}
         <section className="py-8 md:py-12 bg-muted/30 border-y">
           <div className="container px-6">
             <p className="text-center text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-6 md:mb-8">Didukung oleh Institusi & Teknologi Terdepan</p>

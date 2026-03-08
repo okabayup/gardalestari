@@ -54,6 +54,30 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'blogger.googleusercontent.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'www.perhutani.co.id',
+      },
+      {
+        protocol: 'https',
+        hostname: 'rec-data.kalibrr.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'adorespices.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'data.opendevelopmentcambodia.net',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.vissensa.com',
+      },
     ],
   },
   // Bypassing non-fatal errors during build to allow deployment
