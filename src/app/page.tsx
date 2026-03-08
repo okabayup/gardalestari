@@ -1,4 +1,3 @@
-
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
   ArrowRight, 
-  Globe, 
   TreeDeciduous, 
   Sprout, 
   Users, 
@@ -23,6 +21,28 @@ import LeadGallerySlider from '@/components/landing/LeadGallerySlider';
 import InitiativesCarousel from '@/components/landing/InitiativesCarousel';
 import fs from 'fs';
 import path from 'path';
+
+export const metadata = {
+  title: 'Garda Lestari | Inovasi Pemuda Agro-Maritim & Kehutanan',
+  description: 'Garda Lestari adalah organisasi pemuda garda terdepan untuk pelestarian alam, inovasi sektor agro-maritim, dan kehutanan nusantara melalui teknologi dan pemberdayaan komunitas.',
+  keywords: 'agro-maritim, kehutanan, inovasi pemuda, pelestarian alam, garda lestari, indonesia hijau',
+  openGraph: {
+    title: 'Garda Lestari | Inovasi Pemuda Agro-Maritim & Kehutanan',
+    description: 'Bergabunglah dengan gerakan pemuda pelestari alam Indonesia.',
+    url: 'https://gardalestari.org',
+    siteName: 'Garda Lestari',
+    images: [
+      {
+        url: '/hero.png',
+        width: 1200,
+        height: 630,
+        alt: 'Garda Lestari Hero',
+      },
+    ],
+    locale: 'id_ID',
+    type: 'website',
+  },
+};
 
 export default async function LandingPage() {
   const allPosts = await getBeritaPosts('artikel', false);
@@ -46,7 +66,6 @@ export default async function LandingPage() {
     console.error("Error reading galeri folder:", error);
   }
 
-  // Fallback if folder is empty or doesn't exist
   if (galeriImages.length === 0) {
     galeriImages = [
       { url: images.overlap_1.url, description: 'Konservasi Alam' },
@@ -56,10 +75,10 @@ export default async function LandingPage() {
   }
 
   const initiatives = [
-    { title: 'Kampung Aren', desc: 'Inovasi pengolahan aren desa untuk ekonomi lokal.', img: images.prog_aren.url, category: 'Komunitas' },
-    { title: 'Sedekahpohon.org', desc: 'Gerakan digital penanaman pohon untuk reboisasi massal.', img: images.prog_pohon.url, category: 'Reboisasi' },
-    { title: 'Vanili Lestari', desc: 'Pertanian vanili berkelanjutan dengan standar kualitas global.', img: images.prog_vanili.url, category: 'Pertanian' },
-    { title: 'Enviproof', desc: 'Sistem verifikasi data lingkungan berbasis bukti nyata.', img: images.prog_enviproof.url, category: 'Teknologi' },
+    { title: 'Kampung Aren', desc: 'Inovasi pengolahan aren desa untuk ekonomi lokal.', img: '/program/Kampung Aren.jpg', category: 'Komunitas' },
+    { title: 'Sedekahpohon.org', desc: 'Gerakan digital penanaman pohon untuk reboisasi massal.', img: '/program/Sedekah Pohon.jpg', category: 'Reboisasi' },
+    { title: 'Vanili Lestari', desc: 'Pertanian vanili berkelanjutan dengan standar kualitas global.', img: '/program/Vanili Lestari.jpg', category: 'Pertanian' },
+    { title: 'Enviproof', desc: 'Sistem verifikasi data lingkungan berbasis bukti nyata.', img: '/program/Enviproof.jpg', category: 'Teknologi' },
   ];
 
   const partners = [
@@ -71,7 +90,7 @@ export default async function LandingPage() {
     { name: 'BRIN', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Main_Logo_of_National_Research_and_Innovation_Agency_of_Indonesia.svg/500px-Main_Logo_of_National_Research_and_Innovation_Agency_of_Indonesia.svg.png' },
     { name: 'Kemenhut', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Logo_Kementerian_Kehutanan.svg/1280px-Logo_Kementerian_Kehutanan.svg.png' },
     { name: 'JALA', url: 'https://strapi.jala.tech/uploads/jala_logo_6298181eb0.png' },
-    { name: 'KKP', url: 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Emblem_of_Indonesia_and_Logo_of_the_Ministry_of_Maritime_Affairs_and_Fisheries_of_the_Republic_of_Indonesia_%28Indonesian_version_2021%29.svg' },
+    { name: 'KKP', url: 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Emblem_of_Indonesia_and_Logo_of_the_Ministry_of_Maritime_Affairs_of_the_Republic_of_Indonesia_%28Indonesian_version_2021%29.svg' },
     { name: 'Perhutani', url: 'https://www.perhutani.co.id/wp-content/uploads/2020/02/PHT-new-color-1-1024x737.png' },
     { name: 'PLN', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Logo_PLN.png/960px-Logo_PLN.png' },
     { name: 'Kalibrr', url: 'https://rec-data.kalibrr.com/www.kalibrr.com/logos/KBM8JQKYV99H9FUHDMM32UE3X2F3QVETLNLW852C-5fbe2353.png' },
@@ -84,8 +103,30 @@ export default async function LandingPage() {
     { name: 'Microsoft Nonprofits', url: 'https://www.vissensa.com/wp-content/uploads/2025/05/Microsoft-Nonprofits.jpg' }
   ];
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    'name': 'Garda Lestari',
+    'url': 'https://gardalestari.org',
+    'logo': 'https://gardalestari.org/logo.png',
+    'contactPoint': {
+      '@type': 'ContactPoint',
+      'telephone': '+62-851-4490-4161',
+      'contactType': 'customer service',
+      'email': 'halo@gardalestari.org'
+    },
+    'sameAs': [
+      'https://instagram.com/garda.lestari',
+      'https://tiktok.com/@garda.lestari'
+    ]
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <LandingHeader />
 
       <main className="flex-1">
@@ -97,7 +138,6 @@ export default async function LandingPage() {
           )}
           style={{ backgroundImage: "url('/hero.png')" }}
         >
-          {/* Mobile Overlay for better text visibility */}
           <div className="absolute inset-0 bg-white/60 md:hidden pointer-events-none" />
 
           <div className="container px-6 relative z-10">
@@ -128,10 +168,10 @@ export default async function LandingPage() {
           <div className="container px-6 mt-12 md:mt-16 pb-8 relative z-10 hidden sm:block">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
               {[
-                { title: 'Pemberdayaan', desc: 'Memperkuat kapasitas komunitas lokal untuk aksi lingkungan.', img: images.highlight_1.url, hint: images.highlight_1.hint },
-                { title: 'Hilirisasi', desc: 'Transformasi produk alam menjadi nilai ekonomi tinggi.', img: images.highlight_2.url, hint: images.highlight_2.hint },
-                { title: 'Pengawasan', desc: 'Pemantauan aktif untuk perlindungan hutan dan pesisir.', img: images.highlight_3.url, hint: images.highlight_3.hint },
-                { title: 'Pendidikan', desc: 'Edukasi berkelanjutan bagi generasi masa depan.', img: images.highlight_4.url, hint: images.highlight_4.hint }
+                { title: 'Pemberdayaan', desc: 'Memperkuat kapasitas komunitas lokal untuk aksi lingkungan.', img: '/aksi/Pemberdayaan.jpg', hint: 'community empowerment' },
+                { title: 'Hilirisasi', desc: 'Transformasi produk alam menjadi nilai ekonomi tinggi.', img: '/aksi/Hilirisasi.jpg', hint: 'natural processing' },
+                { title: 'Pengawasan', desc: 'Pemantauan aktif untuk perlindungan hutan dan pesisir.', img: '/aksi/Pengawasan.jpg', hint: 'environmental monitoring' },
+                { title: 'Pendidikan', desc: 'Edukasi berkelanjutan bagi generasi masa depan.', img: '/aksi/Pendidikan.jpg', hint: 'environmental education' }
               ].map((card, i) => (
                 <Card key={i} className="organic-card overflow-hidden hover:scale-105 transition-all duration-500 border-none shadow-2xl">
                   <CardContent className="p-0 flex flex-col items-center text-center">

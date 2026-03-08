@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { LogOut, UserCircle, Shield, Bell, Loader2, Award, Coins } from 'lucide-react';
+import { LogOut, UserCircle, Shield, Bell, Loader2, Coins } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 import { Badge } from '../ui/badge';
@@ -39,7 +39,7 @@ const NotificationItem = ({ title, body, time, read, link }: { title: string, bo
 );
 
 export default function Header() {
-  const { user, signOut, hasPermission } = useAuth();
+  const { user, signOut } = useAuth();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -66,7 +66,7 @@ export default function Header() {
       };
       fetchCount();
       
-      const interval = setInterval(fetchCount, 60000); // Poll every minute
+      const interval = setInterval(fetchCount, 60000);
       return () => clearInterval(interval);
     }
   }, [user, mounted]);
@@ -79,7 +79,7 @@ export default function Header() {
     try {
         const fetchedNotifications = await getNotificationsForUser(user.uid);
         setNotifications(fetchedNotifications);
-        setUnreadCount(0); // Optimistically set to 0
+        setUnreadCount(0);
         
         const unreadIds = fetchedNotifications.filter(n => !n.read).map(n => n.id);
         if (unreadIds.length > 0) {
@@ -105,13 +105,12 @@ export default function Header() {
     router.push('/login');
   };
 
-  // Hydration safety
   if (!mounted) {
     return (
       <header className="sticky top-0 z-40 w-full border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-14 items-center">
+        <div className="container px-6 flex h-14 items-center">
           <Link href="/feed" className="flex items-center">
-            <Image src="/logo.png" alt="Garda Lestari Logo" width={120} height={32} className="h-8 w-auto" />
+            <Image src="/logo.png" alt="Garda Lestari Logo" width={120} height={32} className="h-8 w-auto" priority />
           </Link>
         </div>
       </header>
@@ -122,7 +121,7 @@ export default function Header() {
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container px-6 flex h-14 items-center">
         <Link href="/feed" className="flex items-center">
-          <Image src="/logo.png" alt="Garda Lestari Logo" width={120} height={32} className="h-8 w-auto" />
+          <Image src="/logo.png" alt="Garda Lestari Logo" width={120} height={32} className="h-8 w-auto" priority />
         </Link>
         <div className="ml-auto flex items-center gap-2">
           {user && (

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/hooks/use-auth';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Loader2, Menu, X } from 'lucide-react';
+import { Loader2, Menu } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 
@@ -48,6 +48,7 @@ export default function LandingHeader() {
               width={140} 
               height={40} 
               className="h-8 md:h-10 w-auto transition-all" 
+              priority
             />
           </Link>
           

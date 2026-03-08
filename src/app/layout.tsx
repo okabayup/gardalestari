@@ -1,13 +1,10 @@
-
 'use client';
 
 import { useEffect, Suspense } from 'react';
-import type { Metadata, Viewport } from 'next';
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import FirebaseAnalytics from '@/components/FirebaseAnalytics';
-import { getAppSettings } from './actions/settings';
 import { logError } from './actions/errors';
 import { usePathname } from 'next/navigation';
 
@@ -17,7 +14,6 @@ function ErrorWatcher() {
 
   useEffect(() => {
     const handleGlobalError = (event: ErrorEvent) => {
-      // Don't log expected errors or errors during development that are already handled
       if (event.message.includes('Script error')) return;
 
       logError({
@@ -27,7 +23,7 @@ function ErrorWatcher() {
         path: pathname,
         userId: user?.uid,
         userName: user?.displayName || undefined,
-      }, !pathname.startsWith('/panel')); // Only alert dev if error is outside admin panel
+      }, !pathname.startsWith('/panel'));
     };
 
     const handlePromiseRejection = (event: PromiseRejectionEvent) => {
@@ -68,6 +64,10 @@ export default function RootLayout({
           rel="stylesheet"
         />
         <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" href="/logo.png" />
+        <link rel="apple-touch-icon" href="/logo.png" />
+        <title>Garda Lestari - Inovasi Pemuda Agro-Maritim & Kehutanan</title>
+        <meta name="description" content="Wadah inovasi pemuda Indonesia di sektor agro-maritim dan kehutanan nusantara untuk masa depan yang berkelanjutan." />
       </head>
       <body className="font-body antialiased">
         <AuthProvider>
