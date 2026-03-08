@@ -108,14 +108,14 @@ export default async function LandingPage() {
               <p className="text-base sm:text-lg md:text-xl text-accent/90 leading-relaxed font-bold sm:font-medium">
                 Setiap langkah kecil yang Anda ambil hari ini menciptakan efek riak, mendorong perubahan demi masa depan alam Indonesia yang lebih baik.
               </p>
-              <div className="flex flex-wrap gap-3 md:gap-4 pt-2 md:pt-4">
+              <div className="flex flex-row items-center gap-3 md:gap-4 pt-2 md:pt-4">
                 <Link href="/tentang">
-                  <Button size="lg" className="rounded-full bg-primary hover:bg-primary/90 px-8 md:px-10 h-12 md:h-14 text-base md:text-lg font-bold shadow-xl shadow-primary/20">
+                  <Button size="lg" className="rounded-full bg-primary hover:bg-primary/90 px-5 md:px-10 h-11 md:h-14 text-sm md:text-lg font-bold shadow-xl shadow-primary/20">
                     Pendekatan Kami
                   </Button>
                 </Link>
                 <Link href="/register">
-                  <Button size="lg" variant="outline" className="rounded-full border-accent/20 text-accent hover:bg-accent hover:text-white px-8 md:px-10 h-12 md:h-14 text-base md:text-lg font-bold backdrop-blur-md">
+                  <Button size="lg" variant="outline" className="rounded-full border-accent/20 text-accent hover:bg-accent hover:text-white px-5 md:px-10 h-11 md:h-14 text-sm md:text-lg font-bold backdrop-blur-md">
                     Gabung Gerakan
                   </Button>
                 </Link>
