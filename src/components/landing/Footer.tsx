@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Instagram, Linkedin, Facebook, Twitter, Globe, Mail, MapPin, Phone } from 'lucide-react';
+import { Instagram, Linkedin, Facebook, Youtube, Mail, MapPin, Phone } from 'lucide-react';
 
 const TikTokIcon = ({ size = 18 }: { size?: number }) => (
   <svg 
@@ -88,6 +88,9 @@ export default function Footer() {
                         </Link>
                         <Link href="https://tiktok.com/@garda.lestari" target="_blank" className="w-10 h-10 rounded-full border border-accent/10 flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary transition-all">
                             <TikTokIcon size={18} />
+                        </Link>
+                        <Link href="https://youtube.com/@gardalestari?si=Mk0YV4Onk2b1kWwJ" target="_blank" className="w-10 h-10 rounded-full border border-accent/10 flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary transition-all">
+                            <Youtube size={18} />
                         </Link>
                         <Link href="#" className="w-10 h-10 rounded-full border border-accent/10 flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary transition-all">
                             <Linkedin size={18} />
