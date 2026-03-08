@@ -1,5 +1,3 @@
-
-
 'use server';
 
 import { db } from '@/lib/firebase';
@@ -28,7 +26,7 @@ const bookingsCollection = collection(db, 'bookings');
 const meetingsCollection = collection(db, 'meetings');
 const addonsCollection = collection(db, 'edutourismAddons');
 
-const ADMIN_NOTIFICATION_PHONE = '6285937010409';
+const ADMIN_NOTIFICATION_PHONE = '6285144904161';
 const ADMIN_NOTIFICATION_EMAIL = 'halo@gardalestari.org';
 
 

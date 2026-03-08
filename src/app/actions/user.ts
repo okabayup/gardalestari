@@ -23,7 +23,7 @@ if (admin.apps.length === 0) {
 const usersCollection = collection(db, 'users');
 const positionsCollection = collection(db, 'positions');
 const OFFICIAL_ACCOUNT_PHONE = process.env.SATUCONNECT_DEVICE_ID;
-const ADMIN_NOTIFICATION_PHONE = '6285937010409';
+const ADMIN_NOTIFICATION_PHONE = '6285144904161';
 const ADMIN_NOTIFICATION_EMAIL = 'halo@gardalestari.org';
 
 

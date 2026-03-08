@@ -1,5 +1,3 @@
-
-
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -22,7 +20,7 @@ export async function getAppSettings(): Promise<AppSettings> {
         isWhatsappNotificationsEnabled: false,
         isInstallForced: false,
         linkedin: '#',
-        instagram: '#',
+        instagram: 'https://instagram.com/garda.lestari',
         twitter: '#',
         facebook: '#',
         heroImageUrl: 'https://picsum.photos/seed/paddy-field/1920/1080',
@@ -47,7 +45,7 @@ export async function getAppSettings(): Promise<AppSettings> {
   // Return default values if not set or on error
   return {
     linkedin: '#',
-    instagram: '#',
+    instagram: 'https://instagram.com/garda.lestari',
     twitter: '#',
     facebook: '#',
     isRegistrationOpen: true,

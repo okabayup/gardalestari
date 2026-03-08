@@ -1,8 +1,6 @@
-
-
 'use server';
 
-const DEV_PHONE_NUMBER = '6285937010409';
+const DEV_PHONE_NUMBER = '6285144904161';
 
 /**
  * Sends a single message via the SatuConnect WhatsApp API.

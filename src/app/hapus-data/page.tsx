@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -21,6 +20,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+
+const ADMIN_CONTACT_WA = "https://wa.me/6285144904161?text=Halo%20Admin%2C%20saya%20ingin%20bertanya%20mengenai%20penghapusan%20data.";
 
 export default function DeleteDataPage() {
   const { user, loading: authLoading } = useAuth();
@@ -128,6 +129,12 @@ export default function DeleteDataPage() {
                 {renderContent()}
               </div>
 
+              <div className="pt-4 border-t text-center">
+                <Button variant="link" asChild className="text-muted-foreground">
+                    <Link href={ADMIN_CONTACT_WA} target="_blank">Butuh bantuan teknis? Hubungi Admin</Link>
+                </Button>
+              </div>
+
             </CardContent>
           </Card>
         </div>
@@ -138,7 +145,7 @@ export default function DeleteDataPage() {
     <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Anda Yakin Sepenuhnya?</AlertDialogTitle>
+            <AlertDialogTitle>Anda yakin sepenuhnya?</AlertDialogTitle>
             <AlertDialogDescription>
               Ini adalah langkah terakhir. Setelah Anda mengajukan, permintaan akan dikirim ke admin. Jika disetujui, semua data Anda, termasuk akun login Anda, akan <span className="font-bold text-destructive">dihapus secara permanen</span> dan tidak dapat dipulihkan.
             </AlertDialogDescription>

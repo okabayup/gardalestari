@@ -1,4 +1,3 @@
-
 'use server';
 
 import { db, storage } from '@/lib/firebase';
@@ -22,7 +21,7 @@ const documentsCollection = collection(db, 'importantDocuments');
 const categoriesCollection = collection(db, 'documentCategories');
 const docTypesCollection = collection(db, 'documentTypes');
 
-const ADMIN_NOTIFICATION_PHONE = '6285937010409';
+const ADMIN_NOTIFICATION_PHONE = '6285144904161';
 const ADMIN_NOTIFICATION_EMAIL = 'halo@gardalestari.org';
 
 const SIGNATORY_NAMES: Record<SignatoryRole, string> = {

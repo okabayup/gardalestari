@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -9,7 +8,7 @@ import { logError } from './actions/errors';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 
-const ADMIN_CONTACT_WA = "https://wa.me/6285937010409?text=Halo%20Admin%2C%20saya%20mengalami%20error%20di%20aplikasi.";
+const ADMIN_CONTACT_WA = "https://wa.me/6285144904161?text=Halo%20Admin%2C%20saya%20mengalami%20error%20di%20aplikasi.";
 
 export default function Error({
   error,

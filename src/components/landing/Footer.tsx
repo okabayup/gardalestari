@@ -4,6 +4,21 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Instagram, Linkedin, Facebook, Twitter, Globe, Mail, MapPin, Phone } from 'lucide-react';
 
+const TikTokIcon = ({ size = 18 }: { size?: number }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+  >
+    <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
+  </svg>
+);
+
 export default function Footer() {
     return (
         <footer className="bg-[#D1D9CD] text-accent pt-20 pb-12 rounded-t-[5rem]">
@@ -45,11 +60,11 @@ export default function Footer() {
                         <ul className="space-y-4 text-sm font-medium text-accent/60">
                             <li className="flex items-start gap-3">
                                 <MapPin size={18} className="text-primary shrink-0" />
-                                <span>Jl. Melati No. 123, Jakarta Selatan, Indonesia</span>
+                                <span>Jakarta, Indonesia</span>
                             </li>
                             <li className="flex items-center gap-3">
                                 <Phone size={18} className="text-primary shrink-0" />
-                                <span>+62 812 3456 7890</span>
+                                <span>+62 851 4490 4161</span>
                             </li>
                             <li className="flex items-center gap-3">
                                 <Mail size={18} className="text-primary shrink-0" />
@@ -62,11 +77,18 @@ export default function Footer() {
                 <div className="mt-20 pt-8 border-t border-accent/10 flex flex-col md:flex-row justify-between items-center gap-6">
                     <p className="text-xs font-bold text-accent/40 uppercase tracking-widest">&copy; {new Date().getFullYear()} Garda Muda Lestari. Hak Cipta Dilindungi.</p>
                     <div className="flex items-center gap-4">
-                        {[Instagram, Linkedin, Facebook, Twitter, Globe].map((Icon, i) => (
-                            <Link key={i} href="#" className="w-10 h-10 rounded-full border border-accent/10 flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary transition-all">
-                                <Icon size={18} />
-                            </Link>
-                        ))}
+                        <Link href="https://instagram.com/garda.lestari" target="_blank" className="w-10 h-10 rounded-full border border-accent/10 flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary transition-all">
+                            <Instagram size={18} />
+                        </Link>
+                        <Link href="https://tiktok.com/@garda.lestari" target="_blank" className="w-10 h-10 rounded-full border border-accent/10 flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary transition-all">
+                            <TikTokIcon size={18} />
+                        </Link>
+                        <Link href="#" className="w-10 h-10 rounded-full border border-accent/10 flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary transition-all">
+                            <Linkedin size={18} />
+                        </Link>
+                        <Link href="#" className="w-10 h-10 rounded-full border border-accent/10 flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary transition-all">
+                            <Facebook size={18} />
+                        </Link>
                     </div>
                 </div>
             </div>
