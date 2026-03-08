@@ -91,7 +91,7 @@ export default async function LandingPage() {
         {/* HERO SECTION */}
         <section 
           className={cn(
-            "relative min-h-[60vh] md:min-h-[75vh] flex flex-col justify-center overflow-hidden pt-12 md:pt-[85px] bg-white",
+            "relative min-h-[60vh] md:min-h-[75vh] flex flex-col justify-center overflow-hidden mt-12 md:mt-[85px] bg-white",
             "bg-no-repeat bg-[size:100%] md:bg-[size:70%] bg-top md:bg-right-top"
           )}
           style={{ backgroundImage: "url('/hero.png')" }}
@@ -172,7 +172,7 @@ export default async function LandingPage() {
                 </div>
                 <h2 className="text-3xl sm:text-4xl md:text-6xl font-black leading-[1.1] md:leading-[0.9] tracking-tighter">Memandu Arah<br /><span className="text-primary">Perubahan Ekologis</span></h2>
                 <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-                  Kami adalah wadah bagi inovator muda yang berkomitmen melindungi planet ini melalui teknologi cerdas di sektor agro-maritim dan kehutanan.
+                  Kami adalah wadah bagi inovator muda yang berkomitmen melindungi planet ini melalui teknologi cerdas di sektor agro-maritim dan kehutanan nusantara.
                 </p>
                 <div className="space-y-4 text-left">
                   {[
