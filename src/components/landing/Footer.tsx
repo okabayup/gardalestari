@@ -27,7 +27,7 @@ export default function Footer() {
                     {/* Brand */}
                     <div className="space-y-6">
                         <Link href="/" className="flex items-center">
-                            <Image src="/logo.png" alt="Garda Lestari Logo" width={160} height={42} className="h-10 w-auto" />
+                            <Image src="/logo.png" alt="Garda Lestari Logo" width={160} height={42} className="h-10 w-auto" priority />
                         </Link>
                         <p className="text-sm font-medium text-accent/70 leading-relaxed">
                             Wadah bagi pemuda Indonesia untuk berinovasi di sektor agro-maritim dan kehutanan. Bersama kita jaga kelestarian alam nusantara untuk masa depan.

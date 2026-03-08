@@ -90,7 +90,7 @@ export default async function LandingPage() {
     { name: 'BRIN', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Main_Logo_of_National_Research_of_Innovation_Agency_of_Indonesia.svg/500px-Main_Logo_of_National_Research_of_Innovation_Agency_of_Indonesia.svg.png' },
     { name: 'Kemenhut', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Logo_Kementerian_Kehutanan.svg/1280px-Logo_Kementerian_Kehutanan.svg.png' },
     { name: 'JALA', url: 'https://strapi.jala.tech/uploads/jala_logo_6298181eb0.png' },
-    { name: 'KKP', url: 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Emblem_of_Indonesia_and_Logo_of_the_Ministry_of_Maritime_Affairs_of_the_Republic_of_Indonesia_%28Indonesian_version_2021%29.svg' },
+    { name: 'KKP', url: 'https://upload.wikimedia.org/wikipedia/7/7b/Emblem_of_Indonesia_and_Logo_of_the_Ministry_of_Maritime_Affairs_of_the_Republic_of_Indonesia_%28Indonesian_version_2021%29.svg' },
     { name: 'Perhutani', url: 'https://www.perhutani.co.id/wp-content/uploads/2020/02/PHT-new-color-1-1024x737.png' },
     { name: 'PLN', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Logo_PLN.png/960px-Logo_PLN.png' },
     { name: 'Kalibrr', url: 'https://rec-data.kalibrr.com/www.kalibrr.com/logos/KBM8JQKYV99H9FUHDMM32UE3X2F3QVETLNLW852C-5fbe2353.png' },
