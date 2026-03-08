@@ -183,10 +183,10 @@ export default async function LandingPage() {
               <div className="relative px-6 md:px-0 mt-8 md:mt-0">
                 <LeadGallerySlider 
                   images={[
-                    { url: images.lead_side.url, hint: images.lead_side.hint },
-                    { url: images.lead_float.url, hint: images.lead_float.hint },
-                    { url: images.overlap_1.url, hint: images.overlap_1.hint },
-                    { url: images.overlap_2.url, hint: images.overlap_2.hint },
+                    { url: '/galeri/konservasi-mangrove.jpg', hint: 'konservasi-mangrove' },
+                    { url: '/galeri/pemberdayaan-pemuda.jpg', hint: 'pemberdayaan-pemuda' },
+                    { url: '/galeri/pertanian-berkelanjutan.jpg', hint: 'pertanian-berkelanjutan' },
+                    { url: '/galeri/hutan-indonesia.jpg', hint: 'hutan-indonesia' },
                   ]} 
                 />
               </div>

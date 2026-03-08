@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -33,7 +34,7 @@ export default function LeadGallerySlider({ images }: { images: { url: string, h
               <div className="relative aspect-square rounded-[2.5rem] md:rounded-[3.5rem] overflow-hidden shadow-2xl border-4 md:border-8 border-white bg-muted">
                 <Image 
                   src={image.url} 
-                  alt={`Gallery ${i}`} 
+                  alt={image.hint} 
                   data-ai-hint={image.hint} 
                   fill 
                   className="object-cover" 
