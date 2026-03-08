@@ -63,10 +63,10 @@ export default async function LandingPage() {
       <LandingHeader />
 
       <main className="flex-1">
-        {/* HERO SECTION - Improved responsiveness for all devices */}
+        {/* HERO SECTION - Optimized Spacing */}
         <section 
           className={cn(
-            "relative min-h-[85vh] md:min-h-screen flex flex-col justify-center overflow-hidden pt-24 md:pt-40 bg-white",
+            "relative min-h-[70vh] md:min-h-[85vh] flex flex-col justify-center overflow-hidden pt-12 md:pt-20 bg-white",
             "bg-no-repeat bg-[size:100%] md:bg-[size:70%] bg-top md:bg-right-top"
           )}
           style={{ backgroundImage: "url('/hero.png')" }}
@@ -94,8 +94,8 @@ export default async function LandingPage() {
             </div>
           </div>
 
-          {/* HIGHLIGHT CARDS - Only visible on Tablet and Desktop */}
-          <div className="container px-6 mt-16 md:mt-20 pb-12 relative z-10 hidden sm:block">
+          {/* HIGHLIGHT CARDS - Adjusted spacing */}
+          <div className="container px-6 mt-12 md:mt-16 pb-8 relative z-10 hidden sm:block">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
               {[
                 { title: 'Coastal Care', desc: 'Melindungi garis pantai dan ekosistem maritim.', img: images.highlight_1.url, hint: images.highlight_1.hint },
@@ -104,7 +104,7 @@ export default async function LandingPage() {
               ].map((card, i) => (
                 <Card key={i} className={cn(
                   "organic-card overflow-hidden hover:scale-105 transition-all duration-500 border-none shadow-2xl",
-                  i === 2 && "sm:col-span-2 md:col-span-1" // Layout adjustment for tablet
+                  i === 2 && "sm:col-span-2 md:col-span-1"
                 )}>
                   <CardContent className="p-0 flex flex-col items-center text-center">
                     <div className="relative w-full aspect-video">
@@ -121,7 +121,7 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        {/* PARTNERS SECTION - Flexible scrolling logos */}
+        {/* PARTNERS SECTION */}
         <section className="py-8 md:py-12 bg-muted/30 border-y">
           <div className="container px-6">
             <p className="text-center text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-6 md:mb-8">Didukung oleh Institusi & Teknologi Terdepan</p>
