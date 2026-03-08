@@ -225,10 +225,10 @@ export default async function LandingPage() {
           <div className="container px-6">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
               {[
-                { label: 'Proyek Selesai', value: '150+', icon: Target },
-                { label: 'Pohon Ditanam', value: '50k+', icon: Sprout },
-                { label: 'Anggota Aktif', value: '12k+', icon: Users },
-                { label: 'Wilayah Dampak', value: '24', icon: Globe }
+                { label: 'Anggota', value: '630+', icon: Users },
+                { label: 'Pohon Ditanam', value: '5k+', icon: Sprout },
+                { label: 'Petani Binaan', value: '160', icon: Target },
+                { label: 'Wilayah Hutan Lindung Dijaga', value: '2', icon: TreeDeciduous }
               ].map((stat, i) => (
                 <div key={i} className="text-center space-y-2 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] bg-muted/30 hover:bg-primary/5 transition-colors">
                   <div className="mx-auto w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-3 md:mb-4">
