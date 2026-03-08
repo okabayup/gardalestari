@@ -91,20 +91,21 @@ export default async function LandingPage() {
         {/* HERO SECTION */}
         <section 
           className={cn(
-            "relative min-h-[60vh] md:min-h-[75vh] flex flex-col justify-center overflow-hidden mt-12 md:mt-[85px] bg-white",
+            "relative min-h-[60vh] md:min-h-[75vh] flex flex-col justify-center overflow-hidden mt-[85px] bg-white",
             "bg-no-repeat bg-[size:100%] md:bg-[size:70%] bg-top md:bg-right-top"
           )}
           style={{ backgroundImage: "url('/hero.png')" }}
         >
-          <div className="absolute inset-0 bg-white/40 md:hidden pointer-events-none" />
+          {/* Mobile Overlay for better text visibility */}
+          <div className="absolute inset-0 bg-white/60 md:hidden pointer-events-none" />
 
           <div className="container px-6 relative z-10">
-            <div className="max-w-2xl space-y-6 md:space-y-8 animate-in fade-in slide-in-from-left-10 duration-1000">
+            <div className="w-full md:w-1/2 space-y-6 md:space-y-8 animate-in fade-in slide-in-from-left-10 duration-1000">
               <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-accent leading-[1] md:leading-[0.9] tracking-tighter">
                 Aksi Kecil,<br />
                 <span className="text-primary">Dampak Besar</span>
               </h1>
-              <p className="text-base sm:text-lg md:text-xl text-accent/90 max-w-[75%] md:max-w-[50%] leading-relaxed font-bold sm:font-medium">
+              <p className="text-base sm:text-lg md:text-xl text-accent/90 leading-relaxed font-bold sm:font-medium">
                 Setiap langkah kecil yang Anda ambil hari ini menciptakan efek riak, mendorong perubahan demi masa depan alam Indonesia yang lebih baik.
               </p>
               <div className="flex flex-wrap gap-3 md:gap-4 pt-2 md:pt-4">
@@ -122,6 +123,7 @@ export default async function LandingPage() {
             </div>
           </div>
 
+          {/* Highlights */}
           <div className="container px-6 mt-12 md:mt-16 pb-8 relative z-10 hidden sm:block">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
               {[
