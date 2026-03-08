@@ -87,7 +87,7 @@ export default async function LandingPage() {
     { name: 'Nvidia Inception', url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS1Ij2VDZaMa9SRQyjHm280m-Taa3zcx5jIQg&s' },
     { name: 'BPDLH', url: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjZuiY_nP0wEpfqCICn1DBEdqcacjVwW6eURkrUfy8fuwzEihDVw8fl8OGjTo99lsEzJN7wX5F8DS1KWFY0WLMQTatG8wZSa9QLEsucF3KUI8UAoSCQYEDB3BwM-eD_gfNe6VO1-iHN0vFw6jqfSO_vUuIlv07FGf8B2IuyJEtia0cwIlaEEzV8abNHCA/s2127/Logo%20Badan%20Pengelola%20Dana%20Lingkungan%20Hidup%20(BPDLH).png' },
     { name: 'Konservasi Indonesia', url: 'https://sourceup-api-cdn-endpoint-prod.azureedge.net/media/YKI+LOGO-20240902130143971.png' },
-    { name: 'BRIN', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Main_Logo_of_National_Research_and_Innovation_Agency_of_Indonesia.svg/500px-Main_Logo_of_National_Research_and_Innovation_Agency_of_Indonesia.svg.png' },
+    { name: 'BRIN', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Main_Logo_of_National_Research_of_Innovation_Agency_of_Indonesia.svg/500px-Main_Logo_of_National_Research_of_Innovation_Agency_of_Indonesia.svg.png' },
     { name: 'Kemenhut', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Logo_Kementerian_Kehutanan.svg/1280px-Logo_Kementerian_Kehutanan.svg.png' },
     { name: 'JALA', url: 'https://strapi.jala.tech/uploads/jala_logo_6298181eb0.png' },
     { name: 'KKP', url: 'https://upload.wikimedia.org/wikipedia/commons/7/7b/Emblem_of_Indonesia_and_Logo_of_the_Ministry_of_Maritime_Affairs_of_the_Republic_of_Indonesia_%28Indonesian_version_2021%29.svg' },
@@ -165,22 +165,22 @@ export default async function LandingPage() {
           </div>
 
           {/* Highlights */}
-          <div className="container px-6 mt-12 md:mt-16 pb-8 relative z-10 hidden sm:block">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="container px-6 mt-8 md:mt-16 pb-8 relative z-10">
+            <div className="grid grid-cols-4 gap-2 sm:gap-4 md:gap-6">
               {[
-                { title: 'Pemberdayaan', desc: 'Memperkuat kapasitas komunitas lokal untuk aksi lingkungan.', img: '/aksi/Pemberdayaan.jpg', hint: 'community empowerment' },
-                { title: 'Hilirisasi', desc: 'Transformasi produk alam menjadi nilai ekonomi tinggi.', img: '/aksi/Hilirisasi.jpg', hint: 'natural processing' },
-                { title: 'Pengawasan', desc: 'Pemantauan aktif untuk perlindungan hutan dan pesisir.', img: '/aksi/Pengawasan.jpg', hint: 'environmental monitoring' },
-                { title: 'Pendidikan', desc: 'Edukasi berkelanjutan bagi generasi masa depan.', img: '/aksi/Pendidikan.jpg', hint: 'environmental education' }
+                { title: 'Pemberdayaan', desc: 'Memperkuat kapasitas lokal.', img: '/aksi/Pemberdayaan.jpg', hint: 'community empowerment' },
+                { title: 'Hilirisasi', desc: 'Transformasi produk alam.', img: '/aksi/Hilirisasi.jpg', hint: 'natural processing' },
+                { title: 'Pengawasan', desc: 'Pemantauan aktif alam.', img: '/aksi/Pengawasan.jpg', hint: 'environmental monitoring' },
+                { title: 'Pendidikan', desc: 'Edukasi berkelanjutan.', img: '/aksi/Pendidikan.jpg', hint: 'environmental education' }
               ].map((card, i) => (
-                <Card key={i} className="organic-card overflow-hidden hover:scale-105 transition-all duration-500 border-none shadow-2xl">
-                  <CardContent className="p-0 flex flex-col items-center text-center">
-                    <div className="relative w-full aspect-video">
+                <Card key={i} className="organic-card overflow-hidden hover:scale-105 transition-all duration-500 border-none shadow-xl">
+                  <CardContent className="p-0 flex flex-col items-center text-center h-full">
+                    <div className="relative w-full aspect-square sm:aspect-video">
                       <Image src={card.img} alt={card.title} data-ai-hint={card.hint} fill className="object-cover" />
                     </div>
-                    <div className="p-6 md:p-8 space-y-2 bg-white/90 backdrop-blur-sm w-full">
-                      <h3 className="font-black text-lg md:text-xl text-accent">{card.title}</h3>
-                      <p className="text-xs md:text-sm text-muted-foreground">{card.desc}</p>
+                    <div className="p-2 sm:p-6 md:p-8 space-y-1 bg-white/90 backdrop-blur-sm w-full flex-1">
+                      <h3 className="font-black text-[10px] sm:text-base md:text-xl text-accent leading-tight">{card.title}</h3>
+                      <p className="hidden sm:block text-[8px] sm:text-xs md:text-sm text-muted-foreground">{card.desc}</p>
                     </div>
                   </CardContent>
                 </Card>
