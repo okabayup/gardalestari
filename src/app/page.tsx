@@ -91,16 +91,20 @@ export default async function LandingPage() {
                 Small Actions,<br />
                 <span className="text-primary">Big Impact</span>
               </h1>
-              <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-xl leading-relaxed font-medium">
+              <p className="text-base sm:text-lg md:text-xl text-accent/90 max-w-xl leading-relaxed font-bold sm:font-medium">
                 Setiap langkah kecil yang Anda ambil hari ini menciptakan efek riak, mendorong perubahan demi masa depan alam Indonesia yang lebih baik.
               </p>
               <div className="flex flex-wrap gap-3 md:gap-4 pt-2 md:pt-4">
-                <Button size="lg" className="rounded-full bg-primary hover:bg-primary/90 px-8 md:px-10 h-12 md:h-14 text-base md:text-lg font-bold shadow-xl shadow-primary/20">
-                  Our approach
-                </Button>
-                <Button size="lg" variant="outline" className="rounded-full border-accent/20 text-accent hover:bg-accent hover:text-white px-8 md:px-10 h-12 md:h-14 text-base md:text-lg font-bold backdrop-blur-md">
-                  Join Movement
-                </Button>
+                <Link href="/register">
+                  <Button size="lg" className="rounded-full bg-primary hover:bg-primary/90 px-8 md:px-10 h-12 md:h-14 text-base md:text-lg font-bold shadow-xl shadow-primary/20">
+                    Our approach
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button size="lg" variant="outline" className="rounded-full border-accent/20 text-accent hover:bg-accent hover:text-white px-8 md:px-10 h-12 md:h-14 text-base md:text-lg font-bold backdrop-blur-md">
+                    Join Movement
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
