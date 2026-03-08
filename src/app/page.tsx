@@ -72,10 +72,10 @@ export default async function LandingPage() {
   }
 
   const initiatives = [
-    { title: 'Kampung Aren', desc: 'Inovasi pengolahan aren desa untuk ekonomi lokal.', img: images.prog_aren.url, category: 'Community' },
-    { title: 'Sedekahpohon.org', desc: 'Gerakan digital penanaman pohon untuk reboisasi massal.', img: images.prog_pohon.url, category: 'Reforestation' },
-    { title: 'Vanili Lestari', desc: 'Pertanian vanili berkelanjutan dengan standar kualitas global.', img: images.prog_vanili.url, category: 'Agriculture' },
-    { title: 'Enviproof', desc: 'Sistem verifikasi data lingkungan berbasis bukti nyata.', img: "https://picsum.photos/seed/enviproof/600/800", category: 'Technology' },
+    { title: 'Kampung Aren', desc: 'Inovasi pengolahan aren desa untuk ekonomi lokal.', img: '/program/kampung-aren.jpg', category: 'Community' },
+    { title: 'Sedekahpohon.org', desc: 'Gerakan digital penanaman pohon untuk reboisasi massal.', img: '/program/sedekah-pohon.jpg', category: 'Reforestation' },
+    { title: 'Vanili Lestari', desc: 'Pertanian vanili berkelanjutan dengan standar kualitas global.', img: '/program/vanili-lestari.jpg', category: 'Agriculture' },
+    { title: 'Enviproof', desc: 'Sistem verifikasi data lingkungan berbasis bukti nyata.', img: '/program/enviproof.jpg', category: 'Technology' },
   ];
 
   const partners = [
