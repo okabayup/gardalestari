@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -55,10 +56,10 @@ export default async function LandingPage() {
   }
 
   const initiatives = [
-    { title: 'Kampung Aren', desc: 'Inovasi pengolahan aren desa untuk ekonomi lokal.', img: '/program/Kampung Aren.jpg', category: 'Komunitas' },
-    { title: 'Sedekahpohon.org', desc: 'Gerakan digital penanaman pohon untuk reboisasi massal.', img: '/program/Sedekah Pohon.jpg', category: 'Reboisasi' },
-    { title: 'Vanili Lestari', desc: 'Pertanian vanili berkelanjutan dengan standar kualitas global.', img: '/program/Vanili Lestari.jpg', category: 'Pertanian' },
-    { title: 'Enviproof', desc: 'Sistem verifikasi data lingkungan berbasis bukti nyata.', img: '/program/Enviproof.jpg', category: 'Teknologi' },
+    { title: 'Kampung Aren', desc: 'Inovasi pengolahan aren desa untuk ekonomi lokal.', img: images.prog_aren.url, category: 'Komunitas' },
+    { title: 'Sedekahpohon.org', desc: 'Gerakan digital penanaman pohon untuk reboisasi massal.', img: images.prog_pohon.url, category: 'Reboisasi' },
+    { title: 'Vanili Lestari', desc: 'Pertanian vanili berkelanjutan dengan standar kualitas global.', img: images.prog_vanili.url, category: 'Pertanian' },
+    { title: 'Enviproof', desc: 'Sistem verifikasi data lingkungan berbasis bukti nyata.', img: images.prog_enviproof.url, category: 'Teknologi' },
   ];
 
   const partners = [
@@ -125,16 +126,14 @@ export default async function LandingPage() {
 
           {/* Highlights */}
           <div className="container px-6 mt-12 md:mt-16 pb-8 relative z-10 hidden sm:block">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
               {[
-                { title: 'Kepedulian Pesisir', desc: 'Melindungi garis pantai dan ekosistem maritim.', img: images.highlight_1.url, hint: images.highlight_1.hint },
-                { title: 'Gaya Hidup Hijau', desc: 'Implementasi gaya hidup berkelanjutan sehari-hari.', img: images.highlight_2.url, hint: images.highlight_2.hint },
-                { title: 'Aksi Iklim', desc: 'Inisiatif mitigasi dampak perubahan iklim nyata.', img: images.highlight_3.url, hint: images.highlight_3.hint }
+                { title: 'Pemberdayaan', desc: 'Memperkuat kapasitas komunitas lokal untuk aksi lingkungan.', img: images.highlight_1.url, hint: images.highlight_1.hint },
+                { title: 'Hilirisasi', desc: 'Transformasi produk alam menjadi nilai ekonomi tinggi.', img: images.highlight_2.url, hint: images.highlight_2.hint },
+                { title: 'Pengawasan', desc: 'Pemantauan aktif untuk perlindungan hutan dan pesisir.', img: images.highlight_3.url, hint: images.highlight_3.hint },
+                { title: 'Pendidikan', desc: 'Edukasi berkelanjutan bagi generasi masa depan.', img: images.highlight_4.url, hint: images.highlight_4.hint }
               ].map((card, i) => (
-                <Card key={i} className={cn(
-                  "organic-card overflow-hidden hover:scale-105 transition-all duration-500 border-none shadow-2xl",
-                  i === 2 && "sm:col-span-2 md:col-span-1"
-                )}>
+                <Card key={i} className="organic-card overflow-hidden hover:scale-105 transition-all duration-500 border-none shadow-2xl">
                   <CardContent className="p-0 flex flex-col items-center text-center">
                     <div className="relative w-full aspect-video">
                       <Image src={card.img} alt={card.title} data-ai-hint={card.hint} fill className="object-cover" />

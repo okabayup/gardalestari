@@ -1,19 +1,24 @@
+
 {
   "hero_bg": {
     "url": "/hero.png",
     "hint": "nature landscape"
   },
   "highlight_1": {
-    "url": "https://picsum.photos/seed/highlight1/400/400",
-    "hint": "coastal nature"
+    "url": "/aksi/Pemberdayaan.jpg",
+    "hint": "community empowerment"
   },
   "highlight_2": {
-    "url": "https://picsum.photos/seed/highlight2/400/400",
-    "hint": "green living"
+    "url": "/aksi/Hilirisasi.jpg",
+    "hint": "natural processing"
   },
   "highlight_3": {
-    "url": "https://picsum.photos/seed/highlight3/400/400",
-    "hint": "climate action"
+    "url": "/aksi/Pengawasan.jpg",
+    "hint": "environmental monitoring"
+  },
+  "highlight_4": {
+    "url": "/aksi/Pendidikan.jpg",
+    "hint": "environmental education"
   },
   "lead_side": {
     "url": "https://picsum.photos/seed/lead/800/800",
@@ -28,10 +33,11 @@
   "impact_wildlife": { "url": "https://picsum.photos/seed/impact3/400/400", "hint": "wildlife animal" },
   "impact_forest": { "url": "https://picsum.photos/seed/impact4/400/400", "hint": "dense forest" },
   "impact_energy": { "url": "https://picsum.photos/seed/impact5/400/400", "hint": "wind turbine" },
-  "impact_waste": { "url": "https://picsum.photos/seed/impact6/400/400", "hint": "recycling" },
+  "impact_bottom": { "url": "https://picsum.photos/seed/impact6/400/400", "hint": "recycling" },
   "overlap_1": { "url": "https://picsum.photos/seed/ov1/800/600", "hint": "hand holding plant" },
   "overlap_2": { "url": "https://picsum.photos/seed/ov2/800/600", "hint": "ocean turtle" },
-  "prog_aren": { "url": "https://picsum.photos/seed/aren/600/800", "hint": "palm tree" },
-  "prog_pohon": { "url": "https://picsum.photos/seed/pohon/600/800", "hint": "tree nursery" },
-  "prog_vanili": { "url": "https://picsum.photos/seed/vanili/600/800", "hint": "vanilla plant" }
+  "prog_aren": { "url": "/program/Kampung Aren.jpg", "hint": "palm tree" },
+  "prog_pohon": { "url": "/program/Sedekah Pohon.jpg", "hint": "tree nursery" },
+  "prog_vanili": { "url": "/program/Vanili Lestari.jpg", "hint": "vanilla plant" },
+  "prog_enviproof": { "url": "/program/Enviproof.jpg", "hint": "environmental data" }
 }
