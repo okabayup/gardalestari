@@ -1,10 +1,10 @@
-
 'use server';
 
 import { getBeritaPosts } from '@/app/actions/berita';
 import BeritaPostCard from '@/components/berita/BeritaPostCard';
 import LandingHeader from '@/components/layout/LandingHeader';
 import Footer from '@/components/landing/Footer';
+import { Newspaper } from 'lucide-react';
 
 export default async function BeritaPage() {
   const posts = await getBeritaPosts('artikel', false);
@@ -13,21 +13,38 @@ export default async function BeritaPage() {
     <div className="flex min-h-screen flex-col bg-background text-foreground">
         <LandingHeader />
         <main className="flex-1">
-            <div className="container py-12 md:py-16">
-                <div className="text-center sm:text-left mb-8">
-                    <h1 className="font-headline text-3xl font-bold">Berita Kami</h1>
-                    <p className="text-muted-foreground">Cerita dan wawasan dari lapangan.</p>
-                </div>
-                {posts.length > 0 ? (
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {posts.map((post) => (
-                            <BeritaPostCard key={post.slug} {...post} />
-                        ))}
+            {/* Header Section */}
+            <section className="bg-muted/30 pt-32 pb-16 md:pt-40 md:pb-24 rounded-b-[3rem] md:rounded-b-[5rem]">
+                <div className="container px-6 text-center space-y-4">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest">
+                        <Newspaper size={14} /> Sorotan Publikasi
                     </div>
-                ) : (
-                    <p className="text-center text-muted-foreground py-10">Belum ada berita yang dipublikasikan.</p>
-                )}
-            </div>
+                    <h1 className="font-black text-4xl md:text-6xl tracking-tighter text-accent leading-tight">
+                        Warta <span className="text-primary">Garda Lestari</span>
+                    </h1>
+                    <p className="mx-auto max-w-xl text-muted-foreground font-medium">
+                        Cerita inspiratif, wawasan mendalam, dan laporan aksi nyata langsung dari lapangan.
+                    </p>
+                </div>
+            </section>
+
+            {/* Posts Grid */}
+            <section className="py-16 md:py-24">
+                <div className="container px-6">
+                    {posts.length > 0 ? (
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {posts.map((post) => (
+                                <BeritaPostCard key={post.slug} {...post} />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-20 bg-muted/20 rounded-[2rem] border-2 border-dashed">
+                            <Newspaper className="mx-auto h-12 w-12 text-muted-foreground mb-4 opacity-30" />
+                            <p className="text-muted-foreground font-bold">Belum ada berita yang dipublikasikan saat ini.</p>
+                        </div>
+                    )}
+                </div>
+            </section>
         </main>
         <Footer />
     </div>

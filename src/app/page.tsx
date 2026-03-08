@@ -48,17 +48,17 @@ export default async function LandingPage() {
   // Fallback if folder is empty or doesn't exist
   if (galeriImages.length === 0) {
     galeriImages = [
-      { url: images.overlap_1.url, description: 'Nature Conservation' },
-      { url: images.overlap_2.url, description: 'Marine Life Protection' },
-      { url: images.lead_side.url, description: 'Youth Empowerment' },
+      { url: images.overlap_1.url, description: 'Konservasi Alam' },
+      { url: images.overlap_2.url, description: 'Perlindungan Biota Laut' },
+      { url: images.lead_side.url, description: 'Pemberdayaan Pemuda' },
     ];
   }
 
   const initiatives = [
-    { title: 'Kampung Aren', desc: 'Inovasi pengolahan aren desa untuk ekonomi lokal.', img: '/program/Kampung Aren.jpg', category: 'Community' },
-    { title: 'Sedekahpohon.org', desc: 'Gerakan digital penanaman pohon untuk reboisasi massal.', img: '/program/Sedekah Pohon.jpg', category: 'Reforestation' },
-    { title: 'Vanili Lestari', desc: 'Pertanian vanili berkelanjutan dengan standar kualitas global.', img: '/program/Vanili Lestari.jpg', category: 'Agriculture' },
-    { title: 'Enviproof', desc: 'Sistem verifikasi data lingkungan berbasis bukti nyata.', img: '/program/Enviproof.jpg', category: 'Technology' },
+    { title: 'Kampung Aren', desc: 'Inovasi pengolahan aren desa untuk ekonomi lokal.', img: '/program/Kampung Aren.jpg', category: 'Komunitas' },
+    { title: 'Sedekahpohon.org', desc: 'Gerakan digital penanaman pohon untuk reboisasi massal.', img: '/program/Sedekah Pohon.jpg', category: 'Reboisasi' },
+    { title: 'Vanili Lestari', desc: 'Pertanian vanili berkelanjutan dengan standar kualitas global.', img: '/program/Vanili Lestari.jpg', category: 'Pertanian' },
+    { title: 'Enviproof', desc: 'Sistem verifikasi data lingkungan berbasis bukti nyata.', img: '/program/Enviproof.jpg', category: 'Teknologi' },
   ];
 
   const partners = [
@@ -101,21 +101,21 @@ export default async function LandingPage() {
           <div className="container px-6 relative z-10">
             <div className="max-w-2xl space-y-6 md:space-y-8 animate-in fade-in slide-in-from-left-10 duration-1000">
               <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-accent leading-[1] md:leading-[0.9] tracking-tighter">
-                Small Actions,<br />
-                <span className="text-primary">Big Impact</span>
+                Aksi Kecil,<br />
+                <span className="text-primary">Dampak Besar</span>
               </h1>
               <p className="text-base sm:text-lg md:text-xl text-accent/90 max-w-[75%] md:max-w-[50%] leading-relaxed font-bold sm:font-medium">
                 Setiap langkah kecil yang Anda ambil hari ini menciptakan efek riak, mendorong perubahan demi masa depan alam Indonesia yang lebih baik.
               </p>
               <div className="flex flex-wrap gap-3 md:gap-4 pt-2 md:pt-4">
-                <Link href="/register">
+                <Link href="/tentang">
                   <Button size="lg" className="rounded-full bg-primary hover:bg-primary/90 px-8 md:px-10 h-12 md:h-14 text-base md:text-lg font-bold shadow-xl shadow-primary/20">
-                    Our approach
+                    Pendekatan Kami
                   </Button>
                 </Link>
                 <Link href="/register">
                   <Button size="lg" variant="outline" className="rounded-full border-accent/20 text-accent hover:bg-accent hover:text-white px-8 md:px-10 h-12 md:h-14 text-base md:text-lg font-bold backdrop-blur-md">
-                    Join Movement
+                    Gabung Gerakan
                   </Button>
                 </Link>
               </div>
@@ -125,9 +125,9 @@ export default async function LandingPage() {
           <div className="container px-6 mt-12 md:mt-16 pb-8 relative z-10 hidden sm:block">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
               {[
-                { title: 'Coastal Care', desc: 'Melindungi garis pantai dan ekosistem maritim.', img: images.highlight_1.url, hint: images.highlight_1.hint },
-                { title: 'Green Living', desc: 'Implementasi gaya hidup berkelanjutan.', img: images.highlight_2.url, hint: images.highlight_2.hint },
-                { title: 'Climate Action', desc: 'Inisiatif mitigasi dampak perubahan iklim.', img: images.highlight_3.url, hint: images.highlight_3.hint }
+                { title: 'Kepedulian Pesisir', desc: 'Melindungi garis pantai dan ekosistem maritim.', img: images.highlight_1.url, hint: images.highlight_1.hint },
+                { title: 'Gaya Hidup Hijau', desc: 'Implementasi gaya hidup berkelanjutan sehari-hari.', img: images.highlight_2.url, hint: images.highlight_2.hint },
+                { title: 'Aksi Iklim', desc: 'Inisiatif mitigasi dampak perubahan iklim nyata.', img: images.highlight_3.url, hint: images.highlight_3.hint }
               ].map((card, i) => (
                 <Card key={i} className={cn(
                   "organic-card overflow-hidden hover:scale-105 transition-all duration-500 border-none shadow-2xl",
@@ -168,7 +168,7 @@ export default async function LandingPage() {
             <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
               <div className="space-y-6 md:space-y-8 text-center md:text-left">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-[10px] md:text-xs font-bold uppercase tracking-widest">
-                  <Sparkles size={14} /> Leading the innovation
+                  <Sparkles size={14} /> Memimpin Inovasi
                 </div>
                 <h2 className="text-3xl sm:text-4xl md:text-6xl font-black leading-[1.1] md:leading-[0.9] tracking-tighter">Memandu Arah<br /><span className="text-primary">Perubahan Ekologis</span></h2>
                 <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
@@ -188,8 +188,8 @@ export default async function LandingPage() {
                     </div>
                   ))}
                 </div>
-                <Button variant="outline" className="rounded-full border-primary text-primary hover:bg-primary hover:text-white px-8 h-12 font-bold group">
-                  Pelajari lebih lanjut <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                <Button asChild variant="outline" className="rounded-full border-primary text-primary hover:bg-primary hover:text-white px-8 h-12 font-bold group">
+                  <Link href="/tentang">Pelajari lebih lanjut <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" /></Link>
                 </Button>
               </div>
               <div className="relative px-6 md:px-0 mt-8 md:mt-0">
@@ -210,10 +210,12 @@ export default async function LandingPage() {
           <div className="container px-6 relative z-10">
             <div className="flex flex-col md:flex-row justify-between items-center md:items-end mb-12 md:mb-16 gap-6 text-center md:text-left">
               <div className="max-w-xl space-y-4">
-                <Badge className="bg-primary/20 text-primary border-none font-bold px-4 py-1">Our Programs</Badge>
+                <Badge className="bg-primary/20 text-primary border-none font-bold px-4 py-1">Program Kami</Badge>
                 <h2 className="text-3xl md:text-5xl font-black tracking-tighter leading-tight">Inisiatif Unggulan untuk<br />Masa Depan Hijau</h2>
               </div>
-              <Button variant="link" className="text-white font-black uppercase tracking-widest p-0 h-auto hover:text-primary transition-colors">Lihat semua <ArrowRight className="ml-2 h-4 w-4" /></Button>
+              <Button asChild variant="link" className="text-white font-black uppercase tracking-widest p-0 h-auto hover:text-primary transition-colors">
+                <Link href="/programs">Lihat semua <ArrowRight className="ml-2 h-4 w-4" /></Link>
+              </Button>
             </div>
 
             <InitiativesCarousel initiatives={initiatives} />
@@ -225,10 +227,10 @@ export default async function LandingPage() {
           <div className="container px-6">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
               {[
-                { label: 'Anggota', value: '630+', icon: Users },
+                { label: 'Anggota Terdaftar', value: '630+', icon: Users },
                 { label: 'Pohon Ditanam', value: '5k+', icon: Sprout },
                 { label: 'Petani Binaan', value: '160', icon: Target },
-                { label: 'Wilayah Hutan Lindung Dijaga', value: '2', icon: TreeDeciduous }
+                { label: 'Hutan Lindung Dijaga', value: '2', icon: TreeDeciduous }
               ].map((stat, i) => (
                 <div key={i} className="text-center space-y-2 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] bg-muted/30 hover:bg-primary/5 transition-colors">
                   <div className="mx-auto w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-3 md:mb-4">
@@ -273,11 +275,11 @@ export default async function LandingPage() {
         <section className="py-16 md:py-24 bg-nature-pattern">
           <div className="container px-6 text-center space-y-8 md:space-y-12">
             <div className="max-w-2xl mx-auto space-y-4">
-              <h2 className="text-3xl md:text-5xl font-black tracking-tighter">Fuel the Mission</h2>
+              <h2 className="text-3xl md:text-5xl font-black tracking-tighter">Dukung Misi Kami</h2>
               <p className="text-muted-foreground text-base md:text-xl leading-relaxed">Lindungi apa yang paling berharga bagi kita semua: udara, air, dan lanskap yang menopang kehidupan di Bumi Indonesia.</p>
             </div>
             <div className="flex flex-wrap justify-center gap-3 md:gap-4">
-              {['Rp 50k', 'Rp 100k', 'Rp 250k', 'Rp 500k', 'Custom'].map(amount => (
+              {['Rp 50rb', 'Rp 100k', 'Rp 250rb', 'Rp 500rb', 'Kustom'].map(amount => (
                 <Button key={amount} variant="outline" className="rounded-full px-6 md:px-8 h-12 md:h-14 font-black hover:border-primary hover:text-primary transition-all text-base md:text-lg">
                   {amount}
                 </Button>

@@ -15,33 +15,33 @@ export default function Footer() {
                             <Image src="/logo.png" alt="Garda Lestari Logo" width={160} height={42} className="h-10 w-auto" />
                         </Link>
                         <p className="text-sm font-medium text-accent/70 leading-relaxed">
-                            Wadah bagi pemuda Indonesia untuk inovasi di sektor agro-maritim dan kehutanan. Bersama kita jaga kelestarian alam nusantara.
+                            Wadah bagi pemuda Indonesia untuk berinovasi di sektor agro-maritim dan kehutanan. Bersama kita jaga kelestarian alam nusantara untuk masa depan.
                         </p>
                     </div>
 
                     {/* Quick Links 1 */}
                     <div className="space-y-6">
-                        <h4 className="font-bold text-xl uppercase tracking-tighter">About</h4>
+                        <h4 className="font-bold text-xl uppercase tracking-tighter">Tentang</h4>
                         <nav className="flex flex-col gap-3 text-sm font-medium text-accent/60">
-                            <Link href="/tentang" className="hover:text-primary transition-colors">Who We Are</Link>
-                            <Link href="/tentang" className="hover:text-primary transition-colors">Our Story</Link>
-                            <Link href="/gallery" className="hover:text-primary transition-colors">Gallery</Link>
+                            <Link href="/tentang" className="hover:text-primary transition-colors">Siapa Kami</Link>
+                            <Link href="/tentang" className="hover:text-primary transition-colors">Visi & Misi</Link>
+                            <Link href="/gallery" className="hover:text-primary transition-colors">Galeri Aksi</Link>
                         </nav>
                     </div>
 
                     {/* Quick Links 2 */}
                     <div className="space-y-6">
-                        <h4 className="font-bold text-xl uppercase tracking-tighter">Service</h4>
+                        <h4 className="font-bold text-xl uppercase tracking-tighter">Layanan</h4>
                         <nav className="flex flex-col gap-3 text-sm font-medium text-accent/60">
-                            <Link href="/programs" className="hover:text-primary transition-colors">Nature</Link>
-                            <Link href="/donate" className="hover:text-primary transition-colors">Donation</Link>
-                            <Link href="/action" className="hover:text-primary transition-colors">Action</Link>
+                            <Link href="/programs" className="hover:text-primary transition-colors">Program Alam</Link>
+                            <Link href="/points" className="hover:text-primary transition-colors">Poin Hijau</Link>
+                            <Link href="/events" className="hover:text-primary transition-colors">Aksi Nyata</Link>
                         </nav>
                     </div>
 
                     {/* Contact Info */}
                     <div className="space-y-6">
-                        <h4 className="font-bold text-xl uppercase tracking-tighter">Contact Info</h4>
+                        <h4 className="font-bold text-xl uppercase tracking-tighter">Kontak Kami</h4>
                         <ul className="space-y-4 text-sm font-medium text-accent/60">
                             <li className="flex items-start gap-3">
                                 <MapPin size={18} className="text-primary shrink-0" />
@@ -60,7 +60,7 @@ export default function Footer() {
                 </div>
 
                 <div className="mt-20 pt-8 border-t border-accent/10 flex flex-col md:flex-row justify-between items-center gap-6">
-                    <p className="text-xs font-bold text-accent/40 uppercase tracking-widest">&copy; {new Date().getFullYear()} Garda Muda Lestari. All rights reserved.</p>
+                    <p className="text-xs font-bold text-accent/40 uppercase tracking-widest">&copy; {new Date().getFullYear()} Garda Muda Lestari. Hak Cipta Dilindungi.</p>
                     <div className="flex items-center gap-4">
                         {[Instagram, Linkedin, Facebook, Twitter, Globe].map((Icon, i) => (
                             <Link key={i} href="#" className="w-10 h-10 rounded-full border border-accent/10 flex items-center justify-center hover:bg-primary hover:text-white hover:border-primary transition-all">

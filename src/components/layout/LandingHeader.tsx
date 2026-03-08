@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -11,11 +10,11 @@ import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle 
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { href: '/', label: 'Home' },
-  { href: '/tentang', label: 'About Us' },
-  { href: '/programs', label: 'Features' },
-  { href: '/events', label: 'Our Work' },
-  { href: '/berita', label: 'Spotlight' },
+  { href: '/', label: 'Beranda' },
+  { href: '/tentang', label: 'Tentang Kami' },
+  { href: '/programs', label: 'Program' },
+  { href: '/events', label: 'Aksi Kami' },
+  { href: '/berita', label: 'Sorotan' },
 ];
 
 export default function LandingHeader() {
@@ -55,7 +54,7 @@ export default function LandingHeader() {
             />
           </Link>
           
-          {/* Desktop Navigation (Hidden on Tablet & Mobile) */}
+          {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-8 xl:gap-10">
               {navItems.map(item => (
                    <Link 
@@ -72,18 +71,18 @@ export default function LandingHeader() {
           {/* Actions */}
           <div className="flex items-center gap-2 md:gap-4">
             <Button variant="secondary" className="hidden sm:flex rounded-full bg-[#E8F0E5] text-accent hover:bg-primary hover:text-white px-6 md:px-8 h-10 md:h-11 font-bold uppercase tracking-widest text-[10px] md:text-xs">
-              Donate
+              Donasi
             </Button>
             
             {loading ? (
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
             ) : user ? (
               <Button asChild className="rounded-full px-6 md:px-8 font-bold uppercase tracking-widest text-[10px] md:text-xs h-10 md:h-11 shadow-lg shadow-primary/20">
-                <Link href="/feed">Join Us</Link>
+                <Link href="/feed">Masuk App</Link>
               </Button>
             ) : (
               <Button asChild className="rounded-full bg-primary hover:bg-primary/90 px-6 md:px-8 font-bold uppercase tracking-widest text-[10px] md:text-xs h-10 md:h-11 shadow-lg shadow-primary/20">
-                <Link href="/register">Join Us</Link>
+                <Link href="/register">Gabung Kami</Link>
               </Button>
             )}
 
@@ -107,7 +106,7 @@ export default function LandingHeader() {
                           </SheetClose>
                        ))}
                        <div className="flex flex-col w-full gap-4 pt-4 px-6 sm:hidden">
-                          <Button variant="secondary" className="w-full rounded-full h-12 font-bold uppercase tracking-widest text-xs">Donate</Button>
+                          <Button variant="secondary" className="w-full rounded-full h-12 font-bold uppercase tracking-widest text-xs">Donasi Sekarang</Button>
                        </div>
                   </nav>
               </SheetContent>
