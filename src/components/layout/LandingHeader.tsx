@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -50,7 +51,7 @@ export default function LandingHeader() {
               alt="Garda Lestari Logo" 
               width={140} 
               height={40} 
-              className={cn("h-8 md:h-10 w-auto transition-all", !scrolled && "brightness-0 invert")} 
+              className="h-8 md:h-10 w-auto transition-all" 
             />
           </Link>
           
@@ -60,10 +61,7 @@ export default function LandingHeader() {
                    <Link 
                     key={item.href} 
                     href={item.href} 
-                    className={cn(
-                      "text-xs xl:text-sm font-bold uppercase tracking-widest transition-all relative group",
-                      scrolled ? "text-accent" : "text-white hover:text-primary"
-                    )}
+                    className="text-xs xl:text-sm font-bold uppercase tracking-widest transition-all relative group text-accent hover:text-primary"
                    >
                     {item.label}
                     <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
@@ -92,7 +90,7 @@ export default function LandingHeader() {
             {/* Mobile/Tablet Menu Trigger */}
             <Sheet>
               <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className={cn("lg:hidden rounded-full h-10 w-10 md:h-11 md:w-11", !scrolled && "text-white")}>
+                  <Button variant="ghost" size="icon" className="lg:hidden rounded-full h-10 w-10 md:h-11 md:w-11 text-accent">
                       <Menu className="h-5 w-5 md:h-6 md:w-6" />
                   </Button>
               </SheetTrigger>
