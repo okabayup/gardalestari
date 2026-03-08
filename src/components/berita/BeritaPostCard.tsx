@@ -32,7 +32,7 @@ export default function BeritaPostCard({ slug, title, excerpt, imageUrl, imageHi
   }, [date]);
   
   return (
-    <Card className="organic-card overflow-hidden flex flex-col group border-none shadow-xl shadow-black/5 hover:shadow-2xl transition-all duration-500 bg-white">
+    <Card className="organic-card overflow-hidden flex flex-col group border-none shadow-xl shadow-black/5 hover:shadow-2xl transition-all duration-500 bg-white h-full">
       <Link href={`/berita/${slug}`} className="block">
         <div className="relative aspect-[16/10] w-full overflow-hidden">
           <Image

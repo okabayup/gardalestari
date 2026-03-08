@@ -10,7 +10,8 @@ import {
   Users, 
   Target, 
   CheckCircle,
-  Sparkles
+  Sparkles,
+  Newspaper
 } from 'lucide-react';
 import LandingHeader from '@/components/layout/LandingHeader';
 import Footer from '@/components/landing/Footer';
@@ -19,6 +20,8 @@ import { cn } from '@/lib/utils';
 import images from './lib/placeholder-images.json';
 import LeadGallerySlider from '@/components/landing/LeadGallerySlider';
 import InitiativesCarousel from '@/components/landing/InitiativesCarousel';
+import NewsCarousel from '@/components/landing/NewsCarousel';
+import SocialMediaSection from '@/components/landing/SocialMediaSection';
 import fs from 'fs';
 import path from 'path';
 
@@ -46,7 +49,7 @@ export const metadata = {
 
 export default async function LandingPage() {
   const allPosts = await getBeritaPosts('artikel', false);
-  const spotlightPosts = allPosts.slice(0, 4);
+  const spotlightPosts = allPosts.slice(0, 6);
 
   // Dynamic Gallery Logic
   const galeriDir = path.join(process.cwd(), 'public/galeri');
@@ -314,32 +317,27 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        {/* SPOTLIGHT STORIES */}
+        {/* SPOTLIGHT STORIES SLIDER */}
         <section className="py-16 md:py-24 bg-muted/20">
           <div className="container px-6 space-y-8 md:space-y-12">
             <div className="flex flex-col md:flex-row justify-between items-center md:items-end gap-4 text-center md:text-left">
-              <h2 className="text-3xl md:text-4xl font-black tracking-tighter">Sorotan Cerita:<br />Aksi yang Berdampak</h2>
-              <Button asChild variant="ghost" className="font-bold">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-[10px] md:text-xs font-bold uppercase tracking-widest">
+                  <Newspaper size={14} /> Kabar Terbaru
+                </div>
+                <h2 className="text-3xl md:text-4xl font-black tracking-tighter text-accent">Aksi yang Berdampak</h2>
+              </div>
+              <Button asChild variant="ghost" className="font-bold hover:text-primary">
                 <Link href="/berita">Semua Berita <ArrowRight className="ml-2 h-4 w-4" /></Link>
               </Button>
             </div>
-            <div className="grid sm:grid-cols-2 gap-6 md:gap-8">
-              {spotlightPosts.map((post, i) => (
-                <Link href={`/berita/${post.slug}`} key={i} className="group relative h-72 md:h-96 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-lg border-4 border-white">
-                  <Image src={post.imageUrl} alt={post.title} fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 text-white space-y-2">
-                    <h3 className="text-xl md:text-3xl font-bold leading-tight line-clamp-2">{post.title}</h3>
-                    <p className="text-[9px] md:text-[10px] opacity-70 font-black uppercase tracking-widest">{new Date(post.date).toLocaleDateString('id-ID', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
-                  </div>
-                  <div className="absolute top-6 md:top-8 right-6 md:right-8 w-10 h-10 md:w-12 md:h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 transform group-hover:-translate-y-2">
-                    <ArrowRight className="text-white -rotate-45" size={20} />
-                  </div>
-                </Link>
-              ))}
-            </div>
+            
+            <NewsCarousel posts={spotlightPosts} />
           </div>
         </section>
+
+        {/* SOCIAL MEDIA SECTION */}
+        <SocialMediaSection />
 
         {/* DONATION BANNER */}
         <section className="py-16 md:py-24 bg-nature-pattern">
