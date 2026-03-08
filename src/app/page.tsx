@@ -91,7 +91,7 @@ export default async function LandingPage() {
                 Small Actions,<br />
                 <span className="text-primary">Big Impact</span>
               </h1>
-              <p className="text-base sm:text-lg md:text-xl text-accent/90 max-w-xl leading-relaxed font-bold sm:font-medium">
+              <p className="text-base sm:text-lg md:text-xl text-accent/90 max-w-[75%] md:max-w-[50%] leading-relaxed font-bold sm:font-medium">
                 Setiap langkah kecil yang Anda ambil hari ini menciptakan efek riak, mendorong perubahan demi masa depan alam Indonesia yang lebih baik.
               </p>
               <div className="flex flex-wrap gap-3 md:gap-4 pt-2 md:pt-4">
