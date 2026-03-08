@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, Shield, Pencil, Loader2, Award, PlusCircle, Coins, Target, History, Settings, UserCircle, IdCard, AlertTriangle } from 'lucide-react';
+import { LogOut, Shield, Pencil, Loader2, Award, PlusCircle, Coins, Target, History, Settings, UserCircle, IdCard, AlertTriangle, Sprout, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import EditProfileModal from '@/components/profile/EditProfileModal';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,6 +15,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { VerifiedBadge } from '@/components/members/VerifiedBadge';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import VerificationFlow from '@/components/auth/VerificationFlow';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 export default function ProfileMePage() {
   const { user, signOut, loading: authLoading } = useAuth();
@@ -181,8 +183,4 @@ export default function ProfileMePage() {
         />
     </MainLayout>
   );
-}
-
-function Badge({ className, variant, ...props }: any) {
-    return <div className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors", className)} {...props} />
 }
