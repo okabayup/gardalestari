@@ -80,5 +80,5 @@ body {
 }
 
 .organic-card {
-  @apply rounded-[3rem] shadow-xl border-none bg-white/80 backdrop-blur-md;
+  @apply rounded-2xl md:rounded-[3rem] shadow-xl border-none bg-white/80 backdrop-blur-md;
 }
