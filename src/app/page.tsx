@@ -91,7 +91,7 @@ export default async function LandingPage() {
         {/* HERO SECTION */}
         <section 
           className={cn(
-            "relative min-h-[60vh] md:min-h-[75vh] flex flex-col justify-center overflow-hidden pt-12 md:pt-20 bg-white",
+            "relative min-h-[60vh] md:min-h-[75vh] flex flex-col justify-center overflow-hidden pt-12 md:pt-[85px] bg-white",
             "bg-no-repeat bg-[size:100%] md:bg-[size:70%] bg-top md:bg-right-top"
           )}
           style={{ backgroundImage: "url('/hero.png')" }}
