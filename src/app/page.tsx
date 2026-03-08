@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -51,7 +52,8 @@ export default async function LandingPage() {
     { name: 'AWS Startup', url: 'https://preditrix.ai/wp-content/uploads/2025/04/aws-n.png' },
     { name: 'Google For Startup', url: 'https://recogify.com/images/googleforstartups.png' },
     { name: 'Nvidia Inception', url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS1Ij2VDZaMa9SRQyjHm280m-Taa3zcx5jIQg&s' },
-    { name: 'BPDLH', url: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjZuiY_nP0wEpfqCICn1DBEdqcacjVwW6eURkrUfy8fuwzEihDVw8fl8OGjTo99lsEzJN7wX5F8DS1KWFY0WLMQTatG8wZSa9QLEsucF3KUI8UAoSCQYEDB3BwM-eD_gfNe6VO1-iHN0vFw6jqfSO_vUuIlv07FGf8B2IuyJEtia0cwIlaEEzV8abNHCA/s2127/Logo%20Badan%20Pengelola%20Dana%20Lingkungan%20Hidup%20(BPDLH).png' },
+    { name: 'BPDLH', url: 'https://webapi-bpdlh.kemenkeu.go.id/storage/settings/logo/2025/10/23/SCMH26WlMVMfbfEYUEgnnVBxCLQReyA4TANC701I.png' },
+    { name: 'Konservasi Indonesia', url: 'https://sourceup-api-cdn-endpoint-prod.azureedge.net/media/YKI+LOGO-20240902130143971.png' },
     { name: 'BRIN', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Main_Logo_of_National_Research_and_Innovation_Agency_of_Indonesia.svg/500px-Main_Logo_of_National_Research_and_Innovation_Agency_of_Indonesia.svg.png' },
     { name: 'Kemenhut', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Logo_Kementerian_Kehutanan.svg/1280px-Logo_Kementerian_Kehutanan.svg.png' },
     { name: 'JALA', url: 'https://strapi.jala.tech/uploads/jala_logo_6298181eb0.png' },
@@ -63,10 +65,10 @@ export default async function LandingPage() {
       <LandingHeader />
 
       <main className="flex-1">
-        {/* HERO SECTION - Optimized Spacing */}
+        {/* HERO SECTION - Reduced Spacing by 50% */}
         <section 
           className={cn(
-            "relative min-h-[70vh] md:min-h-[85vh] flex flex-col justify-center overflow-hidden pt-12 md:pt-20 bg-white",
+            "relative min-h-[60vh] md:min-h-[75vh] flex flex-col justify-center overflow-hidden pt-12 md:pt-20 bg-white",
             "bg-no-repeat bg-[size:100%] md:bg-[size:70%] bg-top md:bg-right-top"
           )}
           style={{ backgroundImage: "url('/hero.png')" }}
@@ -94,7 +96,7 @@ export default async function LandingPage() {
             </div>
           </div>
 
-          {/* HIGHLIGHT CARDS - Adjusted spacing */}
+          {/* HIGHLIGHT CARDS - Preserved layout */}
           <div className="container px-6 mt-12 md:mt-16 pb-8 relative z-10 hidden sm:block">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
               {[
@@ -121,7 +123,7 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        {/* PARTNERS SECTION */}
+        {/* PARTNERS SECTION - Updated with data from okabayup.com */}
         <section className="py-8 md:py-12 bg-muted/30 border-y">
           <div className="container px-6">
             <p className="text-center text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-6 md:mb-8">Didukung oleh Institusi & Teknologi Terdepan</p>
@@ -153,7 +155,7 @@ export default async function LandingPage() {
                     { title: 'Pemberdayaan Pemuda', desc: 'Melatih pemimpin masa depan untuk aksi nyata.' }
                   ].map((item, i) => (
                     <div key={i} className="flex gap-4 p-4 rounded-3xl border border-border/50 hover:bg-muted/30 transition-colors">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0"><Check size={20} /></div>
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0"><CheckCircle size={20} /></div>
                       <div>
                         <h4 className="font-bold text-sm">{item.title}</h4>
                         <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
