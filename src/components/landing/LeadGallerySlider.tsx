@@ -44,8 +44,8 @@ export default function LeadGallerySlider({ images }: { images: GalleryImage[] }
                   className="object-cover" 
                 />
                 {/* Description Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
-                    <p className="text-white font-black text-sm md:text-lg uppercase tracking-wider animate-in fade-in slide-in-from-bottom-2 duration-700">
+                <div className="absolute bottom-0 left-0 right-0 pb-16 md:pb-20 px-6 md:px-10 pt-10 bg-gradient-to-t from-black/80 via-black/20 to-transparent">
+                    <p className="text-white font-black text-sm md:text-lg tracking-wider animate-in fade-in slide-in-from-bottom-2 duration-700">
                         {image.description}
                     </p>
                 </div>
