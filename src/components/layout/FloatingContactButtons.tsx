@@ -7,6 +7,9 @@ import { Phone, MessageCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
   DialogTrigger,
 } from '@/components/ui/dialog';
 import Link from 'next/link';
@@ -55,6 +58,12 @@ export default function FloatingContactButtons() {
           </Button>
         </DialogTrigger>
         <DialogContent className="max-w-none w-screen h-screen p-0 border-none bg-black shadow-none flex flex-col overflow-hidden rounded-none m-0 [&>button]:text-white [&>button]:h-10 [&>button]:w-10 [&>button]:bg-white/10 [&>button]:backdrop-blur-md [&>button]:rounded-full [&>button]:top-6 [&>button]:right-6">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Asisten Suara Lestari</DialogTitle>
+            <DialogDescription>
+              Gunakan asisten suara kami untuk mendapatkan bantuan interaktif mengenai Garda Lestari.
+            </DialogDescription>
+          </DialogHeader>
           <div className="flex-1 w-full h-full relative bg-black">
             <iframe
               src={webcallUrl}
