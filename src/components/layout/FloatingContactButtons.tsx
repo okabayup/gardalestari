@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Phone, MessageCircle } from 'lucide-react';
 import {
@@ -15,8 +15,15 @@ import { cn } from '@/lib/utils';
 
 export default function FloatingContactButtons() {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
   const whatsappNumber = '6285144904161';
   const webcallUrl = 'https://asisten-lestari-webcall-625063745466.asia-southeast1.run.app';
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
 
   const hasBottomNav = !pathname.startsWith('/panel') && 
     (pathname.startsWith('/feed') || 
