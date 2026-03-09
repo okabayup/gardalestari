@@ -81,7 +81,11 @@ export default function FloatingContactButtons() {
         className="h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-2xl bg-[#25D366] hover:bg-[#20ba56] text-white transition-transform hover:scale-110 active:scale-95"
         title="WhatsApp Asisten Lestari"
       >
-        <Link href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer">
+        <Link 
+          href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent('Halo Asisten Lestari!')}`} 
+          target="_blank" 
+          rel="noopener noreferrer"
+        >
           <MessageCircle className="h-6 w-6 sm:h-7 sm:w-7" />
         </Link>
       </Button>
