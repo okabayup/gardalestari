@@ -6,8 +6,6 @@ import { Phone, MessageCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
 import Link from 'next/link';
@@ -48,11 +46,8 @@ export default function FloatingContactButtons() {
             <Phone className="h-5 w-5 sm:h-6 sm:w-6" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-w-[75vw] sm:max-w-[320px] p-0 rounded-[2rem] border-none bg-white shadow-2xl flex flex-col overflow-hidden">
-          <DialogHeader className="p-4 border-b bg-muted/30 shrink-0">
-            <DialogTitle className="text-center font-black uppercase tracking-widest text-primary text-[10px] sm:text-xs">Asisten Suara Lestari</DialogTitle>
-          </DialogHeader>
-          <div className="w-full aspect-[9/16] bg-black relative">
+        <DialogContent className="max-w-[90vw] sm:max-w-[400px] p-0 rounded-[2rem] border-none bg-black shadow-2xl flex flex-col overflow-hidden">
+          <div className="w-full aspect-[9/16] relative bg-black">
             <iframe
               src={webcallUrl}
               className="absolute inset-0 w-full h-full border-none"
