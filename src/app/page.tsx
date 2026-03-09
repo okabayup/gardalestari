@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -187,7 +188,7 @@ export default async function LandingPage() {
                 <Card key={i} className="organic-card overflow-hidden hover:scale-105 transition-all duration-500 border-none shadow-xl">
                   <CardContent className="p-0 flex flex-col items-center text-center h-full">
                     <div className="relative w-full aspect-square sm:aspect-video">
-                      <Image src={card.img} alt={card.title} data-ai-hint={card.hint} fill className="object-cover" />
+                      <Image src={card.img} alt={card.title} data-ai-hint={card.hint} fill className="object-cover" priority={i < 4} />
                     </div>
                     <div className="p-2 sm:p-6 md:p-8 space-y-1 bg-white/90 backdrop-blur-sm w-full flex-1">
                       <h3 className="font-black text-[10px] sm:text-base md:text-xl text-accent leading-tight">{card.title}</h3>

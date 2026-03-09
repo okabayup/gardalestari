@@ -9,7 +9,12 @@ const withPWA = require('next-pwa')({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    unoptimized: true, // Bypass image proxy to fix local asset permission/visibility issues
     remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'gardalestari.org',
+      },
       {
         protocol: 'https',
         hostname: 'picsum.photos',

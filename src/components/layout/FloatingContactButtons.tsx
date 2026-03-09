@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -46,7 +47,7 @@ export default function FloatingContactButtons() {
             <Phone className="h-5 w-5 sm:h-6 sm:w-6" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-w-none w-screen h-screen p-0 border-none bg-black shadow-none flex flex-col overflow-hidden rounded-none">
+        <DialogContent hideClose={true} className="max-w-none w-screen h-screen p-0 border-none bg-black shadow-none flex flex-col overflow-hidden rounded-none m-0">
           <div className="flex-1 w-full h-full relative bg-black">
             <iframe
               src={webcallUrl}
