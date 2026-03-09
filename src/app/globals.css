@@ -82,3 +82,17 @@ body {
 .organic-card {
   @apply rounded-2xl md:rounded-[3rem] shadow-xl border-none bg-white/80 backdrop-blur-md;
 }
+
+/* TikTok Embed Responsiveness Fix */
+.tiktok-embed {
+  margin: 0 auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: unset !important;
+}
+
+.tiktok-embed iframe {
+  width: 100% !important;
+  max-width: 100% !important;
+  border-radius: inherit !important;
+}

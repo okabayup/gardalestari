@@ -15,13 +15,13 @@ import { cn } from '@/lib/utils';
 
 const TikTokEmbed = ({ url, videoId }: { url: string; videoId: string }) => {
   return (
-    <div className="flex justify-center w-full px-2 overflow-hidden">
-      <div className="w-full max-w-[605px] mx-auto">
+    <div className="flex justify-center w-full px-2">
+      <div className="w-full max-w-[605px] mx-auto overflow-hidden rounded-[2rem] shadow-2xl border-4 border-accent/10 bg-black">
         <blockquote
-          className="tiktok-embed rounded-[2rem] overflow-hidden shadow-2xl border-4 border-accent/10 mx-auto"
+          className="tiktok-embed"
           cite={url}
           data-video-id={videoId}
-          style={{ width: '100%', minWidth: 'unset' }}
+          style={{ width: '100%', margin: '0' }}
         >
           <section>
             <a target="_blank" title="@garda.lestari" href="https://www.tiktok.com/@garda.lestari?refer=embed">
@@ -72,11 +72,11 @@ export default function SocialMediaSection() {
           </p>
         </div>
 
-        <div className="max-w-5xl mx-auto px-4">
+        <div className="max-w-5xl mx-auto">
           <Carousel setApi={setApi} opts={{ align: 'center', loop: true }} className="w-full">
             <CarouselContent>
               {tiktokVideos.map((video, i) => (
-                <CarouselItem key={i} className="basis-full md:basis-1/2 lg:basis-1/2">
+                <CarouselItem key={i} className="basis-full md:basis-1/2">
                   <div className="p-1">
                     <TikTokEmbed url={video.url} videoId={video.id} />
                     <div className="mt-6 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary">
