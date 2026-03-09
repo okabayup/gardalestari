@@ -19,7 +19,6 @@ export default function FloatingContactButtons() {
   const whatsappNumber = '6285144904161';
   const webcallUrl = 'https://asisten-lestari-webcall-625063745466.asia-southeast1.run.app';
 
-  // Check if current page has a bottom navigation bar to adjust FAB height
   const hasBottomNav = !pathname.startsWith('/panel') && 
     (pathname.startsWith('/feed') || 
      pathname.startsWith('/members') || 
@@ -36,10 +35,9 @@ export default function FloatingContactButtons() {
 
   return (
     <div className={cn(
-      "fixed right-4 z-50 flex flex-col gap-3 transition-all duration-300 sm:right-8 sm:bottom-8",
-      hasBottomNav ? "bottom-20" : "bottom-6"
+      "fixed right-4 z-50 flex flex-col gap-3 transition-all duration-300 sm:right-8",
+      hasBottomNav ? "bottom-[72px]" : "bottom-6"
     )}>
-      {/* Webcall FAB */}
       <Dialog>
         <DialogTrigger asChild>
           <Button
@@ -50,14 +48,14 @@ export default function FloatingContactButtons() {
             <Phone className="h-5 w-5 sm:h-6 sm:w-6" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-w-[90vw] sm:max-w-sm p-0 overflow-hidden rounded-[2rem] border-none bg-white shadow-2xl">
-          <DialogHeader className="p-4 border-b bg-muted/30">
+        <DialogContent className="max-w-[95vw] sm:max-w-sm p-0 rounded-[2rem] border-none bg-white shadow-2xl flex flex-col overflow-hidden">
+          <DialogHeader className="p-4 border-b bg-muted/30 shrink-0">
             <DialogTitle className="text-center font-black uppercase tracking-widest text-primary text-sm">Asisten Suara Lestari</DialogTitle>
           </DialogHeader>
-          <div className="relative w-full aspect-[9/16] bg-black">
+          <div className="w-full aspect-[9/16] bg-black relative">
             <iframe
               src={webcallUrl}
-              className="w-full h-full border-none"
+              className="absolute inset-0 w-full h-full border-none"
               allow="microphone"
               title="Asisten Lestari Webcall"
             />
@@ -65,7 +63,6 @@ export default function FloatingContactButtons() {
         </DialogContent>
       </Dialog>
 
-      {/* WhatsApp FAB */}
       <Button
         asChild
         size="icon"
