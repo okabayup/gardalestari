@@ -35,7 +35,7 @@ export default function NewsCarousel({ posts }: NewsCarouselProps) {
       <Carousel setApi={setApi} className="w-full" opts={{ align: 'start', loop: false }}>
         <CarouselContent className="-ml-4 md:-ml-6">
           {posts.map((post, i) => (
-            <CarouselItem key={post.slug} className="pl-4 md:pl-6 basis-full sm:basis-1/2 lg:basis-1/3">
+            <CarouselItem key={post.slug || i} className="pl-4 md:pl-6 basis-full sm:basis-1/2 lg:basis-1/3">
               <div className="h-full">
                 <BeritaPostCard {...post} />
               </div>

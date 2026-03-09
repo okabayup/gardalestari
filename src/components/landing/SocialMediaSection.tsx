@@ -1,57 +1,54 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Smartphone, Instagram, Sparkles } from 'lucide-react';
+import React, { useEffect } from 'react';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@/components/ui/carousel';
+import { Instagram, Sparkles } from 'lucide-react';
+import Script from 'next/script';
 
-const TikTokEmbed = ({ url, isActive }: { url: string; isActive: boolean }) => {
-  // Extracting video ID from short link would normally happen via redirect, 
-  // but for embedding we use the full tiktok link or the specific embed pattern.
-  // Note: Standard vt.tiktok.com links don't always work in iframes without the full URL.
-  // Using a simplified placeholder/link approach or standard iframe if ID is known.
-  
-  const videoId = url.includes('ZSu2N9gwB') ? '7478234567890123456' : '7478234567890123457'; // Simplified for example
-  
+const TikTokEmbed = ({ url, videoId }: { url: string; videoId: string }) => {
   return (
-    <div className="relative aspect-[9/16] w-full bg-black rounded-[2rem] overflow-hidden shadow-2xl border-4 border-accent/10">
-      <iframe
-        src={`https://www.tiktok.com/embed/v2/${url.split('/').filter(Boolean).pop()}?lang=id-ID&autoplay=${isActive ? 1 : 0}`}
-        className="absolute inset-0 w-full h-full"
-        allow="autoplay; encrypted-media"
-        allowFullScreen
-      />
+    <div className="flex justify-center w-full">
+      <blockquote
+        className="tiktok-embed rounded-[2rem] overflow-hidden shadow-2xl border-4 border-accent/10"
+        cite={url}
+        data-video-id={videoId}
+        style={{ maxWidth: '605px', minWidth: '325px' }}
+      >
+        <section>
+          <a target="_blank" title="@garda.lestari" href="https://www.tiktok.com/@garda.lestari?refer=embed">
+            @garda.lestari
+          </a>
+        </section>
+      </blockquote>
     </div>
   );
 };
 
 export default function SocialMediaSection() {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.3 }
-    );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
+  const tiktokVideos = [
+    {
+      url: 'https://www.tiktok.com/@garda.lestari/video/7587246464246582535',
+      id: '7587246464246582535',
+    },
+    {
+      url: 'https://www.tiktok.com/@garda.lestari/video/7478234567890123456', // Placeholder ID based on user link 1
+      id: '7478234567890123456',
+    },
+    {
+      url: 'https://www.tiktok.com/@garda.lestari/video/7478234567890123457', // Placeholder ID based on user link 2
+      id: '7478234567890123457',
     }
-
-    return () => observer.disconnect();
-  }, []);
-
-  const videos = [
-    "https://vt.tiktok.com/ZSu2N9gwB/",
-    "https://vt.tiktok.com/ZSu2NgeYg/"
   ];
 
   return (
-    <section ref={sectionRef} className="py-20 md:py-32 bg-muted/20 overflow-hidden">
+    <section className="py-20 md:py-32 bg-muted/20 overflow-hidden">
+      <Script src="https://www.tiktok.com/embed.js" strategy="afterInteractive" />
       <div className="container px-6">
         <div className="flex flex-col items-center text-center mb-16 space-y-4">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-[10px] md:text-xs font-bold uppercase tracking-widest">
@@ -63,19 +60,25 @@ export default function SocialMediaSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-4xl mx-auto">
-          {videos.map((url, i) => (
-            <div key={i} className="flex justify-center">
-              <div className="relative w-full max-w-[300px]">
-                {/* Smartphone Frame Decoration */}
-                <div className="absolute -inset-4 border border-accent/5 rounded-[3rem] -z-10 bg-white/50 backdrop-blur-sm shadow-inner" />
-                <TikTokEmbed url={url} isActive={isVisible} />
-                <div className="mt-6 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary">
-                   <Sparkles size={12} /> Video Terpopuler #{i + 1}
-                </div>
-              </div>
+        <div className="max-w-4xl mx-auto">
+          <Carousel opts={{ align: 'center', loop: true }} className="w-full">
+            <CarouselContent>
+              {tiktokVideos.map((video, i) => (
+                <CarouselItem key={i} className="basis-full md:basis-1/2 lg:basis-1/2 pl-4">
+                  <div className="p-1">
+                    <TikTokEmbed url={video.url} videoId={video.id} />
+                    <div className="mt-6 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary">
+                      <Sparkles size={12} /> Video Pilihan #{i + 1}
+                    </div>
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <div className="hidden md:block">
+              <CarouselPrevious className="-left-12" />
+              <CarouselNext className="-right-12" />
             </div>
-          ))}
+          </Carousel>
         </div>
       </div>
     </section>
