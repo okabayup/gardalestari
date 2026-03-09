@@ -23,6 +23,7 @@ import LeadGallerySlider from '@/components/landing/LeadGallerySlider';
 import InitiativesCarousel from '@/components/landing/InitiativesCarousel';
 import NewsCarousel from '@/components/landing/NewsCarousel';
 import SocialMediaSection from '@/components/landing/SocialMediaSection';
+import StatCounter from '@/components/landing/StatCounter';
 import fs from 'fs';
 import path from 'path';
 
@@ -280,16 +281,18 @@ export default async function LandingPage() {
           <div className="container px-6">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
               {[
-                { label: 'Anggota Terdaftar', value: '630+', icon: Users },
-                { label: 'Pohon Ditanam', value: '5k+', icon: Sprout },
-                { label: 'Petani Binaan', value: '160', icon: Target },
-                { label: 'Hutan Lindung Dijaga', value: '2', icon: TreeDeciduous }
+                { label: 'Anggota Terdaftar', target: 630, suffix: '+', icon: Users },
+                { label: 'Pohon Ditanam', target: 5000, suffix: '+', isK: true, icon: Sprout },
+                { label: 'Petani Binaan', target: 160, suffix: '', icon: Target },
+                { label: 'Hutan Lindung Dijaga', target: 2, suffix: '', icon: TreeDeciduous }
               ].map((stat, i) => (
                 <div key={i} className="text-center space-y-2 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] bg-muted/30 hover:bg-primary/5 transition-colors">
                   <div className="mx-auto w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-3 md:mb-4">
                     <stat.icon size={20} className="md:size-24" />
                   </div>
-                  <p className="text-2xl md:text-4xl font-black tracking-tighter">{stat.value}</p>
+                  <p className="text-2xl md:text-4xl font-black tracking-tighter">
+                    <StatCounter target={stat.target} suffix={stat.suffix} isK={stat.isK} />
+                  </p>
                   <p className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground">{stat.label}</p>
                 </div>
               ))}
