@@ -47,7 +47,7 @@ export default function FloatingContactButtons() {
             <Phone className="h-5 w-5 sm:h-6 sm:w-6" />
           </Button>
         </DialogTrigger>
-        <DialogContent hideClose={true} className="max-w-none w-screen h-screen p-0 border-none bg-black shadow-none flex flex-col overflow-hidden rounded-none m-0">
+        <DialogContent className="max-w-none w-screen h-screen p-0 border-none bg-black shadow-none flex flex-col overflow-hidden rounded-none m-0 [&>button]:text-white [&>button]:h-10 [&>button]:w-10 [&>button]:bg-white/10 [&>button]:backdrop-blur-md [&>button]:rounded-full [&>button]:top-6 [&>button]:right-6">
           <div className="flex-1 w-full h-full relative bg-black">
             <iframe
               src={webcallUrl}
