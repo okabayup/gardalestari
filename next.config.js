@@ -17,6 +17,10 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'lalokalabs.co',
+      },
+      {
+        protocol: 'https',
         hostname: 'picsum.photos',
       },
       {
