@@ -48,9 +48,9 @@ export default function FloatingContactButtons() {
             <Phone className="h-5 w-5 sm:h-6 sm:w-6" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-w-[95vw] sm:max-w-sm p-0 rounded-[2rem] border-none bg-white shadow-2xl flex flex-col overflow-hidden">
+        <DialogContent className="max-w-[75vw] sm:max-w-[320px] p-0 rounded-[2rem] border-none bg-white shadow-2xl flex flex-col overflow-hidden">
           <DialogHeader className="p-4 border-b bg-muted/30 shrink-0">
-            <DialogTitle className="text-center font-black uppercase tracking-widest text-primary text-sm">Asisten Suara Lestari</DialogTitle>
+            <DialogTitle className="text-center font-black uppercase tracking-widest text-primary text-[10px] sm:text-xs">Asisten Suara Lestari</DialogTitle>
           </DialogHeader>
           <div className="w-full aspect-[9/16] bg-black relative">
             <iframe
