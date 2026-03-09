@@ -1,4 +1,3 @@
-
 import { MetadataRoute } from 'next';
 import { getBeritaPosts } from '@/app/actions/berita';
 import { getPrograms } from '@/app/actions/programs';
@@ -21,8 +20,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/kebijakan-privasi',
     '/ketentuan-layanan',
     '/hapus-data',
-    '/login',
-    '/register'
   ].map((route) => ({
     url: `${BASE_URL}${route}`,
     lastModified: new Date().toISOString(),
@@ -30,35 +27,40 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: route === '/' ? 1 : 0.8,
   }));
 
-  // Dynamic routes for blog posts and videos
-  const posts = await getBeritaPosts();
-  const contentRoutes = posts.map((post) => ({
-    url: `${BASE_URL}/${post.type === 'video' ? 'video' : 'berita'}/${post.slug}`,
-    lastModified: new Date(post.date).toISOString(),
-    changeFrequency: 'weekly' as const,
-    priority: 0.7,
-  }));
-  
-  // Dynamic routes for programs
-  const programs = await getPrograms();
-  const programRoutes = programs.map((program) => ({
-    url: `${BASE_URL}/programs/${program.id}`,
-    lastModified: new Date(program.endDate || program.startDate).toISOString(),
-    changeFrequency: 'weekly' as const,
-    priority: 0.7,
-  }));
+  // Fetch dynamic data for sitemap
+  let contentRoutes: MetadataRoute.Sitemap = [];
+  let programRoutes: MetadataRoute.Sitemap = [];
+  let eventRoutes: MetadataRoute.Sitemap = [];
 
-  // Dynamic routes for events
-  const events = await getEvents();
-  const eventRoutes = events.map((event) => ({
-    url: `${BASE_URL}/events/${event.id}`,
-    lastModified: new Date(event.startDate).toISOString(),
-    changeFrequency: 'weekly' as const,
-    priority: 0.7,
-  }));
+  try {
+    const posts = await getBeritaPosts();
+    contentRoutes = posts.map((post) => ({
+      url: `${BASE_URL}/${post.type === 'video' ? 'video' : 'berita'}/${post.slug}`,
+      lastModified: new Date(post.date).toISOString(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    }));
+  } catch (e) { console.error('Sitemap error: berita', e); }
 
-  // Note: Internal routes like /feed, /profile, /panel/* etc. are intentionally excluded
-  // as they should not be indexed by search engines.
+  try {
+    const programs = await getPrograms();
+    programRoutes = programs.map((program) => ({
+      url: `${BASE_URL}/programs/${program.id}`,
+      lastModified: new Date(program.endDate || program.startDate).toISOString(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    }));
+  } catch (e) { console.error('Sitemap error: programs', e); }
+
+  try {
+    const events = await getEvents();
+    eventRoutes = events.map((event) => ({
+      url: `${BASE_URL}/events/${event.id}`,
+      lastModified: new Date(event.startDate).toISOString(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    }));
+  } catch (e) { console.error('Sitemap error: events', e); }
 
   return [...staticRoutes, ...contentRoutes, ...programRoutes, ...eventRoutes];
 }
