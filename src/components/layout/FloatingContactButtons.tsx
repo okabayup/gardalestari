@@ -50,11 +50,11 @@ export default function FloatingContactButtons() {
             <Phone className="h-5 w-5 sm:h-6 sm:w-6" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-w-[95vw] sm:max-w-md p-0 overflow-hidden rounded-[2rem] border-none bg-white shadow-2xl">
+        <DialogContent className="max-w-[95vw] sm:max-w-3xl p-0 overflow-hidden rounded-[2rem] border-none bg-white shadow-2xl">
           <DialogHeader className="p-4 border-b bg-muted/30">
             <DialogTitle className="text-center font-black uppercase tracking-widest text-primary text-sm">Asisten Suara Lestari</DialogTitle>
           </DialogHeader>
-          <div className="relative w-full aspect-[9/16] max-h-[70vh] bg-black">
+          <div className="relative w-full aspect-video bg-black">
             <iframe
               src={webcallUrl}
               className="w-full h-full border-none"
