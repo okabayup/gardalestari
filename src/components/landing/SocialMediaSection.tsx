@@ -15,19 +15,21 @@ import { cn } from '@/lib/utils';
 
 const TikTokEmbed = ({ url, videoId }: { url: string; videoId: string }) => {
   return (
-    <div className="flex justify-center w-full px-2">
-      <blockquote
-        className="tiktok-embed rounded-[2rem] overflow-hidden shadow-2xl border-4 border-accent/10"
-        cite={url}
-        data-video-id={videoId}
-        style={{ maxWidth: '605px', minWidth: '325px' }}
-      >
-        <section>
-          <a target="_blank" title="@garda.lestari" href="https://www.tiktok.com/@garda.lestari?refer=embed">
-            @garda.lestari
-          </a>
-        </section>
-      </blockquote>
+    <div className="flex justify-center w-full px-2 overflow-hidden">
+      <div className="w-full max-w-[605px] mx-auto">
+        <blockquote
+          className="tiktok-embed rounded-[2rem] overflow-hidden shadow-2xl border-4 border-accent/10 mx-auto"
+          cite={url}
+          data-video-id={videoId}
+          style={{ width: '100%', minWidth: 'unset' }}
+        >
+          <section>
+            <a target="_blank" title="@garda.lestari" href="https://www.tiktok.com/@garda.lestari?refer=embed">
+              @garda.lestari
+            </a>
+          </section>
+        </blockquote>
+      </div>
     </div>
   );
 };
