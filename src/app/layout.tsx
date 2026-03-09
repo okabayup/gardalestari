@@ -51,6 +51,33 @@ function ErrorWatcher() {
   return null;
 }
 
+/**
+ * ImageErrorWatcher: Monitoring global untuk mendeteksi kegagalan pemuatan gambar (404).
+ * Hasil akan dicetak ke konsol browser untuk proses debugging deploy.
+ */
+function ImageErrorWatcher() {
+  useEffect(() => {
+    const handleImageError = (event: ErrorEvent) => {
+      const target = event.target;
+      if (target instanceof HTMLImageElement) {
+        console.error('❌ [Image Debug] Gagal memuat gambar:', {
+          src: target.src,
+          alt: target.alt,
+          origin: window.location.origin,
+          page: window.location.pathname,
+          timestamp: new Date().toISOString()
+        });
+      }
+    };
+
+    // Gunakan capture phase agar event ditangkap sebelum bubbling
+    window.addEventListener('error', handleImageError, true);
+    return () => window.removeEventListener('error', handleImageError, true);
+  }, []);
+
+  return null;
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -75,6 +102,7 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <AuthProvider>
           <ErrorWatcher />
+          <ImageErrorWatcher />
           {children}
           <Toaster />
           <FloatingContactButtons />
