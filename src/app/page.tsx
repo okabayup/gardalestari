@@ -91,7 +91,7 @@ export default async function LandingPage() {
     { name: 'Nvidia Inception', url: 'https://lalokalabs.co/wp-content/uploads/2022/06/nvidia-inception-program-badge-rgb-for-screen.png' },
     { name: 'BPDLH', url: 'https://picsum.photos/seed/bpdlh/200/100' },
     { name: 'Konservasi Indonesia', url: 'https://sourceup-api-cdn-endpoint-prod.azureedge.net/media/YKI+LOGO-20240902130143971.png' },
-    { name: 'BRIN', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Main_Logo_of_National_Research_of_Innovation_Agency_of_Indonesia.svg/500px-Main_Logo_of_National_Research_of_Innovation_Agency_of_Indonesia.svg.png' },
+    { name: 'BRIN', url: 'https://picsum.photos/seed/brin/200/100' },
     { name: 'Kemenhut', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Logo_Kementerian_Kehutanan.svg/1280px-Logo_Kementerian_Kehutanan.svg.png' },
     { name: 'JALA', url: 'https://strapi.jala.tech/uploads/jala_logo_6298181eb0.png' },
     { name: 'KKP', url: 'https://upload.wikimedia.org/wikipedia/7/7b/Emblem_of_Indonesia_and_Logo_of_the_Ministry_of_Maritime_Affairs_of_the_Republic_of_Indonesia_%28Indonesian_version_2021%29.svg' },
