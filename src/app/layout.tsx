@@ -60,17 +60,11 @@ function ImageErrorWatcher() {
     const handleImageError = (event: ErrorEvent) => {
       const target = event.target;
       if (target instanceof HTMLImageElement) {
-        console.error('❌ [Image Debug] Gagal memuat gambar:', {
-          src: target.src,
-          alt: target.alt,
-          origin: window.location.origin,
-          page: window.location.pathname,
-          timestamp: new Date().toISOString()
-        });
+        // Logging lebih detail agar mudah dibaca di log environment
+        console.error(`❌ [Image 404] Gagal memuat: ${target.src} | Alt: ${target.alt || 'N/A'}`);
       }
     };
 
-    // Gunakan capture phase agar event ditangkap sebelum bubbling
     window.addEventListener('error', handleImageError, true);
     return () => window.removeEventListener('error', handleImageError, true);
   }, []);
@@ -99,7 +93,7 @@ export default function RootLayout({
         <meta name="description" content="Wadah inovasi pemuda Indonesia di sektor agro-maritim dan kehutanan nusantara melalui teknologi dan pemberdayaan komunitas." />
         <meta name="keywords" content="agro-maritim, kehutanan, inovasi pemuda, pelestarian alam, garda lestari, indonesia hijau, banyuwangi" />
       </head>
-      <body className="font-body antialiased">
+      <body className="font-body antialiased" suppressHydrationWarning>
         <AuthProvider>
           <ErrorWatcher />
           <ImageErrorWatcher />
