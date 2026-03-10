@@ -284,7 +284,7 @@ export default async function LandingPage() {
                 { label: 'Anggota Terdaftar', target: 630, suffix: '+', icon: Users },
                 { label: 'Pohon Ditanam', target: 5000, suffix: '+', isK: true, icon: Sprout },
                 { label: 'Petani Binaan', target: 160, suffix: '', icon: Target },
-                { label: 'Hutan Lindung Dijaga', target: 2, suffix: '', icon: TreeDeciduous }
+                { label: 'hutan dijaga', target: 70, suffix: '+ ha', icon: TreeDeciduous }
               ].map((stat, i) => (
                 <div key={i} className="text-center space-y-2 p-6 md:p-8 rounded-[1.5rem] md:rounded-[2rem] bg-muted/30 hover:bg-primary/5 transition-colors">
                   <div className="mx-auto w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-3 md:mb-4">
