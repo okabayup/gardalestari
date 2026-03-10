@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -28,25 +27,31 @@ export default function FloatingContactButtons() {
 
   if (!mounted) return null;
 
-  const hasBottomNav = !pathname.startsWith('/panel') && 
-    (pathname.startsWith('/feed') || 
-     pathname.startsWith('/members') || 
-     pathname.startsWith('/programs') || 
-     pathname.startsWith('/assistant') ||
-     pathname.startsWith('/ideas') ||
-     pathname.startsWith('/points') ||
-     pathname.startsWith('/achievements') ||
-     pathname.startsWith('/evoting') ||
-     pathname.startsWith('/documents') ||
-     pathname.startsWith('/announcements') ||
-     pathname.startsWith('/recruitments') ||
-     pathname.startsWith('/profile'));
+  // Define public-facing routes where the FAB should be visible
+  const publicRoutes = [
+    '/',
+    '/tentang',
+    '/berita',
+    '/video',
+    '/recruitments',
+    '/kta',
+    '/dokumen/verifikasi',
+    '/uji-aplikasi',
+    '/booking/meeting',
+    '/hapus-data',
+    '/kebijakan-privasi',
+    '/ketentuan-layanan'
+  ];
+
+  const isPublicPage = publicRoutes.some(route => 
+    pathname === route || (route !== '/' && pathname.startsWith(route))
+  );
+
+  // Hide FABs on non-public pages (internal app and admin panel)
+  if (!isPublicPage) return null;
 
   return (
-    <div className={cn(
-      "fixed right-4 z-50 flex flex-col gap-3 transition-all duration-300 sm:right-8",
-      hasBottomNav ? "bottom-[72px]" : "bottom-6"
-    )}>
+    <div className="fixed right-4 bottom-6 z-50 flex flex-col gap-3 transition-all duration-300 sm:right-8">
       <Dialog>
         <DialogTrigger asChild>
           <Button
@@ -61,7 +66,7 @@ export default function FloatingContactButtons() {
           <DialogHeader className="sr-only">
             <DialogTitle>Asisten Suara Lestari</DialogTitle>
             <DialogDescription>
-              Gunakan asisten suara kami untuk mendapatkan bantuan interaktif mengenai Garda Lestari.
+              Gunakan asisten suara kami untuk mendapatkan bantuan interaktif mengenai Garda Lestari secara langsung.
             </DialogDescription>
           </DialogHeader>
           <div className="flex-1 w-full h-full relative bg-black">

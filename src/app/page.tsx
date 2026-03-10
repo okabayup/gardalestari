@@ -1,4 +1,3 @@
-
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -90,7 +89,7 @@ export default async function LandingPage() {
     { name: 'AWS Startup', url: 'https://preditrix.ai/wp-content/uploads/2025/04/aws-n.png' },
     { name: 'Google For Startup', url: 'https://recogify.com/images/googleforstartups.png' },
     { name: 'Nvidia Inception', url: 'https://lalokalabs.co/wp-content/uploads/2022/06/nvidia-inception-program-badge-rgb-for-screen.png' },
-    { name: 'BPDLH', url: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjZuiY_nP0wEpfqCICn1DBEdqcacjVwW6eURkrUfy8fuwzEihDVw8fl8OGjTo99lsEzJN7wX5F8DS1KWFY0WLMQTatG8wZSa9QLEsucF3KUI8UAoSCQYEDB3BwM-eD_gfNe6VO1-iHN0vFw6jqfSO_vUuIlv07FGf8B2IuyJEtia0cwIlaEEzV8abNHCA/s2127/Logo%20Badan%20Pengelola%20Dana%20Lingkungan%20Hidup%20(BPDLH).png' },
+    { name: 'BPDLH', url: 'https://webapi-bpdlh.kemenkeu.go.id/uploads/images/logo-footer.png' },
     { name: 'Konservasi Indonesia', url: 'https://sourceup-api-cdn-endpoint-prod.azureedge.net/media/YKI+LOGO-20240902130143971.png' },
     { name: 'BRIN', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Main_Logo_of_National_Research_of_Innovation_Agency_of_Indonesia.svg/500px-Main_Logo_of_National_Research_of_Innovation_Agency_of_Indonesia.svg.png' },
     { name: 'Kemenhut', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Logo_Kementerian_Kehutanan.svg/1280px-Logo_Kementerian_Kehutanan.svg.png' },
