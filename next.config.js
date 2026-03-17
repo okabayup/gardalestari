@@ -93,9 +93,10 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Mengaktifkan fitur Turbopack yang didukung oleh Next.js 15+
+  // Mengaktifkan fitur Turbopack sesuai standar Next.js 16 untuk mengatasi konflik dengan webpack config
+  turbopack: {}, 
   experimental: {
-    turbopack: {}, // Kunci yang benar adalah turbopack, bukan turbo
+    // Properti turbopack dipindahkan ke root level untuk validasi build yang lebih stabil
   },
   webpack: (config) => {
     config.resolve.alias.canvas = false;
