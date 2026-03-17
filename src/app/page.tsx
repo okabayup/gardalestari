@@ -54,7 +54,7 @@ export default async function LandingPage() {
   // Specific Gallery Images requested by user
   const galeriFiles = [
     "Berkolaborasi Dengan Menhut Untuk Hutan Lestari.jpg",
-    "Bersama Eks Dubes Jepang, Dirut Adore dan Jajaran Kepala Dinas Banyuwangi.jpg",
+    "Bersama Jajaran Kepala Dinas Banyuwangi dan Dirut Adore.jpg",
     "Bersama Raline Shah di acara Astra.jpg",
     "Menerima Satu Indonesia Award Astra.jpg",
     "Tim CSR PLN Berkunjung ke Kampung Aren.jpg"
