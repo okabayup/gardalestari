@@ -51,14 +51,19 @@ export default async function LandingPage() {
   const allPosts = await getBeritaPosts('artikel', false);
   const spotlightPosts = allPosts.slice(0, 6);
 
-  // Hardcoded Gallery Images because fs.readdirSync is not reliable in production serverless environments
-  const galeriImages = [
-    { url: '/galeri/Bersama.jpg', description: 'Kebersamaan Relawan' },
-    { url: '/galeri/Aksi.jpg', description: 'Aksi Nyata Lapangan' },
-    { url: '/galeri/Edukasi.jpg', description: 'Edukasi Masyarakat' },
-    { url: 'https://picsum.photos/seed/nature1/800/800', description: 'Konservasi Alam' },
-    { url: 'https://picsum.photos/seed/nature2/800/800', description: 'Pemberdayaan Pemuda' },
+  // Specific Gallery Images requested by user
+  const galeriFiles = [
+    "Berkolaborasi Dengan Menhut Untuk Hutan Lestari.jpg",
+    "Bersama Eks Dubes Jepang, Dirut Adore dan Jajaran Kepala Dinas Banyuwangi.jpg",
+    "Bersama Raline Shah di acara Astra.jpg",
+    "Menerima Satu Indonesia Award Astra.jpg",
+    "Tim CSR PLN Berkunjung ke Kampung Aren.jpg"
   ];
+
+  const galeriImages = galeriFiles.map(file => ({
+    url: `/galeri/${file}`,
+    description: file.replace(/\.[^/.]+$/, "") // Remove file extension for cleaner display
+  }));
 
   const initiatives = [
     { title: 'Kampung Aren', desc: 'Inovasi pengolahan aren desa untuk ekonomi lokal.', img: '/program/Kampung Aren.jpg', category: 'Komunitas' },
