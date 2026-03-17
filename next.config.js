@@ -9,7 +9,7 @@ const withPWA = require('next-pwa')({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    unoptimized: true, // Bypass image proxy to fix local asset permission/visibility issues
+    unoptimized: true, // Menonaktifkan optimasi proxy untuk memastikan akses langsung ke folder public di App Hosting
     remotePatterns: [
       {
         protocol: 'https',
@@ -89,12 +89,14 @@ const nextConfig = {
       },
     ],
   },
-  // Bypassing non-fatal errors during build to allow deployment
+  // Mengabaikan build errors untuk kelancaran deploy saat investigasi
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Support Turbopack in Next.js 16 with custom configurations
-  turbopack: {},
+  // Mengaktifkan fitur Turbopack yang didukung oleh Next.js 15+
+  experimental: {
+    turbo: {},
+  },
   webpack: (config) => {
     config.resolve.alias.canvas = false;
     return config;

@@ -5,6 +5,8 @@ build:
   run: npm install && npm run build
 
 runConfig:
-  # Increase this value to automatically spin up more instances in response
-  # to increased traffic, helping to prevent "host load exceeded" errors.
+  # Konfigurasi resource untuk memastikan seluruh aset dilayani dengan stabil
+  minInstances: 1
   maxInstances: 10
+  cpu: 1
+  memoryMiB: 1024

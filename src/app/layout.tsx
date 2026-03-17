@@ -52,18 +52,24 @@ function ErrorWatcher() {
 
 /**
  * ImageErrorWatcher: Monitoring global untuk mendeteksi kegagalan pemuatan gambar (404).
- * Hasil akan dicetak ke konsol browser untuk proses debugging deploy.
+ * Hasil akan dicetak ke konsol browser dengan detail untuk membantu identifikasi masalah di server.
  */
 function ImageErrorWatcher() {
   useEffect(() => {
     const handleImageError = (event: ErrorEvent) => {
       const target = event.target;
       if (target instanceof HTMLImageElement) {
-        // Logging lebih detail agar mudah dibaca di log environment
-        console.error(`❌ [Image 404] Gagal memuat: ${target.src} | Alt: ${target.alt || 'N/A'}`);
+        // Mencetak laporan error yang detail ke konsol untuk investigasi deploy
+        console.group('🖼️ [Image Load Failure]');
+        console.error('URL Sumber:', target.src);
+        console.error('Alt Text:', target.alt || 'N/A');
+        console.error('Lokasi Halaman:', window.location.pathname);
+        console.error('Status: 404 Not Found atau Error Jaringan');
+        console.groupEnd();
       }
     };
 
+    // Menggunakan capture phase (true) karena event error pada tag img tidak melakukan bubbling
     window.addEventListener('error', handleImageError, true);
     return () => window.removeEventListener('error', handleImageError, true);
   }, []);
