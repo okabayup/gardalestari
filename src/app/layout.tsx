@@ -52,21 +52,19 @@ function ErrorWatcher() {
 }
 
 /**
- * ImageErrorWatcher: Monitoring global untuk mendeteksi kegagalan pemuatan gambar (404).
- * Hasil akan dicetak ke konsol browser dengan detail untuk membantu identifikasi masalah di server.
+ * ImageErrorWatcher: Monitoring proaktif untuk mendeteksi kegagalan pemuatan gambar (404).
+ * Sistem ini mencetak detail URL eksak yang gagal dimuat untuk mempermudah perbaikan jalur aset.
  */
 function ImageErrorWatcher() {
   useEffect(() => {
     const handleImageError = (event: ErrorEvent) => {
       const target = event.target;
       if (target instanceof HTMLImageElement) {
-        // Mencetak laporan error yang detail ke konsol untuk investigasi deploy
-        console.group('🖼️ [Image Load Failure]');
+        console.group('🖼️ [Image 404 Detect]');
         console.error('URL Sumber:', target.src);
         console.error('Alt Text:', target.alt || 'N/A');
         console.error('Lokasi Halaman:', window.location.pathname);
-        console.error('Status: 404 Not Found atau Error Jaringan');
-        console.log('Saran: Periksa apakah file ada di folder public/ dan penamaannya (case-sensitive).');
+        console.log('Status: File tidak ditemukan di server produksi. Harap periksa apakah file ada di folder public/ dan penamaannya sudah tepat (case-sensitive).');
         console.groupEnd();
       }
     };

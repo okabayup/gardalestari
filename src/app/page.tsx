@@ -24,8 +24,6 @@ import InitiativesCarousel from '@/components/landing/InitiativesCarousel';
 import NewsCarousel from '@/components/landing/NewsCarousel';
 import SocialMediaSection from '@/components/landing/SocialMediaSection';
 import StatCounter from '@/components/landing/StatCounter';
-import fs from 'fs';
-import path from 'path';
 
 export const metadata = {
   title: 'Garda Lestari | Inovasi Pemuda Agro-Maritim & Kehutanan',
@@ -53,31 +51,14 @@ export default async function LandingPage() {
   const allPosts = await getBeritaPosts('artikel', false);
   const spotlightPosts = allPosts.slice(0, 6);
 
-  // Dynamic Gallery Logic
-  const galeriDir = path.join(process.cwd(), 'public/galeri');
-  let galeriImages: { url: string; description: string }[] = [];
-  
-  try {
-    if (fs.existsSync(galeriDir)) {
-      const files = fs.readdirSync(galeriDir);
-      galeriImages = files
-        .filter(file => /\.(jpg|jpeg|png|webp|avif|gif)$/i.test(file))
-        .map(file => ({
-          url: `/galeri/${file}`,
-          description: file.replace(/\.[^/.]+$/, "").replace(/[-_]/g, ' ')
-        }));
-    }
-  } catch (error) {
-    console.error("Error reading galeri folder:", error);
-  }
-
-  if (galeriImages.length === 0) {
-    galeriImages = [
-      { url: images.overlap_1.url, description: 'Konservasi Alam' },
-      { url: images.overlap_2.url, description: 'Perlindungan Biota Laut' },
-      { url: images.lead_side.url, description: 'Pemberdayaan Pemuda' },
-    ];
-  }
+  // Hardcoded Gallery Images because fs.readdirSync is not reliable in production serverless environments
+  const galeriImages = [
+    { url: '/galeri/Bersama.jpg', description: 'Kebersamaan Relawan' },
+    { url: '/galeri/Aksi.jpg', description: 'Aksi Nyata Lapangan' },
+    { url: '/galeri/Edukasi.jpg', description: 'Edukasi Masyarakat' },
+    { url: 'https://picsum.photos/seed/nature1/800/800', description: 'Konservasi Alam' },
+    { url: 'https://picsum.photos/seed/nature2/800/800', description: 'Pemberdayaan Pemuda' },
+  ];
 
   const initiatives = [
     { title: 'Kampung Aren', desc: 'Inovasi pengolahan aren desa untuk ekonomi lokal.', img: '/program/Kampung Aren.jpg', category: 'Komunitas' },
