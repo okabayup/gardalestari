@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, Suspense } from 'react';
@@ -65,6 +66,7 @@ function ImageErrorWatcher() {
         console.error('Alt Text:', target.alt || 'N/A');
         console.error('Lokasi Halaman:', window.location.pathname);
         console.error('Status: 404 Not Found atau Error Jaringan');
+        console.log('Saran: Periksa apakah file ada di folder public/ dan penamaannya (case-sensitive).');
         console.groupEnd();
       }
     };

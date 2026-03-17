@@ -95,7 +95,7 @@ const nextConfig = {
   },
   // Mengaktifkan fitur Turbopack yang didukung oleh Next.js 15+
   experimental: {
-    turbo: {},
+    turbopack: {}, // Kunci yang benar adalah turbopack, bukan turbo
   },
   webpack: (config) => {
     config.resolve.alias.canvas = false;
