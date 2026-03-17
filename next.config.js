@@ -9,6 +9,7 @@ const withPWA = require('next-pwa')({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Mengaktifkan fitur Turbopack di tingkat root untuk mengatasi konflik dengan webpack config (next-pwa)
+  // Sesuai instruksi build error Next.js 16
   turbopack: {}, 
   images: {
     unoptimized: true, // Memastikan akses langsung ke folder public di App Hosting tanpa proxy

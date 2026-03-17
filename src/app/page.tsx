@@ -51,7 +51,7 @@ export default async function LandingPage() {
   const allPosts = await getBeritaPosts('artikel', false);
   const spotlightPosts = allPosts.slice(0, 6);
 
-  // Specific Gallery Images requested by user
+  // Specific Gallery Images as requested by user
   const galeriFiles = [
     "Berkolaborasi Dengan Menhut Untuk Hutan Lestari.jpg",
     "Bersama Jajaran Kepala Dinas Banyuwangi dan Dirut Adore.jpg",
@@ -62,7 +62,7 @@ export default async function LandingPage() {
 
   const galeriImages = galeriFiles.map(file => ({
     url: `/galeri/${file}`,
-    description: file.replace(/\.[^/.]+$/, "") // Remove file extension for cleaner display
+    description: file.replace(/\.[^/.]+$/, "") // Strip extension for clean display
   }));
 
   const initiatives = [
