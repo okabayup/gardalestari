@@ -1,5 +1,21 @@
 'use client';
 
+/**
+ * Polyfill for Promise.withResolvers
+ * This is required for compatibility with pdfjs-dist v4+ in environments
+ * that do not yet support this newer JavaScript feature (Node.js < 22, older browsers).
+ */
+if (typeof Promise !== 'undefined' && !(Promise as any).withResolvers) {
+  (Promise as any).withResolvers = function () {
+    let resolve, reject;
+    const promise = new Promise((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
+    return { promise, resolve, reject };
+  };
+}
+
 import { useState, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';

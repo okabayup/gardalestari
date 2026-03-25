@@ -1,11 +1,9 @@
-
 'use client';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ImportantDocument, SignatoryRole } from '@/lib/definitions';
 import { Check, X, Loader2, Link as LinkIcon, ShieldCheck, Calendar as CalendarIcon } from 'lucide-react';
-import PdfViewer from '@/components/utils/PdfViewer';
 import { useEffect, useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -14,7 +12,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
+import dynamic from 'next/dynamic';
 
+// Dynamically import PdfViewer to prevent SSR issues with react-pdf/pdfjs-dist
+const PdfViewer = dynamic(() => import('@/components/utils/PdfViewer'), {
+  ssr: false,
+  loading: () => <div className="flex h-full items-center justify-center p-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+});
 
 interface DocumentPreviewDialogProps {
   document: ImportantDocument | null;

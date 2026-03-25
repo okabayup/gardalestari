@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, ChangeEvent } from 'react';
@@ -14,13 +13,19 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { readDocumentText } from '@/ai/flows/ocr-pdf-flow';
-import PdfViewer from '@/components/utils/PdfViewer';
+import dynamic from 'next/dynamic';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+
+// Dynamically import PdfViewer to prevent SSR issues with react-pdf/pdfjs-dist
+const PdfViewer = dynamic(() => import('@/components/utils/PdfViewer'), {
+  ssr: false,
+  loading: () => <div className="flex h-full items-center justify-center p-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+});
 
 const VerificationStatus = ({
   icon: Icon,
@@ -77,14 +82,14 @@ const ComparisonDialog = ({
             {ocrResult && <p className="text-xs text-muted-foreground mt-1">{ocrResult.message}</p>}
         </div>
         <div className="grid grid-cols-2 gap-4 flex-1 overflow-auto">
-          <div className="border rounded-md">
+          <div className="border rounded-md overflow-hidden relative">
             <PdfViewer file={officialUrl} />
           </div>
-          <div className="border rounded-md">
+          <div className="border rounded-md overflow-hidden relative">
              <PdfViewer file={uploadedUrl} />
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="p-4 border-t">
           <Button onClick={onClose}>Tutup</Button>
         </DialogFooter>
       </DialogContent>
@@ -203,7 +208,7 @@ export default function DocumentVerificationPage() {
                     <div className="space-y-6">
                         <VerificationStatus icon={CheckCircle} title="Dokumen Terverifikasi" description="Dokumen ini adalah asli dan tercatat dalam sistem resmi Garda Lestari." variant="success" />
                         
-                        <div className="aspect-[4/5] w-full bg-gray-200 rounded-lg overflow-hidden border shadow-inner">
+                        <div className="aspect-[4/5] w-full bg-gray-200 rounded-lg overflow-hidden border shadow-inner relative">
                            <PdfViewer file={document.fileUrl} />
                         </div>
                         
