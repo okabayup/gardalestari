@@ -13,10 +13,9 @@ import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Timestamp } from 'firebase/firestore';
 
 const RecruitmentCard = ({ recruitment }: { recruitment: Recruitment }) => {
-  const deadline = (recruitment.deadline as unknown as Timestamp).toDate();
+  const deadline = new Date(recruitment.deadline as string);
   const isPast = new Date() > deadline;
   const [formattedDate, setFormattedDate] = useState('');
 
@@ -73,8 +72,8 @@ const JobPostingSchema = ({ recruitment }: { recruitment: Recruitment }) => {
     '@type': 'JobPosting',
     title: recruitment.title,
     description: `<p>${recruitment.description}</p> <h4>Persyaratan:</h4> <ul>${recruitment.requirements.split('\n').map(req => `<li>${req.replace('-', '').trim()}</li>`).join('')}</ul>`,
-    datePosted: (recruitment.createdAt as unknown as Timestamp).toDate().toISOString(),
-    validThrough: (recruitment.deadline as unknown as Timestamp).toDate().toISOString(),
+    datePosted: new Date(recruitment.createdAt as string).toISOString(),
+    validThrough: new Date(recruitment.deadline as string).toISOString(),
     employmentType: 'FULL_TIME', // Assuming full-time, can be parameterized later
     hiringOrganization: {
       '@type': 'Organization',
@@ -113,7 +112,7 @@ export default function RecruitmentsPage() {
       setLoading(true);
       try {
         const data = await getRecruitments();
-        const now = Timestamp.now();
+        const now = new Date().toISOString();
         // Filter out recruitments where the deadline has passed
         const activeRecruitments = data.filter(r => r.deadline >= now);
         setRecruitments(activeRecruitments);

@@ -16,7 +16,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { format } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
 import { getDataBankEntry, updateDataBankEntry } from '@/app/actions/bank-data';
 import { cn } from '@/lib/utils';
 import RichTextEditor from '@/components/panel/RichTextEditor';
@@ -52,7 +51,7 @@ export default function EditDataBankEntryPage() {
     if (id) {
         getDataBankEntry(id).then(data => {
             if (data) {
-                reset({ ...data, publishedDate: data.publishedDate.toDate() });
+                reset({ ...data, publishedDate: new Date(data.publishedDate as string) });
             } else {
                  toast({ variant: 'destructive', title: 'Entri tidak ditemukan' });
                  router.push('/panel/data-bank');
@@ -64,7 +63,7 @@ export default function EditDataBankEntryPage() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      const payload = { ...data, publishedDate: Timestamp.fromDate(data.publishedDate) };
+      const payload = { ...data, publishedDate: data.publishedDate.toISOString() };
       await updateDataBankEntry(id, payload);
       toast({ title: 'Entri data berhasil diperbarui!' });
       router.push('/panel/data-bank');

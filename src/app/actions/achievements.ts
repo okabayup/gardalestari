@@ -1,233 +1,175 @@
 'use server';
 
-import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, where, limit } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 export type { Achievement } from '@/lib/definitions';
 import type { Achievement } from '@/lib/definitions';
-import { getAuth } from 'firebase-admin/auth';
-import admin from 'firebase-admin';
+import { getAll, getOne, create, update, remove, uploadFile, deleteFile, getAuthUser } from '@/lib/db';
 import { checkAndAwardBadges } from '@/app/actions/badges';
 
-if (admin.apps.length === 0) {
-  admin.initializeApp();
-}
+const COL = 'achievements';
 
-const achievementsCollection = collection(db, 'achievements');
+// ─── Public Functions for AI Tool ────────────────────────────────────────────
 
-const toAchievement = (doc: any): Achievement => {
-    const data = doc.data();
-    return {
-        id: doc.id,
-        ...data,
-        date: (data.date as Timestamp).toDate().toISOString(),
-    } as Achievement;
-};
-
-
-// === Public Functions for AI Tool ===
-
-/**
- * Searches the achievements based on a query.
- * To be used by an AI tool.
- * @param searchQuery The keywords to search for.
- * @returns A list of relevant achievements.
- */
 export async function searchAchievements(searchQuery: string): Promise<Partial<Achievement>[]> {
   try {
-    const q = query(
-        achievementsCollection,
-        orderBy('date', 'desc'),
-        limit(20)
-    );
-
-    const snapshot = await getDocs(q);
-    const allEntries: Achievement[] = snapshot.docs.map(toAchievement);
+    const allEntries = await getAll<Achievement>(COL, {
+      orderBy: { field: 'date', direction: 'desc' },
+      limit: 20,
+    });
 
     const searchTerms = searchQuery.toLowerCase().split(' ');
-    const results = allEntries.filter(entry => {
-        const searchableText = `${entry.title} ${entry.description} ${entry.userName}`.toLowerCase();
-        return searchTerms.some(term => searchableText.includes(term));
-    }).slice(0, 5); // Return top 5 matches
+    const results = allEntries
+      .filter(entry => {
+        const text = `${entry.title} ${entry.description} ${entry.userName}`.toLowerCase();
+        return searchTerms.some(term => text.includes(term));
+      })
+      .slice(0, 5);
 
-    return results.map(entry => ({
-        id: entry.id,
-        title: entry.title,
-        userName: entry.userName,
-        date: entry.date,
-    }));
+    return results.map(({ id, title, userName, date }) => ({ id, title, userName, date }));
   } catch (error) {
-    console.error("[searchAchievements Error]", error);
-    throw new Error("Gagal mencari data prestasi.");
+    console.error('[searchAchievements Error]', error);
+    throw new Error('Gagal mencari data prestasi.');
   }
 }
 
+// ─── CRUD ────────────────────────────────────────────────────────────────────
 
-// Get all achievements, ordered by date
 export async function getAchievements(): Promise<Achievement[]> {
   try {
-    const q = query(achievementsCollection, orderBy('date', 'desc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(toAchievement);
+    return await getAll<Achievement>(COL, {
+      orderBy: { field: 'date', direction: 'desc' },
+    });
   } catch (error) {
-    console.error("[getAchievements Error]", error);
-    throw new Error("Gagal mengambil data prestasi.");
+    console.error('[getAchievements Error]', error);
+    throw new Error('Gagal mengambil data prestasi.');
   }
 }
 
-// Get all achievements for a specific user
 export async function getAchievementsByUserId(userId: string): Promise<Achievement[]> {
   try {
-    const q = query(achievementsCollection, where('userId', '==', userId));
-    const snapshot = await getDocs(q);
-    const achievements = snapshot.docs.map(toAchievement);
-    
-    // Sort in memory instead of in the query
-    return achievements.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const results = await getAll<Achievement>(COL, {
+      where: { field: 'userId', op: '==', value: userId },
+    });
+    return results.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
   } catch (error) {
-    console.error("[getAchievementsByUserId Error]", error);
-    throw new Error("Gagal mengambil data prestasi pengguna.");
+    console.error('[getAchievementsByUserId Error]', error);
+    throw new Error('Gagal mengambil data prestasi pengguna.');
   }
 }
 
-
-// Get a single achievement by ID
 export async function getAchievement(id: string): Promise<Achievement | null> {
-    try {
-        const docRef = doc(db, 'achievements', id);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            return toAchievement(docSnap);
-        }
-        return null;
-    } catch (error) {
-        console.error("[getAchievement Error]", error);
-        throw new Error("Gagal mengambil data prestasi tunggal.");
-    }
+  try {
+    return await getOne<Achievement>(COL, id);
+  } catch (error) {
+    console.error('[getAchievement Error]', error);
+    throw new Error('Gagal mengambil data prestasi tunggal.');
+  }
 }
 
-// Create a new achievement (for admins)
-export async function createAchievement(data: Omit<Achievement, 'id' | 'date'> & { date: Timestamp }, imageFile?: File) {
+export async function createAchievement(
+  data: Omit<Achievement, 'id' | 'date'> & { date: string | Date },
+  imageFile?: File
+) {
   try {
-    const achievementData: { [key: string]: any } = { ...data };
-    
+    const achievementData: Record<string, unknown> = {
+      ...data,
+      date: typeof data.date === 'string' ? data.date : (data.date as Date).toISOString(),
+    };
     if (imageFile) {
-        const imageRef = ref(storage, `achievements/${Date.now()}_${imageFile.name}`);
-        await uploadBytes(imageRef, imageFile);
-        achievementData.imageUrl = await getDownloadURL(imageRef);
+      achievementData.imageUrl = await uploadFile(
+        imageFile,
+        `achievements/${Date.now()}_${imageFile.name}`
+      );
     }
-
-    await addDoc(achievementsCollection, achievementData);
+    await create(COL, achievementData);
     revalidatePath('/panel/achievements');
     revalidatePath('/achievements');
-
-    // Trigger badge/mission check
     await checkAndAwardBadges(data.userId, 'achievement_added');
   } catch (error) {
-    console.error("[createAchievement Error]", error);
+    console.error('[createAchievement Error]', error);
     throw new Error(`Gagal membuat data prestasi: ${(error as Error).message}`);
   }
 }
 
-// Create a new achievement for the currently logged-in user
 export async function createMyAchievement(
-  data: Omit<Achievement, 'id' | 'userId' | 'userName' | 'userAvatar' | 'date'> & { date: Timestamp },
+  data: Omit<Achievement, 'id' | 'userId' | 'userName' | 'userAvatar' | 'date'> & {
+    date: string | Date;
+  },
   userId: string,
-  imageFile?: File,
+  imageFile?: File
 ) {
-    try {
-        const auth = getAuth();
-        const user = await auth.getUser(userId);
-
-        if (!user) {
-            throw new Error('User not found.');
-        }
-
-        const achievementData: { [key: string]: any } = {
-            ...data,
-            userId: user.uid,
-            userName: user.displayName || 'Pengguna',
-            userAvatar: user.photoURL || '',
-        };
-        
-        if (imageFile) {
-            console.log("[createMyAchievement] Uploading image...");
-            const imageRef = ref(storage, `achievements/${Date.now()}_${imageFile.name}`);
-            await uploadBytes(imageRef, imageFile);
-            achievementData.imageUrl = await getDownloadURL(imageRef);
-            console.log("[createMyAchievement] Image uploaded successfully:", achievementData.imageUrl);
-        }
-
-        await addDoc(achievementsCollection, achievementData);
-        
-        revalidatePath('/achievements');
-        revalidatePath('/profile/me');
-
-        // Trigger badge/mission check
-        await checkAndAwardBadges(userId, 'achievement_added');
-    } catch (error) {
-        console.error("[createMyAchievement Error]", error);
-        throw new Error(`Gagal menambahkan prestasi Anda: ${(error as Error).message}`);
-    }
-}
-
-
-// Update an existing achievement
-export async function updateAchievement(id: string, data: Partial<Omit<Achievement, 'id' | 'date'>> & { date?: Timestamp }, imageFile?: File) {
   try {
-    const docRef = doc(db, 'achievements', id);
-    const dataToUpdate: { [key: string]: any } = { ...data };
+    const user = await getAuthUser(userId);
+    if (!user) throw new Error('User not found.');
+
+    const achievementData: Record<string, unknown> = {
+      ...data,
+      date: typeof data.date === 'string' ? data.date : (data.date as Date).toISOString(),
+      userId: user.id,
+      userName: user.user_metadata?.full_name ?? user.email ?? 'Pengguna',
+      userAvatar: user.user_metadata?.avatar_url ?? '',
+    };
 
     if (imageFile) {
-        const currentDoc = await getAchievement(id);
-        if (currentDoc?.imageUrl) {
-            try {
-                if (currentDoc.imageUrl.includes('firebasestorage.googleapis.com')) {
-                    await deleteObject(ref(storage, currentDoc.imageUrl));
-                }
-            } catch (storageError: any) {
-                 if (storageError.code !== 'storage/object-not-found') {
-                    console.warn("[updateAchievement Warn] Could not delete old image", storageError);
-                }
-            }
-        }
-        const imageRef = ref(storage, `achievements/${Date.now()}_${imageFile.name}`);
-        await uploadBytes(imageRef, imageFile);
-        dataToUpdate.imageUrl = await getDownloadURL(imageRef);
+      achievementData.imageUrl = await uploadFile(
+        imageFile,
+        `achievements/${Date.now()}_${imageFile.name}`
+      );
     }
-    
-    await updateDoc(docRef, dataToUpdate);
-    revalidatePath('/panel/achievements');
-    revalidatePath(`/achievements`);
+
+    await create(COL, achievementData);
+    revalidatePath('/achievements');
     revalidatePath('/profile/me');
+    await checkAndAwardBadges(userId, 'achievement_added');
   } catch (error) {
-    console.error("[updateAchievement Error]", error);
-    throw new Error(`Gagal memperbarui prestasi: ${(error as Error).message}`);
+    console.error('[createMyAchievement Error]', error);
+    throw new Error(`Gagal menambahkan prestasi Anda: ${(error as Error).message}`);
   }
 }
 
-// Delete an achievement
-export async function deleteAchievement(id: string) {
+export async function updateAchievement(
+  id: string,
+  data: Partial<Omit<Achievement, 'id' | 'date'>> & { date?: string | Date },
+  imageFile?: File
+) {
   try {
-    const docToDelete = await getAchievement(id);
-    if (docToDelete?.imageUrl) {
-        try {
-             if (docToDelete.imageUrl.includes('firebasestorage.googleapis.com')) {
-                await deleteObject(ref(storage, docToDelete.imageUrl));
-             }
-        } catch (storageError: any) {
-            if (storageError.code !== 'storage/object-not-found') {
-                console.warn("[deleteAchievement Warn] Old image not found, skipping deletion.", storageError);
-            }
-        }
+    const dataToUpdate: Record<string, unknown> = { ...data };
+    if (data.date !== undefined) {
+      dataToUpdate.date =
+        typeof data.date === 'string' ? data.date : (data.date as Date).toISOString();
     }
-    await deleteDoc(doc(db, 'achievements', id));
+
+    if (imageFile) {
+      const current = await getOne<Achievement>(COL, id);
+      if (current?.imageUrl) await deleteFile(current.imageUrl);
+      dataToUpdate.imageUrl = await uploadFile(
+        imageFile,
+        `achievements/${Date.now()}_${imageFile.name}`
+      );
+    }
+
+    await update(COL, id, dataToUpdate);
     revalidatePath('/panel/achievements');
     revalidatePath('/achievements');
     revalidatePath('/profile/me');
   } catch (error) {
-    console.error("[deleteAchievement Error]", error);
-    throw new Error("Gagal menghapus prestasi.");
+    console.error('[updateAchievement Error]', error);
+    throw new Error(`Gagal memperbarui prestasi: ${(error as Error).message}`);
+  }
+}
+
+export async function deleteAchievement(id: string) {
+  try {
+    const doc = await getOne<Achievement>(COL, id);
+    if (doc?.imageUrl) await deleteFile(doc.imageUrl);
+    await remove(COL, id);
+    revalidatePath('/panel/achievements');
+    revalidatePath('/achievements');
+    revalidatePath('/profile/me');
+  } catch (error) {
+    console.error('[deleteAchievement Error]', error);
+    throw new Error('Gagal menghapus prestasi.');
   }
 }

@@ -5,7 +5,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import MembershipCard from './MembershipCard';
-import type { User } from 'firebase/auth';
 import { Button } from '../ui/button';
 import { toPng } from 'html-to-image';
 import { Download, Loader2, X, Eye, Award } from 'lucide-react';
@@ -18,7 +17,13 @@ import * as LucideIcons from 'lucide-react';
 
 
 interface MembershipCardDialogProps {
-  user: User & {
+  user: {
+    uid: string;
+    id?: string;
+    displayName?: string | null;
+    photoURL?: string | null;
+    email?: string | null;
+    phoneNumber?: string | null;
     verificationStatus?: 'unverified' | 'temporary' | 'permanent' | 'rejected';
     fullName?: string;
     username?: string;

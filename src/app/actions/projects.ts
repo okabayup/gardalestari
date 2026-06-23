@@ -1,22 +1,5 @@
 'use server';
 
-import { db } from '@/lib/firebase';
-import {
-  collection,
-  doc,
-  addDoc,
-  getDocs,
-  getDoc,
-  updateDoc,
-  deleteDoc,
-  writeBatch,
-  query,
-  where,
-  Timestamp,
-  orderBy,
-  runTransaction,
-  increment,
-} from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { getUserByUid } from '@/app/actions/user';
@@ -24,257 +7,195 @@ import { getWhatsappTemplate } from '@/app/actions/settings';
 import type { Project, ProjectColumn, ProjectTask, CommentWithAuthor } from '@/lib/definitions';
 import { sendNotification } from './notifications';
 import { sendEmail } from '@/services/email';
+import { getAll, getOne, create, update, remove, now } from '@/lib/db';
 
-// Internal collection references (not exported)
-const projectsCollection = collection(db, 'projects');
-const usersCollection = collection(db, 'users');
+const COL_PROJECTS = 'projects';
+const COL_USERS = 'users';
+// Subcollections mapped to flat tables
+const COL_COLUMNS = 'projectColumns';   // was projects/{id}/columns
+const COL_TASKS = 'projectTasks';       // was projects/{id}/tasks
+const COL_TASK_COMMENTS = 'taskComments'; // was projects/{id}/tasks/{id}/comments
 
-// Get all projects
 export async function getProjects(): Promise<Project[]> {
-    try {
-        const q = query(projectsCollection, orderBy('createdAt', 'desc'));
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => {
-            const data = doc.data();
-            return { 
-                id: doc.id,
-                ...data,
-                createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
-            } as Project;
-        });
-    } catch (error) {
-        console.error("Error getting projects:", error);
-        throw new Error("Gagal mengambil data proyek.");
-    }
+  try {
+    const rows = await getAll<any>(COL_PROJECTS, { orderBy: { field: 'createdAt', direction: 'desc' } });
+    return rows.map(r => ({ ...r, createdAt: r.createdAt || new Date().toISOString() })) as Project[];
+  } catch (error) {
+    console.error("Error getting projects:", error);
+    throw new Error("Gagal mengambil data proyek.");
+  }
 }
 
-// Get projects for a specific user (where they are a member)
 export async function getProjectsForUser(userId: string): Promise<Project[]> {
-    try {
-        const q = query(projectsCollection, where('teamIds', 'array-contains', userId), orderBy('createdAt', 'desc'));
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                 id: doc.id, 
-                 ...data,
-                 createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
-            } as Project
-        });
-    } catch (error) {
-        console.error("Error getting projects for user:", error);
-        throw new Error("Gagal mengambil data proyek pengguna.");
-    }
+  try {
+    const rows = await getAll<any>(COL_PROJECTS, {
+      where: { field: 'teamIds', op: 'array-contains', value: userId },
+      orderBy: { field: 'createdAt', direction: 'desc' },
+    });
+    return rows as Project[];
+  } catch (error) {
+    console.error("Error getting projects for user:", error);
+    throw new Error("Gagal mengambil data proyek pengguna.");
+  }
 }
 
-
-// Get a single project by ID
 export async function getProjectById(id: string): Promise<Project | null> {
-    try {
-        const docRef = doc(db, 'projects', id);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            return { 
-                id: docSnap.id, 
-                ...data,
-                createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
-            } as Project;
-        }
-        return null;
-    } catch (error) {
-        console.error("Error getting project by ID:", error);
-        throw new Error("Gagal mengambil data proyek.");
-    }
+  try {
+    const row = await getOne<any>(COL_PROJECTS, id);
+    return row ? (row as Project) : null;
+  } catch (error) {
+    console.error("Error getting project by ID:", error);
+    throw new Error("Gagal mengambil data proyek.");
+  }
 }
 
-// Create a new project
 export async function createProject(
-    data: Omit<Project, 'id' | 'createdAt' | 'taskCount' | 'teamIds' | 'managerId'>,
-    managerId: string,
+  data: Omit<Project, 'id' | 'createdAt' | 'taskCount' | 'teamIds' | 'managerId'>,
+  managerId: string,
 ): Promise<string> {
-    try {
-        const defaultColumns: Omit<ProjectColumn, 'id'>[] = [
-            { title: 'Rencana', taskIds: [] },
-            { title: 'Dikerjakan', taskIds: [] },
-            { title: 'Tinjauan', taskIds: [] },
-            { title: 'Selesai', taskIds: [] },
-        ];
+  try {
+    const projectId = crypto.randomUUID();
+    const projectData = {
+      ...data,
+      managerId,
+      teamIds: [managerId],
+      createdAt: now(),
+      taskCount: 0,
+    };
 
-        const projectData = {
-            ...data,
-            managerId,
-            teamIds: [managerId],
-            createdAt: Timestamp.now(),
-            taskCount: 0,
-        };
+    await create(COL_PROJECTS, projectData as Record<string, unknown>, projectId);
 
-        const projectDocRef = await addDoc(projectsCollection, projectData);
-        
-        const columnsCollection = collection(db, 'projects', projectDocRef.id, 'columns');
-        const batch = writeBatch(db);
-        defaultColumns.forEach(column => {
-            const columnRef = doc(columnsCollection);
-            batch.set(columnRef, column);
-        });
-        await batch.commit();
+    // Create default columns (replaces writeBatch subcollection set)
+    const defaultColumns = ['Rencana', 'Dikerjakan', 'Tinjauan', 'Selesai'];
+    await Promise.all(
+      defaultColumns.map(title =>
+        create(COL_COLUMNS, { projectId, title, taskIds: [] })
+      )
+    );
 
-        revalidatePath('/panel/projects');
-        return projectDocRef.id;
-
-    } catch (error) {
-        console.error("Error creating project:", error);
-        throw new Error("Gagal membuat proyek baru.");
-    }
+    revalidatePath('/panel/projects');
+    return projectId;
+  } catch (error) {
+    console.error("Error creating project:", error);
+    throw new Error("Gagal membuat proyek baru.");
+  }
 }
 
-// Get all columns for a project
 export async function getColumnsForProject(projectId: string): Promise<ProjectColumn[]> {
   try {
-    const columnsRef = collection(db, 'projects', projectId, 'columns');
-    const snapshot = await getDocs(columnsRef);
-    const sortedDocs = snapshot.docs.sort((a, b) => {
-      const order = ['Rencana', 'Dikerjakan', 'Tinjauan', 'Selesai'];
-      return order.indexOf(a.data().title) - order.indexOf(b.data().title);
+    const columns = await getAll<any>(COL_COLUMNS, {
+      where: { field: 'projectId', op: '==', value: projectId },
     });
-    return sortedDocs.map(doc => ({ id: doc.id, ...doc.data() } as ProjectColumn));
+    const order = ['Rencana', 'Dikerjakan', 'Tinjauan', 'Selesai'];
+    return columns
+      .sort((a: any, b: any) => order.indexOf(a.title) - order.indexOf(b.title))
+      .map(c => ({ id: c.id, title: c.title, taskIds: c.taskIds || [] })) as ProjectColumn[];
   } catch (error) {
-      console.error("Error getting columns for project:", error);
-      throw new Error("Gagal mengambil data kolom proyek.");
+    console.error("Error getting columns for project:", error);
+    throw new Error("Gagal mengambil data kolom proyek.");
   }
 }
 
-// Get all tasks for a project
 export async function getTasksForProject(projectId: string): Promise<ProjectTask[]> {
   try {
-    const tasksRef = collection(db, 'projects', projectId, 'tasks');
-    const snapshot = await getDocs(tasksRef);
-    return snapshot.docs.map(doc => {
-        const data = doc.data();
-        let dueDateString: string | undefined = undefined;
-          if (data.dueDate) {
-              if (typeof data.dueDate.toDate === 'function') {
-              dueDateString = data.dueDate.toDate().toISOString();
-              } else if (typeof data.dueDate === 'string') {
-              dueDateString = data.dueDate;
-              }
-          }
-        return {
-            id: doc.id,
-            ...data,
-            dueDate: dueDateString,
-        } as ProjectTask;
+    const tasks = await getAll<any>(COL_TASKS, {
+      where: { field: 'projectId', op: '==', value: projectId },
     });
+    return tasks.map(t => ({
+      ...t,
+      dueDate: t.dueDate || undefined,
+    })) as ProjectTask[];
   } catch (error) {
-      console.error("Error getting tasks for project:", error);
-      throw new Error("Gagal mengambil data tugas proyek.");
+    console.error("Error getting tasks for project:", error);
+    throw new Error("Gagal mengambil data tugas proyek.");
   }
 }
 
-
-// Create a new task in a project and add it to a column
 export async function createTask(projectId: string, columnId: string, title: string): Promise<ProjectTask> {
-    try {
-        const projectRef = doc(db, 'projects', projectId);
-        const tasksCollectionRef = collection(projectRef, 'tasks');
-        const columnRef = doc(projectRef, 'columns', columnId);
+  try {
+    const newTaskData = {
+      projectId,
+      title,
+      description: '',
+      assigneeIds: [],
+      labels: [],
+      commentCount: 0,
+      checklist: [],
+    };
 
-        const newTaskData: Omit<ProjectTask, 'id' | 'dueDate'> = {
-            title: title,
-            description: '',
-            assigneeIds: [],
-            labels: [],
-            commentCount: 0,
-            checklist: [],
-        };
+    const taskId = await create(COL_TASKS, newTaskData);
 
-        const taskDocRef = await addDoc(tasksCollectionRef, newTaskData);
-        
-        await runTransaction(db, async (transaction) => {
-            const columnDoc = await transaction.get(columnRef);
-            if (!columnDoc.exists()) {
-                throw new Error("Kolom tidak ditemukan");
-            }
-            const columnData = columnDoc.data();
-            const newTaskIds = [...columnData.taskIds, taskDocRef.id];
-            transaction.update(columnRef, { taskIds: newTaskIds });
-            transaction.update(projectRef, { taskCount: increment(1) });
-        });
+    // Add task to column's taskIds (sequential, replaces transaction)
+    const column = await getOne<any>(COL_COLUMNS, columnId);
+    if (!column) throw new Error("Kolom tidak ditemukan");
+    await update(COL_COLUMNS, columnId, { taskIds: [...(column.taskIds || []), taskId] });
 
-        revalidatePath(`/panel/projects/${projectId}`);
-        return { id: taskDocRef.id, ...newTaskData };
-    } catch (e) {
-        console.error("Error creating task: ", e);
-        throw new Error("Gagal membuat tugas baru.");
+    // Increment project taskCount
+    const project = await getOne<any>(COL_PROJECTS, projectId);
+    if (project) {
+      await update(COL_PROJECTS, projectId, { taskCount: (project.taskCount || 0) + 1 });
     }
+
+    revalidatePath(`/panel/projects/${projectId}`);
+    return { id: taskId, ...newTaskData } as unknown as ProjectTask;
+  } catch (e) {
+    console.error("Error creating task:", e);
+    throw new Error("Gagal membuat tugas baru.");
+  }
 }
 
-// Update task details
 export async function updateTask(projectId: string, taskId: string, updates: Partial<Omit<ProjectTask, 'id'>>) {
-    try {
-        const taskRef = doc(db, 'projects', projectId, 'tasks', taskId);
-        const currentTaskSnap = await getDoc(taskRef);
-        if (!currentTaskSnap.exists()) throw new Error("Tugas tidak ditemukan");
-        
-        const currentTask = currentTaskSnap.data();
-        
-        const updatesForFirestore: { [key: string]: any } = { ...updates };
-        if (updates.dueDate) {
-            updatesForFirestore.dueDate = Timestamp.fromDate(new Date(updates.dueDate));
-        } else if (updates.dueDate === null) {
-            updatesForFirestore.dueDate = null;
-        }
+  try {
+    const currentTask = await getOne<any>(COL_TASKS, taskId);
+    if (!currentTask) throw new Error("Tugas tidak ditemukan");
 
-        await updateDoc(taskRef, updatesForFirestore);
-
-        if (updates.assigneeIds && currentTask.assigneeIds) {
-            const newAssignees = updates.assigneeIds.filter(id => !currentTask.assigneeIds?.includes(id));
-            if (newAssignees.length > 0) {
-                const project = await getProjectById(projectId);
-                const template = await getWhatsappTemplate('new_task_assigned');
-                const taskTitle = updates.title || currentTask.title;
-                const projectName = project?.title || 'tanpa nama';
-
-                for (const assigneeId of newAssignees) {
-                    const user = await getUserByUid(assigneeId);
-                    if (user) {
-                        const message = template.message
-                            .replace('{namaPengguna}', user.name)
-                            .replace('{namaTugas}', taskTitle)
-                            .replace('{namaProyek}', projectName);
-
-                        if (template.isActive && user.waNumber) {
-                            await sendWhatsAppMessage(user.waNumber, message);
-                        }
-                        if (user.email) {
-                            await sendEmail({
-                                to: user.email,
-                                subject: `Tugas Baru: ${taskTitle}`,
-                                text: message,
-                            });
-                        }
-                        await sendNotification(
-                            { 
-                                title: 'Tugas Baru untuk Anda', 
-                                body: `Anda ditugaskan pada tugas "${taskTitle}" di proyek "${projectName}".`,
-                                link: `/panel/projects/${projectId}`
-                            },
-                            { type: 'users', userIds: [assigneeId] }
-                        );
-                    }
-                }
-            }
-        }
-
-        revalidatePath(`/panel/projects/${projectId}`);
-    } catch (error) {
-        console.error("Error updating task:", error);
-        throw new Error("Gagal memperbarui tugas.");
+    const updatesForDb: Record<string, any> = { ...updates };
+    if (updates.dueDate) {
+      updatesForDb.dueDate = new Date(updates.dueDate).toISOString();
+    } else if (updates.dueDate === null) {
+      updatesForDb.dueDate = null;
     }
+
+    await update(COL_TASKS, taskId, updatesForDb);
+
+    if (updates.assigneeIds && currentTask.assigneeIds) {
+      const newAssignees = updates.assigneeIds.filter((id: string) => !(currentTask.assigneeIds || []).includes(id));
+      if (newAssignees.length > 0) {
+        const project = await getProjectById(projectId);
+        const template = await getWhatsappTemplate('new_task_assigned');
+        const taskTitle = updates.title || currentTask.title;
+        const projectName = project?.title || 'tanpa nama';
+
+        for (const assigneeId of newAssignees) {
+          const user = await getUserByUid(assigneeId);
+          if (user) {
+            const message = template.message
+              .replace('{namaPengguna}', user.name)
+              .replace('{namaTugas}', taskTitle)
+              .replace('{namaProyek}', projectName);
+
+            if (template.isActive && user.waNumber) {
+              await sendWhatsAppMessage(user.waNumber, message);
+            }
+            if (user.email) {
+              await sendEmail({ to: user.email, subject: `Tugas Baru: ${taskTitle}`, text: message });
+            }
+            await sendNotification(
+              { title: 'Tugas Baru untuk Anda', body: `Anda ditugaskan pada tugas "${taskTitle}" di proyek "${projectName}".`, link: `/panel/projects/${projectId}` },
+              { type: 'users', userIds: [assigneeId] }
+            );
+          }
+        }
+      }
+    }
+
+    revalidatePath(`/panel/projects/${projectId}`);
+  } catch (error) {
+    console.error("Error updating task:", error);
+    throw new Error("Gagal memperbarui tugas.");
+  }
 }
 
-
-// Update task's column
 export async function updateTaskColumn(
   projectId: string,
   taskId: string,
@@ -282,109 +203,96 @@ export async function updateTaskColumn(
   destColumnId: string,
   newIndex: number
 ) {
-    try {
-        const sourceColRef = doc(db, 'projects', projectId, 'columns', sourceColumnId);
-        const destColRef = doc(db, 'projects', projectId, 'columns', destColumnId);
+  try {
+    // Sequential read-modify-write (replaces Firebase transaction)
+    const sourceCol = await getOne<any>(COL_COLUMNS, sourceColumnId);
+    if (!sourceCol) throw new Error("Kolom sumber tidak ditemukan");
 
-        await runTransaction(db, async (transaction) => {
-            const sourceDoc = await transaction.get(sourceColRef);
-            const destDoc = await transaction.get(destColRef);
+    const newSourceTaskIds = (sourceCol.taskIds || []).filter((id: string) => id !== taskId);
 
-            if (!sourceDoc.exists() || !destDoc.exists()) {
-                throw new Error("Kolom tidak ditemukan");
-            }
-            
-            const sourceData = sourceDoc.data() as ProjectColumn;
-            const destData = destDoc.data() as ProjectColumn;
+    if (sourceColumnId === destColumnId) {
+      newSourceTaskIds.splice(newIndex, 0, taskId);
+      await update(COL_COLUMNS, sourceColumnId, { taskIds: newSourceTaskIds });
+    } else {
+      const destCol = await getOne<any>(COL_COLUMNS, destColumnId);
+      if (!destCol) throw new Error("Kolom tujuan tidak ditemukan");
 
-            const newSourceTaskIds = sourceData.taskIds.filter(id => id !== taskId);
+      const newDestTaskIds = [...(destCol.taskIds || [])];
+      newDestTaskIds.splice(newIndex, 0, taskId);
 
-            if (sourceColumnId === destColumnId) {
-                newSourceTaskIds.splice(newIndex, 0, taskId);
-                transaction.update(sourceColRef, { taskIds: newSourceTaskIds });
-            } else {
-                const newDestTaskIds = [...destData.taskIds];
-                newDestTaskIds.splice(newIndex, 0, taskId);
-                transaction.update(sourceColRef, { taskIds: newSourceTaskIds });
-                transaction.update(destColRef, { taskIds: newDestTaskIds });
-            }
-        });
-        revalidatePath(`/panel/projects/${projectId}`);
-    } catch(e) {
-        console.error("Transaction failed: ", e);
-        throw new Error("Gagal memindahkan tugas.");
+      await Promise.all([
+        update(COL_COLUMNS, sourceColumnId, { taskIds: newSourceTaskIds }),
+        update(COL_COLUMNS, destColumnId, { taskIds: newDestTaskIds }),
+      ]);
     }
+
+    revalidatePath(`/panel/projects/${projectId}`);
+  } catch (e) {
+    console.error("Error moving task:", e);
+    throw new Error("Gagal memindahkan tugas.");
+  }
 }
 
-// Add/remove team members
 export async function updateTeamMembers(projectId: string, teamIds: string[]) {
-    try {
-        const projectRef = doc(db, 'projects', projectId);
-        await updateDoc(projectRef, { teamIds });
-        revalidatePath(`/panel/projects/${projectId}`);
-    } catch (error) {
-        console.error("Error updating team members:", error);
-        throw new Error("Gagal memperbarui anggota tim.");
-    }
+  try {
+    await update(COL_PROJECTS, projectId, { teamIds });
+    revalidatePath(`/panel/projects/${projectId}`);
+  } catch (error) {
+    console.error("Error updating team members:", error);
+    throw new Error("Gagal memperbarui anggota tim.");
+  }
 }
 
-// Add a comment to a task
 export async function addTaskComment(projectId: string, taskId: string, authorId: string, text: string) {
-    try {
-        if (!authorId) throw new Error("Pengguna tidak terautentikasi.");
-        if (!text.trim()) throw new Error("Komentar tidak boleh kosong.");
+  try {
+    if (!authorId) throw new Error("Pengguna tidak terautentikasi.");
+    if (!text.trim()) throw new Error("Komentar tidak boleh kosong.");
 
-        const taskRef = doc(db, 'projects', projectId, 'tasks', taskId);
-        const commentsCollection = collection(taskRef, 'comments');
-        
-        await runTransaction(db, async (transaction) => {
-            const taskDoc = await transaction.get(taskRef);
-            if (!taskDoc.exists()) throw new Error("Tugas tidak ditemukan.");
+    await create(COL_TASK_COMMENTS, { projectId, taskId, authorId, text, createdAt: now() });
 
-            const newCommentRef = doc(commentsCollection);
-            transaction.set(newCommentRef, { authorId, text, createdAt: Timestamp.now() });
-            transaction.update(taskRef, { commentCount: increment(1) });
-        });
-        
-        revalidatePath(`/panel/projects/${projectId}`);
-    } catch (error) {
-        console.error("Error adding task comment:", error);
-        throw new Error("Gagal menambahkan komentar.");
+    // Increment commentCount
+    const task = await getOne<any>(COL_TASKS, taskId);
+    if (task) {
+      await update(COL_TASKS, taskId, { commentCount: (task.commentCount || 0) + 1 });
     }
+
+    revalidatePath(`/panel/projects/${projectId}`);
+  } catch (error) {
+    console.error("Error adding task comment:", error);
+    throw new Error("Gagal menambahkan komentar.");
+  }
 }
 
-
-// Get comments for a task
 export async function getTaskComments(projectId: string, taskId: string): Promise<CommentWithAuthor[]> {
-    try {
-        const commentsCollection = collection(db, 'projects', projectId, 'tasks', taskId, 'comments');
-        const q = query(commentsCollection, orderBy('createdAt', 'asc'));
+  try {
+    const comments = await getAll<any>(COL_TASK_COMMENTS, {
+      where: [
+        { field: 'projectId', op: '==', value: projectId },
+        { field: 'taskId', op: '==', value: taskId },
+      ],
+      orderBy: { field: 'createdAt', direction: 'asc' },
+    });
 
-        const commentsSnapshot = await getDocs(q);
-        const comments: CommentWithAuthor[] = [];
-
-        for (const commentDoc of commentsSnapshot.docs) {
-            const commentData = commentDoc.data();
-            const authorDoc = await getDoc(doc(usersCollection, commentData.authorId));
-
-            if (authorDoc.exists()) {
-                const authorData = authorDoc.data();
-                comments.push({
-                    id: commentDoc.id,
-                    text: commentData.text,
-                    timestamp: (commentData.createdAt as Timestamp).toDate().toISOString(),
-                    author: {
-                        id: commentData.authorId,
-                        name: authorData.fullName || authorData.displayName || 'User',
-                        username: authorData.username || 'user',
-                        avatarUrl: authorData.avatarUrl || '',
-                    },
-                });
-            }
-        }
-        return comments;
-    } catch (error) {
-        console.error("Error getting task comments:", error);
-        throw new Error("Gagal memuat komentar tugas.");
+    const results: CommentWithAuthor[] = [];
+    for (const comment of comments) {
+      const authorData = await getOne<any>(COL_USERS, comment.authorId);
+      if (authorData) {
+        results.push({
+          id: comment.id,
+          text: comment.text,
+          timestamp: comment.createdAt || new Date().toISOString(),
+          author: {
+            id: comment.authorId,
+            name: authorData.fullName || authorData.displayName || 'User',
+            username: authorData.username || 'user',
+            avatarUrl: authorData.avatarUrl || '',
+          },
+        });
+      }
     }
+    return results;
+  } catch (error) {
+    console.error("Error getting task comments:", error);
+    throw new Error("Gagal memuat komentar tugas.");
+  }
 }

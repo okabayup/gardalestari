@@ -16,8 +16,6 @@ import { searchIdeaBank } from '@/app/actions/ideas';
 import { searchPrograms } from '@/app/actions/programs';
 import { searchEvents } from '@/app/actions/events';
 import { searchAchievements } from '@/app/actions/achievements';
-import { storage } from '@/lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Document as DocxDocument, Packer, Paragraph, TextRun } from 'docx';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { 
@@ -148,10 +146,8 @@ const createDocumentTool = ai.defineTool(
              throw new Error(`Unsupported file format: .${fileExtension}. Please use .docx or .pdf`);
         }
         
-        const storageRef = ref(storage, `ai-generated-docs/${Date.now()}_${fileName}`);
-        await uploadBytes(storageRef, buffer, { contentType });
-        
-        const downloadUrl = await getDownloadURL(storageRef);
+        const storagePath = `ai-generated-docs/${Date.now()}_${fileName}`;
+        const downloadUrl = await uploadFile(buffer, storagePath);
         console.log(`[createDocumentTool] Document successfully generated and uploaded to: ${downloadUrl}`);
         
         return { downloadUrl };
@@ -180,16 +176,13 @@ const generateImageTool = ai.defineTool(
             if (!imageUrl) {
                 throw new Error("Image generation failed to return a URL.");
             }
-            const storageRef = ref(storage, `ai-generated-images/${Date.now()}.png`);
-            // The flow now returns a full data URI, so we need to handle it.
             const isDataUri = imageUrl.startsWith('data:');
             const buffer = isDataUri 
                 ? Buffer.from(imageUrl.split(',')[1], 'base64')
                 : Buffer.from(await(await fetch(imageUrl)).arrayBuffer());
-            const contentType = isDataUri ? imageUrl.split(';')[0].split(':')[1] : 'image/png';
             
-            await uploadBytes(storageRef, buffer, { contentType });
-            const downloadUrl = await getDownloadURL(storageRef);
+            const storagePath = `ai-generated-images/${Date.now()}.png`;
+            const downloadUrl = await uploadFile(buffer, storagePath);
             console.log(`[generateImageTool] Image successfully generated and uploaded to: ${downloadUrl}`);
             return { imageUrl: downloadUrl };
         } catch (error) {

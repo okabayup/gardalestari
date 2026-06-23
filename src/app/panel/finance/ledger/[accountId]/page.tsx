@@ -11,7 +11,6 @@ import { Loader2, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { Timestamp } from 'firebase/firestore';
 
 interface LedgerRow {
   date: Date;
@@ -54,7 +53,7 @@ export default function LedgerPage() {
         const change = accountDetails.normalBalance === 'Debit' ? debit - credit : credit - debit;
         runningBalance += change;
         return {
-          date: (entry.date as any).toDate(),
+          date: new Date(entry.date as string),
           description: entry.description,
           debit,
           credit,

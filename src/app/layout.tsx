@@ -9,6 +9,7 @@ import FirebaseAnalytics from '@/components/FirebaseAnalytics';
 import { logError } from './actions/errors';
 import { usePathname } from 'next/navigation';
 import FloatingContactButtons from '@/components/layout/FloatingContactButtons';
+import MigrationBanner from '@/components/layout/MigrationBanner';
 
 function ErrorWatcher() {
   const { user } = useAuth();
@@ -102,6 +103,7 @@ export default function RootLayout({
         <AuthProvider>
           <ErrorWatcher />
           <ImageErrorWatcher />
+          <MigrationBanner />
           {children}
           <Toaster />
           <FloatingContactButtons />

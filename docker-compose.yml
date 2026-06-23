@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  gardalestari:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: http://host.docker.internal:8000
+        NEXT_PUBLIC_BASE_URL: https://gardalestari.org
+    image: gardalestari:latest
+    container_name: gardalestari_app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - NEXT_PUBLIC_BASE_URL=https://gardalestari.org
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

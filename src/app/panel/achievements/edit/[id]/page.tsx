@@ -16,7 +16,6 @@ import { Loader2, Calendar as CalendarIcon, User, Search } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
 import { getAchievement, updateAchievement } from '@/app/actions/achievements';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -82,7 +81,7 @@ export default function EditAchievementPage() {
     setLoading(true);
     try {
       const { imageFile, ...payload } = data;
-      const achievementData = { ...payload, date: Timestamp.fromDate(data.date) };
+      const achievementData = { ...payload, date: data.date.toISOString() };
       await updateAchievement(id, achievementData, imageFile?.[0]);
       toast({ title: 'Prestasi berhasil diperbarui!' });
       router.push('/panel/achievements');

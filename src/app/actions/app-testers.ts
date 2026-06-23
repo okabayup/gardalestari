@@ -1,150 +1,116 @@
-
-
 'use server';
 
-import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, Timestamp, query, orderBy, getDoc, where, deleteDoc } from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 import { AppTester, AppTesterApp } from '@/lib/definitions';
+import { getAll, getOne, getFirst, create, update, remove, now } from '@/lib/db';
 import { getWhatsappTemplate } from '@/app/actions/settings';
 import { sendWhatsAppMessage } from '@/services/whatsapp';
 import { createShortLink } from '@/app/actions/shortlinks';
 import { sendEmail } from '@/services/email';
 
-const appTestersCollection = collection(db, 'appTesters');
-const appTesterAppsCollection = collection(db, 'appTesterApps');
+const COL_TESTERS = 'appTesters';
+const COL_APPS = 'appTesterApps';
 
-export async function submitTesterApplication(data: Omit<AppTester, 'id' | 'status' | 'submittedAt'>): Promise<void> {
-    try {
-        await addDoc(appTestersCollection, {
-            ...data,
-            status: 'pending',
-            submittedAt: Timestamp.now(),
-        });
-    } catch (error) {
-        console.error("Error submitting tester application:", error);
-        throw new Error("Gagal mengirimkan aplikasi Anda.");
-    }
+export async function submitTesterApplication(
+  data: Omit<AppTester, 'id' | 'status' | 'submittedAt'>
+): Promise<void> {
+  try {
+    await create(COL_TESTERS, { ...data, status: 'pending', submittedAt: now() });
+  } catch (error) {
+    console.error('Error submitting tester application:', error);
+    throw new Error('Gagal mengirimkan aplikasi Anda.');
+  }
 }
 
 export async function getTesterApplications(): Promise<AppTester[]> {
-    const q = query(appTestersCollection, orderBy('submittedAt', 'desc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-            id: doc.id,
-            ...data,
-            submittedAt: (data.submittedAt as Timestamp).toDate().toISOString(),
-            processedAt: data.processedAt ? (data.processedAt as Timestamp).toDate().toISOString() : undefined,
-        } as AppTester;
-    });
+  return await getAll<AppTester>(COL_TESTERS, {
+    orderBy: { field: 'submittedAt', direction: 'desc' },
+  });
 }
 
 export async function approveTesterApplication(id: string): Promise<void> {
-    try {
-        const docRef = doc(db, 'appTesters', id);
-        const appSnap = await getDoc(docRef);
-        if (!appSnap.exists()) {
-            throw new Error("Aplikasi tidak ditemukan.");
-        }
-        const application = appSnap.data() as AppTester;
-        
-        const appToTest = await getAppTesterApp(application.appId);
-        if (!appToTest) {
-            throw new Error("Aplikasi yang diuji tidak ditemukan.");
-        }
-        
-        const template = await getWhatsappTemplate('app_tester_approved');
-        if (template.isActive && application.waNumber) {
-            const message = template.message
-                .replace('{namaPengguna}', application.name)
-                .replace('{namaAplikasi}', appToTest.name)
-                .replace('{linkPengujian}', appToTest.testingLink);
-            await sendWhatsAppMessage(application.waNumber, message);
-        }
-        
-        await sendEmail({
-            to: application.email,
-            subject: `Persetujuan Penguji Aplikasi: ${appToTest.name}`,
-            text: `Selamat, ${application.name}! Anda telah disetujui sebagai penguji untuk aplikasi "${appToTest.name}". Silakan klik tautan berikut untuk bergabung dalam program pengujian: ${appToTest.testingLink}`
-        });
+  try {
+    const application = await getOne<AppTester>(COL_TESTERS, id);
+    if (!application) throw new Error('Aplikasi tidak ditemukan.');
 
-        await updateDoc(docRef, {
-            status: 'approved',
-            processedAt: Timestamp.now(),
-        });
-        
-        revalidatePath('/panel/app-testers');
+    const appToTest = await getAppTesterApp(application.appId);
+    if (!appToTest) throw new Error('Aplikasi yang diuji tidak ditemukan.');
 
-    } catch (error) {
-        console.error("Error approving tester:", error);
-        throw new Error(`Gagal menyetujui tester: ${(error as Error).message}`);
+    const template = await getWhatsappTemplate('app_tester_approved');
+    if (template.isActive && (application as any).waNumber) {
+      const message = template.message
+        .replace('{namaPengguna}', application.name)
+        .replace('{namaAplikasi}', appToTest.name)
+        .replace('{linkPengujian}', (appToTest as any).testingLink);
+      await sendWhatsAppMessage((application as any).waNumber, message);
     }
+
+    await sendEmail({
+      to: application.email,
+      subject: `Persetujuan Penguji Aplikasi: ${appToTest.name}`,
+      text: `Selamat, ${application.name}! Anda telah disetujui sebagai penguji untuk "${appToTest.name}". Link: ${(appToTest as any).testingLink}`,
+    });
+
+    await update(COL_TESTERS, id, { status: 'approved', processedAt: now() });
+    revalidatePath('/panel/app-testers');
+  } catch (error) {
+    console.error('Error approving tester:', error);
+    throw new Error(`Gagal menyetujui tester: ${(error as Error).message}`);
+  }
 }
 
 export async function rejectTesterApplication(id: string): Promise<void> {
-    try {
-        const docRef = doc(db, 'appTesters', id);
-        await updateDoc(docRef, {
-            status: 'rejected',
-            processedAt: Timestamp.now(),
-        });
-        revalidatePath('/panel/app-testers');
-    } catch (error) {
-        console.error("Error rejecting tester:", error);
-        throw new Error("Gagal menolak tester.");
-    }
+  try {
+    await update(COL_TESTERS, id, { status: 'rejected', processedAt: now() });
+    revalidatePath('/panel/app-testers');
+  } catch (error) {
+    console.error('Error rejecting tester:', error);
+    throw new Error('Gagal menolak tester.');
+  }
 }
 
+// ─── App Management ───────────────────────────────────────────────────────────
 
-// --- App Tester App Management ---
-export async function createAppTesterApp(data: Omit<AppTesterApp, 'id' | 'createdAt' | 'shortlinkSlug'>) {
-    const slug = `uji-${data.name.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 20)}`;
-    const q = query(appTesterAppsCollection, where('shortlinkSlug', '==', slug));
-    const existing = await getDocs(q);
-    if (!existing.empty) {
-        throw new Error(`Aplikasi dengan nama serupa sudah ada (slug: ${slug}).`);
-    }
+export async function createAppTesterApp(
+  data: Omit<AppTesterApp, 'id' | 'createdAt' | 'shortlinkSlug'>
+) {
+  const slug = `uji-${data.name.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 20)}`;
+  const existing = await getFirst(COL_APPS, {
+    where: { field: 'shortlinkSlug', op: '==', value: slug },
+  });
+  if (existing) throw new Error(`Aplikasi dengan nama serupa sudah ada (slug: ${slug}).`);
 
-    const docRef = await addDoc(appTesterAppsCollection, {
-        ...data,
-        shortlinkSlug: slug,
-        createdAt: Timestamp.now(),
-    });
+  const id = await create(COL_APPS, { ...data, shortlinkSlug: slug, createdAt: now() });
 
-    await createShortLink({
-        title: `Pendaftaran Uji Aplikasi: ${data.name}`,
-        slug: slug,
-        longUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/uji-aplikasi/${slug}`,
-        type: 'app_tester',
-        relatedId: docRef.id,
-    });
-    
-    revalidatePath('/panel/app-testers/apps');
+  await createShortLink({
+    title: `Pendaftaran Uji Aplikasi: ${data.name}`,
+    slug,
+    longUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/uji-aplikasi/${slug}`,
+    type: 'app_tester',
+    relatedId: id,
+  });
+
+  revalidatePath('/panel/app-testers/apps');
 }
 
 export async function getAppTesterApps(): Promise<AppTesterApp[]> {
-    const q = query(appTesterAppsCollection, orderBy('createdAt', 'desc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(d => ({id: d.id, ...d.data()} as AppTesterApp));
+  return await getAll<AppTesterApp>(COL_APPS, {
+    orderBy: { field: 'createdAt', direction: 'desc' },
+  });
 }
 
 export async function getAppTesterApp(id: string): Promise<AppTesterApp | null> {
-    const docSnap = await getDoc(doc(appTesterAppsCollection, id));
-    return docSnap.exists() ? {id: docSnap.id, ...docSnap.data()} as AppTesterApp : null;
+  return await getOne<AppTesterApp>(COL_APPS, id);
 }
 
 export async function getAppTesterAppBySlug(slug: string): Promise<AppTesterApp | null> {
-    const q = query(appTesterAppsCollection, where('shortlinkSlug', '==', slug));
-    const snapshot = await getDocs(q);
-    if (snapshot.empty) return null;
-    const doc = snapshot.docs[0];
-    return {id: doc.id, ...doc.data()} as AppTesterApp;
+  return await getFirst<AppTesterApp>(COL_APPS, {
+    where: { field: 'shortlinkSlug', op: '==', value: slug },
+  });
 }
 
 export async function deleteAppTesterApp(id: string) {
-    // TODO: Also delete the shortlink
-    await deleteDoc(doc(appTesterAppsCollection, id));
-    revalidatePath('/panel/app-testers/apps');
+  // TODO: Also delete the shortlink
+  await remove(COL_APPS, id);
+  revalidatePath('/panel/app-testers/apps');
 }

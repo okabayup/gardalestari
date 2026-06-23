@@ -62,7 +62,7 @@ export default async function ChallengesPage() {
                                 <CardFooter className="flex flex-col sm:flex-row justify-between items-center bg-muted/50 p-4">
                                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                         <Calendar className="h-4 w-4" />
-                                        <span>Batas Waktu: {format(challenge.deadline.toDate(), "dd MMMM yyyy", { locale: id })}</span>
+                                        <span>Batas Waktu: {format(new Date(challenge.deadline as string), "dd MMMM yyyy", { locale: id })}</span>
                                     </div>
                                     <Button asChild className="mt-4 sm:mt-0 w-full sm:w-auto">
                                         <Link href={`/ideas/new?challengeId=${challenge.id}&title=${encodeURIComponent(`Solusi untuk: ${challenge.title}`)}`}>

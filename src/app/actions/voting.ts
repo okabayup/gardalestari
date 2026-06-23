@@ -1,72 +1,65 @@
-
 'use server';
 
-import { db, storage } from '@/lib/firebase';
-import {
-  collection,
-  doc,
-  addDoc,
-  getDocs,
-  getDoc,
-  updateDoc,
-  deleteDoc,
-  writeBatch,
-  query,
-  where,
-  Timestamp,
-  orderBy,
-  runTransaction,
-} from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import type { VotingTopic, VotingOption, UpdateVotingTopicPayload, VotingTopicDTO } from '@/lib/definitions';
+import { getAll, getOne, create, update, remove, uploadFile, now } from '@/lib/db';
 import { checkAndAwardBadges } from './badges';
 
-const votingCollection = collection(db, 'votingTopics');
-const usersCollection = collection(db, 'users');
+const COL = 'votingTopics';
+const COL_USERS = 'users';
+
+// Helper: safely convert any date value to ISO string
+const toISOStringSafe = (date: any): string => {
+  if (!date) return new Date().toISOString();
+  if (typeof date === 'string') {
+    const parsed = new Date(date);
+    return isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
+  }
+  if (date instanceof Date) return date.toISOString();
+  if (date.toDate) return date.toDate().toISOString(); // Firestore Timestamp (migrated data)
+  return new Date().toISOString();
+};
 
 // --- Admin Actions ---
 
 export async function createVotingTopic(
-  data: Omit<UpdateVotingTopicPayload, 'options'>, 
+  data: Omit<UpdateVotingTopicPayload, 'options'>,
   options: { name: string; imageFile?: File }[],
   coverImageFile?: File
 ) {
   try {
     let coverImageUrl: string | undefined = undefined;
     if (coverImageFile) {
-        const coverImageRef = ref(storage, `evoting/covers/${Date.now()}_${coverImageFile.name}`);
-        await uploadBytes(coverImageRef, coverImageFile);
-        coverImageUrl = await getDownloadURL(coverImageRef);
+      coverImageUrl = await uploadFile(coverImageFile, `evoting/covers/${Date.now()}_${coverImageFile.name}`);
     }
-    
-    const optionsWithDetails: VotingOption[] = await Promise.all(options.map(async (opt, index) => {
+
+    const optionsWithDetails: VotingOption[] = await Promise.all(
+      options.map(async (opt, index) => {
         let imageUrl: string | undefined = undefined;
         if (opt.imageFile) {
-            const optionImageRef = ref(storage, `evoting/options/${Date.now()}_${index}_${opt.imageFile.name}`);
-            await uploadBytes(optionImageRef, opt.imageFile);
-            imageUrl = await getDownloadURL(optionImageRef);
+          imageUrl = await uploadFile(opt.imageFile, `evoting/options/${Date.now()}_${index}_${opt.imageFile.name}`);
         }
         return {
-            id: `option-${index + 1}-${Date.now()}`,
-            name: opt.name,
-            voteCount: 0,
-            imageUrl: imageUrl
+          id: `option-${index + 1}-${Date.now()}`,
+          name: opt.name,
+          voteCount: 0,
+          imageUrl,
         };
-    }));
-    
+      })
+    );
+
     const newTopic = {
-        ...data,
-        startDate: Timestamp.fromDate(data.startDate),
-        endDate: Timestamp.fromDate(data.endDate),
-        options: optionsWithDetails,
-        coverImageUrl,
-        totalVotes: 0,
-        voterIds: [],
-        createdAt: Timestamp.now(),
+      ...data,
+      startDate: data.startDate instanceof Date ? data.startDate.toISOString() : data.startDate,
+      endDate: data.endDate instanceof Date ? data.endDate.toISOString() : data.endDate,
+      options: optionsWithDetails,
+      coverImageUrl,
+      totalVotes: 0,
+      voterIds: [],
+      createdAt: now(),
     };
 
-    await addDoc(votingCollection, newTopic);
+    await create(COL, newTopic as Record<string, unknown>);
     revalidatePath('/panel/evoting');
     revalidatePath('/evoting');
   } catch (error) {
@@ -76,59 +69,48 @@ export async function createVotingTopic(
 }
 
 export async function updateVotingTopic(
-    id: string, 
-    data: UpdateVotingTopicPayload,
-    newOptions: { name: string; imageFile?: File; existingImageUrl?: string; id: string; voteCount: number }[],
-    coverImageFile?: File
+  id: string,
+  data: UpdateVotingTopicPayload,
+  newOptions: { name: string; imageFile?: File; existingImageUrl?: string; id: string; voteCount: number }[],
+  coverImageFile?: File
 ) {
-    try {
-        const topicRef = doc(db, 'votingTopics', id);
+  try {
+    const dataToUpdate: Record<string, any> = {
+      ...data,
+      startDate: data.startDate instanceof Date ? data.startDate.toISOString() : data.startDate,
+      endDate: data.endDate instanceof Date ? data.endDate.toISOString() : data.endDate,
+    };
 
-        const dataToUpdate: { [key: string]: any } = {
-            ...data,
-            startDate: Timestamp.fromDate(data.startDate),
-            endDate: Timestamp.fromDate(data.endDate),
-        };
-        
-        if (coverImageFile) {
-            const coverImageRef = ref(storage, `evoting/covers/${Date.now()}_${coverImageFile.name}`);
-            await uploadBytes(coverImageRef, coverImageFile);
-            dataToUpdate.coverImageUrl = await getDownloadURL(coverImageRef);
-        } else if (data.coverImageUrl === undefined) {
-             dataToUpdate.coverImageUrl = null;
-        }
-
-        const updatedOptions = await Promise.all(newOptions.map(async (opt, index) => {
-            let imageUrl = opt.existingImageUrl;
-            if (opt.imageFile) {
-                const optionImageRef = ref(storage, `evoting/options/${id}_${index}_${opt.imageFile.name}`);
-                await uploadBytes(optionImageRef, opt.imageFile);
-                imageUrl = await getDownloadURL(optionImageRef);
-            }
-             return {
-                id: opt.id,
-                name: opt.name,
-                voteCount: opt.voteCount,
-                imageUrl: imageUrl
-            };
-        }));
-        
-        dataToUpdate.options = updatedOptions;
-
-        await updateDoc(topicRef, dataToUpdate);
-
-        revalidatePath('/panel/evoting');
-        revalidatePath(`/evoting/${id}`);
-    } catch (error) {
-        console.error('Error updating voting topic:', error);
-        throw new Error(`Gagal memperbarui topik E-Voting: ${(error as Error).message}`);
+    if (coverImageFile) {
+      dataToUpdate.coverImageUrl = await uploadFile(coverImageFile, `evoting/covers/${Date.now()}_${coverImageFile.name}`);
+    } else if (data.coverImageUrl === undefined) {
+      dataToUpdate.coverImageUrl = null;
     }
-}
 
+    const updatedOptions = await Promise.all(
+      newOptions.map(async (opt, index) => {
+        let imageUrl = opt.existingImageUrl;
+        if (opt.imageFile) {
+          imageUrl = await uploadFile(opt.imageFile, `evoting/options/${id}_${index}_${opt.imageFile.name}`);
+        }
+        return { id: opt.id, name: opt.name, voteCount: opt.voteCount, imageUrl };
+      })
+    );
+
+    dataToUpdate.options = updatedOptions;
+    await update(COL, id, dataToUpdate);
+
+    revalidatePath('/panel/evoting');
+    revalidatePath(`/evoting/${id}`);
+  } catch (error) {
+    console.error('Error updating voting topic:', error);
+    throw new Error(`Gagal memperbarui topik E-Voting: ${(error as Error).message}`);
+  }
+}
 
 export async function deleteVotingTopic(id: string) {
   try {
-    await deleteDoc(doc(db, 'votingTopics', id));
+    await remove(COL, id);
     // TODO: Delete images from storage
     revalidatePath('/panel/evoting');
     revalidatePath('/evoting');
@@ -138,137 +120,91 @@ export async function deleteVotingTopic(id: string) {
   }
 }
 
-// Helper function to safely convert a Firestore Timestamp or a JS Date to an ISO string.
-const toISOStringSafe = (date: any): string => {
-  if (!date) return new Date().toISOString();
-  if (date.toDate) return date.toDate().toISOString(); // Firestore Timestamp
-  if (date instanceof Date) return date.toISOString(); // JavaScript Date
-  
-  // Check if the date string is valid before creating a new Date
-  const parsedDate = new Date(date);
-  if (!isNaN(parsedDate.getTime())) {
-    return parsedDate.toISOString();
-  }
-
-  // Fallback for invalid dates
-  return new Date().toISOString();
-}
-
-// This function returns a DTO to be safely used by client components
 export async function getVotingTopics(): Promise<VotingTopicDTO[]> {
-  const q = query(votingCollection, orderBy('createdAt', 'desc'));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(docSnap => {
-    const data = docSnap.data();
-    return {
-        id: docSnap.id,
-        title: data.title,
-        description: data.description,
-        options: data.options,
-        voterIds: data.voterIds,
-        totalVotes: data.totalVotes,
-        startDate: toISOStringSafe(data.startDate),
-        endDate: toISOStringSafe(data.endDate),
-        createdAt: toISOStringSafe(data.createdAt),
-        coverImageUrl: data.coverImageUrl,
-    }
-  });
+  const rows = await getAll<any>(COL, { orderBy: { field: 'createdAt', direction: 'desc' } });
+  return rows.map(row => ({
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    options: row.options,
+    voterIds: row.voterIds,
+    totalVotes: row.totalVotes,
+    startDate: toISOStringSafe(row.startDate),
+    endDate: toISOStringSafe(row.endDate),
+    createdAt: toISOStringSafe(row.createdAt),
+    coverImageUrl: row.coverImageUrl,
+  }));
 }
 
-// This function returns a DTO to be safely used by client components
 export async function getVotingTopic(id: string): Promise<VotingTopicDTO | null> {
-  const docRef = doc(db, 'votingTopics', id);
-  const docSnap = await getDoc(docRef);
-  if (!docSnap.exists()) {
-    return null;
-  }
-  const data = docSnap.data();
+  const row = await getOne<any>(COL, id);
+  if (!row) return null;
   return {
-    id: docSnap.id,
-    title: data.title,
-    description: data.description,
-    options: data.options,
-    voterIds: data.voterIds,
-    totalVotes: data.totalVotes,
-    startDate: toISOStringSafe(data.startDate),
-    endDate: toISOStringSafe(data.endDate),
-    createdAt: toISOStringSafe(data.createdAt),
-    coverImageUrl: data.coverImageUrl
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    options: row.options,
+    voterIds: row.voterIds,
+    totalVotes: row.totalVotes,
+    startDate: toISOStringSafe(row.startDate),
+    endDate: toISOStringSafe(row.endDate),
+    createdAt: toISOStringSafe(row.createdAt),
+    coverImageUrl: row.coverImageUrl,
   };
 }
-
 
 // --- User Actions ---
 
 export async function castVote(topicId: string, optionId: string, userId: string) {
   try {
-    await runTransaction(db, async (transaction) => {
-      const topicRef = doc(db, 'votingTopics', topicId);
-      const userRef = doc(db, 'users', userId);
-      
-      const [topicDoc, userDoc] = await Promise.all([
-          transaction.get(topicRef),
-          transaction.get(userRef)
-      ]);
+    // Sequential read-modify-write (replaces Firebase transaction)
+    const topicData = await getOne<any>(COL, topicId);
+    const userData = await getOne<any>(COL_USERS, userId);
 
-      if (!topicDoc.exists()) {
-        throw new Error('Topik voting tidak ditemukan.');
+    if (!topicData) throw new Error('Topik voting tidak ditemukan.');
+    if (!userData) throw new Error('Pengguna tidak ditemukan.');
+
+    if ((topicData.voterIds || []).includes(userId)) {
+      throw new Error('Anda sudah memberikan suara untuk topik ini.');
+    }
+
+    const nowIso = new Date().toISOString();
+    if (nowIso < toISOStringSafe(topicData.startDate) || nowIso > toISOStringSafe(topicData.endDate)) {
+      throw new Error('Periode voting untuk topik ini sudah berakhir atau belum dimulai.');
+    }
+
+    // --- Weighted Vote Logic ---
+    let voteWeight = 1;
+    const isSpecialMember = userData.isSpecialMember === true;
+
+    if (isSpecialMember) {
+      const voterIds: string[] = topicData.voterIds || [];
+      const voterDocs = await Promise.all(voterIds.map(vId => getOne<any>(COL_USERS, vId)));
+      const regularVotersCount = voterDocs.filter(v => v && v.isSpecialMember !== true).length;
+      const specialVotersCount = voterDocs.filter(v => v && v.isSpecialMember === true).length;
+
+      const totalRegularVotesWeight = Math.ceil(regularVotersCount * 0.25);
+      const newSpecialVoterCount = specialVotersCount + 1;
+
+      voteWeight = totalRegularVotesWeight > 0
+        ? Math.max(1, Math.floor(totalRegularVotesWeight / newSpecialVoterCount))
+        : 5;
+    }
+
+    const newOptions = (topicData.options || []).map((opt: VotingOption) => {
+      if (opt.id === optionId) {
+        return { ...opt, voteCount: opt.voteCount + voteWeight };
       }
-      if (!userDoc.exists()) {
-        throw new Error('Pengguna tidak ditemukan.');
-      }
-
-      const topicData = topicDoc.data() as VotingTopic;
-      const userData = userDoc.data();
-
-      // Check if user has already voted
-      if (topicData.voterIds.includes(userId)) {
-        throw new Error('Anda sudah memberikan suara untuk topik ini.');
-      }
-
-      // Check if voting is active
-      const now = Timestamp.now();
-      if (now < topicData.startDate || now > topicData.endDate) {
-          throw new Error('Periode voting untuk topik ini sudah berakhir atau belum dimulai.');
-      }
-      
-      // --- Weighted Vote Logic ---
-      let voteWeight = 1;
-      const isSpecialMember = userData.isSpecialMember === true;
-
-      if (isSpecialMember) {
-          const voterInfoPromises = topicData.voterIds.map(vId => transaction.get(doc(usersCollection, vId)));
-          const voterDocs = await Promise.all(voterInfoPromises);
-          
-          const regularVotersCount = voterDocs.filter(vDoc => vDoc.exists() && vDoc.data()?.isSpecialMember !== true).length;
-          const specialVotersCount = voterDocs.filter(vDoc => vDoc.exists() && vDoc.data()?.isSpecialMember === true).length;
-          
-          const totalRegularVotesWeight = Math.ceil(regularVotersCount * 0.25);
-          const newSpecialVoterCount = specialVotersCount + 1; // including the current voter
-
-          voteWeight = totalRegularVotesWeight > 0 
-              ? Math.max(1, Math.floor(totalRegularVotesWeight / newSpecialVoterCount))
-              : 5; // Fallback weight if no regular members have voted yet
-      }
-
-      // Update vote counts
-      const newOptions = topicData.options.map(opt => {
-        if (opt.id === optionId) {
-          return { ...opt, voteCount: opt.voteCount + voteWeight };
-        }
-        return opt;
-      });
-
-      transaction.update(topicRef, {
-        options: newOptions,
-        voterIds: [...topicData.voterIds, userId],
-        totalVotes: topicData.totalVotes + voteWeight,
-      });
+      return opt;
     });
 
-    // Trigger badge/mission check after successful transaction
-    await checkAndAwardBadges(userId, 'vote_casted');
+    await update(COL, topicId, {
+      options: newOptions,
+      voterIds: [...(topicData.voterIds || []), userId],
+      totalVotes: (topicData.totalVotes || 0) + voteWeight,
+    });
 
+    await checkAndAwardBadges(userId, 'vote_casted');
     revalidatePath(`/evoting/${topicId}`);
   } catch (error) {
     console.error("Error casting vote:", error);

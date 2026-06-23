@@ -18,7 +18,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
 import { createJournalEntry, getAccounts, Account } from '@/app/actions/finance';
 import { cn } from '@/lib/utils';
 
@@ -83,7 +82,7 @@ export default function NewJournalEntryPage() {
     try {
       const payload = {
         ...data,
-        date: Timestamp.fromDate(data.date),
+        date: data.date.toISOString(),
         createdBy: user.uid,
       };
       await createJournalEntry(payload);

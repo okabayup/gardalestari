@@ -16,7 +16,6 @@ import { Loader2, Calendar as CalendarIcon, User, Search } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
 import { createAchievement } from '@/app/actions/achievements';
 import { searchUsers, PublicUser } from '@/app/actions/user';
 import { cn } from '@/lib/utils';
@@ -134,7 +133,7 @@ export default function NewAchievementPage() {
         userId: user.id,
         userName: user.name,
         userAvatar: user.avatarUrl,
-        date: Timestamp.fromDate(data.date),
+        date: data.date.toISOString(),
       };
       await createAchievement(payload, imageFile?.[0]);
       toast({ title: 'Prestasi berhasil ditambahkan!' });

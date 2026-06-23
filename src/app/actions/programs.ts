@@ -1,8 +1,5 @@
 'use server';
 
-import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, query, orderBy, limit, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import { getWhatsappTemplate } from '@/app/actions/settings';
 import { sendBulkWhatsAppMessage } from '@/services/whatsapp';
@@ -11,45 +8,40 @@ import type { Program, ProgramFormData, ProgramTag } from '@/lib/definitions';
 import { generateImage } from '@/ai/flows/image-generate-flow';
 import { sendNotification } from '@/app/actions/notifications';
 import { getMembers } from '@/app/actions/user';
+import { getAll, getOne, create, update, remove, uploadFile, deleteFile, now } from '@/lib/db';
 
-const programsCollection = collection(db, 'programs');
-const tagsCollection = collection(db, 'programTags');
-const usersCollection = collection(db, 'users');
+const COL = 'programs';
+const COL_TAGS = 'programTags';
 
-const toProgram = (doc: any): Program => {
-    const data = doc.data();
-    return {
-        id: doc.id,
-        ...data,
-        startDate: (data.startDate as Timestamp).toDate(),
-        endDate: data.endDate ? (data.endDate as Timestamp).toDate() : undefined,
-    } as Program;
-}
+// Helper: convert ISO string dates back to Date objects for Program type compatibility
+const toProgram = (data: any): Program => ({
+  ...data,
+  startDate: data.startDate ? new Date(data.startDate) : new Date(),
+  endDate: data.endDate ? new Date(data.endDate) : undefined,
+}) as Program;
 
 // === Public Functions for AI Tool ===
 
 export async function searchPrograms(searchQuery: string): Promise<Partial<Program>[]> {
   try {
-    const q = query(
-        programsCollection,
-        orderBy('endDate', 'desc'),
-        limit(10)
-    );
-
-    const snapshot = await getDocs(q);
-    const allEntries: Program[] = snapshot.docs.map(toProgram);
+    const all = await getAll<any>(COL, {
+      orderBy: { field: 'endDate', direction: 'desc' },
+      limit: 10,
+    });
 
     const searchTerms = searchQuery.toLowerCase().split(' ');
-    const results = allEntries.filter(entry => {
-        const searchableText = `${entry.title} ${entry.description} ${entry.tags.join(' ')}`.toLowerCase();
+    const results = all
+      .filter((entry: any) => {
+        const searchableText = `${entry.title} ${entry.description} ${(entry.tags || []).join(' ')}`.toLowerCase();
         return searchTerms.some(term => searchableText.includes(term));
-    }).slice(0, 5);
+      })
+      .slice(0, 5);
 
-    return results.map(entry => ({
-        id: entry.id,
-        title: entry.title,
-        endDate: entry.endDate,
-        category: entry.category,
+    return results.map((entry: any) => ({
+      id: entry.id,
+      title: entry.title,
+      endDate: entry.endDate ? new Date(entry.endDate) : undefined,
+      category: entry.category,
     }));
   } catch (error) {
     console.error("[searchPrograms Error]", error);
@@ -57,218 +49,164 @@ export async function searchPrograms(searchQuery: string): Promise<Partial<Progr
   }
 }
 
-
-// Get all programs
 export async function getPrograms(): Promise<Program[]> {
   try {
-    const q = query(programsCollection, orderBy('startDate', 'desc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(toProgram);
+    const rows = await getAll<any>(COL, { orderBy: { field: 'startDate', direction: 'desc' } });
+    return rows.map(toProgram);
   } catch (error) {
     console.error("[getPrograms Error]", error);
     throw new Error("Gagal mengambil data program.");
   }
 }
 
-// Get a single program by ID
 export async function getProgram(id: string): Promise<Program | null> {
-    try {
-        const programDocRef = doc(db, 'programs', id);
-        const docSnap = await getDoc(programDocRef);
-        if (docSnap.exists()) {
-            return toProgram(docSnap);
-        }
-        return null;
-    } catch (error) {
-        console.error("[getProgram Error]", error);
-        throw new Error("Gagal mengambil data program.");
-    }
+  try {
+    const row = await getOne<any>(COL, id);
+    return row ? toProgram(row) : null;
+  } catch (error) {
+    console.error("[getProgram Error]", error);
+    throw new Error("Gagal mengambil data program.");
+  }
 }
 
-export async function createProgram(
-    formData: FormData,
-): Promise<string> {
-    try {
-        const programData = Object.fromEntries(formData.entries());
-        const { 
-            imageFile, attachment, dateRangeFrom, dateRangeTo, tags, isUnlimited,
-            ...rest 
-        } = programData;
+export async function createProgram(formData: FormData): Promise<string> {
+  try {
+    const programData = Object.fromEntries(formData.entries());
+    const { imageFile, attachment, dateRangeFrom, dateRangeTo, tags, isUnlimited, ...rest } = programData;
 
-        const dataToCreate: { [key: string]: any } = {
-            ...rest,
-            tags: Array.isArray(tags) ? tags : (tags as string).split(','),
-            startDate: Timestamp.fromDate(new Date(dateRangeFrom as string)),
-            createdAt: serverTimestamp(),
-        };
+    const dataToCreate: Record<string, any> = {
+      ...rest,
+      tags: Array.isArray(tags) ? tags : (tags as string).split(','),
+      startDate: new Date(dateRangeFrom as string).toISOString(),
+      createdAt: now(),
+    };
 
-        if (isUnlimited === 'true') {
-            dataToCreate.endDate = null;
-        } else if (dateRangeTo) {
-            dataToCreate.endDate = Timestamp.fromDate(new Date(dateRangeTo as string));
-        }
-
-        if (programData.imageSource === 'upload' && imageFile instanceof File) {
-            const imageRef = ref(storage, `program-images/${Date.now()}_${imageFile.name}`);
-            await uploadBytes(imageRef, imageFile);
-            dataToCreate.imageUrl = await getDownloadURL(imageRef);
-        } else if (programData.imageSource === 'ai' && typeof programData.imageHint === 'string' && programData.imageHint) {
-            const result = await generateImage({ prompt: programData.imageHint });
-            if (!result.imageUrl) throw new Error("AI gagal membuat URL gambar.");
-            
-            // If it's a data URI, upload it to storage first
-            if (result.imageUrl.startsWith('data:')) {
-                const storageRef = ref(storage, `program-images/${Date.now()}_ai_generated.png`);
-                await uploadBytes(storageRef, Buffer.from(result.imageUrl.split(',')[1], 'base64'), { contentType: 'image/png' });
-                dataToCreate.imageUrl = await getDownloadURL(storageRef);
-            } else {
-                dataToCreate.imageUrl = result.imageUrl;
-            }
-
-        } else if (programData.imageSource === 'url' && typeof programData.imageUrl === 'string' && programData.imageUrl) {
-             dataToCreate.imageUrl = programData.imageUrl;
-        } else {
-             dataToCreate.imageUrl = `https://picsum.photos/seed/${programData.title}/600/400`;
-        }
-        
-        if (attachment instanceof File) {
-          const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachment.name}`);
-          await uploadBytes(attachmentRef, attachment);
-          dataToCreate.attachmentUrl = await getDownloadURL(attachmentRef);
-          dataToCreate.attachmentName = attachment.name;
-        }
-        
-        const docRef = await addDoc(programsCollection, dataToCreate);
-
-        if (programData.programType === 'aktif') {
-            try {
-                await sendNotification(
-                    {
-                        title: `Program Baru: ${dataToCreate.title}`,
-                        body: `Pendaftaran untuk program "${dataToCreate.title}" telah dibuka. Cek sekarang!`,
-                        link: `/programs/${docRef.id}`
-                    },
-                    { type: 'all' }
-                );
-            } catch (e) { console.warn("[createProgram Warn] Gagal mengirim notifikasi push untuk program baru:", e); }
-
-            try {
-                const template = await getWhatsappTemplate('new_program_announcement');
-                if (template.isActive && dateRangeTo) {
-                    const members = await getMembers();
-                    const phoneNumbers = members.map(doc => doc.waNumber).filter(Boolean) as string[];
-
-                    if (phoneNumbers.length > 0) {
-                        const message = template.message
-                            .replace('{namaProgram}', dataToCreate.title)
-                            .replace('{batasWaktu}', new Date(dateRangeTo as string).toLocaleDateString('id-ID'));
-                        
-                        await sendBulkWhatsAppMessage(phoneNumbers, message);
-                    }
-                }
-            } catch (error) { console.warn(`[createProgram Warn] Gagal mengirim notifikasi WhatsApp massal:`, error); }
-        }
-        
-        revalidatePath('/panel/programs');
-        revalidatePath('/programs');
-        revalidatePath(`/programs/${docRef.id}`);
-        
-        return docRef.id;
-
-    } catch (error) {
-        console.error('[createProgram Error] Server Action Error:', error);
-        throw new Error(`Gagal total membuat program: ${(error as Error).message}`);
+    if (isUnlimited === 'true') {
+      dataToCreate.endDate = null;
+    } else if (dateRangeTo) {
+      dataToCreate.endDate = new Date(dateRangeTo as string).toISOString();
     }
+
+    if (programData.imageSource === 'upload' && imageFile instanceof File) {
+      dataToCreate.imageUrl = await uploadFile(imageFile, `program-images/${Date.now()}_${imageFile.name}`);
+    } else if (programData.imageSource === 'ai' && typeof programData.imageHint === 'string' && programData.imageHint) {
+      const result = await generateImage({ prompt: programData.imageHint });
+      if (!result.imageUrl) throw new Error("AI gagal membuat URL gambar.");
+
+      if (result.imageUrl.startsWith('data:')) {
+        const buf = Buffer.from(result.imageUrl.split(',')[1], 'base64');
+        dataToCreate.imageUrl = await uploadFile(buf, `program-images/${Date.now()}_ai_generated.png`);
+      } else {
+        dataToCreate.imageUrl = result.imageUrl;
+      }
+    } else if (programData.imageSource === 'url' && typeof programData.imageUrl === 'string' && programData.imageUrl) {
+      dataToCreate.imageUrl = programData.imageUrl;
+    } else {
+      dataToCreate.imageUrl = `https://picsum.photos/seed/${programData.title}/600/400`;
+    }
+
+    if (attachment instanceof File) {
+      dataToCreate.attachmentUrl = await uploadFile(attachment, `program_attachments/${Date.now()}_${attachment.name}`);
+      dataToCreate.attachmentName = attachment.name;
+    }
+
+    const programId = await create(COL, dataToCreate);
+
+    if (programData.programType === 'aktif') {
+      try {
+        await sendNotification(
+          {
+            title: `Program Baru: ${dataToCreate.title}`,
+            body: `Pendaftaran untuk program "${dataToCreate.title}" telah dibuka. Cek sekarang!`,
+            link: `/programs/${programId}`,
+          },
+          { type: 'all' }
+        );
+      } catch (e) { console.warn("[createProgram Warn] Gagal mengirim notifikasi:", e); }
+
+      try {
+        const template = await getWhatsappTemplate('new_program_announcement');
+        if (template.isActive && dateRangeTo) {
+          const members = await getMembers();
+          const phoneNumbers = members.map((m: any) => m.waNumber).filter(Boolean) as string[];
+          if (phoneNumbers.length > 0) {
+            const message = template.message
+              .replace('{namaProgram}', dataToCreate.title)
+              .replace('{batasWaktu}', new Date(dateRangeTo as string).toLocaleDateString('id-ID'));
+            await sendBulkWhatsAppMessage(phoneNumbers, message);
+          }
+        }
+      } catch (error) { console.warn("[createProgram Warn] Gagal mengirim notifikasi WhatsApp:", error); }
+    }
+
+    revalidatePath('/panel/programs');
+    revalidatePath('/programs');
+    revalidatePath(`/programs/${programId}`);
+
+    return programId;
+  } catch (error) {
+    console.error('[createProgram Error]', error);
+    throw new Error(`Gagal total membuat program: ${(error as Error).message}`);
+  }
 }
 
-// Update an existing program
 export async function updateProgram(id: string, formData: FormData) {
-    try {
-        const programData = Object.fromEntries(formData.entries());
-        const { 
-            imageFile, attachment, dateRangeFrom, dateRangeTo, tags, isUnlimited,
-            ...rest 
-        } = programData;
+  try {
+    const programData = Object.fromEntries(formData.entries());
+    const { imageFile, attachment, dateRangeFrom, dateRangeTo, tags, isUnlimited, ...rest } = programData;
 
-        const dataToUpdate: { [key: string]: any } = {
-            ...rest,
-            tags: Array.isArray(tags) ? tags : (tags as string).split(','),
-        };
-        
-        if (dateRangeFrom) dataToUpdate.startDate = Timestamp.fromDate(new Date(dateRangeFrom as string));
-        
-        if (isUnlimited === 'true') {
-            dataToUpdate.endDate = null;
-        } else if (dateRangeTo) {
-            dataToUpdate.endDate = Timestamp.fromDate(new Date(dateRangeTo as string));
-        }
+    const dataToUpdate: Record<string, any> = {
+      ...rest,
+      tags: Array.isArray(tags) ? tags : (tags as string).split(','),
+    };
 
-        if (imageFile instanceof File) {
-            const imageRef = ref(storage, `program-images/${Date.now()}_${imageFile.name}`);
-            await uploadBytes(imageRef, imageFile);
-            dataToUpdate.imageUrl = await getDownloadURL(imageRef);
-        }
+    if (dateRangeFrom) dataToUpdate.startDate = new Date(dateRangeFrom as string).toISOString();
 
-        if (attachment instanceof File) {
-            const currentProgram = await getProgram(id);
-            if (currentProgram?.attachmentUrl) {
-                try {
-                    const oldAttachmentRef = ref(storage, currentProgram.attachmentUrl);
-                    await deleteObject(oldAttachmentRef);
-                } catch (storageError: any) {
-                    if (storageError.code !== 'storage/object-not-found') {
-                        console.warn("[updateProgram Warn] Could not delete old attachment, it might not exist.", storageError);
-                    }
-                }
-            }
-            const attachmentRef = ref(storage, `program_attachments/${Date.now()}_${attachment.name}`);
-            await uploadBytes(attachmentRef, attachment);
-            dataToUpdate.attachmentUrl = await getDownloadURL(attachmentRef);
-            dataToUpdate.attachmentName = attachment.name;
-        }
-
-        const programDoc = doc(db, 'programs', id);
-        await updateDoc(programDoc, dataToUpdate);
-        
-        revalidatePath('/panel/programs');
-        revalidatePath(`/panel/programs/edit/${id}`);
-        revalidatePath('/programs');
-        revalidatePath(`/programs/${id}`);
-    } catch (error) {
-        console.error("[updateProgram Error]", error);
-        throw new Error("Gagal memperbarui program. " + (error as Error).message);
+    if (isUnlimited === 'true') {
+      dataToUpdate.endDate = null;
+    } else if (dateRangeTo) {
+      dataToUpdate.endDate = new Date(dateRangeTo as string).toISOString();
     }
+
+    if (imageFile instanceof File) {
+      dataToUpdate.imageUrl = await uploadFile(imageFile, `program-images/${Date.now()}_${imageFile.name}`);
+    }
+
+    if (attachment instanceof File) {
+      const currentProgram = await getProgram(id);
+      if (currentProgram?.attachmentUrl) {
+        try {
+          await deleteFile(currentProgram.attachmentUrl as any);
+        } catch (e) {
+          console.warn("[updateProgram Warn] Could not delete old attachment:", e);
+        }
+      }
+      dataToUpdate.attachmentUrl = await uploadFile(attachment, `program_attachments/${Date.now()}_${attachment.name}`);
+      dataToUpdate.attachmentName = attachment.name;
+    }
+
+    await update(COL, id, dataToUpdate);
+
+    revalidatePath('/panel/programs');
+    revalidatePath(`/panel/programs/edit/${id}`);
+    revalidatePath('/programs');
+    revalidatePath(`/programs/${id}`);
+  } catch (error) {
+    console.error("[updateProgram Error]", error);
+    throw new Error("Gagal memperbarui program. " + (error as Error).message);
+  }
 }
 
-// Delete a program
 export async function deleteProgram(id: string) {
   try {
     const programToDelete = await getProgram(id);
-    const programDoc = doc(db, 'programs', id);
-    await deleteDoc(programDoc);
+    await remove(COL, id);
 
-    if (programToDelete?.attachmentUrl) {
-        try {
-            const attachmentRef = ref(storage, programToDelete.attachmentUrl);
-            await deleteObject(attachmentRef);
-        } catch (storageError: any) {
-             if (storageError.code !== 'storage/object-not-found') {
-                console.error("[deleteProgram Error] Could not delete attachment:", storageError);
-             }
-        }
+    if ((programToDelete as any)?.attachmentUrl) {
+      try { await deleteFile((programToDelete as any).attachmentUrl); } catch {}
     }
-
-    if (programToDelete?.imageUrl) {
-        try {
-            if (programToDelete.imageUrl.includes('firebasestorage.googleapis.com')) {
-                const imageRef = ref(storage, programToDelete.imageUrl);
-                await deleteObject(imageRef);
-            }
-        } catch (storageError: any) {
-             if (storageError.code !== 'storage/object-not-found') {
-                console.error("[deleteProgram Error] Could not delete program image:", storageError);
-             }
-        }
+    if ((programToDelete as any)?.imageUrl) {
+      try { await deleteFile((programToDelete as any).imageUrl); } catch {}
     }
 
     revalidatePath('/panel/programs');
@@ -279,39 +217,33 @@ export async function deleteProgram(id: string) {
   }
 }
 
-
 // --- Tag Management ---
 
-// Get all tags
 export async function getProgramTags(): Promise<ProgramTag[]> {
   try {
-    const snapshot = await getDocs(query(tagsCollection, orderBy('name')));
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProgramTag));
+    return await getAll<ProgramTag>(COL_TAGS, { orderBy: { field: 'name', direction: 'asc' } });
   } catch (error) {
-      console.error("[getProgramTags Error]", error);
-      throw new Error("Gagal mengambil data tag.");
+    console.error("[getProgramTags Error]", error);
+    throw new Error("Gagal mengambil data tag.");
   }
 }
 
-// Add a new tag
 export async function addProgramTag(name: string) {
-    try {
-        await addDoc(tagsCollection, { name });
-        revalidatePath('/panel/programs/tags');
-    } catch (error) {
-        console.error("[addProgramTag Error]", error);
-        throw new Error("Gagal menambahkan tag baru.");
-    }
+  try {
+    await create(COL_TAGS, { name });
+    revalidatePath('/panel/programs/tags');
+  } catch (error) {
+    console.error("[addProgramTag Error]", error);
+    throw new Error("Gagal menambahkan tag baru.");
+  }
 }
 
-// Delete a tag
 export async function deleteProgramTag(id: string) {
-    try {
-        const tagDoc = doc(db, 'programTags', id);
-        await deleteDoc(tagDoc);
-        revalidatePath('/panel/programs/tags');
-    } catch (error) {
-        console.error("[deleteProgramTag Error]", error);
-        throw new Error("Gagal menghapus tag.");
-    }
+  try {
+    await remove(COL_TAGS, id);
+    revalidatePath('/panel/programs/tags');
+  } catch (error) {
+    console.error("[deleteProgramTag Error]", error);
+    throw new Error("Gagal menghapus tag.");
+  }
 }

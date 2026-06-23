@@ -19,7 +19,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
 import { createInvoice } from '@/app/actions/finance';
 import { getContacts, Contact } from '@/app/actions/finance';
 import { cn } from '@/lib/utils';
@@ -82,8 +81,8 @@ export default function NewInvoicePage() {
     const payload: Omit<Invoice, 'id' | 'createdAt' | 'invoiceNumber'> = {
       contactId: data.contactId,
       contactName: selectedContact.name,
-      date: Timestamp.fromDate(data.date),
-      dueDate: Timestamp.fromDate(data.dueDate),
+      date: data.date.toISOString(),
+      dueDate: data.dueDate.toISOString(),
       items: data.items.map(item => ({ ...item, total: item.quantity * item.unitPrice })),
       subtotal,
       tax,

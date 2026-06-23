@@ -1,6 +1,6 @@
 
 'use client';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { Loader2 } from 'lucide-react';
@@ -11,22 +11,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { logError } from '@/app/actions/errors';
-import { RecaptchaVerifier } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 
-// Function to normalize phone number to +62 format
 const normalizePhoneNumber = (phone: string): string => {
-    let normalized = phone.replace(/\D/g, ''); // Remove non-digit characters
-    if (normalized.startsWith('0')) {
-        normalized = '62' + normalized.substring(1);
-    } else if (normalized.startsWith('62')) {
-        // Already in correct format prefix, do nothing
-    } else {
-        normalized = '62' + normalized;
-    }
-    return `+${normalized}`;
+  let normalized = phone.replace(/\D/g, '');
+  if (normalized.startsWith('0')) {
+    normalized = '62' + normalized.substring(1);
+  } else if (!normalized.startsWith('62')) {
+    normalized = '62' + normalized;
+  }
+  return `+${normalized}`;
 };
-
 
 export default function LoginPage() {
   const { user, loading, signInWithPhone, verifyOtp } = useAuth();
@@ -38,28 +32,6 @@ export default function LoginPage() {
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [countdown, setCountdown] = useState(0);
-  
-  const recaptchaContainerRef = useRef<HTMLDivElement>(null);
-  const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
-
-  useEffect(() => {
-    if (!loading && !user && recaptchaContainerRef.current && !recaptchaVerifierRef.current) {
-        try {
-            const verifier = new RecaptchaVerifier(auth, recaptchaContainerRef.current, {
-                'size': 'invisible',
-                'callback': () => {},
-            });
-            recaptchaVerifierRef.current = verifier;
-        } catch (error) {
-             console.error("reCAPTCHA initialization error:", error);
-             toast({
-                variant: 'destructive',
-                title: 'Gagal memuat reCAPTCHA',
-                description: 'Mohon segarkan halaman dan coba lagi.',
-            });
-        }
-    }
-  }, [loading, user, toast]);
 
   useEffect(() => {
     if (!loading && user) {
@@ -80,25 +52,18 @@ export default function LoginPage() {
     setIsSubmitting(true);
     setCountdown(60);
     const phoneNumber = normalizePhoneNumber(phone);
-    
-    if (!recaptchaVerifierRef.current) {
-        toast({ variant: 'destructive', title: 'Error', description: 'reCAPTCHA belum siap. Mohon segarkan halaman.' });
-        setIsSubmitting(false);
-        setCountdown(0);
-        return;
-    }
 
     try {
-      await signInWithPhone(phoneNumber, recaptchaVerifierRef.current);
+      await signInWithPhone(phoneNumber);
       setStep('otp');
       toast({ title: 'OTP Terkirim', description: 'Silakan periksa ponsel Anda untuk kode verifikasi.' });
     } catch (error) {
       const err = error as Error;
       toast({ variant: 'destructive', title: 'Error', description: 'Gagal mengirim OTP. Pastikan nomor valid dan coba lagi.' });
-      logError({ 
-        message: err.message, 
-        stack: err.stack, 
-        context: 'login-otp-send', 
+      logError({
+        message: err.message,
+        stack: err.stack,
+        context: 'login-otp-send',
         userPhone: phoneNumber,
         path: pathname,
       });
@@ -118,10 +83,10 @@ export default function LoginPage() {
     } catch (error) {
       const err = error as Error;
       toast({ variant: 'destructive', title: 'Error', description: err.message || 'OTP tidak valid. Silakan coba lagi.' });
-      logError({ 
-        message: err.message, 
-        stack: err.stack, 
-        context: 'login-otp-verify', 
+      logError({
+        message: err.message,
+        stack: err.stack,
+        context: 'login-otp-verify',
         userPhone: phone,
         path: pathname,
       });
@@ -129,30 +94,23 @@ export default function LoginPage() {
       setIsSubmitting(false);
     }
   };
-  
+
   const handleResendOtp = async () => {
     if (countdown > 0) return;
     setIsSubmitting(true);
     setCountdown(60);
     const phoneNumber = normalizePhoneNumber(phone);
-    
-    if (!recaptchaVerifierRef.current) {
-        toast({ variant: 'destructive', title: 'Error', description: 'reCAPTCHA belum siap. Mohon tunggu atau segarkan halaman.' });
-        setIsSubmitting(false);
-        setCountdown(0);
-        return;
-    }
 
     try {
-      await signInWithPhone(phoneNumber, recaptchaVerifierRef.current);
+      await signInWithPhone(phoneNumber);
       toast({ title: 'OTP Terkirim Kembali', description: 'Silakan periksa kembali ponsel Anda.' });
     } catch (error) {
       const err = error as Error;
       toast({ variant: 'destructive', title: 'Gagal Mengirim Ulang OTP', description: 'Silakan coba lagi beberapa saat.' });
-      logError({ 
-        message: err.message, 
-        stack: err.stack, 
-        context: 'login-otp-resend', 
+      logError({
+        message: err.message,
+        stack: err.stack,
+        context: 'login-otp-resend',
         userPhone: phoneNumber,
         path: pathname,
       });
@@ -160,8 +118,7 @@ export default function LoginPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }
-
+  };
 
   if (loading || user) {
     return (
@@ -173,7 +130,6 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-secondary p-4">
-       <div ref={recaptchaContainerRef} />
       <div className="w-full max-w-sm">
         <div className="text-center mb-6">
           <Link href="/" className="inline-block">
@@ -201,7 +157,7 @@ export default function LoginPage() {
                 />
                 <Button type="submit" className="w-full" disabled={isSubmitting || countdown > 0}>
                   {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  {isSubmitting ? 'Mengirim...' : (countdown > 0 ? `Kirim Ulang OTP dalam ${countdown}s` : 'Kirim OTP')}
+                  {isSubmitting ? 'Mengirim...' : countdown > 0 ? `Kirim Ulang OTP dalam ${countdown}s` : 'Kirim OTP'}
                 </Button>
               </form>
             ) : (
@@ -218,8 +174,8 @@ export default function LoginPage() {
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Verifikasi & Masuk
                 </Button>
-                 <Button type="button" variant="link" className="w-full" onClick={handleResendOtp} disabled={countdown > 0 || isSubmitting}>
-                    {countdown > 0 ? `Kirim ulang dalam ${countdown}s` : 'Kirim ulang kode OTP'}
+                <Button type="button" variant="link" className="w-full" onClick={handleResendOtp} disabled={countdown > 0 || isSubmitting}>
+                  {countdown > 0 ? `Kirim ulang dalam ${countdown}s` : 'Kirim ulang kode OTP'}
                 </Button>
               </form>
             )}

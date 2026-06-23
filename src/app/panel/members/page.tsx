@@ -37,7 +37,6 @@ import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/panel/DataTable';
 import { columns } from './columns';
 import { Badge } from '@/components/ui/badge';
-import type { Timestamp } from 'firebase/firestore';
 import { memberTypes, verificationStatuses } from '@/lib/definitions';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -184,7 +183,7 @@ export default function AdminMembersPage() {
           accessorKey: "deletionRequestedAt",
           header: "Permintaan Hapus",
           cell: ({ row }) => {
-            const member = row.original as MemberWithStatus & { deletionRequestedAt?: Timestamp };
+            const member = row.original as MemberWithStatus & { deletionRequestedAt?: string | Date };
             return member.deletionRequestedAt ? (
               <Badge variant="destructive">Diminta</Badge>
             ) : null;

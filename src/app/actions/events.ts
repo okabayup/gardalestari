@@ -1,291 +1,214 @@
 'use server';
 
-import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query, limit, arrayUnion } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 export type { Event } from '@/lib/definitions';
 import type { Event } from '@/lib/definitions';
+import { getAll, getOne, create, update, remove, uploadFile, deleteFile, now } from '@/lib/db';
 import { generateImage } from '@/ai/flows/image-generate-flow';
 import { getWhatsappTemplate } from './settings';
 import { sendBulkWhatsAppMessage } from '@/services/whatsapp';
 import { getMembers } from './user';
 
-const eventsCollection = collection(db, 'events');
+const COL = 'events';
 
-const toEvent = (doc: any): Event => {
-    const data = doc.data();
-    return {
-        id: doc.id,
-        ...data,
-        startDate: (data.startDate as Timestamp).toDate(),
-        endDate: data.endDate ? (data.endDate as Timestamp).toDate() : undefined,
-        createdAt: (data.createdAt as Timestamp).toDate(),
-    } as Event;
-};
+// ─── AI Tool ─────────────────────────────────────────────────────────────────
 
-
-// === Public Functions for AI Tool ===
-
-/**
- * Searches events based on a query.
- * To be used by an AI tool.
- * @param searchQuery The keywords to search for.
- * @returns A list of relevant events.
- */
 export async function searchEvents(searchQuery: string): Promise<Partial<Event>[]> {
-    try {
-        const q = query(
-            eventsCollection,
-            orderBy('startDate', 'desc'),
-            limit(10)
-        );
-
-        const snapshot = await getDocs(q);
-        const allEntries: Event[] = snapshot.docs.map(toEvent);
-
-        const searchTerms = searchQuery.toLowerCase().split(' ');
-        const results = allEntries.filter(entry => {
-            const searchableText = `${entry.title} ${entry.description} ${entry.location}`.toLowerCase();
-            return searchTerms.some(term => searchableText.includes(term));
-        }).slice(0, 5);
-
-        return results.map(entry => ({
-            id: entry.id,
-            title: entry.title,
-            startDate: entry.startDate,
-            endDate: entry.endDate,
-            location: entry.location,
-        }));
-    } catch (error) {
-        console.error("[searchEvents Error]", error);
-        throw new Error("Gagal mencari acara.");
-    }
-}
-
-
-// Get all events, ordered by date
-export async function getEvents(): Promise<Event[]> {
   try {
-    const q = query(eventsCollection, orderBy('startDate', 'asc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(toEvent);
+    const allEntries = await getAll<Event>(COL, {
+      orderBy: { field: 'startDate', direction: 'desc' },
+      limit: 10,
+    });
+    const terms = searchQuery.toLowerCase().split(' ');
+    return allEntries
+      .filter(e => {
+        const text = `${e.title} ${(e as any).description} ${(e as any).location}`.toLowerCase();
+        return terms.some(t => text.includes(t));
+      })
+      .slice(0, 5)
+      .map(({ id, title, startDate, endDate, location }: any) => ({ id, title, startDate, endDate, location }));
   } catch (error) {
-      console.error("[getEvents Error]", error);
-      throw new Error("Gagal mengambil data acara.");
+    console.error('[searchEvents Error]', error);
+    throw new Error('Gagal mencari acara.');
   }
 }
 
-// Get a single event by ID
-export async function getEvent(id: string): Promise<Event | null> {
-    try {
-        const eventDoc = doc(db, 'events', id);
-        const docSnap = await getDoc(eventDoc);
-        if (docSnap.exists()) {
-            return toEvent(docSnap);
-        }
-        return null;
-    } catch (error) {
-        console.error("[getEvent Error]", error);
-        throw new Error("Gagal mengambil data acara.");
-    }
+// ─── CRUD ────────────────────────────────────────────────────────────────────
+
+export async function getEvents(): Promise<Event[]> {
+  try {
+    return await getAll<Event>(COL, {
+      orderBy: { field: 'startDate', direction: 'asc' },
+    });
+  } catch (error) {
+    console.error('[getEvents Error]', error);
+    throw new Error('Gagal mengambil data acara.');
+  }
 }
 
-// Create a new event
+export async function getEvent(id: string): Promise<Event | null> {
+  try {
+    return await getOne<Event>(COL, id);
+  } catch (error) {
+    console.error('[getEvent Error]', error);
+    throw new Error('Gagal mengambil data acara.');
+  }
+}
+
+async function resolveImage(
+  imageSource: string,
+  imageFile: File | null,
+  imageHint: string,
+  imageUrl: string,
+  fallbackTitle: string
+): Promise<string> {
+  if (imageSource === 'upload' && imageFile && imageFile.size > 0) {
+    return await uploadFile(imageFile, `event-images/${Date.now()}_${imageFile.name}`);
+  }
+  if (imageSource === 'ai' && imageHint) {
+    const result = await generateImage({ prompt: imageHint });
+    if (result.imageUrl) {
+      if (result.imageUrl.startsWith('data:')) {
+        const buf = Buffer.from(result.imageUrl.split(',')[1], 'base64');
+        return await uploadFile(buf, `event-images/${Date.now()}_ai_generated.png`);
+      }
+      return result.imageUrl;
+    }
+  }
+  if (imageSource === 'url' && imageUrl) return imageUrl;
+  return `https://picsum.photos/seed/${fallbackTitle}/600/400`;
+}
+
 export async function createEvent(formData: FormData) {
   try {
-    const eventData = Object.fromEntries(formData.entries());
-    
-    const dataToCreate: { [key: string]: any } = {
-        title: eventData.title,
-        slug: eventData.slug,
-        description: eventData.description,
-        location: eventData.location,
-        visibility: eventData.visibility,
-        submissionType: eventData.submissionType,
-        applicationUrl: eventData.applicationUrl,
-        formId: eventData.formId,
-        startDate: Timestamp.fromDate(new Date(eventData.dateRangeFrom as string)),
-        endDate: eventData.dateRangeTo ? Timestamp.fromDate(new Date(eventData.dateRangeTo as string)) : null,
-        attendeeIds: [],
-        guestAttendees: [],
-        createdAt: Timestamp.now(),
+    const d = Object.fromEntries(formData.entries());
+    const dataToCreate: Record<string, unknown> = {
+      title: d.title,
+      slug: d.slug,
+      description: d.description,
+      location: d.location,
+      visibility: d.visibility,
+      submissionType: d.submissionType,
+      applicationUrl: d.applicationUrl,
+      formId: d.formId,
+      startDate: new Date(d.dateRangeFrom as string).toISOString(),
+      endDate: d.dateRangeTo ? new Date(d.dateRangeTo as string).toISOString() : null,
+      attendeeIds: [],
+      guestAttendees: [],
+      createdAt: now(),
     };
-    
-    if (eventData.imageSource === 'upload' && eventData.imageFile instanceof File && eventData.imageFile.size > 0) {
-        const imageRef = ref(storage, `event-images/${Date.now()}_${eventData.imageFile.name}`);
-        await uploadBytes(imageRef, eventData.imageFile);
-        dataToCreate.imageUrl = await getDownloadURL(imageRef);
-    } else if (eventData.imageSource === 'ai' && typeof eventData.imageHint === 'string' && eventData.imageHint) {
-        const result = await generateImage({ prompt: eventData.imageHint });
-        if (result.imageUrl) {
-             if (result.imageUrl.startsWith('data:')) {
-                const storageRef = ref(storage, `event-images/${Date.now()}_ai_generated.png`);
-                await uploadBytes(storageRef, Buffer.from(result.imageUrl.split(',')[1], 'base64'), { contentType: 'image/png' });
-                dataToCreate.imageUrl = await getDownloadURL(storageRef);
-            } else {
-                dataToCreate.imageUrl = result.imageUrl;
-            }
-        }
-    } else if (eventData.imageSource === 'url' && typeof eventData.imageUrl === 'string' && eventData.imageUrl) {
-         dataToCreate.imageUrl = eventData.imageUrl;
-    } else {
-         dataToCreate.imageUrl = `https://picsum.photos/seed/${eventData.title}/600/400`;
+
+    dataToCreate.imageUrl = await resolveImage(
+      d.imageSource as string,
+      d.imageFile instanceof File ? d.imageFile : null,
+      d.imageHint as string,
+      d.imageUrl as string,
+      d.title as string
+    );
+
+    if (d.attachment instanceof File && (d.attachment as File).size > 0) {
+      const f = d.attachment as File;
+      dataToCreate.attachmentUrl = await uploadFile(f, `event_attachments/${Date.now()}_${f.name}`);
+      dataToCreate.attachmentName = f.name;
     }
 
-    if (eventData.attachment instanceof File && eventData.attachment.size > 0) {
-      const attachmentRef = ref(storage, `event_attachments/${Date.now()}_${eventData.attachment.name}`);
-      await uploadBytes(attachmentRef, eventData.attachment);
-      dataToCreate.attachmentUrl = await getDownloadURL(attachmentRef);
-      dataToCreate.attachmentName = eventData.attachment.name;
-    }
-    await addDoc(eventsCollection, dataToCreate);
-
+    await create(COL, dataToCreate);
     revalidatePath('/panel/events');
     revalidatePath('/events');
   } catch (error) {
-    console.error("[createEvent Error]", error);
+    console.error('[createEvent Error]', error);
     throw new Error(`Gagal membuat acara: ${(error as Error).message}`);
   }
 }
 
-// Update an existing event
 export async function updateEvent(id: string, formData: FormData) {
   try {
-    const eventDoc = doc(db, 'events', id);
-    const eventData = Object.fromEntries(formData.entries());
-
-    const dataToUpdate: { [key: string]: any } = {
-        title: eventData.title,
-        slug: eventData.slug,
-        description: eventData.description,
-        location: eventData.location,
-        visibility: eventData.visibility,
-        submissionType: eventData.submissionType,
-        applicationUrl: eventData.applicationUrl,
-        formId: eventData.formId,
-        startDate: Timestamp.fromDate(new Date(eventData.dateRangeFrom as string)),
-        endDate: eventData.dateRangeTo ? Timestamp.fromDate(new Date(eventData.dateRangeTo as string)) : null,
+    const d = Object.fromEntries(formData.entries());
+    const dataToUpdate: Record<string, unknown> = {
+      title: d.title,
+      slug: d.slug,
+      description: d.description,
+      location: d.location,
+      visibility: d.visibility,
+      submissionType: d.submissionType,
+      applicationUrl: d.applicationUrl,
+      formId: d.formId,
+      startDate: new Date(d.dateRangeFrom as string).toISOString(),
+      endDate: d.dateRangeTo ? new Date(d.dateRangeTo as string).toISOString() : null,
     };
-    
-    if (eventData.imageFile instanceof File && eventData.imageFile.size > 0) {
-        const imageRef = ref(storage, `event-images/${Date.now()}_${eventData.imageFile.name}`);
-        await uploadBytes(imageRef, eventData.imageFile);
-        dataToUpdate.imageUrl = await getDownloadURL(imageRef);
-    } else if (eventData.imageSource === 'ai' && typeof eventData.imageHint === 'string' && eventData.imageHint) {
-         const result = await generateImage({ prompt: eventData.imageHint });
-         if (result.imageUrl) {
-            if (result.imageUrl.startsWith('data:')) {
-                const storageRef = ref(storage, `event-images/${Date.now()}_ai_generated.png`);
-                await uploadBytes(storageRef, Buffer.from(result.imageUrl.split(',')[1], 'base64'), { contentType: 'image/png' });
-                dataToUpdate.imageUrl = await getDownloadURL(storageRef);
-            } else {
-                dataToUpdate.imageUrl = result.imageUrl;
-            }
-         }
-    } else if (eventData.imageSource === 'url' && typeof eventData.imageUrl === 'string' && eventData.imageUrl) {
-         dataToUpdate.imageUrl = eventData.imageUrl;
+
+    if (d.imageFile instanceof File && (d.imageFile as File).size > 0) {
+      dataToUpdate.imageUrl = await uploadFile(
+        d.imageFile as File,
+        `event-images/${Date.now()}_${(d.imageFile as File).name}`
+      );
+    } else if (d.imageSource === 'ai' && d.imageHint) {
+      dataToUpdate.imageUrl = await resolveImage('ai', null, d.imageHint as string, '', '');
+    } else if (d.imageSource === 'url' && d.imageUrl) {
+      dataToUpdate.imageUrl = d.imageUrl;
     }
 
-    if (eventData.attachment instanceof File && eventData.attachment.size > 0) {
-        const currentEvent = await getEvent(id);
-        if (currentEvent?.attachmentUrl) {
-            try {
-                const oldAttachmentRef = ref(storage, currentEvent.attachmentUrl);
-                await deleteObject(oldAttachmentRef);
-            } catch (storageError: any) {
-                if (storageError.code !== 'storage/object-not-found') {
-                     console.warn("[updateEvent Warn] Could not delete old attachment, it might not exist.", storageError);
-                }
-            }
-        }
-        const attachmentRef = ref(storage, `event_attachments/${Date.now()}_${eventData.attachment.name}`);
-        await uploadBytes(attachmentRef, eventData.attachment);
-        dataToUpdate.attachmentUrl = await getDownloadURL(attachmentRef);
-        dataToUpdate.attachmentName = eventData.attachment.name;
+    if (d.attachment instanceof File && (d.attachment as File).size > 0) {
+      const f = d.attachment as File;
+      const current = await getOne<Event>(COL, id);
+      if ((current as any)?.attachmentUrl) await deleteFile((current as any).attachmentUrl);
+      dataToUpdate.attachmentUrl = await uploadFile(f, `event_attachments/${Date.now()}_${f.name}`);
+      dataToUpdate.attachmentName = f.name;
     }
-    
-    await updateDoc(eventDoc, dataToUpdate);
+
+    await update(COL, id, dataToUpdate);
     revalidatePath('/panel/events');
     revalidatePath(`/panel/events/edit/${id}`);
     revalidatePath('/events');
   } catch (error) {
-    console.error("[updateEvent Error]", error);
+    console.error('[updateEvent Error]', error);
     throw new Error(`Gagal memperbarui acara: ${(error as Error).message}`);
   }
 }
 
-// Delete an event
 export async function deleteEvent(id: string) {
   try {
-    const eventToDelete = await getEvent(id);
-    const eventDoc = doc(db, 'events', id);
-    await deleteDoc(eventDoc);
-     if (eventToDelete?.attachmentUrl) {
-        try {
-            const attachmentRef = ref(storage, eventToDelete.attachmentUrl);
-            await deleteObject(attachmentRef);
-        } catch (storageError: any) {
-             if (storageError.code !== 'storage/object-not-found') {
-                console.error("[deleteEvent Error] Could not delete attachment:", storageError);
-             }
-        }
-    }
-     if (eventToDelete?.imageUrl && eventToDelete.imageUrl.includes('firebasestorage')) {
-        try {
-            const imageRef = ref(storage, eventToDelete.imageUrl);
-            await deleteObject(imageRef);
-        } catch (storageError: any) {
-            if (storageError.code !== 'storage/object-not-found') {
-                console.error("[deleteEvent Error] Could not delete image:", storageError);
-            }
-        }
-    }
+    const event = await getOne<Event>(COL, id) as any;
+    if (event?.attachmentUrl) await deleteFile(event.attachmentUrl);
+    if (event?.imageUrl) await deleteFile(event.imageUrl);
+    await remove(COL, id);
     revalidatePath('/panel/events');
     revalidatePath('/events');
   } catch (error) {
-    console.error("[deleteEvent Error]", error);
-    throw new Error("Gagal menghapus acara.");
+    console.error('[deleteEvent Error]', error);
+    throw new Error('Gagal menghapus acara.');
   }
 }
 
-export async function markAttendance(eventId: string, userId: string, userName: string): Promise<{success: boolean, message: string}> {
-    const eventRef = doc(db, 'events', eventId);
-    const eventDoc = await getDoc(eventRef);
+export async function markAttendance(
+  eventId: string,
+  userId: string,
+  userName: string
+): Promise<{ success: boolean; message: string }> {
+  const event = await getOne<Event>(COL, eventId) as any;
+  if (!event) return { success: false, message: 'Acara tidak ditemukan.' };
 
-    if (!eventDoc.exists()) {
-        return { success: false, message: 'Acara tidak ditemukan.' };
-    }
+  const attendeeIds: any[] = event.attendeeIds ?? [];
+  if (attendeeIds.some((a: any) => a.userId === userId)) {
+    return { success: true, message: 'Anda sudah tercatat hadir.' };
+  }
 
-    const eventData = eventDoc.data() as Event;
-    
-    if (eventData.attendeeIds?.some(attendee => attendee.userId === userId)) {
-        return { success: true, message: 'Anda sudah tercatat hadir.' };
-    }
-    
-    const newAttendee = { userId, userName, timestamp: Timestamp.now() };
-
-    await updateDoc(eventRef, {
-        attendeeIds: arrayUnion(newAttendee)
-    });
-    
-    revalidatePath(`/events/${eventId}`);
-    return { success: true, message: 'Kehadiran Anda berhasil dicatat!' };
+  const newAttendee = { userId, userName, timestamp: now() };
+  await update(COL, eventId, { attendeeIds: [...attendeeIds, newAttendee] });
+  revalidatePath(`/events/${eventId}`);
+  return { success: true, message: 'Kehadiran Anda berhasil dicatat!' };
 }
 
-export async function markGuestAttendance(eventId: string, guest: { name: string, email: string, phone?: string }): Promise<void> {
-    const eventRef = doc(db, 'events', eventId);
-    const eventDoc = await getDoc(eventRef);
+export async function markGuestAttendance(
+  eventId: string,
+  guest: { name: string; email: string; phone?: string }
+): Promise<void> {
+  const event = await getOne<Event>(COL, eventId) as any;
+  if (!event) throw new Error('Acara tidak ditemukan.');
 
-    if (!eventDoc.exists()) {
-        throw new Error('Acara tidak ditemukan.');
-    }
-
-    const newGuestAttendee = { ...guest, timestamp: Timestamp.now() };
-
-    await updateDoc(eventRef, {
-        guestAttendees: arrayUnion(newGuestAttendee)
-    });
-    
-    revalidatePath(`/events/${eventId}`);
+  const guestAttendees: any[] = event.guestAttendees ?? [];
+  await update(COL, eventId, {
+    guestAttendees: [...guestAttendees, { ...guest, timestamp: now() }],
+  });
+  revalidatePath(`/events/${eventId}`);
 }

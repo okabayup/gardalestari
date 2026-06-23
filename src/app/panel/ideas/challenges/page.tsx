@@ -76,7 +76,7 @@ export default function AdminChallengesPage() {
                 challenges.map(challenge => (
                   <TableRow key={challenge.id}>
                     <TableCell className="font-medium">{challenge.title}</TableCell>
-                    <TableCell>{format(challenge.deadline.toDate(), 'dd MMMM yyyy', { locale: id })}</TableCell>
+                    <TableCell>{format(new Date(challenge.deadline as string), 'dd MMMM yyyy', { locale: id })}</TableCell>
                     <TableCell className="text-right">
                        <DropdownMenu>
                           <DropdownMenuTrigger asChild>

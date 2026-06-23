@@ -1,106 +1,81 @@
-
 'use server';
 
-import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, query, orderBy, serverTimestamp, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import type { EduwisataPackage, Addon, ShortLink } from '@/lib/definitions';
+import { getAll, getOne, create, update, remove, uploadFile } from '@/lib/db';
 import { createShortLink, updateShortLink, getShortLink } from '@/app/actions/shortlinks';
-import { SHORTLINK_DOMAIN } from '@/lib/definitions';
 
-const packagesCollection = collection(db, 'edutourismPackages');
-const addonsCollection = collection(db, 'edutourismAddons');
-
-// --- Package Management ---
+const COL_PACKAGES = 'edutourismPackages';
+const COL_ADDONS = 'edutourismAddons';
 
 export async function getEduwisataPackages(): Promise<EduwisataPackage[]> {
-  const snapshot = await getDocs(query(packagesCollection, orderBy('title', 'asc')));
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as EduwisataPackage));
+  return getAll<EduwisataPackage>(COL_PACKAGES, { orderBy: { field: 'title', direction: 'asc' } });
 }
 
 export async function getEduwisataPackage(id: string): Promise<EduwisataPackage | null> {
-  if (!id) {
-    return null;
-  }
-  const docRef = doc(db, 'edutourismPackages', id);
-  const docSnap = await getDoc(docRef);
-  return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as EduwisataPackage : null;
+  if (!id) return null;
+  return getOne<EduwisataPackage>(COL_PACKAGES, id);
 }
 
-export async function createEduwisataPackage(
-  formData: FormData,
-): Promise<string> {
+export async function createEduwisataPackage(formData: FormData): Promise<string> {
   console.log("Received form data on server");
   try {
     const data = {
-        title: formData.get('title') as string,
-        description: formData.get('description') as string,
-        price: Number(formData.get('price')),
-        minParticipants: Number(formData.get('minParticipants')),
-        duration: formData.get('duration') as string,
-        availableAddonIds: (formData.get('availableAddonIds') as string)?.split(',') || [],
+      title: formData.get('title') as string,
+      description: formData.get('description') as string,
+      price: Number(formData.get('price')),
+      minParticipants: Number(formData.get('minParticipants')),
+      duration: formData.get('duration') as string,
+      availableAddonIds: (formData.get('availableAddonIds') as string)?.split(',') || [],
     };
     const imageFile = formData.get('imageFile') as File;
     const galleryFiles = formData.getAll('galleryFiles') as File[];
 
-    if (!imageFile) {
-        throw new Error("Gambar utama wajib diunggah.");
-    }
+    if (!imageFile) throw new Error("Gambar utama wajib diunggah.");
 
-    const imageRef = ref(storage, `eduwisata/packages/${Date.now()}_${imageFile.name}`);
-    await uploadBytes(imageRef, imageFile);
-    const imageUrl = await getDownloadURL(imageRef);
+    const imageUrl = await uploadFile(imageFile, `eduwisata/packages/${Date.now()}_${imageFile.name}`);
     console.log("Main image uploaded:", imageUrl);
 
     let galleryImageUrls: string[] = [];
     if (galleryFiles && galleryFiles.length > 0 && galleryFiles[0].size > 0) {
-        for (const file of galleryFiles) {
-            const galleryImageRef = ref(storage, `eduwisata/gallery/${Date.now()}_${file.name}`);
-            await uploadBytes(galleryImageRef, file);
-            galleryImageUrls.push(await getDownloadURL(galleryImageRef));
-        }
-        console.log("Gallery images uploaded:", galleryImageUrls.length);
+      for (const file of galleryFiles) {
+        galleryImageUrls.push(await uploadFile(file, `eduwisata/gallery/${Date.now()}_${file.name}`));
+      }
+      console.log("Gallery images uploaded:", galleryImageUrls.length);
     }
-    
-    const docRef = doc(collection(db, 'edutourismPackages'));
-    
-    // Create the shortlink first to get its ID
+
+    // Generate stable ID upfront so shortlink can reference it
+    const packageId = crypto.randomUUID();
+
     const shortlinkId = await createShortLink({
-        title: `Eduwisata: ${data.title}`,
-        longUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/edutourism/${docRef.id}`,
-        slug: `edu-${docRef.id.substring(0, 5)}`,
-        type: 'edutourism',
-        relatedId: docRef.id,
+      title: `Eduwisata: ${data.title}`,
+      longUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/edutourism/${packageId}`,
+      slug: `edu-${packageId.substring(0, 5)}`,
+      type: 'edutourism',
+      relatedId: packageId,
     });
     console.log("Shortlink created with ID:", shortlinkId);
-    
+
     const packageData: Omit<EduwisataPackage, 'id'> = {
-        ...data,
-        imageUrl,
-        images: galleryImageUrls,
-        shortlinkId: shortlinkId,
+      ...data,
+      imageUrl,
+      images: galleryImageUrls,
+      shortlinkId: shortlinkId,
     };
-    await setDoc(docRef, packageData);
-    console.log("Package data saved to Firestore with ID:", docRef.id);
+    await create(COL_PACKAGES, packageData as Record<string, unknown>, packageId);
+    console.log("Package data saved with ID:", packageId);
 
     revalidatePath('/panel/edutourism');
-    return docRef.id;
-
+    return packageId;
   } catch (error) {
-    console.error("[createEduwisataPackage Error]", "Failed to create package. Full error:", error);
+    console.error("[createEduwisataPackage Error]", error);
     throw new Error(`Gagal total membuat paket: ${(error as Error).message}`);
   }
 }
 
-
-export async function updateEduwisataPackage(
-  id: string,
-  formData: FormData,
-) {
+export async function updateEduwisataPackage(id: string, formData: FormData) {
   console.log("Received update form data on server");
   try {
-    const docRef = doc(db, 'edutourismPackages', id);
     const existingPackage = await getEduwisataPackage(id);
     if (!existingPackage) throw new Error("Package not found");
 
@@ -113,17 +88,14 @@ export async function updateEduwisataPackage(
       availableAddonIds: (formData.get('availableAddonIds') as string)?.split(',') || [],
     };
     const newShortlinkSlug = formData.get('shortlinkSlug') as string | undefined;
-
     const imageFile = formData.get('imageFile') as File | null;
     const galleryFiles = formData.getAll('galleryFiles') as File[];
 
-    const dataToUpdate: { [key: string]: any } = { ...data };
-    
+    const dataToUpdate: Record<string, unknown> = { ...data };
+
     if (imageFile && imageFile.size > 0) {
       console.log("Uploading new main image...");
-      const imageRef = ref(storage, `eduwisata/packages/${Date.now()}_${imageFile.name}`);
-      await uploadBytes(imageRef, imageFile);
-      dataToUpdate.imageUrl = await getDownloadURL(imageRef);
+      dataToUpdate.imageUrl = await uploadFile(imageFile, `eduwisata/packages/${Date.now()}_${imageFile.name}`);
       console.log("New main image URL:", dataToUpdate.imageUrl);
     }
 
@@ -131,74 +103,60 @@ export async function updateEduwisataPackage(
       console.log(`Uploading ${galleryFiles.length} new gallery images...`);
       const newImageUrls: string[] = [];
       for (const file of galleryFiles) {
-        const galleryImageRef = ref(storage, `eduwisata/gallery/${Date.now()}_${file.name}`);
-        await uploadBytes(galleryImageRef, file);
-        newImageUrls.push(await getDownloadURL(galleryImageRef));
+        newImageUrls.push(await uploadFile(file, `eduwisata/gallery/${Date.now()}_${file.name}`));
       }
-      dataToUpdate.images = [...(existingPackage.images || []), ...newImageUrls];
+      dataToUpdate.images = [...((existingPackage as any).images || []), ...newImageUrls];
       console.log("New gallery URLs:", newImageUrls);
     }
 
+    await update(COL_PACKAGES, id, dataToUpdate);
 
-    await updateDoc(docRef, dataToUpdate);
-    
-    // Sync shortlink title and slug
     if (existingPackage.shortlinkId) {
-        const existingShortlink = await getShortLink(existingPackage.shortlinkId);
-        const updates: Partial<ShortLink> = {};
-        if (data.title !== existingPackage.title) {
-            updates.title = `Eduwisata: ${data.title}`;
-        }
-        if (newShortlinkSlug && newShortlinkSlug !== existingShortlink?.slug) {
-            updates.slug = newShortlinkSlug;
-        }
-
-        if (Object.keys(updates).length > 0) {
-             await updateShortLink(existingPackage.shortlinkId, updates);
-        }
+      const existingShortlink = await getShortLink(existingPackage.shortlinkId);
+      const updates: Partial<ShortLink> = {};
+      if (data.title !== existingPackage.title) {
+        updates.title = `Eduwisata: ${data.title}`;
+      }
+      if (newShortlinkSlug && newShortlinkSlug !== existingShortlink?.slug) {
+        updates.slug = newShortlinkSlug;
+      }
+      if (Object.keys(updates).length > 0) {
+        await updateShortLink(existingPackage.shortlinkId, updates);
+      }
     }
 
-
-    console.log("Firestore document updated successfully.");
+    console.log("Document updated successfully.");
     revalidatePath('/panel/edutourism');
     revalidatePath(`/panel/edutourism/edit/${id}`);
   } catch (error) {
-      console.error("[updateEduwisataPackage Error]", "Failed to update package. Full error:", error);
-      throw new Error(`Gagal total memperbarui paket: ${(error as Error).message}`);
+    console.error("[updateEduwisataPackage Error]", error);
+    throw new Error(`Gagal total memperbarui paket: ${(error as Error).message}`);
   }
 }
 
-
 export async function deleteEduwisataPackage(id: string) {
-  const docRef = doc(db, 'edutourismPackages', id);
   // TODO: Also delete images from storage and associated shortlink
-  await deleteDoc(docRef);
+  await remove(COL_PACKAGES, id);
   revalidatePath('/panel/edutourism');
 }
-
 
 // --- Addon Management ---
 
 export async function getAddons(): Promise<Addon[]> {
-  const addonsCollectionRef = collection(db, 'edutourismAddons');
-  const snapshot = await getDocs(query(addonsCollectionRef, orderBy('name', 'asc')));
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Addon));
+  return getAll<Addon>(COL_ADDONS, { orderBy: { field: 'name', direction: 'asc' } });
 }
 
 export async function createAddon(data: Omit<Addon, 'id'>) {
-  const addonsCollectionRef = collection(db, 'edutourismAddons');
-  await addDoc(addonsCollectionRef, data);
+  await create(COL_ADDONS, data as Record<string, unknown>);
   revalidatePath('/panel/edutourism/addons');
 }
 
 export async function updateAddon(id: string, data: Partial<Omit<Addon, 'id'>>) {
-  const docRef = doc(db, 'edutourismAddons', id);
-  await updateDoc(docRef, data);
+  await update(COL_ADDONS, id, data as Record<string, unknown>);
   revalidatePath('/panel/edutourism/addons');
 }
 
 export async function deleteAddon(id: string) {
-  const docRef = doc(db, 'edutourismAddons', id);
-  await deleteDoc(docRef);
+  await remove(COL_ADDONS, id);
   revalidatePath('/panel/edutourism/addons');
 }

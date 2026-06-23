@@ -225,7 +225,7 @@ function NotificationItemWrapper({ notification }: { notification: AppNotificati
     useEffect(() => {
         const formatTime = async () => {
             const { id: localeId } = await import('date-fns/locale/id');
-            const date = typeof notification.createdAt === 'string' ? new Date(notification.createdAt) : notification.createdAt.toDate();
+            const date = new Date(notification.createdAt as string);
             setTimeAgo(formatDistanceToNow(date, { addSuffix: true, locale: localeId }));
         };
         formatTime();

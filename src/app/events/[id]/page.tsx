@@ -19,7 +19,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Timestamp } from 'firebase/firestore';
 
 
 interface EventDetailPageProps {
@@ -46,7 +45,7 @@ const InfoCard = ({ icon, title, children }: { icon: React.ReactNode, title: str
     </Card>
 )
 
-const AttendanceList = ({ attendees, guests }: { attendees?: { userId: string, userName: string, timestamp: Timestamp }[], guests?: { name: string, email: string, phone?: string, timestamp: Timestamp }[] }) => {
+const AttendanceList = ({ attendees, guests }: { attendees?: { userId: string, userName: string, timestamp: string }[], guests?: { name: string, email: string, phone?: string, timestamp: string }[] }) => {
     return (
         <Tabs defaultValue="members">
             <TabsList className="grid w-full grid-cols-2">
@@ -66,7 +65,7 @@ const AttendanceList = ({ attendees, guests }: { attendees?: { userId: string, u
                             attendees.map(a => (
                                 <TableRow key={a.userId}>
                                     <TableCell>{a.userName}</TableCell>
-                                    <TableCell>{format(a.timestamp.toDate(), 'HH:mm')}</TableCell>
+                                    <TableCell>{format(new Date(a.timestamp as string), 'HH:mm')}</TableCell>
                                 </TableRow>
                             ))
                         ) : (

@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation';
 import MainLayout from '@/components/layout/MainLayout';
 import PostCard from '@/components/feed/PostCard';
 import { getPostById, togglePostLike, archivePost } from '@/app/actions/posts';
-import { auth } from '@/lib/firebase'; // We can use server-side auth access
 import { unstable_noStore as noStore } from 'next/cache';
 
 // This is a dynamic page, so we don't need generateStaticParams
@@ -18,7 +17,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
   const { id: postId } = params;
   
   // Get current user on the server
-  const currentUserId = auth.currentUser?.uid;
+  const currentUserId = undefined; // Auth handled client-side
 
   if (!postId) {
     notFound();

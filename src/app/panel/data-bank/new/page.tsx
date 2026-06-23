@@ -16,7 +16,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { format } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
 import { createDataBankEntry } from '@/app/actions/bank-data';
 import { cn } from '@/lib/utils';
 import RichTextEditor from '@/components/panel/RichTextEditor';
@@ -49,7 +48,7 @@ export default function NewDataBankEntryPage() {
     try {
       const payload = {
         ...data,
-        publishedDate: Timestamp.fromDate(data.publishedDate),
+        publishedDate: data.publishedDate.toISOString(),
       };
       await createDataBankEntry(payload);
       toast({ title: 'Entri data berhasil ditambahkan!' });

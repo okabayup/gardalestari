@@ -143,7 +143,7 @@ export default function ReportsPage() {
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>
-                                                {format(report.createdAt.toDate(), 'dd MMM yyyy, HH:mm', { locale: idLocale })}
+                                                {format(new Date(report.createdAt as string), 'dd MMM yyyy, HH:mm', { locale: idLocale })}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <DropdownMenu>

@@ -16,7 +16,6 @@ import { Loader2, Calendar as CalendarIcon, ArrowLeft } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
 import { createMyAchievement } from '@/app/actions/achievements';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
@@ -52,7 +51,7 @@ export default function NewMyAchievementPage() {
     setLoading(true);
     try {
       const { imageFile, ...achievementData } = data;
-      const payload = { ...achievementData, date: Timestamp.fromDate(data.date) };
+      const payload = { ...achievementData, date: data.date.toISOString() };
       await createMyAchievement(payload, user.uid, imageFile?.[0]);
       toast({ title: 'Prestasi berhasil ditambahkan!' });
       router.push('/profile/me');

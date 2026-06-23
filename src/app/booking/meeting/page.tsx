@@ -16,7 +16,6 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { CheckCircle, Handshake, Loader2, CalendarIcon, Clock } from 'lucide-react';
-import { Timestamp } from 'firebase/firestore';
 import { add, format } from 'date-fns';
 
 const formSchema = z.object({

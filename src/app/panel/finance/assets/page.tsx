@@ -38,7 +38,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 
 const assetSchema = z.object({
@@ -57,7 +56,7 @@ const AssetFormDialog = ({ asset, onSave, isSaving, onClose }: { asset?: FixedAs
     resolver: zodResolver(assetSchema),
     defaultValues: asset ? {
         ...asset,
-        acquisitionDate: asset.acquisitionDate.toDate(),
+        acquisitionDate: new Date(asset.acquisitionDate as string),
     } : {
         name: '',
         description: '',
@@ -71,7 +70,7 @@ const AssetFormDialog = ({ asset, onSave, isSaving, onClose }: { asset?: FixedAs
   useEffect(() => {
     reset(asset ? {
         ...asset,
-        acquisitionDate: asset.acquisitionDate.toDate(),
+        acquisitionDate: new Date(asset.acquisitionDate as string),
     } : {
         name: '',
         description: '',
@@ -177,7 +176,7 @@ export default function AssetsPage() {
     setIsSaving(true);
     const payload = {
         ...data,
-        acquisitionDate: Timestamp.fromDate(data.acquisitionDate),
+        acquisitionDate: data.acquisitionDate.toISOString(),
         depreciationMethod: 'straight-line' as const,
     };
     try {
@@ -269,7 +268,7 @@ export default function AssetsPage() {
                 {assets.map(asset => (
                   <TableRow key={asset.id}>
                     <TableCell className="font-medium">{asset.name}</TableCell>
-                    <TableCell>{format(asset.acquisitionDate.toDate(), "dd MMM yyyy")}</TableCell>
+                    <TableCell>{format(new Date(asset.acquisitionDate as string), "dd MMM yyyy")}</TableCell>
                     <TableCell className="font-mono">{asset.acquisitionCost.toLocaleString('id-ID')}</TableCell>
                     <TableCell>{asset.status}</TableCell>
                     <TableCell className="text-right">

@@ -18,7 +18,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { format } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
 import { createSimpleTransaction, getAccounts, Account } from '@/app/actions/finance';
 import { cn } from '@/lib/utils';
 
@@ -67,7 +66,7 @@ export default function NewTransactionPage() {
     try {
       await createSimpleTransaction(
         transactionType,
-        Timestamp.fromDate(data.date),
+        data.date.toISOString(),
         data.amount,
         data.description,
         data.cashBankAccountId,

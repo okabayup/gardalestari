@@ -1,124 +1,86 @@
-
 'use server';
 
-import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc, Timestamp, orderBy, query } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { revalidatePath } from 'next/cache';
 import type { Announcement } from '@/lib/definitions';
+import { getAll, getOne, create, update, remove, uploadFile, deleteFile, now } from '@/lib/db';
 
-const announcementsCollection = collection(db, 'announcements');
+const COL = 'announcements';
 
-const toAnnouncement = (doc: any): Announcement => {
-    const data = doc.data();
-    return {
-        id: doc.id,
-        ...data,
-        createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
-    } as Announcement;
-};
-
-
-// Get all announcements, ordered by creation date
 export async function getAnnouncements(): Promise<Announcement[]> {
   try {
-    const q = query(announcementsCollection, orderBy('createdAt', 'desc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(toAnnouncement);
+    return await getAll<Announcement>(COL, {
+      orderBy: { field: 'createdAt', direction: 'desc' },
+    });
   } catch (error) {
-    console.error("Error getting announcements:", error);
-    throw new Error("Gagal mengambil data pengumuman.");
+    console.error('Error getting announcements:', error);
+    throw new Error('Gagal mengambil data pengumuman.');
   }
 }
 
-// Get a single announcement by ID
 export async function getAnnouncement(id: string): Promise<Announcement | null> {
-    try {
-        const docRef = doc(db, 'announcements', id);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            return toAnnouncement(docSnap);
-        }
-        return null;
-    } catch (error) {
-        console.error("Error getting single announcement:", error);
-        throw new Error("Gagal mengambil data pengumuman.");
-    }
+  try {
+    return await getOne<Announcement>(COL, id);
+  } catch (error) {
+    console.error('Error getting single announcement:', error);
+    throw new Error('Gagal mengambil data pengumuman.');
+  }
 }
 
-// Create a new announcement
-export async function createAnnouncement(data: Omit<Announcement, 'id' | 'createdAt'>, attachmentFile?: File) {
+export async function createAnnouncement(
+  data: Omit<Announcement, 'id' | 'createdAt'>,
+  attachmentFile?: File
+) {
   try {
-    const announcementData: { [key: string]: any } = { 
-        ...data,
-        createdAt: Timestamp.now()
-    };
+    const announcementData: Record<string, unknown> = { ...data, createdAt: now() };
     if (attachmentFile) {
-        const attachmentRef = ref(storage, `announcements/${Date.now()}_${attachmentFile.name}`);
-        await uploadBytes(attachmentRef, attachmentFile);
-        announcementData.attachmentUrl = await getDownloadURL(attachmentRef);
-        announcementData.attachmentName = attachmentFile.name;
+      announcementData.attachmentUrl = await uploadFile(
+        attachmentFile,
+        `announcements/${Date.now()}_${attachmentFile.name}`
+      );
+      announcementData.attachmentName = attachmentFile.name;
     }
-    await addDoc(announcementsCollection, announcementData);
+    await create(COL, announcementData);
     revalidatePath('/panel/announcements');
-    revalidatePath('/announcements'); // Assuming a public page might exist
+    revalidatePath('/announcements');
   } catch (error) {
-    console.error("Error creating announcement:", error);
+    console.error('Error creating announcement:', error);
     throw new Error(`Gagal membuat pengumuman: ${(error as Error).message}`);
   }
 }
 
-// Update an existing announcement
-export async function updateAnnouncement(id: string, data: Partial<Omit<Announcement, 'id' | 'createdAt'>>, attachmentFile?: File) {
+export async function updateAnnouncement(
+  id: string,
+  data: Partial<Omit<Announcement, 'id' | 'createdAt'>>,
+  attachmentFile?: File
+) {
   try {
-    const docRef = doc(db, 'announcements', id);
-    const dataToUpdate: { [key: string]: any } = { ...data };
-
+    const dataToUpdate: Record<string, unknown> = { ...data };
     if (attachmentFile) {
-        // Delete old file if it exists
-        const currentDoc = await getAnnouncement(id);
-        if (currentDoc?.attachmentUrl) {
-            try {
-                await deleteObject(ref(storage, currentDoc.attachmentUrl));
-            } catch (storageError: any) {
-                 if (storageError.code !== 'storage/object-not-found') {
-                     console.warn("Could not delete old attachment", storageError);
-                }
-            }
-        }
-        // Upload new file
-        const attachmentRef = ref(storage, `announcements/${Date.now()}_${attachmentFile.name}`);
-        await uploadBytes(attachmentRef, attachmentFile);
-        dataToUpdate.attachmentUrl = await getDownloadURL(attachmentRef);
-        dataToUpdate.attachmentName = attachmentFile.name;
+      const current = await getOne<Announcement>(COL, id);
+      if (current?.attachmentUrl) await deleteFile(current.attachmentUrl);
+      dataToUpdate.attachmentUrl = await uploadFile(
+        attachmentFile,
+        `announcements/${Date.now()}_${attachmentFile.name}`
+      );
+      dataToUpdate.attachmentName = attachmentFile.name;
     }
-    
-    await updateDoc(docRef, dataToUpdate);
+    await update(COL, id, dataToUpdate);
     revalidatePath('/panel/announcements');
     revalidatePath(`/panel/announcements/edit/${id}`);
   } catch (error) {
-    console.error("Error updating announcement:", error);
+    console.error('Error updating announcement:', error);
     throw new Error(`Gagal memperbarui pengumuman: ${(error as Error).message}`);
   }
 }
 
-// Delete an announcement
 export async function deleteAnnouncement(id: string) {
   try {
-    const docToDelete = await getAnnouncement(id);
-    await deleteDoc(doc(db, 'announcements', id));
-     if (docToDelete?.attachmentUrl) {
-        try {
-            await deleteObject(ref(storage, docToDelete.attachmentUrl));
-        } catch (storageError: any) {
-             if (storageError.code !== 'storage/object-not-found') {
-                console.error("Could not delete attachment:", storageError);
-             }
-        }
-    }
+    const doc = await getOne<Announcement>(COL, id);
+    if (doc?.attachmentUrl) await deleteFile(doc.attachmentUrl);
+    await remove(COL, id);
     revalidatePath('/panel/announcements');
   } catch (error) {
-    console.error("Error deleting announcement:", error);
-    throw new Error("Gagal menghapus pengumuman.");
+    console.error('Error deleting announcement:', error);
+    throw new Error('Gagal menghapus pengumuman.');
   }
 }

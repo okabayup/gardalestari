@@ -92,7 +92,7 @@ export default function BookingsPage() {
     {
       accessorKey: 'bookingDate',
       header: ({ column }) => <DataTableColumnHeader column={column} title="Tanggal Kunjungan" />,
-      cell: ({ row }) => format(row.original.bookingDate.toDate(), 'dd MMM yyyy', { locale: idLocale }),
+      cell: ({ row }) => format(new Date(row.original.bookingDate as string), 'dd MMM yyyy', { locale: idLocale }),
     },
     {
       accessorKey: 'totalPrice',

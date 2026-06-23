@@ -3,7 +3,6 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { User } from 'firebase/auth';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -23,7 +22,21 @@ import { Textarea } from '../ui/textarea';
 interface EditProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  user: User & { fullName?: string; nik?: string; username?: string, instagram?: string, linkedin?: string, skills?: string[], interests?: string[] };
+  user: {
+    uid: string;
+    id?: string;
+    displayName?: string | null;
+    photoURL?: string | null;
+    email?: string | null;
+    phoneNumber?: string | null;
+    fullName?: string;
+    nik?: string;
+    username?: string;
+    instagram?: string;
+    linkedin?: string;
+    skills?: string[];
+    interests?: string[];
+  };
 }
 
 export default function EditProfileModal({ isOpen, onClose, user }: EditProfileModalProps) {

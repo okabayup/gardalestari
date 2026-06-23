@@ -13,8 +13,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { generateImage } from './image-generate-flow';
-import { storage } from '@/lib/firebase';
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { uploadFile } from '@/lib/db';
 
 const NewsGeneratorInputSchema = z.object({
   topic: z.string().optional().describe('The topic of the news article. If empty, the AI will generate one.'),
@@ -57,9 +56,9 @@ export async function generateNewsArticle(formData: FormData): Promise<NewsGener
         let userImageUrls: string[] = [];
         if (userImageFiles.length > 0) {
             const uploadPromises = userImageFiles.map(async (file, index) => {
-                const storageRef = ref(storage, `user-uploads/${Date.now()}_${index}_${file.name}`);
-                await uploadString(storageRef, await file.arrayBuffer().then(b => new TextDecoder().decode(b)), 'data_url');
-                return getDownloadURL(storageRef);
+                const fileBuffer = Buffer.from(await file.arrayBuffer());
+                const storagePath = `user-uploads/${Date.now()}_${index}_${file.name}`;
+                return uploadFile(fileBuffer, storagePath);
             });
             userImageUrls = await Promise.all(uploadPromises);
         }
@@ -188,9 +187,9 @@ const newsGeneratorFlow = ai.defineFlow(
         const generatedImageUrls: string[] = [];
         for (const result of imageResults) {
             if (!result.imageUrl) throw new Error('Gagal membuat salah satu gambar AI.');
-            const storageRef = ref(storage, `news-images/${Date.now()}_${Math.random()}.png`);
-            await uploadString(storageRef, result.imageUrl, 'data_url');
-            generatedImageUrls.push(await getDownloadURL(storageRef));
+            const imgBuffer = Buffer.from(result.imageUrl.split(',')[1] || result.imageUrl, 'base64');
+            const imgPath = `news-images/${Date.now()}_${Math.random()}.png`;
+            generatedImageUrls.push(await uploadFile(imgBuffer, imgPath));
         }
         allImageUrls.push(...generatedImageUrls);
     }

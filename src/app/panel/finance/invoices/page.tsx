@@ -63,12 +63,12 @@ export default function InvoicesPage() {
     {
       accessorKey: 'date',
       header: ({ column }) => <DataTableColumnHeader column={column} title="Tanggal" />,
-      cell: ({ row }) => format(row.original.date.toDate(), 'dd MMM yyyy', { locale: idLocale }),
+      cell: ({ row }) => format(new Date(row.original.date as string), 'dd MMM yyyy', { locale: idLocale }),
     },
     {
       accessorKey: 'dueDate',
       header: ({ column }) => <DataTableColumnHeader column={column} title="Jatuh Tempo" />,
-      cell: ({ row }) => format(row.original.dueDate.toDate(), 'dd MMM yyyy', { locale: idLocale }),
+      cell: ({ row }) => format(new Date(row.original.dueDate as string), 'dd MMM yyyy', { locale: idLocale }),
     },
     {
         accessorKey: 'total',

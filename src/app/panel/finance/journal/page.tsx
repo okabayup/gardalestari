@@ -64,13 +64,13 @@ export default function JournalPage() {
         <CardContent>
             {loading ? (
                  <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
-            ) : entries.length > 0 ? (
+            ) : entries.length > 0 ? new Date(
                 <Accordion type="single" collapsible className="w-full">
                     {entries.map(entry => (
                         <AccordionItem key={entry.id} value={entry.id!}>
                             <AccordionTrigger>
                                 <div className="flex justify-between w-full pr-4">
-                                    <span>{format((entry.date as any).toDate(), 'dd MMM yyyy', { locale: idLocale })}</span>
+                                    <span>{format((entry.date as string), 'dd MMM yyyy', { locale: idLocale })}</span>
                                     <span className="flex-1 text-left ml-4 truncate">{entry.description}</span>
                                     <span className="text-muted-foreground text-sm">{entry.transactions.length} transaksi</span>
                                 </div>

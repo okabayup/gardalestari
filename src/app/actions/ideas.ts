@@ -1,425 +1,334 @@
 'use server';
 
-import { db } from '@/lib/firebase';
-import {
-  collection,
-  doc,
-  addDoc,
-  getDocs,
-  getDoc,
-  updateDoc,
-  deleteDoc,
-  writeBatch,
-  query,
-  where,
-  Timestamp,
-  orderBy,
-  runTransaction,
-  increment,
-  limit,
-} from 'firebase/firestore';
 import { revalidatePath } from 'next/cache';
 export type { Idea, IdeaWithAuthor, IdeaAuthor, IdeaCategory, VoteType, IdeaStatus, IdeaType, Challenge } from '@/lib/definitions';
-import type { Idea, IdeaWithAuthor, IdeaAuthor, IdeaCategory, VoteType, IdeaStatus, IdeaType, Challenge, Comment, CommentWithAuthor } from '@/lib/definitions';
+import type { Idea, IdeaWithAuthor, IdeaAuthor, IdeaCategory, VoteType, IdeaStatus, IdeaType, Challenge, CommentWithAuthor } from '@/lib/definitions';
+import { getAll, getOne, getFirst, create, update, remove, count, now } from '@/lib/db';
 import { checkAndAwardBadges } from '@/app/actions/badges';
 
-const ideasCollection = collection(db, 'ideas');
-const usersCollection = collection(db, 'users');
-const ideaCategoriesCollection = collection(db, 'ideaCategories');
-const challengesCollection = collection(db, 'challenges');
+const COL_IDEAS = 'ideas';
+const COL_USERS = 'users';
+const COL_CATEGORIES = 'ideaCategories';
+const COL_CHALLENGES = 'challenges';
+const COL_COMMENTS = 'ideaComments'; // flat table instead of subcollection
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const formatTimestamp = (timestamp: Timestamp): string => {
-  const date = timestamp.toDate();
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const diffHours = Math.floor(diff / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffHours < 1) return "Baru saja";
-  if (diffHours < 24) return `${diffHours} jam lalu`;
-  return `${diffDays} hari lalu`;
-};
-
-
-// Helper to build a IdeaWithAuthor object
-const buildIdeaWithAuthor = async (ideaDoc: any, currentUserId?: string): Promise<IdeaWithAuthor | null> => {
-    try {
-        const ideaData = { id: ideaDoc.id, ...ideaDoc.data() } as Idea;
-        const authorRef = doc(usersCollection, ideaData.authorId);
-        const authorDoc = await getDoc(authorRef);
-        
-        if (!authorDoc.exists()) {
-            console.warn(`[buildIdeaWithAuthor Warn] Author with ID ${ideaData.authorId} not found for idea ${ideaData.id}.`);
-            return null;
-        }
-        
-        const authorData = authorDoc.data();
-        const author: IdeaAuthor = {
-            id: ideaData.authorId,
-            name: authorData?.fullName || authorData?.displayName || 'Unknown User',
-            username: authorData?.username || `user_${ideaData.authorId.substring(0,5)}`,
-            avatarUrl: authorData?.avatarUrl || '',
-            type: authorData?.type,
-        };
-
-        let userVote: VoteType | undefined = undefined;
-        if (currentUserId) {
-            if (ideaData.upvotes.includes(currentUserId)) userVote = 'up';
-            else if (ideaData.downvotes.includes(currentUserId)) userVote = 'down';
-        }
-
-        const { upvotes, downvotes, createdAt, ...restOfData } = ideaData;
-
-        return {
-          ...restOfData,
-          createdAt: createdAt.toDate().toISOString(), // Convert Timestamp to ISO string
-          author: author,
-          userVote: userVote,
-        };
-    } catch (error) {
-        console.error(`[buildIdeaWithAuthor Error] for idea ${ideaDoc.id}:`, error);
-        return null;
-    }
+function formatTimestamp(iso: string): string {
+  const date = new Date(iso);
+  const diff = Date.now() - date.getTime();
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const days = Math.floor(hours / 24);
+  if (hours < 1) return 'Baru saja';
+  if (hours < 24) return `${hours} jam lalu`;
+  return `${days} hari lalu`;
 }
 
-
-// Create a new idea
-export async function createIdea(authorId: string, title: string, description: string, category: string, challengeId?: string): Promise<string> {
-    try {
-        if (!authorId) throw new Error('Pengguna tidak terautentikasi.');
-        
-        let challengeTitle: string | undefined = undefined;
-        if (challengeId) {
-            const challengeDoc = await getDoc(doc(db, 'challenges', challengeId));
-            if (challengeDoc.exists()) challengeTitle = challengeDoc.data().title;
-        }
-
-        const newIdea: Omit<Idea, 'id'> = {
-            title,
-            description,
-            category,
-            authorId,
-            status: 'diajukan',
-            createdAt: Timestamp.now(),
-            upvotes: [],
-            downvotes: [],
-            voteScore: 0,
-            commentCount: 0,
-            type: challengeId ? 'SOLUTION' : 'INNOVATIVE',
-            challengeId: challengeId,
-            challengeTitle: challengeTitle,
-        };
-        const docRef = await addDoc(ideasCollection, newIdea);
-        revalidatePath('/ideas');
-
-        // Check for badges and missions after creating an idea
-        await checkAndAwardBadges(authorId, 'idea_count');
-
-        return docRef.id;
-    } catch (error) {
-        console.error("[createIdea Error]", error);
-        throw new Error("Gagal membuat ide baru.");
-    }
-}
-
-
-// Get all ideas with filters and search
-export async function getIdeas(
-    userId: string, 
-    sortBy: 'newest' | 'top' = 'top', 
-    categoryFilter?: string, 
-    searchQuery?: string,
-    typeFilter?: 'ALL' | IdeaType
-): Promise<IdeaWithAuthor[]> {
-    try {
-        const orderField = sortBy === 'top' ? 'voteScore' : 'createdAt';
-        let q = query(ideasCollection, orderBy(orderField, 'desc'));
-
-        if (categoryFilter && categoryFilter !== 'Semua') {
-            q = query(q, where('category', '==', categoryFilter));
-        }
-        
-        const ideasSnapshot = await getDocs(q);
-
-        let ideasPromises = ideasSnapshot.docs.map(doc => buildIdeaWithAuthor(doc, userId));
-        let ideas = (await Promise.all(ideasPromises)).filter((p): p is IdeaWithAuthor => p !== null);
-        
-        if (typeFilter && typeFilter !== 'ALL') {
-            ideas = ideas.filter(idea => idea.type === typeFilter);
-        }
-
-        if (searchQuery) {
-            const lowercasedQuery = searchQuery.toLowerCase();
-            ideas = ideas.filter(idea => 
-                idea.title.toLowerCase().includes(lowercasedQuery) ||
-                idea.description.toLowerCase().includes(lowercasedQuery)
-            );
-        }
-
-        return ideas;
-    } catch (error) {
-        console.error("[getIdeas Error]", error);
-        throw new Error("Gagal memuat ide.");
-    }
-}
-
-/**
- * Searches the idea bank for relevant entries based on a query.
- * To be used by an AI tool.
- * @param searchQuery The keywords or question to search for.
- * @returns A list of relevant ideas.
- */
-export async function searchIdeaBank(searchQuery: string): Promise<Partial<Idea>[]> {
-    try {
-        const q = query(
-            ideasCollection,
-            orderBy('voteScore', 'desc'),
-            limit(50)
-        );
-        const snapshot = await getDocs(q);
-        if (snapshot.empty) return [];
-
-        const allEntries: Idea[] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Idea));
-
-        const searchTerms = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
-        const results = allEntries.filter(entry => {
-            const searchableText = `${entry.title} ${entry.description} ${entry.category}`.toLowerCase();
-            return searchTerms.some(term => searchableText.includes(term));
-        }).slice(0, 5); // Return top 5 matches
-
-        return results.map(idea => ({
-            id: idea.id,
-            title: idea.title,
-            description: idea.description,
-            category: idea.category,
-            voteScore: idea.voteScore,
-            commentCount: idea.commentCount,
-        }));
-    } catch (error) {
-        console.error("[searchIdeaBank Error]", error);
-        throw new Error("Gagal mencari di bank ide.");
-    }
-}
-
-
-// Get a single idea by ID
-export async function getIdeaById(ideaId: string, currentUserId?: string): Promise<IdeaWithAuthor | null> {
-    try {
-        const ideaRef = doc(db, 'ideas', ideaId);
-        const ideaDoc = await getDoc(ideaRef);
-
-        if (!ideaDoc.exists()) {
-            return null;
-        }
-
-        return buildIdeaWithAuthor(ideaDoc, currentUserId);
-    } catch (error) {
-        console.error("[getIdeaById Error]", error);
-        throw new Error("Gagal mengambil detail ide.");
-    }
-}
-
-// Update idea status
-export async function updateIdeaStatus(ideaId: string, status: IdeaStatus) {
-    try {
-        const ideaRef = doc(db, 'ideas', ideaId);
-        await updateDoc(ideaRef, { status });
-        revalidatePath('/ideas');
-        revalidatePath(`/ideas/${ideaId}`);
-    } catch (error) {
-        console.error("[updateIdeaStatus Error]", error);
-        throw new Error("Gagal memperbarui status ide.");
-    }
-}
-
-
-// Toggle vote on an idea
-export async function toggleVote(ideaId: string, userId: string, voteType: VoteType) {
+async function buildIdeaWithAuthor(idea: Idea, currentUserId?: string): Promise<IdeaWithAuthor | null> {
   try {
-    await runTransaction(db, async (transaction) => {
-      const ideaRef = doc(db, 'ideas', ideaId);
-      const ideaDoc = await transaction.get(ideaRef);
-      if (!ideaDoc.exists()) {
-        throw "Ide tidak ditemukan!";
-      }
+    const author = await getOne<Record<string, unknown>>(COL_USERS, idea.authorId);
+    if (!author) {
+      console.warn(`[buildIdeaWithAuthor] Author ${idea.authorId} not found for idea ${idea.id}`);
+      return null;
+    }
 
-      const ideaData = ideaDoc.data() as Idea;
-      let upvotes = ideaData.upvotes || [];
-      let downvotes = ideaData.downvotes || [];
-      
-      const hasUpvoted = upvotes.includes(userId);
-      const hasDownvoted = downvotes.includes(userId);
+    const upvotes: string[] = (idea as any).upvotes ?? [];
+    const downvotes: string[] = (idea as any).downvotes ?? [];
+    let userVote: VoteType | undefined;
+    if (currentUserId) {
+      if (upvotes.includes(currentUserId)) userVote = 'up';
+      else if (downvotes.includes(currentUserId)) userVote = 'down';
+    }
 
-      if (voteType === 'up') {
-        upvotes = hasUpvoted ? upvotes.filter(uid => uid !== userId) : [...upvotes, userId];
-        downvotes = downvotes.filter(uid => uid !== userId);
-      } else { // 'down'
-        downvotes = hasDownvoted ? downvotes.filter(uid => uid !== userId) : [...downvotes, userId];
-        upvotes = upvotes.filter(uid => uid !== userId);
-      }
-      
-      const voteScore = upvotes.length - downvotes.length;
-
-      transaction.update(ideaRef, { upvotes, downvotes, voteScore });
-    });
-    
-    revalidatePath('/ideas');
-    revalidatePath(`/ideas/${ideaId}`);
-
-  } catch (e) {
-    console.error("[toggleVote Error]", e);
-    throw new Error("Gagal memberikan suara.");
+    const { upvotes: _u, downvotes: _d, ...restOfData } = idea as any;
+    return {
+      ...restOfData,
+      createdAt: idea.createdAt,
+      author: {
+        id: idea.authorId,
+        name: (author.fullName ?? author.displayName ?? 'Unknown User') as string,
+        username: (author.username ?? `user_${idea.authorId.substring(0, 5)}`) as string,
+        avatarUrl: (author.avatarUrl ?? '') as string,
+        type: author.type as any,
+      },
+      userVote,
+    };
+  } catch (error) {
+    console.error(`[buildIdeaWithAuthor] Error for idea ${idea.id}:`, error);
+    return null;
   }
 }
 
-// Add a comment to an idea
-export async function addIdeaComment(ideaId: string, userId: string, text: string) {
-    try {
-        if (!userId) throw new Error("Pengguna tidak terautentikasi.");
-        if (!text.trim()) throw new Error("Komentar tidak boleh kosong.");
+// ─── CRUD ────────────────────────────────────────────────────────────────────
 
-        const ideaRef = doc(db, 'ideas', ideaId);
-        const commentCollection = collection(ideaRef, 'comments');
-
-        const batch = writeBatch(db);
-
-        const newCommentRef = doc(commentCollection);
-        batch.set(newCommentRef, {
-            authorId: userId,
-            text: text,
-            createdAt: Timestamp.now()
-        });
-
-        batch.update(ideaRef, { commentCount: increment(1) });
-        
-        await batch.commit();
-        revalidatePath(`/ideas/${ideaId}`);
-
-    } catch (error) {
-        console.error("[addIdeaComment Error]", error);
-        throw new Error("Gagal menambahkan komentar.");
-    }
-}
-
-// Get comments for an idea
-export async function getIdeaComments(ideaId: string): Promise<CommentWithAuthor[]> {
-    try {
-        const commentsCollection = collection(db, 'ideas', ideaId, 'comments');
-        const q = query(commentsCollection, orderBy('createdAt', 'desc'));
-
-        const commentsSnapshot = await getDocs(q);
-        const comments: CommentWithAuthor[] = [];
-
-        for (const commentDoc of commentsSnapshot.docs) {
-            const data = commentDoc.data();
-            const commentData = { id: commentDoc.id, authorId: data.authorId, text: data.text, createdAt: data.createdAt };
-            const authorDoc = await getDoc(doc(usersCollection, commentData.authorId));
-            if (authorDoc.exists()) {
-                const authorData = authorDoc.data();
-                comments.push({
-                    id: commentData.id,
-                    text: commentData.text,
-                    author: {
-                        id: commentData.authorId,
-                        name: authorData.fullName || 'User',
-                        username: authorData.username || 'user',
-                        avatarUrl: authorData.avatarUrl || ''
-                    },
-                    timestamp: formatTimestamp(commentData.createdAt as Timestamp)
-                });
-            }
-        }
-        return comments;
-    } catch (error) {
-        console.error("[getIdeaComments Error]", error);
-        throw new Error("Gagal memuat komentar.");
-    }
-}
-
-// --- Category Management ---
-
-// Get all idea categories
-export async function getIdeaCategories(): Promise<IdeaCategory[]> {
-    try {
-        const q = query(ideaCategoriesCollection, orderBy('name', 'asc'));
-        const snapshot = await getDocs(q);
-        const categories: IdeaCategory[] = [];
-        snapshot.forEach(doc => {
-            categories.push({ id: doc.id, ...doc.data() } as IdeaCategory);
-        });
-        return categories;
-    } catch (error) {
-        console.error("[getIdeaCategories Error]", error);
-        throw new Error("Gagal memuat kategori ide.");
-    }
-}
-
-// Add a new idea category
-export async function addIdeaCategory(name: string) {
-    try {
-        await addDoc(ideaCategoriesCollection, { name });
-        revalidatePath('/panel/ideas/kategori');
-    } catch (error) {
-        console.error("[addIdeaCategory Error]", error);
-        throw new Error("Gagal menambahkan kategori ide.");
-    }
-}
-
-// Delete an idea category
-export async function deleteIdeaCategory(id: string) {
-    try {
-        const categoryDoc = doc(db, 'ideaCategories', id);
-        await deleteDoc(categoryDoc);
-        revalidatePath('/panel/ideas/kategori');
-    } catch (error) {
-        console.error("[deleteIdeaCategory Error]", error);
-        throw new Error("Gagal menghapus kategori ide.");
-    }
-}
-
-// --- Challenge Management ---
-export async function createChallenge(
-    data: Omit<Challenge, 'id' | 'createdAt' | 'authorId' | 'deadline'> & { deadline: Date },
-    authorId: string,
+export async function createIdea(
+  authorId: string,
+  title: string,
+  description: string,
+  category: string,
+  challengeId?: string
 ): Promise<string> {
-    try {
-        const challengeData = {
-            ...data,
-            deadline: Timestamp.fromDate(data.deadline),
-            authorId,
-            createdAt: Timestamp.now(),
-        };
-        const docRef = await addDoc(challengesCollection, challengeData);
-        revalidatePath('/panel/ideas/challenges');
-        revalidatePath('/ideas/challenges');
-        return docRef.id;
-    } catch (error) {
-        console.error("Error creating challenge:", error);
-        throw new Error("Gagal membuat tantangan baru.");
+  try {
+    if (!authorId) throw new Error('Pengguna tidak terautentikasi.');
+    let challengeTitle: string | undefined;
+    if (challengeId) {
+      const challenge = await getOne<Challenge>(COL_CHALLENGES, challengeId);
+      if (challenge) challengeTitle = challenge.title;
     }
+
+    const id = await create(COL_IDEAS, {
+      title, description, category, authorId,
+      status: 'diajukan',
+      createdAt: now(),
+      upvotes: [],
+      downvotes: [],
+      voteScore: 0,
+      commentCount: 0,
+      type: challengeId ? 'SOLUTION' : 'INNOVATIVE',
+      challengeId,
+      challengeTitle,
+    });
+
+    revalidatePath('/ideas');
+    await checkAndAwardBadges(authorId, 'idea_count');
+    return id;
+  } catch (error) {
+    console.error('[createIdea Error]', error);
+    throw new Error('Gagal membuat ide baru.');
+  }
+}
+
+export async function getIdeas(
+  userId: string,
+  sortBy: 'newest' | 'top' = 'top',
+  categoryFilter?: string,
+  searchQuery?: string,
+  typeFilter?: 'ALL' | IdeaType
+): Promise<IdeaWithAuthor[]> {
+  try {
+    const orderField = sortBy === 'top' ? 'voteScore' : 'createdAt';
+    let ideas = await getAll<Idea>(COL_IDEAS, {
+      orderBy: { field: orderField, direction: 'desc' },
+      ...(categoryFilter && categoryFilter !== 'Semua'
+        ? { where: { field: 'category', op: '==', value: categoryFilter } }
+        : {}),
+    });
+
+    const withAuthors = (
+      await Promise.all(ideas.map(idea => buildIdeaWithAuthor(idea, userId)))
+    ).filter((p): p is IdeaWithAuthor => p !== null);
+
+    return withAuthors
+      .filter(idea => !typeFilter || typeFilter === 'ALL' || idea.type === typeFilter)
+      .filter(idea => {
+        if (!searchQuery) return true;
+        const q = searchQuery.toLowerCase();
+        return idea.title.toLowerCase().includes(q) || idea.description.toLowerCase().includes(q);
+      });
+  } catch (error) {
+    console.error('[getIdeas Error]', error);
+    throw new Error('Gagal memuat ide.');
+  }
+}
+
+export async function searchIdeaBank(searchQuery: string): Promise<Partial<Idea>[]> {
+  try {
+    const all = await getAll<Idea>(COL_IDEAS, {
+      orderBy: { field: 'voteScore', direction: 'desc' },
+      limit: 50,
+    });
+    const terms = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
+    return all
+      .filter(e => {
+        const text = `${e.title} ${e.description} ${e.category}`.toLowerCase();
+        return terms.some(t => text.includes(t));
+      })
+      .slice(0, 5)
+      .map(({ id, title, description, category, voteScore, commentCount }) => ({
+        id, title, description, category, voteScore, commentCount,
+      }));
+  } catch (error) {
+    console.error('[searchIdeaBank Error]', error);
+    throw new Error('Gagal mencari di bank ide.');
+  }
+}
+
+export async function getIdeaById(ideaId: string, currentUserId?: string): Promise<IdeaWithAuthor | null> {
+  try {
+    const idea = await getOne<Idea>(COL_IDEAS, ideaId);
+    if (!idea) return null;
+    return buildIdeaWithAuthor(idea, currentUserId);
+  } catch (error) {
+    console.error('[getIdeaById Error]', error);
+    throw new Error('Gagal mengambil detail ide.');
+  }
+}
+
+export async function updateIdeaStatus(ideaId: string, status: IdeaStatus) {
+  try {
+    await update(COL_IDEAS, ideaId, { status });
+    revalidatePath('/ideas');
+    revalidatePath(`/ideas/${ideaId}`);
+  } catch (error) {
+    console.error('[updateIdeaStatus Error]', error);
+    throw new Error('Gagal memperbarui status ide.');
+  }
+}
+
+export async function toggleVote(ideaId: string, userId: string, voteType: VoteType) {
+  try {
+    const idea = await getOne<Idea>(COL_IDEAS, ideaId) as any;
+    if (!idea) throw new Error('Ide tidak ditemukan!');
+
+    let upvotes: string[] = idea.upvotes ?? [];
+    let downvotes: string[] = idea.downvotes ?? [];
+
+    if (voteType === 'up') {
+      upvotes = upvotes.includes(userId) ? upvotes.filter(u => u !== userId) : [...upvotes, userId];
+      downvotes = downvotes.filter(u => u !== userId);
+    } else {
+      downvotes = downvotes.includes(userId) ? downvotes.filter(u => u !== userId) : [...downvotes, userId];
+      upvotes = upvotes.filter(u => u !== userId);
+    }
+
+    const voteScore = upvotes.length - downvotes.length;
+    await update(COL_IDEAS, ideaId, { upvotes, downvotes, voteScore });
+
+    revalidatePath('/ideas');
+    revalidatePath(`/ideas/${ideaId}`);
+  } catch (error) {
+    console.error('[toggleVote Error]', error);
+    throw new Error('Gagal memberikan suara.');
+  }
+}
+
+// ─── Comments (flat table) ────────────────────────────────────────────────────
+
+export async function addIdeaComment(ideaId: string, userId: string, text: string) {
+  try {
+    if (!userId) throw new Error('Pengguna tidak terautentikasi.');
+    if (!text.trim()) throw new Error('Komentar tidak boleh kosong.');
+
+    await create(COL_COMMENTS, { ideaId, authorId: userId, text, createdAt: now() });
+
+    // Increment commentCount
+    const idea = await getOne<Idea>(COL_IDEAS, ideaId) as any;
+    await update(COL_IDEAS, ideaId, { commentCount: (idea?.commentCount ?? 0) + 1 });
+
+    revalidatePath(`/ideas/${ideaId}`);
+  } catch (error) {
+    console.error('[addIdeaComment Error]', error);
+    throw new Error('Gagal menambahkan komentar.');
+  }
+}
+
+export async function getIdeaComments(ideaId: string): Promise<CommentWithAuthor[]> {
+  try {
+    const comments = await getAll<Record<string, unknown>>(COL_COMMENTS, {
+      where: { field: 'ideaId', op: '==', value: ideaId },
+      orderBy: { field: 'createdAt', direction: 'desc' },
+    });
+
+    const result: CommentWithAuthor[] = [];
+    for (const c of comments) {
+      const author = await getOne<Record<string, unknown>>(COL_USERS, c.authorId as string);
+      if (author) {
+        result.push({
+          id: c.id as string,
+          text: c.text as string,
+          author: {
+            id: c.authorId as string,
+            name: (author.fullName ?? 'User') as string,
+            username: (author.username ?? 'user') as string,
+            avatarUrl: (author.avatarUrl ?? '') as string,
+          },
+          timestamp: formatTimestamp(c.createdAt as string),
+        });
+      }
+    }
+    return result;
+  } catch (error) {
+    console.error('[getIdeaComments Error]', error);
+    throw new Error('Gagal memuat komentar.');
+  }
+}
+
+// ─── Categories ───────────────────────────────────────────────────────────────
+
+export async function getIdeaCategories(): Promise<IdeaCategory[]> {
+  try {
+    return await getAll<IdeaCategory>(COL_CATEGORIES, {
+      orderBy: { field: 'name', direction: 'asc' },
+    });
+  } catch (error) {
+    console.error('[getIdeaCategories Error]', error);
+    throw new Error('Gagal memuat kategori ide.');
+  }
+}
+
+export async function addIdeaCategory(name: string) {
+  try {
+    await create(COL_CATEGORIES, { name });
+    revalidatePath('/panel/ideas/kategori');
+  } catch (error) {
+    console.error('[addIdeaCategory Error]', error);
+    throw new Error('Gagal menambahkan kategori ide.');
+  }
+}
+
+export async function deleteIdeaCategory(id: string) {
+  try {
+    await remove(COL_CATEGORIES, id);
+    revalidatePath('/panel/ideas/kategori');
+  } catch (error) {
+    console.error('[deleteIdeaCategory Error]', error);
+    throw new Error('Gagal menghapus kategori ide.');
+  }
+}
+
+// ─── Challenges ───────────────────────────────────────────────────────────────
+
+export async function createChallenge(
+  data: Omit<Challenge, 'id' | 'createdAt' | 'authorId' | 'deadline'> & { deadline: Date },
+  authorId: string
+): Promise<string> {
+  try {
+    const id = await create(COL_CHALLENGES, {
+      ...data,
+      deadline: data.deadline.toISOString(),
+      authorId,
+      createdAt: now(),
+    });
+    revalidatePath('/panel/ideas/challenges');
+    revalidatePath('/ideas/challenges');
+    return id;
+  } catch (error) {
+    console.error('Error creating challenge:', error);
+    throw new Error('Gagal membuat tantangan baru.');
+  }
 }
 
 export async function getChallenges(): Promise<Challenge[]> {
-    try {
-        const q = query(challengesCollection, orderBy('deadline', 'desc'));
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Challenge));
-    } catch (error) {
-        console.error("[getChallenges Error]", error);
-        throw new Error("Gagal mengambil daftar tantangan.");
-    }
+  try {
+    return await getAll<Challenge>(COL_CHALLENGES, {
+      orderBy: { field: 'deadline', direction: 'desc' },
+    });
+  } catch (error) {
+    console.error('[getChallenges Error]', error);
+    throw new Error('Gagal mengambil daftar tantangan.');
+  }
 }
 
-
 export async function getActiveChallenges(): Promise<Challenge[]> {
-    try {
-        const now = Timestamp.now();
-        const q = query(challengesCollection, where('deadline', '>', now), orderBy('deadline', 'asc'));
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Challenge));
-    } catch (error) {
-        console.error("[getActiveChallenges Error]", error);
-        throw new Error("Gagal mengambil daftar tantangan aktif.");
-    }
+  try {
+    const nowIso = new Date().toISOString();
+    const all = await getAll<Challenge>(COL_CHALLENGES, {
+      where: { field: 'deadline', op: '>', value: nowIso },
+      orderBy: { field: 'deadline', direction: 'asc' },
+    });
+    return all;
+  } catch (error) {
+    console.error('[getActiveChallenges Error]', error);
+    throw new Error('Gagal mengambil daftar tantangan aktif.');
+  }
 }
